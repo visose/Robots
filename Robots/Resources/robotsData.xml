@@ -1,0 +1,10 @@
+﻿<robots>
+  <robot model="KR210-2" manufacturer="KUKA">
+    <Joint number="1" a ="350" d ="750" minrange = "-185" maxrange ="185" maxspeed ="156"/>
+    <Joint number="2" a ="1250" d ="0" minrange = "-155" maxrange ="35" maxspeed ="156"/>
+    <Joint number="3" a ="-55" d ="0" minrange = "-130" maxrange ="154" maxspeed ="156"/>
+    <Joint number="4" a ="0" d ="1100" minrange = "-350" maxrange ="350" maxspeed ="330"/>
+    <Joint number="5" a ="0" d ="0" minrange = "-130" maxrange ="130" maxspeed ="330"/>
+    <Joint number="6" a ="0" d ="230" minrange = "-350" maxrange ="350" maxspeed ="615"/>
+  </robot>
+</robots>
