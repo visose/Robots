@@ -8,18 +8,18 @@ using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper
 {
-    public class ToolComponent : GH_Component
+    public class CreateTool : GH_Component
     {
-        public ToolComponent() : base("Tool", "Tool", "Tool", "Robots", "Components") { }
+        public CreateTool() : base("Create tool", "Tool", "Creates a tool or end effector.", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{E59E634B-7AD5-4682-B2C1-F18B73AE05C6}");
         protected override System.Drawing.Bitmap Icon => null;  // return Properties.Resources.visualstudio; 
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Name", "N", "Name", GH_ParamAccess.item,"DefaultTool");
-            pManager.AddPlaneParameter("TCP", "P", "TCP plane", GH_ParamAccess.item,Plane.WorldXY);
-            pManager.AddNumberParameter("Weight", "W", "Tool weight", GH_ParamAccess.item,0.01);
+            pManager.AddTextParameter("Name", "N", "Name", GH_ParamAccess.item, "DefaultTool");
+            pManager.AddPlaneParameter("TCP", "P", "TCP plane", GH_ParamAccess.item, Plane.WorldXY);
+            pManager.AddNumberParameter("Weight", "W", "Tool weight", GH_ParamAccess.item, 0.01);
             pManager.AddMeshParameter("Mesh", "M", "Tool geometry", GH_ParamAccess.item);
 
             pManager[3].Optional = true;
@@ -33,23 +33,23 @@ namespace Robots.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string name = null;
-            GH_Plane TCP = null;
+            GH_Plane tcp = null;
             double weight = 0;
             GH_Mesh mesh = null;
 
             if (!DA.GetData(0, ref name)) { return; }
-            if (!DA.GetData(1, ref TCP)) { return; }
+            if (!DA.GetData(1, ref tcp)) { return; }
             if (!DA.GetData(2, ref weight)) { return; }
             DA.GetData(3, ref mesh);
 
-            var tool = new Tool(name,TCP.Value,weight, mesh?.Value);
+            var tool = new Tool(name, tcp.Value, weight, mesh?.Value);
             DA.SetData(0, new GH_Tool(tool));
         }
     }
 
     public class ToolParameter : GH_PersistentParam<GH_Tool>
     {
-        public ToolParameter() : base("Tool", "Tool", "This is a Tool.", "Robots", "Parameters"){ }
+        public ToolParameter() : base("Tool parameter", "Tool", "This is a robot tool or end effector", "Robots", "Parameters") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         protected override System.Drawing.Bitmap Icon => null;   // 24x24 pixels // Properties.Resources.bitmapparameter;
         public override System.Guid ComponentGuid => new Guid("{073A02A6-2166-4387-9482-2EE3282E9209}");
