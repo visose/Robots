@@ -1,16 +1,48 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-
-using Rhino.Geometry;
-using Grasshopper.Kernel;
+﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Robots.Grasshopper
 {
-    public class CustomCommand : GH_Component
+    public class CommandParameter : GH_PersistentParam<GH_Command>
     {
-        public CustomCommand() : base("Custom command", "CustomCmd", "Custom command", "Robots", "Commands") { }
+        public CommandParameter() : base("Command parameter", "Command", "This is a robot command", "Robots", "Parameters") { }
+        public override GH_Exposure Exposure => GH_Exposure.secondary;
+        protected override System.Drawing.Bitmap Icon => null;   // 24x24 pixels // Properties.Resources.bitmapparameter;
+        public override System.Guid ComponentGuid => new Guid("{F5865990-90F3-4736-9AFF-4DD9ECEDA799}");
+          
+        protected override GH_GetterResult Prompt_Singular(ref GH_Command value)
+        {
+            value = new GH_Command();
+            return GH_GetterResult.success;
+        }
+        protected override GH_GetterResult Prompt_Plural(ref List<GH_Command> values)
+        {
+            values = new List<GH_Command>();
+            return GH_GetterResult.success;
+        }
+    }
+
+    public class GH_Command : GH_Goo<Robots.Commands.ICommand>
+    {
+        public GH_Command() { this.Value = null; }
+        public GH_Command(GH_Command goo) { this.Value = goo.Value; }
+        public GH_Command(Robots.Commands.ICommand native) { this.Value = native; }
+        public override IGH_Goo Duplicate() => new GH_Command(this);
+        public override bool IsValid => true;
+        public override string TypeName => "Command";
+        public override string TypeDescription => "Command";
+        public override string ToString() => this.Value.ToString();
+    }
+}
+
+namespace Robots.Grasshopper.Commands
+{
+    public class Custom : GH_Component
+    {
+        public Custom() : base("Custom command", "CustomCmd", "Custom command", "Robots", "Commands") { }
         public override GH_Exposure Exposure => GH_Exposure.primary;
         public override Guid ComponentGuid => new Guid("{D15B1F9D-B3B9-4105-A365-234C1329B092}");
         protected override System.Drawing.Bitmap Icon => null;  // return Properties.Resources.visualstudio; 
@@ -37,38 +69,97 @@ namespace Robots.Grasshopper
             if (!DA.GetData(2, ref kuka)) { return; }
             if (!DA.GetData(3, ref ur)) { return; }
 
-            var command = new Commands.Custom(name,abb,kuka, ur);
+            var command = new Robots.Commands.Custom(name, abb, kuka, ur);
             DA.SetData(0, new GH_Command(command));
         }
     }
 
-    public class CommandParameter : GH_PersistentParam<GH_Command>
+    public class Group : GH_Component
     {
-        public CommandParameter() : base("Command", "Command", "This is a Command.", "Robots", "Parameters"){ }
-        public override GH_Exposure Exposure => GH_Exposure.secondary;
-        protected override System.Drawing.Bitmap Icon => null;   // 24x24 pixels // Properties.Resources.bitmapparameter;
-        public override System.Guid ComponentGuid => new Guid("{F5865990-90F3-4736-9AFF-4DD9ECEDA799}");
-        protected override GH_GetterResult Prompt_Singular(ref GH_Command value)
+        public Group() : base("Group command", "GroupCmd", "Group of commands", "Robots", "Commands") { }
+        public override GH_Exposure Exposure => GH_Exposure.primary;
+        public override Guid ComponentGuid => new Guid("{17485955-818B-4D0E-9986-26264E1F86DC}");
+        protected override System.Drawing.Bitmap Icon => null;  // return Properties.Resources.visualstudio; 
+
+        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            value = new GH_Command();
-            return GH_GetterResult.success;
+            pManager.AddParameter(new CommandParameter(), "Commands", "C", "Group of commands", GH_ParamAccess.list);      
         }
-        protected override GH_GetterResult Prompt_Plural(ref List<GH_Command> values)
+
+        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            values = new List<GH_Command>();
-            return GH_GetterResult.success;
+            pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
+        }
+
+        protected override void SolveInstance(IGH_DataAccess DA)
+        {
+            var commands = new List<GH_Command> ();
+
+            if (!DA.GetDataList(0, commands)) { return; }
+
+            var command = new Robots.Commands.Group();
+            command.AddRange(commands.Select(x=>x.Value));
+            DA.SetData(0, new GH_Command(command));
         }
     }
 
-    public class GH_Command : GH_Goo<Commands.ICommand>
+
+    public class Wait : GH_Component
     {
-        public GH_Command() { this.Value = null; }
-        public GH_Command(GH_Command goo) { this.Value = goo.Value; }
-        public GH_Command(Commands.ICommand native) { this.Value = native; }
-        public override IGH_Goo Duplicate() => new GH_Command(this);
-        public override bool IsValid => true;
-        public override string TypeName => "Command";
-        public override string TypeDescription => "Command";
-        public override string ToString() => this.Value.ToString();
+        public Wait() : base("Wait command", "WaitCmd", "Wait command", "Robots", "Commands") { }
+        public override GH_Exposure Exposure => GH_Exposure.secondary;
+        public override Guid ComponentGuid => new Guid("{5E7BA355-7EAC-4A5D-B736-286043AB0A45}");
+        protected override System.Drawing.Bitmap Icon => null;  // return Properties.Resources.visualstudio; 
+
+        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        {
+            pManager.AddNumberParameter("Time", "T", "Time in seconds", GH_ParamAccess.item);
+        }
+
+        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        {
+            pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
+        }
+
+        protected override void SolveInstance(IGH_DataAccess DA)
+        {
+            double time = 0;
+
+            if (!DA.GetData(0, ref time)) { return; }
+
+            var command = new Robots.Commands.Wait(time);
+            DA.SetData(0, new GH_Command(command));
+        }
+    }
+
+    public class SetDO : GH_Component
+    {
+        public SetDO() : base("Set DO", "SetDO", "Set digital output", "Robots", "Commands") { }
+        public override GH_Exposure Exposure => GH_Exposure.secondary;
+        public override Guid ComponentGuid => new Guid("{C2F263E3-BF97-4E48-B2CB-42D3A5FE6190}");
+        protected override System.Drawing.Bitmap Icon => null;  // return Properties.Resources.visualstudio; 
+
+        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        {
+            pManager.AddIntegerParameter("DO", "D", "Digital output number", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Value", "V", "Digital output value", GH_ParamAccess.item);
+        }
+
+        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        {
+            pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
+        }
+
+        protected override void SolveInstance(IGH_DataAccess DA)
+        {
+            int DO = 0;
+            bool value = false;
+
+            if (!DA.GetData(0, ref DO)) { return; }
+            if (!DA.GetData(1, ref value)) { return; }
+
+            var command = new Robots.Commands.SetDO(DO,value);
+            DA.SetData(0, new GH_Command(command));
+        }
     }
 }
