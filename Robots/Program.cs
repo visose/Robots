@@ -68,6 +68,6 @@ namespace Robots
             return -1;
         }
 
-        public override string ToString() => $"Program: {Name} with {Targets.Count} targets";
+        public override string ToString() => $"Program ({Name} with {Targets.Count} targets)";
     }
 }

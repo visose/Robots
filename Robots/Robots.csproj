@@ -88,11 +88,41 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\Robots.rob" />
+    <None Include="Resources\Meshes.rob" />
     <None Include="Resources\robotsData.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\robotsGeometry.3dm" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icons\iconRobot.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icons\iconRobotList.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icons\iconCheckProgram.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icons\iconCommand.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icons\iconCreateProgram.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icons\iconCreateTarget.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icons\iconDeconstructTarget.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icons\iconKinematics.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icons\iconParamProgram.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icons\iconTool.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

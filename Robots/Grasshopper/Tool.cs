@@ -13,7 +13,7 @@ namespace Robots.Grasshopper
         public CreateTool() : base("Create tool", "Tool", "Creates a tool or end effector.", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{E59E634B-7AD5-4682-B2C1-F18B73AE05C6}");
-        protected override System.Drawing.Bitmap Icon => null;  // return Properties.Resources.visualstudio; 
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconTool;
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
@@ -51,7 +51,7 @@ namespace Robots.Grasshopper
     {
         public ToolParameter() : base("Tool parameter", "Tool", "This is a robot tool or end effector", "Robots", "Parameters") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
-        protected override System.Drawing.Bitmap Icon => null;   // 24x24 pixels // Properties.Resources.bitmapparameter;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconParamProgram;
         public override System.Guid ComponentGuid => new Guid("{073A02A6-2166-4387-9482-2EE3282E9209}");
         protected override GH_GetterResult Prompt_Singular(ref GH_Tool value)
         {

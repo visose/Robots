@@ -43,7 +43,7 @@ namespace Robots.Commands
             }
         }
 
-        public override string ToString() => $"Command: {name}";
+        public override string ToString() => $"Command ({name})";
     }
 
     public class Group : Collection<ICommand>, ICommand
@@ -58,7 +58,7 @@ namespace Robots.Commands
             return string.Join("\r\n", this.Select(command => command.Code(robot, target)));
         }
 
-        public override string ToString() => $"Command: Group with {Count} commands";
+        public override string ToString() => $"Command (Group with {Count} commands)";
     }
 
 
@@ -104,7 +104,7 @@ namespace Robots.Commands
             }
         }
 
-        public override string ToString() => $"Command: Wait {seconds} secs";
+        public override string ToString() => $"Command (Wait {seconds} secs)";
     }
 
     public class SetDO : ICommand
@@ -157,6 +157,6 @@ namespace Robots.Commands
             }
         }
 
-        public override string ToString() => $"Command: SetDO {DO} {value}";
+        public override string ToString() => $"Command (SetDO {DO} {value})";
     }
 }

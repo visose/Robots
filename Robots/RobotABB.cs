@@ -9,7 +9,6 @@ using static Robots.Util;
 
 namespace Robots
 {
-    [Serializable]
     class RobotABB : Robot
     {
         internal RobotABB(string model, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io) : base(model, Manufacturers.ABB, "MOD", basePlane, baseMesh, joints, io) { }

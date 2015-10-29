@@ -7,7 +7,6 @@ using static System.Math;
 
 namespace Robots
 {
-    [Serializable]
     class RobotUR : Robot
     {
         public RemoteConnection Remote { get; } = new RemoteConnection();

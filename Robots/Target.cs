@@ -56,7 +56,7 @@ namespace Robots
                 return new Target(JointRotations, Tool, Speed, Zone, Commands.ToList());
         }
 
-        public override string ToString() => IsCartesian ? $"Target: Cartesian ({Plane.OriginX:0.00}, {Plane.OriginY:0.00}, {Plane.OriginZ:0.00})" : $"Target: Joint ({string.Join(",", JointRotations.Select(x=>$"{x:0.00}"))})";
+        public override string ToString() => IsCartesian ? $"Target (Cartesian {Plane.OriginX:0.00}, {Plane.OriginY:0.00}, {Plane.OriginZ:0.00})" : $"Target (Joint {string.Join(",", JointRotations.Select(x=>$"{x:0.00}"))})";
     }
 
     public class Tool
@@ -73,7 +73,7 @@ namespace Robots
             this.Weight = weight;
             this.Mesh = mesh;
         }
-        public override string ToString() => $"Tool: {Name}";
+        public override string ToString() => $"Tool ({Name})";
     }
 
     public class Speed
@@ -94,7 +94,7 @@ namespace Robots
             this.RotationSpeed = rotation;
         }
 
-        public override string ToString() => (Name != null)? $"Speed: {Name}" : $"Speed: {TranslationSpeed:0.00} mm/s";
+        public override string ToString() => (Name != null)? $"Speed ({Name})" : $"Speed ({TranslationSpeed:0.00} mm/s)";
     }
 
     public class Zone
@@ -113,6 +113,6 @@ namespace Robots
 
         public Zone(double distance = 0.3) : this(null, distance, distance) { }
 
-        public override string ToString() => (Name != null) ? $"Zone: {Name}" : IsFlyBy ? $"Zone: {Distance:0.00} mm" : $"Zone: Stop point";
+        public override string ToString() => (Name != null) ? $"Zone ({Name})" : IsFlyBy ? $"Zone ({Distance:0.00} mm)" : $"Zone (Stop point)";
     }
 }

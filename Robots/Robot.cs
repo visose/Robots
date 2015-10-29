@@ -10,7 +10,7 @@ using static System.Math;
 
 namespace Robots
 {
-    [Serializable]
+
     public abstract partial class Robot
     {
         public enum Manufacturers { ABB, KUKA, UR };
@@ -48,36 +48,91 @@ namespace Robots
 
             KinematicSolution kinematics = null;
             if (manufacturer != Manufacturers.UR)
-               kinematics = Kinematics(new Target(new double[] { 0, PI / 2, 0, 0, 0, -PI }), false);
+                kinematics = Kinematics(new Target(new double[] { 0, PI / 2, 0, 0, 0, -PI }), false);
             else
-                kinematics = Kinematics(new Target(new double[] { -PI, -PI/2, 0, -PI / 2, 0, 0}), false);
+                kinematics = Kinematics(new Target(new double[] { -PI, -PI / 2, 0, -PI / 2, 0, 0 }), false);
 
             for (int i = 0; i < 6; i++)
             {
-                joints[i].Plane = kinematics.Planes[i+1];
+                joints[i].Plane = kinematics.Planes[i + 1];
                 joints[i].Range = new Interval(DegreeToRadian(joints[i].Range.T0, i), DegreeToRadian(joints[i].Range.T1, i));
-            }
-        }
-
-        public static Robot Load(string model, Plane basePlane)
-        {
-            using (var stream = new MemoryStream(Properties.Resources.Robots))
-            {
-                var formatter = new BinaryFormatter();
-                List<Robot> robots = formatter.Deserialize(stream) as List<Robot>;
-                var robot = robots.First(x => x.Model == model);
-                robot.basePlane = basePlane;
-                return robot;
             }
         }
 
         public static List<string> List()
         {
-            using (var stream = new MemoryStream(Properties.Resources.Robots))
+            var names = new List<string>();
+            XElement robotsData = XElement.Parse(Properties.Resources.robotsData);
+
+            foreach (var element in robotsData.Elements())
+            {
+                names.Add($"{element.Attribute(XName.Get("manufacturer")).Value}.{element.Attribute(XName.Get("model")).Value}");
+            }
+            return names;
+        }
+
+        public static Robot Load(string model, Plane basePlane)
+        {
+            XElement robotsData = XElement.Parse(Properties.Resources.robotsData);
+            XElement robotElement = null;
+            try
+            {
+                robotElement = robotsData.Elements().First(x => model == $"{x.Attribute(XName.Get("manufacturer")).Value}.{x.Attribute(XName.Get("model")).Value}");
+            }
+            catch (InvalidOperationException)
+            {
+
+                throw new InvalidOperationException($" Robot \"{model}\" is not in the library");
+            }
+            
+            Mesh[] meshes;
+            using (var stream = new MemoryStream(Properties.Resources.Meshes))
             {
                 var formatter = new BinaryFormatter();
-                List<Robot> robots = formatter.Deserialize(stream) as List<Robot>;
-                return robots.Select(x => x.Model).ToList();
+                RobotMeshes robotMeshes = formatter.Deserialize(stream) as RobotMeshes;
+                int index = robotMeshes.Names.FindIndex(x => x == model);        
+                meshes = robotMeshes.Meshes[index];
+            }
+
+            var modelName = robotElement.Attribute(XName.Get("model")).Value;
+            var manufacturer = (Manufacturers)Enum.Parse(typeof(Manufacturers), robotElement.Attribute(XName.Get("manufacturer")).Value);
+            var baseMesh = meshes[0].DuplicateMesh();
+
+            var jointElements = robotElement.Element(XName.Get("Joints")).Descendants().ToArray();
+            Joint[] joints = new Joint[6];
+
+            for (int i = 0; i < 6; i++)
+            {
+                var jointElement = jointElements[i];
+                double a = Convert.ToDouble(jointElement.Attribute(XName.Get("a")).Value);
+                double d = Convert.ToDouble(jointElement.Attribute(XName.Get("d")).Value);
+                double minRange = Convert.ToDouble(jointElement.Attribute(XName.Get("minrange")).Value);
+                double maxRange = Convert.ToDouble(jointElement.Attribute(XName.Get("maxrange")).Value);
+                Interval range = new Interval(minRange, maxRange);
+                double maxSpeed = Convert.ToDouble(jointElement.Attribute(XName.Get("maxspeed")).Value);
+                Mesh mesh = meshes[i + 1].DuplicateMesh();
+
+                joints[i] = new Joint() { A = a, D = d, Range = range, MaxSpeed = maxSpeed, Mesh = mesh };
+            }
+
+            var ioElement = robotElement.Element(XName.Get("IO"));
+            string[] doNames = ioElement.Element(XName.Get("DO")).Attribute(XName.Get("names")).Value.Split(',');
+            string[] diNames = ioElement.Element(XName.Get("DI")).Attribute(XName.Get("names")).Value.Split(',');
+            string[] aoNames = ioElement.Element(XName.Get("AO")).Attribute(XName.Get("names")).Value.Split(',');
+            string[] aiNames = ioElement.Element(XName.Get("AI")).Attribute(XName.Get("names")).Value.Split(',');
+
+            var io = new RobotIO() { DO = doNames, DI = diNames, AO = aoNames, AI = aiNames };
+
+            switch (manufacturer)
+            {
+                case (Manufacturers.ABB):
+                    return new RobotABB(modelName, basePlane, baseMesh, joints, io);
+                case (Manufacturers.KUKA):
+                    return new RobotKUKA(modelName, basePlane, baseMesh, joints, io);
+                case (Manufacturers.UR):
+                    return new RobotUR(modelName, basePlane, baseMesh, joints, io);
+                default:
+                    return null;
             }
         }
 
@@ -143,26 +198,42 @@ namespace Robots
             return robots;
         }
 
-        public static void Write()
+        public static void WriteMeshes()
         {
-            var robots = LoadFromFile();
+            Rhino.FileIO.File3dm robotsGeometry = Rhino.FileIO.File3dm.Read($@"{ResourcesFolder}\robotsGeometry.3dm");
+            var robotMeshes = new RobotMeshes();
+
+            foreach (var layer in robotsGeometry.Layers)
+            {
+                if (layer.Name == "Default" || layer.ParentLayerId != Guid.Empty) continue;
+                robotMeshes.Names.Add(layer.Name);
+                var meshes = new Mesh[7];
+                meshes[0] = robotsGeometry.Objects.First(x => x.Attributes.LayerIndex == layer.LayerIndex).Geometry as Mesh;
+
+                for (int i = 0; i < 6; i++)
+                {
+                    meshes[i + 1] = robotsGeometry.Objects.First(x => x.Attributes.LayerIndex == layer.LayerIndex + 1+i).Geometry as Mesh;
+                }
+                robotMeshes.Meshes.Add(meshes);
+            }
+
             using (var stream = new MemoryStream())
             {
                 var formatter = new BinaryFormatter();
-                formatter.Serialize(stream, robots);
-                File.WriteAllBytes($@"{ResourcesFolder}\Robots.rob", stream.ToArray());
+                formatter.Serialize(stream, robotMeshes);
+                File.WriteAllBytes($@"{ResourcesFolder}\Meshes.rob", stream.ToArray());
             }
         }
 
+
         public virtual KinematicSolution Kinematics(Target target, bool calculateMeshes = true) => new SphericalWristKinematics(target, this, calculateMeshes);
 
-        public override string ToString() => $"Robot: {Model}";
+        public override string ToString() => $"Robot ({Model})";
 
         abstract internal List<string> Code(Program program);
         public abstract double DegreeToRadian(double degree, int i);
         public abstract double RadianToDegree(double radian, int i);
 
-        [Serializable]
         internal class Joint
         {
             public double A { get; set; }
@@ -173,13 +244,19 @@ namespace Robots
             public Mesh Mesh { get; set; }
         }
 
-        [Serializable]
         public class RobotIO
         {
             public string[] DO { get; set; }
             public string[] DI { get; set; }
             public string[] AO { get; set; }
             public string[] AI { get; set; }
+        }
+
+        [Serializable]
+        class RobotMeshes
+        {
+            internal List<string> Names { get; set; } = new List<string>();
+            internal List<Mesh[]> Meshes { get; set; } = new List<Mesh[]>();
         }
     }
 }
