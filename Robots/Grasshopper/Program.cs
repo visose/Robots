@@ -11,7 +11,7 @@ namespace Robots.Grasshopper
         public CreateProgram() : base("Create program", "Program", "Create a program", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.tertiary;
         public override Guid ComponentGuid => new Guid("{5186EFD5-C042-4CA9-A7D2-E143F4848DEF}");
-        protected override System.Drawing.Bitmap Icon => null;  // return Properties.Resources.visualstudio; 
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCreateProgram;
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
@@ -117,7 +117,7 @@ namespace Robots.Grasshopper
         public CheckProgram() : base("Check program", "CheckProg", "Check a program for errors", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.tertiary;
         public override Guid ComponentGuid => new Guid("{BE57878F-2E6E-46A3-9EB9-E78568B6DC6C}");
-        protected override System.Drawing.Bitmap Icon => null;  // return Properties.Resources.visualstudio; 
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCheckProgram;
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
@@ -152,7 +152,7 @@ namespace Robots.Grasshopper
     {
         public ProgramParameter() : base("Program", "Program", "This is a robot program", "Robots", "Parameters") { }
         public override GH_Exposure Exposure => GH_Exposure.tertiary;
-        protected override System.Drawing.Bitmap Icon => null;   // 24x24 pixels // Properties.Resources.bitmapparameter;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconParamProgram;
         public override System.Guid ComponentGuid => new Guid("{9C4F1BB6-5FA2-44DA-B7EA-421AF31DA054}");
         protected override GH_GetterResult Prompt_Singular(ref GH_Program value)
         {

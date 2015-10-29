@@ -11,7 +11,6 @@ using static Rhino.RhinoMath;
 
 namespace Robots
 {
-    [Serializable]
     public class RobotKUKA : Robot
     {
         internal RobotKUKA(string model, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io) : base(model, Manufacturers.KUKA, "SRC", basePlane, baseMesh, joints, io) { }
