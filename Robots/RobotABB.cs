@@ -11,9 +11,15 @@ namespace Robots
 {
     class RobotABB : Robot
     {
-        internal RobotABB(string model, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io) : base(model, Manufacturers.ABB, "MOD", basePlane, baseMesh, joints, io) { }
+        internal RobotABB(string model, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io) : base(model, basePlane, baseMesh, joints, io)
+        {
+            this.Manufacturer = Manufacturers.ABB;
+            this.Extension = "MOD";
+        }
 
         internal override List<string> Code(Program program) => new RapidPostProcessor(this, program).Code;
+
+        protected override double[] GetStartPose() => new double[] { 0, PI / 2, 0, 0, 0, -PI };
 
         public override double DegreeToRadian(double degree, int i)
         {
@@ -151,7 +157,8 @@ namespace Robots
             string Speed(Speed speed, int i)
             {
                 if (speed.Name == null) speed.Name = $"speed{i:000}";
-                return $"VAR speeddata {speed.Name}:=[{speed.TranslationSpeed:0.00},{speed.RotationSpeed:0.00},200,15];";
+                double rotaion = speed.RotationSpeed * (180 / PI);
+                return $"VAR speeddata {speed.Name}:=[{speed.TranslationSpeed:0.00},{rotaion:0.00},200,15];";
             }
 
             string Zone(Zone zone, int i)
