@@ -34,14 +34,14 @@ namespace Robots.Grasshopper
             if (!DA.GetData(0, ref model)) { return; }
             if (!DA.GetData(1, ref basePlane)) { return; }
 
-            var robot = Robot.Load(model, basePlane.Value);
+            var robot = Robot.LoadFromLibrary(model, basePlane.Value);
             DA.SetData(0, new GH_Robot(robot));
         }
     }
 
     public class ListRobots : GH_Component
     {
-        public ListRobots() : base("List Robots", "ListRobots", "List all robots in assembly", "Robots", "Components") { }
+        public ListRobots() : base("List robots", "ListRobots", "Lists all the robots contained in the library", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.primary;
         public override Guid ComponentGuid => new Guid("{8126494B-21AC-4612-BD95-1814A5FD36C8}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconRobotList; 
@@ -57,7 +57,7 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            DA.SetDataList(0, Robot.List());
+            DA.SetDataList(0, Robot.ListLibrary());
         }
     }
 

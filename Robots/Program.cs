@@ -14,10 +14,6 @@ namespace Robots
         public Commands.Group InitCommands { get; set; }
         public List<string> Code { get; set; }
 
-        readonly Tool defaultTool = new Tool();
-        readonly Speed defaultSpeed = new Speed();
-        readonly Zone defaultZone = new Zone();
-
         public Program(string name, Robot robot, IEnumerable<Target> targets = null, Commands.Group initCommands = null)
         {
             this.Name = name;
@@ -31,6 +27,7 @@ namespace Robots
             CheckProgram();
             Code = Robot.Code(this);
         }
+
         public void Save(string folder)
         {
             if (!Directory.Exists(folder)) throw new DirectoryNotFoundException($" Folder \"{folder}\" not found");

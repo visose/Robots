@@ -96,10 +96,12 @@ namespace Robots
 
         protected class SphericalWristKinematics : KinematicSolution
         {
+            static double[] StartPosition = new double[] { 0, PI / 2, 0, 0, 0, -PI };
+
             public SphericalWristKinematics(Target target, Robot robot, bool displayMeshes) : base(target, robot, displayMeshes) { }
 
             /// <summary>
-            /// Inverse Kinematics for a spherical wrist 6 axis robot.
+            /// Inverse kinematics for a spherical wrist 6 axis robot.
             /// Code adapted from https://github.com/whitegreen/KinematikJava
             /// </summary>
             /// <param name="target">Cartesian target</param>
@@ -235,17 +237,47 @@ namespace Robots
             public OffsetWristKinematics(Target target, Robot robot, bool displayMeshes) : base(target, robot, displayMeshes) { }
 
             /// <summary>
-            /// Inverse Kinematics for a spherical wrist 6 axis robot.
+            /// Inverse kinematics for a offset wrist 6 axis robot.
             /// Code adapted from https://github.com/ros-industrial/universal_robot/blob/indigo-devel/ur_kinematics/src/ur_kin.cpp
             /// </summary>
             /// <param name="target">Cartesian target</param>
             /// <returns>Returns the 6 rotation values in radians.</returns>
             override protected double[] InverseKinematics(Transform transform, Target.RobotConfigurations configuration)
             {
-                bool shoulder = configuration.HasFlag(Target.RobotConfigurations.Shoulder);
-                bool elbow = configuration.HasFlag(Target.RobotConfigurations.Elbow);
-                if (shoulder) elbow = !elbow;
-                bool wrist = !configuration.HasFlag(Target.RobotConfigurations.Wrist);
+                //     bool shoulder = configuration.HasFlag(Target.RobotConfigurations.Shoulder);
+                //     bool elbow = configuration.HasFlag(Target.RobotConfigurations.Elbow);
+                //     if (shoulder) elbow = !elbow;
+                //     bool wrist = !configuration.HasFlag(Target.RobotConfigurations.Wrist);
+
+                int solutionNum = -1;
+                int configNum = (int)configuration;
+                switch (configNum)
+                {
+                    case 0:
+                        solutionNum = 7;
+                        break;
+                    case 1:
+                        solutionNum = 0;
+                        break;
+                    case 2:
+                        solutionNum = 6;
+                        break;
+                    case 3:
+                        solutionNum = 1;
+                        break;
+                    case 4:
+                        solutionNum = 5;
+                        break;
+                    case 5:
+                        solutionNum = 2;
+                        break;
+                    case 6:
+                        solutionNum = 4;
+                        break;
+                    case 7:
+                        solutionNum = 3;
+                        break;
+                }
 
                 double[] q_sols = new double[48];
 
@@ -257,7 +289,9 @@ namespace Robots
                 int num_sols = 0;
                 double ZERO_THRESH = 0.0000000001; //0.0001
 
+                // var rotation = Transform.Rotation(-PI / 2, Point3d.Origin);
                 Transform T = transform;
+               // Transform T = Transform.Multiply(transform,rotation);
 
                 double T02 = T.M02; double T00 = T.M00; double T01 = T.M01; double T03 = T.M03;
                 double T12 = T.M12; double T10 = T.M10; double T11 = T.M11; double T13 = T.M13;
@@ -382,7 +416,7 @@ namespace Robots
                                 c3 = Sign(c3);
                             else if (Abs(c3) > 1.0)
                             {
-                                Errors.Add($"Near wrist singularity.");
+                            //    Errors.Add($"Near wrist singularity.");
                             }
                             double arccos = Acos(c3);
                             q3[0] = arccos;
@@ -421,9 +455,9 @@ namespace Robots
 
                 //  if (Abs(1 - mr[2, 2]) < 0.0001)
                 //      Errors.Add($"Near wrist singularity.");
-                int configNumber = (int)configuration;
 
-                var joints = new double[] { q_sols[configNumber+0], q_sols[configNumber+1], q_sols[configNumber+2], q_sols[configNumber+3], q_sols[configNumber+4], q_sols[configNumber+5] };
+                solutionNum *= 6;
+                var joints = new double[] { q_sols[solutionNum+0], q_sols[solutionNum + 1], q_sols[solutionNum + 2], q_sols[solutionNum + 3], q_sols[solutionNum + 4], q_sols[solutionNum + 5] };
                 return joints;
             }
 

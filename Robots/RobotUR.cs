@@ -10,14 +10,25 @@ namespace Robots
     class RobotUR : Robot
     {
         public RemoteConnection Remote { get; } = new RemoteConnection();
-        internal RobotUR(string model, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io) : base(model, Manufacturers.UR, "URS", basePlane, baseMesh, joints, io) { }
+        internal RobotUR(string model, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io) : base(model, basePlane, baseMesh, joints, io)
+        {
+            this.Manufacturer = Manufacturers.UR;
+            this.Extension = "URS";
+        }
 
         public override KinematicSolution Kinematics(Target target, bool calculateMeshes = true) => new OffsetWristKinematics(target, this, calculateMeshes);
         internal override List<string> Code(Program program) => new URScriptPostProcessor(this, program).Code;
+        protected override double[] GetStartPose() => new double[] { -PI, -PI / 2, 0, -PI / 2, 0, 0 };
         public override double DegreeToRadian(double degree, int i) => degree * (PI/180);
         public override double RadianToDegree(double radian, int i) => radian * (180/PI);
 
-        [Serializable]
+        internal double RadianToRadian(double radian, int i)
+        {
+            if (i == 0) radian -= PI;
+            if (i == 1) radian -= PI * 2;
+            if (i == 2) radian -= PI * 2;
+            return radian;
+        }
         public class RemoteConnection
         {
             TcpClient client;
@@ -223,9 +234,9 @@ namespace Robots
                         case Target.Motions.JointRotations:
                             {
                                 double[] joints = target.IsCartesian ? robot.Kinematics(target, false).JointRotations : target.JointRotations;
-                               // joints = joints.Select((x, i) => robot.RadianToDegree(x, i)).ToArray();
-                                double axisAccel = 3;
-                                double axisSpeed = 0.2;
+                                joints = joints.Select((x,i) => robot.RadianToRadian(x,i)).ToArray();
+                                double axisSpeed = target.Speed.AxisSpeed;
+                                double axisAccel = target.Speed.AxisAccel;
                                 double zone = target.Zone.Distance / 1000;
                                 string moveText = $"  movej([{joints[0]:0.0000}, {joints[1]:0.0000}, {joints[2]:0.0000}, {joints[3]:0.0000}, {joints[4]:0.0000}, {joints[5]:0.0000}], a={axisAccel:0.0000}, v={axisSpeed:0.000}, r={zone:0.00000})";
                                 code.Add(moveText);
@@ -234,8 +245,8 @@ namespace Robots
 
                         case Target.Motions.JointCartesian:
                             {
-                                double axisAccel = 4;
-                                double axisSpeed = 1;
+                                double axisSpeed = target.Speed.AxisSpeed;
+                                double axisAccel = target.Speed.AxisAccel;
                                 double zone = target.Zone.Distance / 1000;
                                 string moveText = $"  movej(p[{origin.X:0.00000}, {origin.Y:0.00000}, {origin.Z:0.00000}, {axisAngle[0]:0.0000}, {axisAngle[1]:0.0000}, {axisAngle[2]:0.0000}],a={axisAccel:0.00000},v={axisSpeed:0.00000},r={zone:0.00000})";
                                 code.Add(moveText);
@@ -244,8 +255,8 @@ namespace Robots
 
                         case Target.Motions.Linear:
                             {
-                                double linearAccel = 4;
                                 double linearSpeed = target.Speed.TranslationSpeed / 1000;
+                                double linearAccel = target.Speed.TranslatioAccel / 1000;
                                 double zone = target.Zone.Distance / 1000;
                                 string moveText = $"  movel(p[{origin.X:0.00000}, {origin.Y:0.00000}, {origin.Z:0.00000}, {axisAngle[0]:0.0000}, {axisAngle[1]:0.0000}, {axisAngle[2]:0.0000}],a={linearAccel:0.00000},v={linearSpeed:0.00000},r={zone:0.00000})";
                                 code.Add(moveText);
@@ -269,13 +280,14 @@ namespace Robots
             string Tool(Tool tool)
             {
                 Plane tcp = tool.Tcp;
-                tcp.Rotate(Math.PI / 2, tcp.Normal);
+               // tcp.Rotate(Math.PI / 2, tcp.Normal);
                 Point3d origin = tcp.Origin / 1000;
                 Plane originPlane = new Plane(Point3d.Origin, Vector3d.XAxis, Vector3d.YAxis);
+               // originPlane.Rotate(PI / 2,originPlane.Normal);
                 double[] axisAngle = AxisAngle(tcp, originPlane);
                 string pos = $"  set_tcp(p[{origin.X:0.00000}, {origin.Y:0.00000}, {origin.Z:0.00000}, {axisAngle[0]:0.0000}, {axisAngle[1]:0.0000}, {axisAngle[2]:0.0000}])";
                 string mass = $"  set_payload({tool.Weight:0.000})";
-                return $"{pos}\r\n{mass}";
+                return $"{pos}\n{mass}";
             }
         }
     }

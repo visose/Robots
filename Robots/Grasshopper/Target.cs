@@ -397,22 +397,34 @@ namespace Robots.Grasshopper
         public override string TypeDescription => "Speed";
         public override string ToString() => this.Value.ToString();
 
+        public override object ScriptVariable() => Value;
+
         public override bool CastFrom(object source)
         {
+            if (source is Speed)
+            {
+                Value = source as Speed;
+                return true;
+            }
+
             if (source is GH_Number)
             {
                 Value = new Speed((source as GH_Number).Value);
                 return true;
             }
 
-            double value = 0;
-            if (GH_Convert.ToDouble_Secondary((source as GH_String).Value, ref value))
+            if (source is GH_String)
             {
-                Value = new Speed(value);
-                return true;
+                double value = 0;
+                if (GH_Convert.ToDouble_Secondary((source as GH_String).Value, ref value))
+                {
+                    Value = new Speed(value);
+                    return true;
+                }
+                else
+                    return false;
             }
-            else
-                return false;
+            return false;
         }
     }
 

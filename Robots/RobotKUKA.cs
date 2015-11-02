@@ -13,9 +13,15 @@ namespace Robots
 {
     public class RobotKUKA : Robot
     {
-        internal RobotKUKA(string model, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io) : base(model, Manufacturers.KUKA, "SRC", basePlane, baseMesh, joints, io) { }
+        internal RobotKUKA(string model, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io) : base(model, basePlane, baseMesh, joints, io)
+        {
+            this.Manufacturer = Manufacturers.KUKA;
+            this.Extension = "SRC";
+        }
 
         internal override List<string> Code(Program program) => new KRLPostProcessor(this, program).Code;
+
+        protected override double[] GetStartPose() => new double[] { 0, PI / 2, 0, 0, 0, -PI };
 
         public override double DegreeToRadian(double degree, int i)
         {

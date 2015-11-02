@@ -5,6 +5,8 @@ using System.Text;
 using Rhino.Geometry;
 using System.Collections;
 using static Robots.Util;
+using static System.Math;
+using static Rhino.RhinoMath;
 
 namespace Robots
 {
@@ -81,17 +83,22 @@ namespace Robots
         public string Name { get; set; }
         public double TranslationSpeed { get; set; }
         public double RotationSpeed { get; set; }
+        public double AxisSpeed { get; set; }
+        public double TranslatioAccel { get; set; } = 3000;
+        public double AxisAccel { get; set; } = PI;
 
-        public Speed(double translation = 100, double rotation = 90)
+        public Speed(double translation)
         {
             this.TranslationSpeed = translation;
-            this.RotationSpeed = rotation;
+            this.RotationSpeed = (translation / 250) * PI / 2;
+            this.AxisSpeed = (translation / 250) * PI / 2;
         }
-        public Speed(string name, double translation = 100, double rotation = 90)
+        public Speed(string name, double translation = 100, double rotation = PI/2, double axis = PI/8)
         {
             this.Name = name;
             this.TranslationSpeed = translation;
             this.RotationSpeed = rotation;
+            this.AxisSpeed = axis;
         }
 
         public override string ToString() => (Name != null)? $"Speed ({Name})" : $"Speed ({TranslationSpeed:0.00} mm/s)";
