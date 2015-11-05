@@ -59,37 +59,5 @@ namespace Robots.Grasshopper
         {
             DA.SetDataList(0, Robot.ListLibrary());
         }
-    }
-
-
-    public class RobotParameter : GH_PersistentParam<GH_Robot>
-    {
-        public RobotParameter() : base("Robot parameter", "Robot", "This is a robot", "Robots", "Parameters"){ }
-        public override GH_Exposure Exposure => GH_Exposure.primary;
-        protected override System.Drawing.Bitmap Icon =>  Properties.Resources.iconParamProgram;
-        public override System.Guid ComponentGuid => new Guid("{AFF10EB3-6BA5-431C-BF2A-A50941540FF3}");
-        
-        protected override GH_GetterResult Prompt_Singular(ref GH_Robot value)
-        {
-            value = new GH_Robot();
-            return GH_GetterResult.success;
-        }
-        protected override GH_GetterResult Prompt_Plural(ref List<GH_Robot> values)
-        {
-            values = new List<GH_Robot>();
-            return GH_GetterResult.success;
-        }
-    }
-
-    public class GH_Robot : GH_Goo<Robot>
-    {
-        public GH_Robot() { this.Value = null; }
-        public GH_Robot(GH_Robot goo) { this.Value = goo.Value; }
-        public GH_Robot(Robot native) { this.Value = native; }
-        public override IGH_Goo Duplicate() => new GH_Robot(this);
-        public override bool IsValid => true;
-        public override string TypeName => "Robot";
-        public override string TypeDescription => "Robot";
-        public override string ToString() => this.Value.ToString();
-    }
+    }   
 }

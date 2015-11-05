@@ -57,11 +57,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Commands.cs" />
+    <Compile Include="Grasshopper\GooTypes.cs" />
     <Compile Include="Grasshopper\Kinematics.cs" />
     <Compile Include="Grasshopper\Commands.cs" />
+    <Compile Include="Grasshopper\Parameters.cs" />
     <Compile Include="Grasshopper\Program.cs" />
     <Compile Include="Grasshopper\Remote.cs" />
-    <Compile Include="Grasshopper\Tool.cs" />
     <Compile Include="Grasshopper\Target.cs" />
     <Compile Include="Kinematics.cs" />
     <Compile Include="Program.cs" />

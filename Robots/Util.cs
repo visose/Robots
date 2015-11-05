@@ -10,6 +10,7 @@ namespace Robots
     static class Util
     {
         public const double Tol = 0.001;
+        internal const double SingularityTol = 0.0001;
         internal const string ResourcesFolder = @"C:\Users\Vicente\Documents\Trabajo\Bartlett\RobotsApp\Robots\Robots\Resources";
 
         internal static Transform ToTransform(double[,] matrix)

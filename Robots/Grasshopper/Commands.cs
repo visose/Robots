@@ -4,40 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Robots.Grasshopper
-{
-    public class CommandParameter : GH_PersistentParam<GH_Command>
-    {
-        public CommandParameter() : base("Command parameter", "Command", "This is a robot command", "Robots", "Parameters") { }
-        public override GH_Exposure Exposure => GH_Exposure.secondary;
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconParamProgram;
-        public override System.Guid ComponentGuid => new Guid("{F5865990-90F3-4736-9AFF-4DD9ECEDA799}");
-          
-        protected override GH_GetterResult Prompt_Singular(ref GH_Command value)
-        {
-            value = new GH_Command();
-            return GH_GetterResult.success;
-        }
-        protected override GH_GetterResult Prompt_Plural(ref List<GH_Command> values)
-        {
-            values = new List<GH_Command>();
-            return GH_GetterResult.success;
-        }
-    }
-
-    public class GH_Command : GH_Goo<Robots.Commands.ICommand>
-    {
-        public GH_Command() { this.Value = null; }
-        public GH_Command(GH_Command goo) { this.Value = goo.Value; }
-        public GH_Command(Robots.Commands.ICommand native) { this.Value = native; }
-        public override IGH_Goo Duplicate() => new GH_Command(this);
-        public override bool IsValid => true;
-        public override string TypeName => "Command";
-        public override string TypeDescription => "Command";
-        public override string ToString() => this.Value.ToString();
-    }
-}
-
 namespace Robots.Grasshopper.Commands
 {
     public class Custom : GH_Component
