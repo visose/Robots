@@ -84,14 +84,14 @@ namespace Robots
         public double TranslationSpeed { get; set; }
         public double RotationSpeed { get; set; }
         public double AxisSpeed { get; set; }
-        public double TranslatioAccel { get; set; } = 3000;
+        public double TranslatioAccel { get; set; } = 1000;
         public double AxisAccel { get; set; } = PI;
 
         public Speed(double translation)
         {
             this.TranslationSpeed = translation;
-            this.RotationSpeed = (translation / 250) * PI / 2;
-            this.AxisSpeed = (translation / 250) * PI / 2;
+            this.RotationSpeed = (translation / 1000) * PI / 2;
+            this.AxisSpeed = (translation / 1000) * PI / 2;
         }
         public Speed(string name, double translation = 100, double rotation = PI/2, double axis = PI/8)
         {

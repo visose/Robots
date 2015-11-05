@@ -201,7 +201,7 @@ namespace Robots.Grasshopper
         public DeconstructTarget() : base("Deconstruct target", "DeTarget", "Deconstructs a target", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{3252D880-59F9-4C9A-8A92-A6CD4C0BA591}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconDeconstructTarget; 
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconDeconstructTarget;
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
@@ -307,173 +307,42 @@ namespace Robots.Grasshopper
         #endregion
     }
 
-    public class TargetParameter : GH_PersistentParam<GH_Target>
+    public class CreateTool : GH_Component
     {
-        public TargetParameter() : base("Target parameter", "Target", "This is a robot target", "Robots", "Parameters") { }
+        public CreateTool() : base("Create tool", "Tool", "Creates a tool or end effector.", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconParamProgram;
-        public override System.Guid ComponentGuid => new Guid("{BEB590A9-905E-42ED-AB08-3E999EA94553}");
-        protected override GH_GetterResult Prompt_Singular(ref GH_Target value)
+        public override Guid ComponentGuid => new Guid("{E59E634B-7AD5-4682-B2C1-F18B73AE05C6}");
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconTool;
+
+        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            value = new GH_Target();
-            return GH_GetterResult.success;
+            pManager.AddTextParameter("Name", "N", "Name", GH_ParamAccess.item, "DefaultTool");
+            pManager.AddPlaneParameter("TCP", "P", "TCP plane", GH_ParamAccess.item, Plane.WorldXY);
+            pManager.AddNumberParameter("Weight", "W", "Tool weight", GH_ParamAccess.item, 0.01);
+            pManager.AddMeshParameter("Mesh", "M", "Tool geometry", GH_ParamAccess.item);
+
+            pManager[3].Optional = true;
         }
-        protected override GH_GetterResult Prompt_Plural(ref List<GH_Target> values)
+
+        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            values = new List<GH_Target>();
-            return GH_GetterResult.success;
+            pManager.AddParameter(new ToolParameter(), "Tool", "T", "Tool", GH_ParamAccess.item);
         }
-    }
 
-    public class GH_Target : GH_Goo<Target>
-    {
-        public GH_Target() { this.Value = null; }
-        public GH_Target(GH_Target goo) { this.Value = goo.Value; }
-        public GH_Target(Target native) { this.Value = native; }
-        public override IGH_Goo Duplicate() => new GH_Target(this);
-        public override bool IsValid => true;
-        public override string TypeName => "Target";
-        public override string TypeDescription => "Target";
-        public override string ToString() => this.Value.ToString();
-
-        public override bool CastFrom(object source)
+        protected override void SolveInstance(IGH_DataAccess DA)
         {
-            if (source is GH_Point)
-            {
-                Value = new Target(new Plane((source as GH_Point).Value, Vector3d.XAxis, Vector3d.YAxis));
-                return true;
-            }
+            string name = null;
+            GH_Plane tcp = null;
+            double weight = 0;
+            GH_Mesh mesh = null;
 
-            if (source is GH_Plane)
-            {
-                Value = new Target((source as GH_Plane).Value);
-                return true;
-            }
+            if (!DA.GetData(0, ref name)) { return; }
+            if (!DA.GetData(1, ref tcp)) { return; }
+            if (!DA.GetData(2, ref weight)) { return; }
+            DA.GetData(3, ref mesh);
 
-            if (source is GH_String)
-            {
-                string text = (source as GH_String).Value;
-                string[] jointsText = text.Split(',');
-                if (jointsText.Length != 6) return false;
-
-                var joints = new double[6];
-                for (int i = 0; i < 6; i++)
-                    if (!GH_Convert.ToDouble_Secondary(jointsText[i], ref joints[i])) return false;
-
-                Value = new Target(joints);
-                return true;
-            }
-            return false;
+            var tool = new Tool(name, tcp.Value, weight, mesh?.Value);
+            DA.SetData(0, new GH_Tool(tool));
         }
     }
-
-
-    public class SpeedParameter : GH_PersistentParam<GH_Speed>
-    {
-        public SpeedParameter() : base("Speed parameter", "Speed", "This is a robot speed", "Robots", "Parameters") { }
-        public override GH_Exposure Exposure => GH_Exposure.secondary;
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconParamProgram;
-        public override System.Guid ComponentGuid => new Guid("{0B329813-13A0-48C4-B89A-65F289A4FF28}");
-        protected override GH_GetterResult Prompt_Singular(ref GH_Speed value)
-        {
-            value = new GH_Speed();
-            return GH_GetterResult.success;
-        }
-        protected override GH_GetterResult Prompt_Plural(ref List<GH_Speed> values)
-        {
-            values = new List<GH_Speed>();
-            return GH_GetterResult.success;
-        }
-    }
-
-    public class GH_Speed : GH_Goo<Speed>
-    {
-        public GH_Speed() { this.Value = null; }
-        public GH_Speed(GH_Speed goo) { this.Value = goo.Value; }
-        public GH_Speed(Speed native) { this.Value = native; }
-        public override IGH_Goo Duplicate() => new GH_Speed(this);
-        public override bool IsValid => true;
-        public override string TypeName => "Speed";
-        public override string TypeDescription => "Speed";
-        public override string ToString() => this.Value.ToString();
-
-        public override object ScriptVariable() => Value;
-
-        public override bool CastFrom(object source)
-        {
-            if (source is Speed)
-            {
-                Value = source as Speed;
-                return true;
-            }
-
-            if (source is GH_Number)
-            {
-                Value = new Speed((source as GH_Number).Value);
-                return true;
-            }
-
-            if (source is GH_String)
-            {
-                double value = 0;
-                if (GH_Convert.ToDouble_Secondary((source as GH_String).Value, ref value))
-                {
-                    Value = new Speed(value);
-                    return true;
-                }
-                else
-                    return false;
-            }
-            return false;
-        }
-    }
-
-    public class ZoneParameter : GH_PersistentParam<GH_Zone>
-    {
-        public ZoneParameter() : base("Zone parameter", "Zone", "This is an aproximation zone", "Robots", "Parameters") { }
-        public override GH_Exposure Exposure => GH_Exposure.secondary;
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconParamProgram;
-        public override System.Guid ComponentGuid => new Guid("{458855D3-F671-4A50-BDA1-6AD3B7A5EC70}");
-        protected override GH_GetterResult Prompt_Singular(ref GH_Zone value)
-        {
-            value = new GH_Zone();
-            return GH_GetterResult.success;
-        }
-        protected override GH_GetterResult Prompt_Plural(ref List<GH_Zone> values)
-        {
-            values = new List<GH_Zone>();
-            return GH_GetterResult.success;
-        }
-    }
-
-    public class GH_Zone : GH_Goo<Zone>
-    {
-        public GH_Zone() { this.Value = null; }
-        public GH_Zone(GH_Zone goo) { this.Value = goo.Value; }
-        public GH_Zone(Zone native) { this.Value = native; }
-        public override IGH_Goo Duplicate() => new GH_Zone(this);
-        public override bool IsValid => true;
-        public override string TypeName => "Zone";
-        public override string TypeDescription => "Zone";
-        public override string ToString() => this.Value.ToString();
-
-        public override bool CastFrom(object source)
-        {
-            if (source is GH_Number)
-            {
-                Value = new Zone((source as GH_Number).Value);
-                return true;
-            }
-
-            double value = 0;
-            if (GH_Convert.ToDouble_Secondary(source, ref value))
-            {
-                Value = new Zone(value);
-                return true;
-            }
-            else
-                return false;
-        }
-    }
-
 }

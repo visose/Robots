@@ -8,6 +8,8 @@ namespace Robots.Grasshopper
 {
     public class RemoteUR : GH_Component
     {
+        bool connected = false;
+
         public RemoteUR() : base("Remote UR", "RemoteUR", "Remote connection with UR robot", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.quinary;
         public override Guid ComponentGuid => new Guid("{19A5E3A3-E2BC-4798-8C54-13873FD2973A}");
@@ -27,6 +29,7 @@ namespace Robots.Grasshopper
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddTextParameter("Log", "L", "Log", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -48,15 +51,13 @@ namespace Robots.Grasshopper
             if (!DA.GetData("Play", ref play)) { return; }
             if (!DA.GetData("Pause", ref pause)) { return; }
 
-            if (connect && !robotUR.Remote.IsConnected)
-                robotUR.Remote.Connect();
-            else
-                robotUR.Remote.Disconnect();
-
-            if (upload)
-                robotUR.Remote.UploadProgram(program.Value);
+            if (connect && !connected) { robotUR.Remote.Connect(); connected = true; }
+            if (!connect) { robotUR.Remote.Disconnect(); connected = false; }
+            if (upload) robotUR.Remote.UploadProgram(program.Value);
             if (play) robotUR.Remote.Play();
             if (pause) robotUR.Remote.Pause();
+
+            DA.SetDataList(0, robotUR.Remote.Log);
         }
     }
 }

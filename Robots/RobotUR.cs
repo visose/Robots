@@ -18,59 +18,19 @@ namespace Robots
 
         public override KinematicSolution Kinematics(Target target, bool calculateMeshes = true) => new OffsetWristKinematics(target, this, calculateMeshes);
         internal override List<string> Code(Program program) => new URScriptPostProcessor(this, program).Code;
-        protected override double[] GetStartPose() => new double[] { -PI, -PI / 2, 0, -PI / 2, 0, 0 };
-        public override double DegreeToRadian(double degree, int i) => degree * (PI/180);
-        public override double RadianToDegree(double radian, int i) => radian * (180/PI);
+        protected override double[] GetStartPose() => new double[] { 0, -PI / 2, 0, -PI / 2, 0, -PI / 2 };
+        public override double DegreeToRadian(double degree, int i) => degree * (PI / 180);
+        public override double RadianToDegree(double radian, int i) => radian * (180 / PI);
 
         internal double RadianToRadian(double radian, int i)
         {
-            if (i == 0) radian -= PI;
+            //  if (i == 0) radian -= PI*2;
             if (i == 1) radian -= PI * 2;
             if (i == 2) radian -= PI * 2;
+            if (i == 3) radian -= PI * 2;
+            if (i == 5) radian -= PI * 2 - PI / 2;
             return radian;
         }
-        public class RemoteConnection
-        {
-            TcpClient client;
-            NetworkStream stream;
-            public string IP { get; set; }
-            public int Port { get; set; } = 30002;
-            public bool IsConnected => client?.Client != null && client.Connected;
-
-            public void Connect()
-            {
-                if (IP == null) throw new NullReferenceException(" IP for UR robot has not been set");
-                if (IsConnected) Disconnect();
-                client = new TcpClient();
-                client.Connect(IP, Port);
-                stream = client.GetStream();
-            }
-
-            public void Disconnect()
-            {
-               if (stream != null) stream.Close();
-                if (client != null) client.Close();
-            }
-
-            public void Send(string message)
-            {
-                if (!IsConnected) return;
-                var asen = new System.Text.ASCIIEncoding();
-                byte[] byteArray = asen.GetBytes(message);
-                stream.Write(byteArray, 0, byteArray.Length);
-            }
-
-            public void UploadProgram(Program program)
-            {
-                var joinedCode = string.Join("\n", program.Code);
-                Send(joinedCode);
-            }
-            
-            public void Pause() => Send("pause program\n");
-            public void Play() => Send("resume program\n");
-
-        }
-
 
         /// <summary>
         /// Code lifted from http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToAngle/
@@ -94,23 +54,23 @@ namespace Robots
                                    // optional check that input is pure rotation, 'isRotationMatrix' is defined at:
                                    // http://www.euclideanspace.com/maths/algebra/matrix/orthogonal/rotation/
                                    // assert isRotationMatrix(m) : "not valid rotation matrix";// for debugging
-            if ((Math.Abs(m[0][1] - m[1][0]) < epsilon)
-              && (Math.Abs(m[0][2] - m[2][0]) < epsilon)
-            && (Math.Abs(m[1][2] - m[2][1]) < epsilon))
+            if ((Abs(m[0][1] - m[1][0]) < epsilon)
+              && (Abs(m[0][2] - m[2][0]) < epsilon)
+            && (Abs(m[1][2] - m[2][1]) < epsilon))
             {
                 // singularity found
                 // first check for identity matrix which must have +1 for all terms
                 //  in leading diagonaland zero in other terms
-                if ((Math.Abs(m[0][1] + m[1][0]) < epsilon2)
-                  && (Math.Abs(m[0][2] + m[2][0]) < epsilon2)
-                  && (Math.Abs(m[1][2] + m[2][1]) < epsilon2)
-                && (Math.Abs(m[0][0] + m[1][1] + m[2][2] - 3) < epsilon2))
+                if ((Abs(m[0][1] + m[1][0]) < epsilon2)
+                  && (Abs(m[0][2] + m[2][0]) < epsilon2)
+                  && (Abs(m[1][2] + m[2][1]) < epsilon2)
+                && (Abs(m[0][0] + m[1][1] + m[2][2] - 3) < epsilon2))
                 {
                     // this singularity is identity matrix so angle = 0
                     return new double[] { 0, 0, 0 }; // zero angle, arbitrary axis
                 }
                 // otherwise this singularity is angle = 180
-                angle = Math.PI;
+                angle = PI;
                 double xx = (m[0][0] + 1) / 2;
                 double yy = (m[1][1] + 1) / 2;
                 double zz = (m[2][2] + 1) / 2;
@@ -127,7 +87,7 @@ namespace Robots
                     }
                     else
                     {
-                        x = Math.Sqrt(xx);
+                        x = Sqrt(xx);
                         y = xy / x;
                         z = xz / x;
                     }
@@ -142,7 +102,7 @@ namespace Robots
                     }
                     else
                     {
-                        y = Math.Sqrt(yy);
+                        y = Sqrt(yy);
                         x = xy / y;
                         z = yz / y;
                     }
@@ -157,7 +117,7 @@ namespace Robots
                     }
                     else
                     {
-                        z = Math.Sqrt(zz);
+                        z = Sqrt(zz);
                         x = xz / z;
                         y = yz / z;
                     }
@@ -168,13 +128,13 @@ namespace Robots
                 return new double[] { vector.X, vector.Y, vector.Z }; // return 180 deg rotation
             }
             // as we have reached here there are no singularities so we can handle normally
-            double s = Math.Sqrt((m[2][1] - m[1][2]) * (m[2][1] - m[1][2])
+            double s = Sqrt((m[2][1] - m[1][2]) * (m[2][1] - m[1][2])
               + (m[0][2] - m[2][0]) * (m[0][2] - m[2][0])
               + (m[1][0] - m[0][1]) * (m[1][0] - m[0][1])); // used to normalise
-            if (Math.Abs(s) < 0.001) s = 1;
+            if (Abs(s) < 0.001) s = 1;
             // prevent divide by zero, should not happen if matrix is orthogonal and should be
             // caught by singularity test above, but I've left it in just in case
-            angle = Math.Acos((m[0][0] + m[1][1] + m[2][2] - 1) / 2);
+            angle = Acos((m[0][0] + m[1][1] + m[2][2] - 1) / 2);
             x = (m[2][1] - m[1][2]) / s;
             y = (m[0][2] - m[2][0]) / s;
             z = (m[1][0] - m[0][1]) / s;
@@ -182,6 +142,57 @@ namespace Robots
             vector.Unitize();
             vector *= angle;
             return new double[] { vector.X, vector.Y, vector.Z }; // return 180 deg rotation
+        }
+
+        public class RemoteConnection
+        {
+            TcpClient client = new TcpClient();
+            public string IP { get; set; }
+            public int Port { get; set; } = 30002;
+            public List<string> Log { get; } = new List<string>();
+            public bool IsConnected => client.Connected;
+
+            public void Connect()
+            {
+                if (IP == null) throw new NullReferenceException(" IP for UR robot has not been set");
+                if (IsConnected) Disconnect();
+                client.Connect(IP, Port);
+                Log.Add((IsConnected) ? "Connected" : "Not able to connect");
+            }
+
+            public void Disconnect()
+            {
+                if (IsConnected)
+                {
+                    client.Close();
+                    client = new TcpClient();
+                    Log.Add("Disconnected");
+                }
+            }
+
+            public void Send(string message)
+            {
+                if (!IsConnected) return;
+                message += '\n';
+                var asen = new System.Text.ASCIIEncoding();
+                byte[] byteArray = asen.GetBytes(message);
+                NetworkStream stream = client.GetStream();
+                stream.Write(byteArray, 0, byteArray.Length);
+
+                string firstLine = message.Substring(0, message.IndexOf('\n'));
+                if (firstLine.Length + 1 < message.Length) firstLine += " ...";
+                Log.Add($"Sending: {firstLine}");
+            }
+
+            public void UploadProgram(Program program)
+            {
+                var joinedCode = string.Join("\n", program.Code);
+                Send(joinedCode);
+            }
+
+            public void Pause() => Send("pause program");
+            public void Play() => Send("resume program");
+
         }
 
         class URScriptPostProcessor
@@ -234,7 +245,7 @@ namespace Robots
                         case Target.Motions.JointRotations:
                             {
                                 double[] joints = target.IsCartesian ? robot.Kinematics(target, false).JointRotations : target.JointRotations;
-                                joints = joints.Select((x,i) => robot.RadianToRadian(x,i)).ToArray();
+                                joints = joints.Select((x, i) => robot.RadianToRadian(x, i)).ToArray();
                                 double axisSpeed = target.Speed.AxisSpeed;
                                 double axisAccel = target.Speed.AxisAccel;
                                 double zone = target.Zone.Distance / 1000;
@@ -280,10 +291,10 @@ namespace Robots
             string Tool(Tool tool)
             {
                 Plane tcp = tool.Tcp;
-               // tcp.Rotate(Math.PI / 2, tcp.Normal);
+                // tcp.Rotate(PI / 2, tcp.Normal);
                 Point3d origin = tcp.Origin / 1000;
                 Plane originPlane = new Plane(Point3d.Origin, Vector3d.XAxis, Vector3d.YAxis);
-               // originPlane.Rotate(PI / 2,originPlane.Normal);
+                // originPlane.Rotate(PI / 2,originPlane.Normal);
                 double[] axisAngle = AxisAngle(tcp, originPlane);
                 string pos = $"  set_tcp(p[{origin.X:0.00000}, {origin.Y:0.00000}, {origin.Z:0.00000}, {axisAngle[0]:0.0000}, {axisAngle[1]:0.0000}, {axisAngle[2]:0.0000}])";
                 string mass = $"  set_payload({tool.Weight:0.000})";
