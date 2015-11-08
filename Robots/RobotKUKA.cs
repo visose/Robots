@@ -155,7 +155,7 @@ $APO.CPTP=100
                     {
                         case Target.Motions.JointRotations:
                             {
-                                double[] joints = target.IsCartesian ? robot.Kinematics(target, false).JointRotations : target.JointRotations;
+                                double[] joints = target.JointRotations;
                                 joints = joints.Select((x, i) => robot.RadianToDegree(x,i)).ToArray();
                                 moveText = $"PTP {{A1 {joints[0]:0.000},A2 {joints[1]:0.000},A3 {joints[2]:0.000},A4 {joints[3]:0.000},A5 {joints[4]:0.000},A6 {joints[5]:0.000},E1 0,E2 0,E3 0,E4 0,E5 0,E6 0}}";
                                 if (target.Zone.IsFlyBy) moveText += " C_PTP";                                

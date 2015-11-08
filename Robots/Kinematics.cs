@@ -1,13 +1,8 @@
-﻿using System;
-using System.Xml.Linq;
-using System.Text;
-using System.Linq;
+﻿using Rhino.Geometry;
 using System.Collections.Generic;
-using static System.Math;
-
-using Rhino.Geometry;
+using System.Linq;
 using static Robots.Util;
-using static Rhino.RhinoMath;
+using static System.Math;
 
 
 namespace Robots
@@ -255,7 +250,6 @@ namespace Robots
 
                 double[] a = robot.joints.Select(joint => joint.A).ToArray();
                 double[] d = robot.joints.Select(joint => joint.D).ToArray();
-
 
                 // shoulder
                 {

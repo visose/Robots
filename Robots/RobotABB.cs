@@ -19,12 +19,12 @@ namespace Robots
 
         internal override List<string> Code(Program program) => new RapidPostProcessor(this, program).Code;
 
-        protected override double[] GetStartPose() => new double[] { 0, PI / 2, 0, 0, 0, -PI };
+        protected override double[] GetStartPose() => new double[] { 0, PI / 2, 0, 0, 0, 0 };
 
         public override double DegreeToRadian(double degree, int i)
         {
             double radian = degree * PI / 180;
-            if (i == 1) radian = -radian+PI*0.5;
+            if (i == 1) radian = -radian + PI * 0.5;
             if (i == 2) radian *= -1;
             if (i == 4) radian *= -1;
             return radian;
@@ -56,37 +56,31 @@ namespace Robots
             {
                 var code = new List<string>();
                 code.Add("MODULE MainModule");
-                code.Add("ConfJ \\Off;");
-                code.Add("ConfL \\Off;");
                 code.Add("VAR extjoint extj := [9E9,9E9,9E9,9E9,9E9,9E9];");
                 code.Add("VAR confdata conf := [0,-2,1,0];");
 
-                var tools = program.Targets.Select(x => x.Tool).Distinct();
-                var speeds = program.Targets.Select(x => x.Speed).Distinct();
-                var zones = program.Targets.Select(x => x.Zone).Distinct();
+                var tools = program.Targets.Select(x => x.Tool).Distinct().ToList();
+                var speeds = program.Targets.Select(x => x.Speed).Distinct().ToList();
+                var zones = program.Targets.Select(x => x.Zone).Distinct().ToList();
 
                 foreach (var tool in tools)
                     code.Add(Tool(tool));
 
-                foreach (var speed in speeds)
-                {
-                    int i = 0;
-                    code.Add(Speed(speed,i++));
-                }
+                for (int i = 0; i < speeds.Count; i++)
+                    code.Add(Speed(speeds[i], i));
 
-                foreach (var zone in zones)
-                {
-                    int i = 0;
-                    if (zone.IsFlyBy) code.Add(Zone(zone, i++));
-                }
+                for (int i = 0; i < zones.Count; i++)
+                    if (zones[i].IsFlyBy) code.Add(Zone(zones[i], i));
 
                 code.Add("PROC Main()");
+                code.Add("ConfJ \\Off;");
+                code.Add("ConfL \\Off;");
 
                 string initCommands = program.InitCommands.Code(program.Robot, new Target(Plane.Unset));
                 if (initCommands.Length > 0)
                     code.Add(initCommands);
 
-                Plane originPlane = new Plane(Point3d.Origin, -Vector3d.YAxis, Vector3d.XAxis);
+                Plane originPlane = new Plane(Point3d.Origin, -Vector3d.XAxis, -Vector3d.YAxis);
 
                 foreach (Target target in program.Targets)
                 {
@@ -98,16 +92,17 @@ namespace Robots
                     {
                         plane = target.Plane;
                         plane.Transform(Transform.PlaneToPlane(robot.basePlane, Plane.WorldXY));
-                        quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
+                        quaternion = Quaternion.Rotation(originPlane, plane);
                     }
 
                     switch (target.Motion)
                     {
                         case Target.Motions.JointRotations:
                             {
-                                double[] joints = target.IsCartesian ? robot.Kinematics(target, false).JointRotations : target.JointRotations;
+                                double[] joints = target.JointRotations;
                                 joints = joints.Select((x, i) => robot.RadianToDegree(x, i)).ToArray();
-                                 moveText = $"MoveAbsJ [[{joints[0]:0.000}, {joints[1]:0.000}, {joints[2]:0.000}, {joints[3]:0.000}, {joints[4]:0.000}, {joints[5]:0.000}],[0,9E9,9E9,9E9,9E9,9E9]],{target.Speed.Name},{target.Zone.Name},{target.Tool.Name};";                                
+                                string zone = target.Zone.IsFlyBy ? target.Zone.Name : "fine";
+                                moveText = $"MoveAbsJ [[{joints[0]:0.000}, {joints[1]:0.000}, {joints[2]:0.000}, {joints[3]:0.000}, {joints[4]:0.000}, {joints[5]:0.000}],[0,9E9,9E9,9E9,9E9,9E9]],{target.Speed.Name},{zone},{target.Tool.Name};";
                                 break;
                             }
 
@@ -146,11 +141,16 @@ namespace Robots
 
             string Tool(Tool tool)
             {
-                string pos = $"[{tool.Tcp.OriginX:0.00},{tool.Tcp.OriginY:0.00},{tool.Tcp.OriginZ:0.00}]";
                 Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, tool.Tcp);
-                string orient = $"[{quaternion.A:0.000},{quaternion.B:0.000},{quaternion.C:0.000},{quaternion.D:0.000}]";
+                double weight = (tool.Weight > 0.001) ? tool.Weight : 0.001;
+
                 Point3d centroid = tool.Tcp.Origin / 2;
-                string loaddata = $"[{tool.Weight:0.000},[{centroid.X:0.00},{centroid.Y:0.00},{centroid.Z:0.00}],[1,0,0,0],0,0,0]";
+                if (centroid.DistanceTo(Point3d.Origin) < 0.001)
+                    centroid = new Point3d(0, 0, 0.001);
+
+                string pos = $"[{tool.Tcp.OriginX:0.000},{tool.Tcp.OriginY:0.000},{tool.Tcp.OriginZ:0.000}]";
+                string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
+                string loaddata = $"[{weight:0.000},[{centroid.X:0.000},{centroid.Y:0.000},{centroid.Z:0.000}],[1,0,0,0],0,0,0]";
                 return $"PERS tooldata {tool.Name}:=[TRUE,[{pos},{orient}],{loaddata}];";
             }
 
@@ -164,9 +164,8 @@ namespace Robots
             string Zone(Zone zone, int i)
             {
                 if (zone.Name == null) zone.Name = $"zone{i:000}";
-                string stop = zone.IsFlyBy ? "FALSE" : "TRUE";
                 double angle = 0.1;
-                return $"VAR zonedata {zone.Name}:=[{stop},{zone.Distance:0.00},{zone.Rotation:0.00},{zone.Distance:0.00},{angle:0.00},{zone.Rotation:0.00},{angle:0.00}];";
+                return $"VAR zonedata {zone.Name}:=[FALSE,{zone.Distance:0.00},{zone.Rotation:0.00},{zone.Distance:0.00},{angle:0.00},{zone.Rotation:0.00},{angle:0.00}];";
             }
         }
 
