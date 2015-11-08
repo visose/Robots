@@ -244,7 +244,7 @@ namespace Robots
                     {
                         case Target.Motions.JointRotations:
                             {
-                                double[] joints = target.IsCartesian ? robot.Kinematics(target, false).JointRotations : target.JointRotations;
+                                double[] joints = target.JointRotations;
                                 joints = joints.Select((x, i) => robot.RadianToRadian(x, i)).ToArray();
                                 double axisSpeed = target.Speed.AxisSpeed;
                                 double axisAccel = target.Speed.AxisAccel;
@@ -267,7 +267,7 @@ namespace Robots
                         case Target.Motions.Linear:
                             {
                                 double linearSpeed = target.Speed.TranslationSpeed / 1000;
-                                double linearAccel = target.Speed.TranslatioAccel / 1000;
+                                double linearAccel = target.Speed.TranslationAccel / 1000;
                                 double zone = target.Zone.Distance / 1000;
                                 string moveText = $"  movel(p[{origin.X:0.00000}, {origin.Y:0.00000}, {origin.Z:0.00000}, {axisAngle[0]:0.0000}, {axisAngle[1]:0.0000}, {axisAngle[2]:0.0000}],a={linearAccel:0.00000},v={linearSpeed:0.00000},r={zone:0.00000})";
                                 code.Add(moveText);

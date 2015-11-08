@@ -26,6 +26,9 @@ namespace Robots.Grasshopper
         {
             pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
             pManager.AddTextParameter("Code", "C", "Code", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Duration", "D", "Program duration in seconds", GH_ParamAccess.item);
+            pManager.AddTextParameter("Warnings", "W", "Warnings in program", GH_ParamAccess.list);
+            pManager.AddTextParameter("Errors", "E", "Errors in program", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -44,9 +47,22 @@ namespace Robots.Grasshopper
             initCommand.AddRange(commands.Select(x => x.Value));
 
             var program = new Program(name, robot.Value, targets.Select(x => x.Value).ToList(), initCommand);
-            program.GenerateCode();
+
             DA.SetData(0, new GH_Program(program));
             DA.SetDataList(1, program.Code);
+            DA.SetData(2, program.Duration);
+
+            if (program.Warnings.Count > 0)
+            {
+                DA.SetDataList(3, program.Warnings);
+                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Warnigs in program");
+            }
+
+            if (program.Errors.Count > 0)
+            {
+                DA.SetDataList(4, program.Errors);
+                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in program");
+            }
         }
     }
 
@@ -106,49 +122,9 @@ namespace Robots.Grasshopper
 
             if (!DA.GetData(0, ref program)) { return; }
             if (!DA.GetDataList(1, code)) { return; }
-            program.Value.Code = code;
-
+            program.Value.ChangeCode(code);
             DA.SetData(0, program);
         }
     }
 
-    public class CheckProgram : GH_Component
-    {
-        public CheckProgram() : base("Check program", "CheckProg", "Check a program for errors", "Robots", "Components") { }
-        public override GH_Exposure Exposure => GH_Exposure.tertiary;
-        public override Guid ComponentGuid => new Guid("{BE57878F-2E6E-46A3-9EB9-E78568B6DC6C}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCheckProgram;
-
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
-        {
-            pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
-        }
-
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
-        {
-            pManager.AddTextParameter("Target index", "I", "Index of first target that contains errors", GH_ParamAccess.list);
-            pManager.AddTextParameter("Errors", "E", "Errors in program", GH_ParamAccess.list);
-        }
-
-        protected override void SolveInstance(IGH_DataAccess DA)
-        {
-            GH_Program program = null;
-
-            if (!DA.GetData(0, ref program)) { return; }
-
-            var errors = new List<string>();
-            int i = program.Value.CheckKinematics(out errors);
-
-            if (i != -1)
-            {
-                DA.SetData(0, new GH_Integer(i));
-                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Errors in program");
-            }
-            DA.SetDataList(1, errors);
-        }
-    }
-
-   
-
-    
 }

@@ -114,7 +114,7 @@ namespace Robots.Grasshopper
             DA.SetData(0, new GH_Target(target));
         }
 
-        #region menu override
+        // Variable inputs
         protected override void AppendAdditionalComponentMenuItems(System.Windows.Forms.ToolStripDropDown menu)
         {
             Menu_AppendItem(menu, "Target input", AddTarget, true, Params.Input.Any(x => x.Name == "Target"));
@@ -183,8 +183,7 @@ namespace Robots.Grasshopper
         IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index) => null;
         bool IGH_VariableParameterComponent.DestroyParameter(GH_ParameterSide side, int index) => false;
         void IGH_VariableParameterComponent.VariableParameterMaintenance() { }
-        #endregion
-    }
+       }
 
     public class DeconstructTarget : GH_Component, IGH_VariableParameterComponent
     {
@@ -318,7 +317,7 @@ namespace Robots.Grasshopper
         {
             pManager.AddTextParameter("Name", "N", "Name", GH_ParamAccess.item, "DefaultTool");
             pManager.AddPlaneParameter("TCP", "P", "TCP plane", GH_ParamAccess.item, Plane.WorldXY);
-            pManager.AddNumberParameter("Weight", "W", "Tool weight", GH_ParamAccess.item, 0.01);
+            pManager.AddNumberParameter("Weight", "W", "Tool weight", GH_ParamAccess.item, 0.0);
             pManager.AddMeshParameter("Mesh", "M", "Tool geometry", GH_ParamAccess.item);
 
             pManager[3].Optional = true;

@@ -15,18 +15,18 @@ namespace Robots
         public enum Motions { JointRotations, JointCartesian, Linear, Circular, Spline }
        [Flags] public enum RobotConfigurations { None = 0, Shoulder = 1, Elbow = 2, Wrist = 4}
 
-        Plane plane;
-        double[] jointRotations;
+        internal Plane plane;
+        internal double[] jointRotations;
 
-        public Plane Plane { get { return plane; } set {plane = value; jointRotations = null; } }
-        public double[] JointRotations { get { return jointRotations; } set {jointRotations = value; plane = Plane.Unset; } }
+        public Plane Plane { get { return plane; } set {plane = value; IsCartesian = true; } }
+        public double[] JointRotations { get { return jointRotations; } set {jointRotations = value; IsCartesian = false; } }
         public Tool Tool { get; set; }
         public Motions Motion { get; set; }
         public Speed Speed { get; set; }
         public Zone Zone { get; set; }
         public Commands.Group Commands { get; set; } = new Commands.Group();
         public RobotConfigurations Configuration { get; set; }
-        public bool IsCartesian => (JointRotations == null);
+        public bool IsCartesian { get; private set; }
 
         public Target(Plane plane, Tool tool = null, Motions motion = Motions.JointCartesian, Speed speed = null, Zone zone = null, IEnumerable<Commands.ICommand> commands = null, RobotConfigurations configuration = 0)
         {
@@ -68,7 +68,14 @@ namespace Robots
         public double Weight { get; }
         public Mesh Mesh { get; }
 
-        public Tool(string name = "DefaultTool", Plane tcp = new Plane(), double weight = 0.01, Mesh mesh = null)
+        public static Tool Default {get;}
+
+        static Tool()
+        {
+            Default = new Tool("DefaultTool", Plane.WorldXY, 0);
+        }
+
+        public Tool(string name, Plane tcp, double weight, Mesh mesh = null)
         {
             this.Name = name;
             this.Tcp = tcp;
@@ -84,24 +91,25 @@ namespace Robots
         public double TranslationSpeed { get; set; }
         public double RotationSpeed { get; set; }
         public double AxisSpeed { get; set; }
-        public double TranslatioAccel { get; set; } = 1000;
+        public double TranslationAccel { get; set; } = 1000;
         public double AxisAccel { get; set; } = PI;
 
-        public Speed(double translation)
+        public static Speed Default { get; }
+
+        static Speed()
         {
+            Default = new Speed(100, "DefaultZone");
+        }
+
+        public Speed(double translation, string name = null)
+        {
+            this.Name = name;
             this.TranslationSpeed = translation;
             this.RotationSpeed = (translation / 1000) * PI / 2;
             this.AxisSpeed = (translation / 1000) * PI / 2;
         }
-        public Speed(string name, double translation = 100, double rotation = PI/2, double axis = PI/8)
-        {
-            this.Name = name;
-            this.TranslationSpeed = translation;
-            this.RotationSpeed = rotation;
-            this.AxisSpeed = axis;
-        }
 
-        public override string ToString() => (Name != null)? $"Speed ({Name})" : $"Speed ({TranslationSpeed:0.00} mm/s)";
+        public override string ToString() => (Name != null)? $"Speed ({Name})" : $"Speed ({TranslationSpeed:0.0} mm/s)";
     }
 
     public class Zone
@@ -111,14 +119,18 @@ namespace Robots
         public double Rotation { get; set; }
         public bool IsFlyBy => Distance > Tol;
 
-        public Zone(string name, double distance, double angle)
+        public static Zone Default { get; }
+
+        static Zone()
+        {
+            Default = new Zone(1, "DefaultZone");
+        }
+
+        public Zone(double distance, string name = null)
         {
             this.Name = name;
             this.Distance = distance;
-            this.Rotation = angle;
         }
-
-        public Zone(double distance = 0.3) : this(null, distance, distance) { }
 
         public override string ToString() => (Name != null) ? $"Zone ({Name})" : IsFlyBy ? $"Zone ({Distance:0.00} mm)" : $"Zone (Stop point)";
     }

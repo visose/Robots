@@ -64,11 +64,11 @@ namespace Robots.Commands
 
     public class Wait : ICommand
     {
-        double seconds = 0;
+        internal double Seconds { get; }
 
         public Wait(double seconds)
         {
-            this.seconds = seconds;
+            this.Seconds = seconds;
         }
 
         public string Code(Robot robot, Target target)
@@ -78,25 +78,25 @@ namespace Robots.Commands
                 case (Robot.Manufacturers.ABB):
                     {
                         if (target.Zone.IsFlyBy)
-                            return $@"WaitTime {seconds:0.000}";
+                            return $@"WaitTime {Seconds:0.000};";
                         else
-                            return $@"WaitTime \InPos,{seconds:0.000}";
+                            return $@"WaitTime \InPos,{Seconds:0.000};";
                     }
 
                 case (Robot.Manufacturers.KUKA):
                     {
                         if (target.Zone.IsFlyBy)
-                            return $"CONTINUE\r\nWAIT SEC {seconds:0.000}";
+                            return $"CONTINUE\r\nWAIT SEC {Seconds:0.000}";
                         else
-                            return $"WAIT SEC {seconds:0.000}";
+                            return $"WAIT SEC {Seconds:0.000}";
                     }
 
                 case (Robot.Manufacturers.UR):
                     {
                         if (target.Zone.IsFlyBy)
-                            return $"sleep({seconds:0.000})";
+                            return $"sleep({Seconds:0.000})";
                         else
-                            return $"sleep({seconds:0.000})";
+                            return $"sleep({Seconds:0.000})";
                     }
 
                 default:
@@ -104,7 +104,7 @@ namespace Robots.Commands
             }
         }
 
-        public override string ToString() => $"Command (Wait {seconds} secs)";
+        public override string ToString() => $"Command (Wait {Seconds} secs)";
     }
 
     public class SetDO : ICommand

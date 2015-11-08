@@ -17,9 +17,8 @@ namespace Robots.Grasshopper
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddParameter(new RobotParameter(), "Robot", "R", "UR Robot", GH_ParamAccess.item);
-            pManager.AddTextParameter("IP", "IP", "IP address of robot", GH_ParamAccess.item);
             pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
+            pManager.AddTextParameter("IP", "IP", "IP address of robot", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Connect", "C", "Connect to robot", GH_ParamAccess.item, false);
             pManager.AddBooleanParameter("Upload", "U", "Upload program", GH_ParamAccess.item, false);
             pManager.AddBooleanParameter("Play", "P", "Play", GH_ParamAccess.item, false);
@@ -34,14 +33,12 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            GH_Robot robot = null;
             GH_Program program = null;
             GH_String ip = null;
 
-            if (!DA.GetData(0, ref robot)) { return; }
-            if (!DA.GetData(2, ref program)) { return; }
+            if (!DA.GetData(0, ref program)) { return; }
 
-            var robotUR = robot.Value as RobotUR;
+            var robotUR = program.Value.Robot as RobotUR;
             if (DA.GetData(1, ref ip) && ip != null)
                 robotUR.Remote.IP = ip.Value;
 

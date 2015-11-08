@@ -191,7 +191,7 @@ namespace Robots
         }
 
 
-        public virtual KinematicSolution Kinematics(Target target, bool calculateMeshes = true) => new SphericalWristKinematics(target, this, calculateMeshes);
+        public virtual KinematicSolution Kinematics(Target target, bool calculateMeshes = false) => new SphericalWristKinematics(target, this, calculateMeshes);
 
         public override string ToString() => $"Robot ({Model})";
 
