@@ -338,10 +338,16 @@ namespace Robots
                 if (isUnreachable)
                     Errors.Add($"Target out of reach.");
 
-                if (joints[0] < 0.0) joints[1] += 2.0 * PI;
-                if (joints[1] < 0.0) joints[1] += 2.0 * PI;
-                if (joints[3] < 0.0) joints[3] += 2.0 * PI;
-                if (joints[5] < 0.0) joints[5] += 2.0 * PI;
+                //   if (joints[0] < 0.0) joints[1] += 2.0 * PI;
+                //   if (joints[1] < 0.0) joints[1] += 2.0 * PI;
+                //   if (joints[3] < 0.0) joints[3] += 2.0 * PI;
+                //   if (joints[5] < 0.0) joints[5] += 2.0 * PI;
+
+                for (int i = 0; i < 6; i++)
+                {
+                    if (joints[i] > PI) joints[i] -= 2.0 * PI;
+                    if (joints[i] < -PI) joints[i] += 2.0 * PI;
+                }
 
                 return joints;
             }

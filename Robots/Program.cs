@@ -113,6 +113,12 @@ namespace Robots
                         kinematics = ClosestSolution(currentConfiguration, fixedTargets[i - 1].JointRotations, target, i);
                     }
 
+                    if (kinematics == null)
+                    {
+                        errors.Add($"No valid kinematic configuration found for target {i}");
+                        return;
+                    }
+
                     target.jointRotations = kinematics.JointRotations;
                     target.plane = kinematics.Planes[7];
 
@@ -120,7 +126,7 @@ namespace Robots
                     {
                         errors.Add($"Kinematic error in target {i}");
                         errors.AddRange(kinematics.Errors);
-                        break;
+                        return;
                     }
                 }
             }
@@ -159,6 +165,8 @@ namespace Robots
                     targetCopy.Configuration = configuration;
 
                     var kinematics = program.Robot.Kinematics(targetCopy);
+                    if (kinematics.Errors.Count > 0) continue;
+
                     double difference = joints.Zip(kinematics.JointRotations, (x, y) => Pow(Abs(x - y), 2)).Sum();
 
                     if (difference < closestDifference)
@@ -305,7 +313,8 @@ namespace Robots
                 else
                 {
                     var plane = CartesianLerp(prevTarget.plane, target.plane, currentTime, prevTarget.time, target.time);
-                    return robot.Kinematics(new Target(plane), true);
+                    Target.RobotConfigurations configuration = (Abs(prevTarget.time - currentTime) < Abs(target.time - currentTime)) ? prevTarget.configuration : target.configuration;
+                    return robot.Kinematics(new Target(plane,configuration: configuration), true);
                 }
             }
 
