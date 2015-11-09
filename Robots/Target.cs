@@ -58,8 +58,16 @@ namespace Robots
                 return new Target(JointRotations, Tool, Speed, Zone, Commands.ToList());
         }
 
-        public override string ToString() => IsCartesian ? $"Target (Cartesian {Plane.OriginX:0.00}, {Plane.OriginY:0.00}, {Plane.OriginZ:0.00})" : $"Target (Joint {string.Join(",", JointRotations.Select(x=>$"{x:0.00}"))})";
-    }
+        public override string ToString()
+        {
+            string motion = IsCartesian ? $"Cartesian ({Plane.OriginX:0.00},{Plane.OriginY:0.00},{Plane.OriginZ:0.00})" : $"Joint ({string.Join(",", JointRotations.Select(x => $"{x:0.00})"))}";
+            string tool = Tool != null ? $", {Tool}" : "";
+            string speed = Speed != null ? $", {Speed}" : "";
+            string zone = Zone != null ? $", {Zone}" : "";
+            string commands = (Commands.Count > 0) ? ", (Contains commands)" : "";
+            return $"Target ({motion}{tool}{speed}{zone}{commands})";
+        }
+        }
 
     public class Tool
     {

@@ -19,6 +19,7 @@ namespace Robots.Grasshopper
         {
             pManager.AddTextParameter("Model", "M", "Model", GH_ParamAccess.item, "KUKA.KR210-2");
             pManager.AddPlaneParameter("Base", "P", "Base plane", GH_ParamAccess.item,Plane.WorldXY);
+            pManager.AddBooleanParameter("From file", "F", "Set to true to read from a custom file", GH_ParamAccess.item, false);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
@@ -30,11 +31,14 @@ namespace Robots.Grasshopper
         {
             string model = null;
             GH_Plane basePlane = null;
+            GH_Boolean fromFile = null;
 
             if (!DA.GetData(0, ref model)) { return; }
             if (!DA.GetData(1, ref basePlane)) { return; }
+            if (!DA.GetData(2, ref fromFile)) { return; }
 
-            var robot = Robot.LoadFromLibrary(model, basePlane.Value);
+            var robot = (fromFile.Value) ? Robot.LoadFromFile(model, basePlane.Value) : Robot.LoadFromLibrary(model, basePlane.Value);
+
             DA.SetData(0, new GH_Robot(robot));
         }
     }
@@ -48,6 +52,7 @@ namespace Robots.Grasshopper
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddBooleanParameter("From file", "F", "Set to true to read from a custom file", GH_ParamAccess.item, false);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
@@ -57,7 +62,11 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            DA.SetDataList(0, Robot.ListLibrary());
+            GH_Boolean fromFile = null;
+
+            if (!DA.GetData(0, ref fromFile)) { return; }
+
+            DA.SetDataList(0, Robot.ListRobots(fromFile.Value));
         }
     }   
 }

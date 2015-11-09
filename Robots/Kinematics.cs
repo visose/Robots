@@ -248,6 +248,8 @@ namespace Robots
                 double[] joints = new double[6];
                 bool isUnreachable = false;
 
+                transform *= Transform.Rotation(PI / 2, Point3d.Origin);
+
                 double[] a = robot.joints.Select(joint => joint.A).ToArray();
                 double[] d = robot.joints.Select(joint => joint.D).ToArray();
 
@@ -338,10 +340,7 @@ namespace Robots
                 if (isUnreachable)
                     Errors.Add($"Target out of reach.");
 
-                //   if (joints[0] < 0.0) joints[1] += 2.0 * PI;
-                //   if (joints[1] < 0.0) joints[1] += 2.0 * PI;
-                //   if (joints[3] < 0.0) joints[3] += 2.0 * PI;
-                //   if (joints[5] < 0.0) joints[5] += 2.0 * PI;
+             //   joints[5] += PI / 2;
 
                 for (int i = 0; i < 6; i++)
                 {
@@ -371,10 +370,7 @@ namespace Robots
                 transforms[4] = ToTransform(new double[4, 4] { { s[0] * s[4] + c234 * c[0] * c[4], -s234 * c[0], c[4] * s[0] - c234 * c[0] * s[4], c[0] * (a[2] * c23 + a[1] * c[1]) + d[3] * s[0] + d[4] * s234 * c[0] }, { c234 * c[4] * s[0] - c[0] * s[4], -s234 * s[0], -c[0] * c[4] - c234 * s[0] * s[4], s[0] * (a[2] * c23 + a[1] * c[1]) - d[3] * c[0] + d[4] * s234 * s[0] }, { s234 * c[4], c234, -s234 * s[4], d[0] + a[2] * s23 + a[1] * s[1] - d[4] * c234 }, { 0, 0, 0, 1 } });
                 transforms[5] = ToTransform(new double[4, 4] { { c[5] * (s[0] * s[4] + c234 * c[0] * c[4]) - s234 * c[0] * s[5], -s[5] * (s[0] * s[4] + c234 * c[0] * c[4]) - s234 * c[0] * c[5], c[4] * s[0] - c234 * c[0] * s[4], d[5] * (c[4] * s[0] - c234 * c[0] * s[4]) + c[0] * (a[2] * c23 + a[1] * c[1]) + d[3] * s[0] + d[4] * s234 * c[0] }, { -c[5] * (c[0] * s[4] - c234 * c[4] * s[0]) - s234 * s[0] * s[5], s[5] * (c[0] * s[4] - c234 * c[4] * s[0]) - s234 * c[5] * s[0], -c[0] * c[4] - c234 * s[0] * s[4], s[0] * (a[2] * c23 + a[1] * c[1]) - d[3] * c[0] - d[5] * (c[0] * c[4] + c234 * s[0] * s[4]) + d[4] * s234 * s[0] }, { c234 * s[5] + s234 * c[4] * c[5], c234 * c[5] - s234 * c[4] * s[5], -s234 * s[4], d[0] + a[2] * s23 + a[1] * s[1] - d[4] * c234 - d[5] * s234 * s[4] }, { 0, 0, 0, 1 } });
 
-                Transform baseTrans = ToTransform(new double[4, 4] { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 } });
-
-                for (int i = 0; i < 6; i++)
-                    transforms[i] *= baseTrans;
+                transforms[5] *= Transform.Rotation(-PI / 2, Point3d.Origin);
 
                 return transforms;
             }

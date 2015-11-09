@@ -93,8 +93,6 @@ namespace Robots
 
             void FixTargets(List<Target> targets)
             {
-                Target.RobotConfigurations currentConfiguration = 0;
-
                 for (int i = 0; i < targets.Count; i++)
                 {
                     var target = targets[i];
@@ -105,18 +103,11 @@ namespace Robots
 
                     if (target.Motion == Target.Motions.JointRotations)
                     {
-                        currentConfiguration = target.Configuration;
                         kinematics = program.Robot.Kinematics(target);
                     }
                     else
                     {
-                        kinematics = ClosestSolution(currentConfiguration, fixedTargets[i - 1].JointRotations, target, i);
-                    }
-
-                    if (kinematics == null)
-                    {
-                        errors.Add($"No valid kinematic configuration found for target {i}");
-                        return;
+                        kinematics = GetClosestSolution(i);
                     }
 
                     target.jointRotations = kinematics.JointRotations;
@@ -152,35 +143,45 @@ namespace Robots
                 }
             }
 
-            Robot.KinematicSolution ClosestSolution(Target.RobotConfigurations currentConfiguration, double[] joints, Target target, int i)
+            Robot.KinematicSolution GetClosestSolution(int i)
             {
+                Robot.KinematicSolution[] solutions = new Robot.KinematicSolution[8];
+                double[] differences = new double[8];
+
+                System.Threading.Tasks.Parallel.For(0, 8, j =>
+                      {
+                          var targetCopy = fixedTargets[i].Duplicate();
+                          targetCopy.Configuration = (Target.RobotConfigurations)j;
+                          solutions[j] = program.Robot.Kinematics(targetCopy);
+                          differences[j] = fixedTargets[i-1].JointRotations.Zip(solutions[j].JointRotations, (x, y) => Pow(Abs(x - y), 2)).Sum();
+                      });
+
                 Robot.KinematicSolution closestKinematics = null;
                 Target.RobotConfigurations closestConfiguration = 0;
                 double closestDifference = double.MaxValue;
 
                 for (int j = 0; j < 8; j++)
                 {
-                    var configuration = (Target.RobotConfigurations)j;
-                    var targetCopy = target.Duplicate();
-                    targetCopy.Configuration = configuration;
+                    if (solutions[j].Errors.Count > 0) continue;
 
-                    var kinematics = program.Robot.Kinematics(targetCopy);
-                    if (kinematics.Errors.Count > 0) continue;
-
-                    double difference = joints.Zip(kinematics.JointRotations, (x, y) => Pow(Abs(x - y), 2)).Sum();
-
-                    if (difference < closestDifference)
+                    if (differences[j] < closestDifference)
                     {
-                        closestDifference = difference;
-                        closestKinematics = kinematics;
-                        closestConfiguration = configuration;
+                        closestDifference = differences[j];
+                        closestKinematics = solutions[j];
+                        closestConfiguration = (Target.RobotConfigurations)j;
                     }
                 }
 
-                if (currentConfiguration != closestConfiguration)
-                    warnings.Add($"Target {i} changed to {closestConfiguration.ToString()} configuration");
+                if (closestKinematics == null)
+                {
+                    errors.Add($"No valid kinematic configuration found for target {i}");
+                    closestKinematics = solutions[(int)fixedTargets[i - 1].Configuration];
+                }
 
-                target.Configuration = closestConfiguration;
+                if (fixedTargets[i-1].Configuration != closestConfiguration)
+                    warnings.Add($"Configuration changed to \"{closestConfiguration.ToString()}\" on target {i}");
+
+                fixedTargets[i].Configuration = closestConfiguration;
                 return closestKinematics;
             }
         }
@@ -314,7 +315,7 @@ namespace Robots
                 {
                     var plane = CartesianLerp(prevTarget.plane, target.plane, currentTime, prevTarget.time, target.time);
                     Target.RobotConfigurations configuration = (Abs(prevTarget.time - currentTime) < Abs(target.time - currentTime)) ? prevTarget.configuration : target.configuration;
-                    return robot.Kinematics(new Target(plane,configuration: configuration), true);
+                    return robot.Kinematics(new Target(plane, configuration: configuration), true);
                 }
             }
 
