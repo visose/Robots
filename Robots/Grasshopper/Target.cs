@@ -13,15 +13,18 @@ namespace Robots.Grasshopper
 {
     public class CreateTarget : GH_Component, IGH_VariableParameterComponent
     {
-        IGH_Param targetParam = new TargetParameter() { Name = "Target", NickName = "T", Description = "Reference target", Optional = false };
-        IGH_Param planeParam = new Param_Plane() { Name = "Plane", NickName = "P", Description = "Target plane", Optional = false };
-        IGH_Param jointParam = new Param_String() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false };
-        IGH_Param toolParam = new ToolParameter() { Name = "Tool", NickName = "T", Description = "Tool or end effector", Optional = true };
-        IGH_Param motionParam = new Param_String() { Name = "Motion", NickName = "M", Description = "Type of motion", Optional = true };
-        IGH_Param speedParam = new SpeedParameter() { Name = "Speed", NickName = "S", Description = "Speed of robot in mm/s", Optional = true };
-        IGH_Param zoneParam = new ZoneParameter() { Name = "Zone", NickName = "Z", Description = "Aproximation zone in mm", Optional = true };
-        IGH_Param commandParam = new CommandParameter() { Name = "Command", NickName = "C", Description = "Robot command", Optional = true };
-        IGH_Param configParam = new Param_Integer() { Name = "RobConf", NickName = "F", Description = "Robot configuration", Optional = true };
+        IGH_Param[] parameters = new IGH_Param[9]
+        {
+         new TargetParameter() { Name = "Target", NickName = "T", Description = "Reference target", Optional = false },
+         new Param_Plane() { Name = "Plane", NickName = "P", Description = "Target plane", Optional = false },
+         new Param_String() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false },
+         new ToolParameter() { Name = "Tool", NickName = "T", Description = "Tool or end effector", Optional = true },
+         new Param_String() { Name = "Motion", NickName = "M", Description = "Type of motion", Optional = true },
+         new SpeedParameter() { Name = "Speed", NickName = "S", Description = "Speed of robot in mm/s", Optional = true },
+         new ZoneParameter() { Name = "Zone", NickName = "Z", Description = "Aproximation zone in mm", Optional = true },
+         new CommandParameter() { Name = "Command", NickName = "C", Description = "Robot command", Optional = true },
+         new Param_Integer() { Name = "RobConf", NickName = "F", Description = "Robot configuration", Optional = true }
+        };
 
         public CreateTarget() : base("Create target", "Target", "Creates a target", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
@@ -30,7 +33,7 @@ namespace Robots.Grasshopper
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            Params.RegisterInputParam(planeParam, 0);
+            Params.RegisterInputParam(parameters[1]);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
@@ -50,7 +53,7 @@ namespace Robots.Grasshopper
             GH_Command command = null;
             GH_Integer config = null;
 
-            bool hasTarget = Params.IsInputParam(targetParam);
+            bool hasTarget = Params.Input.Any(x => x.Name == "Target");
             bool hasPosition = HasPosition();
             bool hasTool = Params.Input.Any(x => x.Name == "Tool");
             bool hasMotion = Params.Input.Any(x => x.Name == "Motion");
@@ -133,30 +136,43 @@ namespace Robots.Grasshopper
         bool HasPosition() => Params.Input.Any(x => (x.Name == "Plane") || (x.Name == "Joints"));
         bool IsCartesian() => !Params.Input.Any(x => (x.Name == "Joints"));
 
-        private void AddParam(IGH_Param parameter, int index)
+        private void AddParam(int index)
         {
+            IGH_Param parameter = parameters[index];
+
             if (Params.Input.Any(x => x.Name == parameter.Name))
                 Params.UnregisterInputParameter(Params.Input.First(x => x.Name == parameter.Name), true);
             else
-                Params.RegisterInputParam(parameter, index);
-
+            {
+                int insertIndex = Params.Input.Count;
+                for (int i=0;i<Params.Input.Count;i++)
+                {
+                    int otherIndex = Array.FindIndex(parameters, x => x.Name == Params.Input[i].Name);
+                    if (otherIndex > index)
+                    {
+                        insertIndex = i;
+                        break;
+                    }
+                    }
+                Params.RegisterInputParam(parameter, insertIndex);
+            }
             Params.OnParametersChanged();
             ExpireSolution(true);
         }
 
-        private void AddTarget(object sender, EventArgs e) => AddParam(targetParam, 0);
+        private void AddTarget(object sender, EventArgs e) => AddParam(0);
 
         private void SwitchCartesian(object sender, EventArgs e)
         {
             if (IsCartesian())
             {
                 Params.UnregisterInputParameter(Params.Input.First(x => x.Name == "Plane"), true);
-                Params.RegisterInputParam(jointParam, 1);
+                AddParam(2);
             }
             else
             {
                 Params.UnregisterInputParameter(Params.Input.First(x => x.Name == "Joints"), true);
-                Params.RegisterInputParam(planeParam, 1);
+                AddParam(1);
             }
 
             Params.OnParametersChanged();
@@ -166,38 +182,44 @@ namespace Robots.Grasshopper
         private void AddPosition(object sender, EventArgs e)
         {
             if (IsCartesian())
-                AddParam(planeParam, 1);
+                AddParam(1);
             else
-                AddParam(jointParam, 1);
+                AddParam(2);
         }
-
-        private void AddTool(object sender, EventArgs e) => AddParam(toolParam, 2);
-        private void AddMotion(object sender, EventArgs e) => AddParam(motionParam, 3);
-        private void AddSpeed(object sender, EventArgs e) => AddParam(speedParam, 4);
-        private void AddZone(object sender, EventArgs e) => AddParam(zoneParam, 5);
-        private void AddCommand(object sender, EventArgs e) => AddParam(commandParam, 6);
-        private void AddConfig(object sender, EventArgs e) => AddParam(configParam, 7);
+        private void AddTool(object sender, EventArgs e) => AddParam(3);
+        private void AddMotion(object sender, EventArgs e) => AddParam(4);
+        private void AddSpeed(object sender, EventArgs e) => AddParam(5);
+        private void AddZone(object sender, EventArgs e) => AddParam(6);
+        private void AddCommand(object sender, EventArgs e) => AddParam(7);
+        private void AddConfig(object sender, EventArgs e) => AddParam(8);
 
         bool IGH_VariableParameterComponent.CanInsertParameter(GH_ParameterSide side, int index) => false;
         bool IGH_VariableParameterComponent.CanRemoveParameter(GH_ParameterSide side, int index) => false;
         IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index) => null;
         bool IGH_VariableParameterComponent.DestroyParameter(GH_ParameterSide side, int index) => false;
         void IGH_VariableParameterComponent.VariableParameterMaintenance() { }
-       }
+    }
 
     public class DeconstructTarget : GH_Component, IGH_VariableParameterComponent
     {
         bool isCartesian = true;
-        IGH_Param planeParam = new Param_Plane() { Name = "Plane", NickName = "P", Description = "Target plane", Optional = false };
-        IGH_Param jointParam = new Param_String() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false };
-        IGH_Param toolParam = new ToolParameter() { Name = "Tool", NickName = "T", Description = "Tool or end effector", Optional = true };
-        IGH_Param motionParam = new Param_String() { Name = "Motion", NickName = "M", Description = "Type of motion", Optional = true };
-        IGH_Param speedParam = new SpeedParameter() { Name = "Speed", NickName = "S", Description = "Speed of robot in mm/s", Optional = true };
-        IGH_Param zoneParam = new ZoneParameter() { Name = "Zone", NickName = "Z", Description = "Aproximation zone in mm", Optional = true };
-        IGH_Param commandParam = new CommandParameter() { Name = "Command", NickName = "C", Description = "Robot command", Optional = true };
-        IGH_Param configParam = new Param_Integer() { Name = "RobConf", NickName = "F", Description = "Robot configuration", Optional = true };
 
-        public DeconstructTarget() : base("Deconstruct target", "DeTarget", "Deconstructs a target", "Robots", "Components") { }
+        IGH_Param[] parameters = new IGH_Param[8]
+{
+         new Param_Plane() { Name = "Plane", NickName = "P", Description = "Target plane", Optional = false },
+         new Param_String() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false },
+         new ToolParameter() { Name = "Tool", NickName = "T", Description = "Tool or end effector", Optional = true },
+         new Param_String() { Name = "Motion", NickName = "M", Description = "Type of motion", Optional = true },
+         new SpeedParameter() { Name = "Speed", NickName = "S", Description = "Speed of robot in mm/s", Optional = true },
+         new ZoneParameter() { Name = "Zone", NickName = "Z", Description = "Aproximation zone in mm", Optional = true },
+         new CommandParameter() { Name = "Command", NickName = "C", Description = "Robot command", Optional = true },
+         new Param_Integer() { Name = "RobConf", NickName = "F", Description = "Robot configuration", Optional = true }
+};
+
+        public DeconstructTarget() : base("Deconstruct target", "DeTarget", "Deconstructs a target", "Robots", "Components")
+        {
+
+        }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{3252D880-59F9-4C9A-8A92-A6CD4C0BA591}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconDeconstructTarget;
@@ -209,12 +231,14 @@ namespace Robots.Grasshopper
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            Params.RegisterOutputParam(planeParam, 0);
+            Params.RegisterOutputParam(parameters[0]);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             bool hasPosition = HasPosition();
+            bool hasPlane = Params.Output.Any(x => x.Name == "Plane");
+            bool hasJoints = Params.Output.Any(x => x.Name == "Joints");
             bool hasTool = Params.Output.Any(x => x.Name == "Tool");
             bool hasMotion = Params.Output.Any(x => x.Name == "Motion");
             bool hasSpeed = Params.Output.Any(x => x.Name == "Speed");
@@ -231,25 +255,20 @@ namespace Robots.Grasshopper
             if (!isCartesian)
                 jointsText = string.Join(",", target.Value.JointRotations.Select(x => $"{x:0.000}"));
 
-            if (HasPosition())
+            if (hasPlane && !isCartesian)
             {
-                if (!isCartesian)
-                {
-                    Params.UnregisterOutputParameter(planeParam, true);
-                    Params.RegisterOutputParam(jointParam, 0);
-                }
-                else
-                {
-                    Params.UnregisterOutputParameter(jointParam, true);
-                    Params.RegisterOutputParam(planeParam, 0);
-                }
-
-                Params.OnParametersChanged();
-                ExpireSolution(true);
+                Params.UnregisterOutputParameter(parameters[0], true);
+                AddParam(1);
             }
 
-            if (hasPosition && isCartesian) DA.SetData("Plane", new GH_Plane(target.Value.Plane));
-            if (hasPosition && !isCartesian) DA.SetData("Joints", new GH_String(jointsText));
+            if (hasJoints && isCartesian)
+            {
+                Params.UnregisterOutputParameter(parameters[1], true);
+                AddParam(0);
+            }
+
+            if (hasPlane) DA.SetData("Plane", new GH_Plane(target.Value.Plane));
+            if (hasJoints) DA.SetData("Joints", new GH_String(jointsText));
             if (hasTool && (target.Value.Tool != null)) DA.SetData("Tool", new GH_Tool(target.Value.Tool));
             if (hasMotion) DA.SetData("Motion", new GH_Integer((int)target.Value.Motion));
             if (hasSpeed && (target.Value.Speed != null)) DA.SetData("Speed", new GH_Speed(target.Value.Speed));
@@ -258,7 +277,6 @@ namespace Robots.Grasshopper
             if (hasConfig) DA.SetData("RobConf", new GH_Integer((int)target.Value.Configuration));
         }
 
-        #region menu override
         protected override void AppendAdditionalComponentMenuItems(System.Windows.Forms.ToolStripDropDown menu)
         {
             Menu_AppendItem(menu, "Position input", AddPosition, true, HasPosition());
@@ -272,38 +290,52 @@ namespace Robots.Grasshopper
 
         bool HasPosition() => Params.Output.Any(x => (x.Name == "Plane") || (x.Name == "Joints"));
 
-        private void AddParam(IGH_Param parameter, int index)
+
+        private void AddParam(int index)
         {
+            IGH_Param parameter = parameters[index];
+
             if (Params.Output.Any(x => x.Name == parameter.Name))
                 Params.UnregisterOutputParameter(Params.Output.First(x => x.Name == parameter.Name), true);
             else
-                Params.RegisterOutputParam(parameter, index);
-
+            {
+                int insertIndex = Params.Output.Count;
+                for (int i = 0; i < Params.Output.Count; i++)
+                {
+                    int otherIndex = Array.FindIndex(parameters, x => x.Name == Params.Output[i].Name);
+                    if (otherIndex > index)
+                    {
+                        insertIndex = i;
+                        break;
+                    }
+                }
+                Params.RegisterOutputParam(parameter, insertIndex);
+            }
             Params.OnParametersChanged();
             ExpireSolution(true);
         }
 
+
         private void AddPosition(object sender, EventArgs e)
         {
             if (isCartesian)
-                AddParam(planeParam, 1);
+                AddParam(0);
             else
-                AddParam(jointParam, 1);
+                AddParam(1);
         }
 
-        private void AddTool(object sender, EventArgs e) => AddParam(toolParam, 2);
-        private void AddMotion(object sender, EventArgs e) => AddParam(motionParam, 3);
-        private void AddSpeed(object sender, EventArgs e) => AddParam(speedParam, 4);
-        private void AddZone(object sender, EventArgs e) => AddParam(zoneParam, 5);
-        private void AddCommand(object sender, EventArgs e) => AddParam(commandParam, 6);
-        private void AddConfig(object sender, EventArgs e) => AddParam(configParam, 7);
+        private void AddTool(object sender, EventArgs e) => AddParam(2);
+        private void AddMotion(object sender, EventArgs e) => AddParam(3);
+        private void AddSpeed(object sender, EventArgs e) => AddParam(4);
+        private void AddZone(object sender, EventArgs e) => AddParam(5);
+        private void AddCommand(object sender, EventArgs e) => AddParam(6);
+        private void AddConfig(object sender, EventArgs e) => AddParam(7);
 
         bool IGH_VariableParameterComponent.CanInsertParameter(GH_ParameterSide side, int index) => false;
         bool IGH_VariableParameterComponent.CanRemoveParameter(GH_ParameterSide side, int index) => false;
         IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index) => null;
         bool IGH_VariableParameterComponent.DestroyParameter(GH_ParameterSide side, int index) => false;
         void IGH_VariableParameterComponent.VariableParameterMaintenance() { }
-        #endregion
     }
 
     public class CreateTool : GH_Component

@@ -18,19 +18,9 @@ namespace Robots
 
         public override KinematicSolution Kinematics(Target target, bool calculateMeshes = true) => new OffsetWristKinematics(target, this, calculateMeshes);
         internal override List<string> Code(Program program) => new URScriptPostProcessor(this, program).Code;
-        protected override double[] GetStartPose() => new double[] { 0, -PI / 2, 0, -PI / 2, 0, -PI / 2 };
+        protected override double[] GetStartPose() => new double[] { 0, -PI / 2, 0, -PI / 2, 0, 0};
         public override double DegreeToRadian(double degree, int i) => degree * (PI / 180);
         public override double RadianToDegree(double radian, int i) => radian * (180 / PI);
-
-        internal double RadianToRadian(double radian, int i)
-        {
-            //  if (i == 0) radian -= PI*2;
-            if (i == 1) radian -= PI * 2;
-            if (i == 2) radian -= PI * 2;
-            if (i == 3) radian -= PI * 2;
-            if (i == 5) radian -= PI * 2 - PI / 2;
-            return radian;
-        }
 
         /// <summary>
         /// Code lifted from http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToAngle/
@@ -245,7 +235,6 @@ namespace Robots
                         case Target.Motions.JointRotations:
                             {
                                 double[] joints = target.JointRotations;
-                                joints = joints.Select((x, i) => robot.RadianToRadian(x, i)).ToArray();
                                 double axisSpeed = target.Speed.AxisSpeed;
                                 double axisAccel = target.Speed.AxisAccel;
                                 double zone = target.Zone.Distance / 1000;

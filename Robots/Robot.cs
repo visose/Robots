@@ -51,15 +51,25 @@ namespace Robots
                 joints[i].Plane = kinematics.Planes[i + 1];
         }
 
-        public static List<string> ListLibrary()
+        public static List<string> ListRobots(bool fromFile = false)
         {
             var names = new List<string>();
-            XElement robotsData = XElement.Parse(Properties.Resources.robotsData);
+            XElement robotsData = null;
 
-            foreach (var element in robotsData.Elements())
+            if (fromFile)
+            {
+                string dataFile = $@"{AssemblyDirectory}\robotsData.xml";
+                if (!File.Exists(dataFile)) throw new FileNotFoundException($@"Can't find the file: {dataFile}");
+                robotsData = XElement.Load(dataFile);
+            }
+            else
+                robotsData = XElement.Parse(Properties.Resources.robotsData);
+
+             foreach (var element in robotsData.Elements())
             {
                 names.Add($"{element.Attribute(XName.Get("manufacturer")).Value}.{element.Attribute(XName.Get("model")).Value}");
             }
+
             return names;
         }
 
@@ -91,10 +101,15 @@ namespace Robots
 
         public static Robot LoadFromFile(string model, Plane basePlane)
         {
-            string folder = AppDomain.CurrentDomain.RelativeSearchPath;
+            string dataFile = $@"{AssemblyDirectory}\robotsData.xml";
+            string geometryFile = $@"{AssemblyDirectory}\robotsGeometry.3dm";
 
-            XElement robotsData = XElement.Load($@"{folder}\robotsData.xml");
+            if (!File.Exists(dataFile)) throw new FileNotFoundException($@"Can't find the file: {dataFile}");
+            if (!File.Exists(geometryFile)) throw new FileNotFoundException($@"Can't find the file: {geometryFile}");
+
+            XElement robotsData = XElement.Load(dataFile);
             XElement robotElement = null;
+
             try
             {
                 robotElement = robotsData.Elements().First(x => model == $"{x.Attribute(XName.Get("manufacturer")).Value}.{x.Attribute(XName.Get("model")).Value}");
@@ -102,18 +117,29 @@ namespace Robots
             catch (InvalidOperationException)
             {
 
-                throw new InvalidOperationException($" Robot \"{model}\" is not in the file");
+                throw new InvalidOperationException($" Robot \"{model}\" is not in the data file");
             }
 
-            Rhino.FileIO.File3dm robotsGeometry = Rhino.FileIO.File3dm.Read($@"{folder}\robotsGeometry.3dm");
-            var meshes = new Mesh[7];
+            Rhino.FileIO.File3dm robotsGeometry = Rhino.FileIO.File3dm.Read(geometryFile);
+            Rhino.DocObjects.Layer robotLayer = null;
 
-            var robotLayer = robotsGeometry.Layers.First(x => x.Name == $"{model}");
+            try
+            {
+                robotLayer = robotsGeometry.Layers.First(x => x.Name == $"{model}");
+            }
+            catch (InvalidOperationException)
+            {
+
+                throw new InvalidOperationException($" Robot \"{model}\" is not in the geometry file");
+            }
+
+            var meshes = new Mesh[7];
             meshes[0] = robotsGeometry.Objects.First(x => x.Attributes.LayerIndex == robotLayer.LayerIndex).Geometry as Mesh;
 
             for (int i = 0; i < 6; i++)
             {
-                meshes[i + 1] = robotsGeometry.Objects.First(x => x.Attributes.LayerIndex == robotLayer.LayerIndex + 1 + i).Geometry as Mesh;
+                var jointLayer = robotsGeometry.Layers.First(x => (x.Name == $"{i+1}") && (x.ParentLayerId == robotLayer.Id));
+                meshes[i + 1] = robotsGeometry.Objects.First(x => x.Attributes.LayerIndex == jointLayer.LayerIndex).Geometry as Mesh;
             }
 
             return Load(robotElement, meshes, basePlane);
@@ -177,7 +203,8 @@ namespace Robots
 
                 for (int i = 0; i < 6; i++)
                 {
-                    meshes[i + 1] = robotsGeometry.Objects.First(x => x.Attributes.LayerIndex == layer.LayerIndex + 1 + i).Geometry as Mesh;
+                    var jointLayer = robotsGeometry.Layers.First(x => (x.Name == $"{i+1}") && (x.ParentLayerId == layer.Id));
+                    meshes[i + 1] = robotsGeometry.Objects.First(x => x.Attributes.LayerIndex == jointLayer.LayerIndex).Geometry as Mesh;
                 }
                 robotMeshes.Meshes.Add(meshes);
             }
@@ -189,7 +216,6 @@ namespace Robots
                 File.WriteAllBytes($@"{ResourcesFolder}\Meshes.rob", stream.ToArray());
             }
         }
-
 
         public virtual KinematicSolution Kinematics(Target target, bool calculateMeshes = false) => new SphericalWristKinematics(target, this, calculateMeshes);
 
