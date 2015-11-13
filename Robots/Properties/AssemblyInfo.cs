@@ -8,7 +8,7 @@ using Rhino.PlugIns;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Robots")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Provides components to visualize and create programs for ABB, KUKA and UR robots. Developed as an open source tool to interact with the robots at Bartlett School of Architecture.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Robots")]

@@ -16,9 +16,12 @@ namespace Robots.Grasshopper.Commands
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Name", "N", "Name", GH_ParamAccess.item, "Custom command");
-            pManager.AddTextParameter("ABB", "A", "ABB code", GH_ParamAccess.item, "");
-            pManager.AddTextParameter("KUKA", "K", "KUKA code", GH_ParamAccess.item, "");
-            pManager.AddTextParameter("UR", "U", "UR code", GH_ParamAccess.item, "");
+            pManager.AddTextParameter("ABB", "A", "ABB code", GH_ParamAccess.item);
+            pManager.AddTextParameter("KUKA", "K", "KUKA code", GH_ParamAccess.item);
+            pManager.AddTextParameter("UR", "U", "UR code", GH_ParamAccess.item);
+            pManager[1].Optional = true;
+            pManager[2].Optional = true;
+            pManager[3].Optional = true;
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -31,9 +34,9 @@ namespace Robots.Grasshopper.Commands
             string name = null, abb = null, kuka = null, ur = null;
 
             if (!DA.GetData(0, ref name)) { return; }
-            if (!DA.GetData(1, ref abb)) { return; }
-            if (!DA.GetData(2, ref kuka)) { return; }
-            if (!DA.GetData(3, ref ur)) { return; }
+            DA.GetData(1, ref abb);
+            DA.GetData(2, ref kuka);
+            DA.GetData(3, ref ur);
 
             var command = new Robots.Commands.Custom(name, abb, kuka, ur);
             DA.SetData(0, new GH_Command(command));
@@ -70,34 +73,6 @@ namespace Robots.Grasshopper.Commands
     }
 
 
-    public class Wait : GH_Component
-    {
-        public Wait() : base("Wait command", "WaitCmd", "Wait command", "Robots", "Commands") { }
-        public override GH_Exposure Exposure => GH_Exposure.secondary;
-        public override Guid ComponentGuid => new Guid("{5E7BA355-7EAC-4A5D-B736-286043AB0A45}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand; 
-
-        protected override void RegisterInputParams(GH_InputParamManager pManager)
-        {
-            pManager.AddNumberParameter("Time", "T", "Time in seconds", GH_ParamAccess.item);
-        }
-
-        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
-        {
-            pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
-        }
-
-        protected override void SolveInstance(IGH_DataAccess DA)
-        {
-            double time = 0;
-
-            if (!DA.GetData(0, ref time)) { return; }
-
-            var command = new Robots.Commands.Wait(time);
-            DA.SetData(0, new GH_Command(command));
-        }
-    }
-
     public class SetDO : GH_Component
     {
         public SetDO() : base("Set DO", "SetDO", "Set digital output", "Robots", "Commands") { }
@@ -125,6 +100,172 @@ namespace Robots.Grasshopper.Commands
             if (!DA.GetData(1, ref value)) { return; }
 
             var command = new Robots.Commands.SetDO(DO,value);
+            DA.SetData(0, new GH_Command(command));
+        }
+    }
+
+    public class SetAO : GH_Component
+    {
+        public SetAO() : base("Set AO", "SetAO", "Set analog output", "Robots", "Commands") { }
+        public override GH_Exposure Exposure => GH_Exposure.secondary;
+        public override Guid ComponentGuid => new Guid("{CAA1A764-D588-4D63-95EA-9C8D43374B8D}");
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
+
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
+        {
+            pManager.AddIntegerParameter("AO", "A", "Analog output number", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Value", "V", "Analog output value", GH_ParamAccess.item);
+        }
+
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
+        {
+            pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
+        }
+
+        protected override void SolveInstance(IGH_DataAccess DA)
+        {
+            int AO = 0;
+            double value = 0;
+
+            if (!DA.GetData(0, ref AO)) { return; }
+            if (!DA.GetData(1, ref value)) { return; }
+
+            var command = new Robots.Commands.SetAO(AO, value);
+            DA.SetData(0, new GH_Command(command));
+        }
+    }
+
+    public class PulseDO : GH_Component
+    {
+        public PulseDO() : base("Pulse DO", "PulseDO", "Send a pulse to a digital output", "Robots", "Commands") { }
+        public override GH_Exposure Exposure => GH_Exposure.secondary;
+        public override Guid ComponentGuid => new Guid("{3CBDCD59-9621-4A0F-86BF-F4CC876E360D}");
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
+
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
+        {
+            pManager.AddIntegerParameter("DO", "D", "Digital output number", GH_ParamAccess.item);
+        }
+
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
+        {
+            pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
+        }
+
+        protected override void SolveInstance(IGH_DataAccess DA)
+        {
+            int DO = 0;
+
+            if (!DA.GetData(0, ref DO)) { return; }
+
+            var command = new Robots.Commands.PulseDO(DO);
+            DA.SetData(0, new GH_Command(command));
+        }
+    }
+
+    public class Wait : GH_Component
+    {
+        public Wait() : base("Wait command", "WaitCmd", "Wait command", "Robots", "Commands") { }
+        public override GH_Exposure Exposure => GH_Exposure.secondary;
+        public override Guid ComponentGuid => new Guid("{5E7BA355-7EAC-4A5D-B736-286043AB0A45}");
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
+
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
+        {
+            pManager.AddNumberParameter("Time", "T", "Time in seconds", GH_ParamAccess.item);
+        }
+
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
+        {
+            pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
+        }
+
+        protected override void SolveInstance(IGH_DataAccess DA)
+        {
+            double time = 0;
+
+            if (!DA.GetData(0, ref time)) { return; }
+
+            var command = new Robots.Commands.Wait(time);
+            DA.SetData(0, new GH_Command(command));
+        }
+    }
+
+    public class WaitDI : GH_Component
+    {
+        public WaitDI() : base("Wait DI", "WaitDI", "Waits until a digital input is turned on", "Robots", "Commands") { }
+        public override GH_Exposure Exposure => GH_Exposure.secondary;
+        public override Guid ComponentGuid => new Guid("{8A930C8F-3BCE-4476-9E30-3F5C23DB2FB9}");
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
+
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
+        {
+            pManager.AddIntegerParameter("DI", "D", "Digital input number", GH_ParamAccess.item);
+        }
+
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
+        {
+            pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
+        }
+
+        protected override void SolveInstance(IGH_DataAccess DA)
+        {
+            int DI = 0;
+
+            if (!DA.GetData(0, ref DI)) { return; }
+
+            var command = new Robots.Commands.WaitDI(DI);
+            DA.SetData(0, new GH_Command(command));
+        }
+    }
+
+    public class Stop : GH_Component
+    {
+        public Stop() : base("Stop program", "Stop", "Stops the program until an operator starts it again", "Robots", "Commands") { }
+        public override GH_Exposure Exposure => GH_Exposure.secondary;
+        public override Guid ComponentGuid => new Guid("{80E4E1AD-D1C0-441F-BDC5-5E810BCECE61}");
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
+
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
+        {
+        }
+
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
+        {
+            pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
+        }
+
+        protected override void SolveInstance(IGH_DataAccess DA)
+        {
+            var command = new Robots.Commands.Stop();
+            DA.SetData(0, new GH_Command(command));
+        }
+    }
+
+    public class Message : GH_Component
+    {
+        public Message() : base("Message", "Message", "Sends a message to the teach pendant", "Robots", "Commands") { }
+        public override GH_Exposure Exposure => GH_Exposure.secondary;
+        public override Guid ComponentGuid => new Guid("{CFAABB24-CAEE-49FC-850F-BE9F70F070CA}");
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
+
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
+        {
+            pManager.AddTextParameter("Message", "M", "Message to display in teach pendant", GH_ParamAccess.item);
+        }
+
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
+        {
+            pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
+        }
+
+        protected override void SolveInstance(IGH_DataAccess DA)
+        {
+            string message = string.Empty;
+
+            if (!DA.GetData(0, ref message)) { return; }
+
+            var command = new Robots.Commands.Message(message);
             DA.SetData(0, new GH_Command(command));
         }
     }
