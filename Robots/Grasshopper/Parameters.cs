@@ -1,10 +1,11 @@
 ﻿using Grasshopper.Kernel;
 using System;
 using System.Collections.Generic;
+using Rhino.Geometry;
 
 namespace Robots.Grasshopper
 {
-    public class RobotParameter : GH_PersistentParam<GH_Robot>
+    public class RobotParameter : GH_PersistentParam<GH_Robot>, IGH_PreviewObject
     {
         public RobotParameter() : base("Robot parameter", "Robot", "This is a robot", "Robots", "Parameters") { }
         public override GH_Exposure Exposure => GH_Exposure.primary;
@@ -21,24 +22,35 @@ namespace Robots.Grasshopper
             values = new List<GH_Robot>();
             return GH_GetterResult.success;
         }
+
+        public bool Hidden { get; set; }
+        public bool IsPreviewCapable => true;
+        public BoundingBox ClippingBox => base.Preview_ComputeClippingBox();
+        public void DrawViewportWires(IGH_PreviewArgs args) => base.Preview_DrawMeshes(args);
+        public void DrawViewportMeshes(IGH_PreviewArgs args) => base.Preview_DrawMeshes(args);
     }
 
     public class ProgramParameter : GH_PersistentParam<GH_Program>
     {
-        public ProgramParameter() : base("Program", "Program", "This is a robot program", "Robots", "Parameters") { }
+        public ProgramParameter() : base("Program parameter", "Program", "This is a robot program", "Robots", "Parameters") { }
         public override GH_Exposure Exposure => GH_Exposure.tertiary;
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconParamProgram;
         public override System.Guid ComponentGuid => new Guid("{9C4F1BB6-5FA2-44DA-B7EA-421AF31DA054}");
         protected override GH_GetterResult Prompt_Singular(ref GH_Program value)
         {
             value = new GH_Program();
+
+            if (value.Value.HasCustomCode)
+                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, " Program contains custom code");
+
             return GH_GetterResult.success;
         }
         protected override GH_GetterResult Prompt_Plural(ref List<GH_Program> values)
         {
             values = new List<GH_Program>();
             return GH_GetterResult.success;
-        }    
+        }
+
     }
 
     public class TargetParameter : GH_PersistentParam<GH_Target>

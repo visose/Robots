@@ -57,7 +57,8 @@ namespace Robots
                 var code = new List<string>();
                 code.Add("MODULE MainModule");
                 code.Add("VAR extjoint extj := [9E9,9E9,9E9,9E9,9E9,9E9];");
-                code.Add("VAR confdata conf := [0,-2,1,0];");
+                // code.Add("VAR confdata conf := [0,-2,1,0];");
+                code.Add("VAR confdata conf := [0,0,0,0];");
 
                 var tools = program.Targets.Select(x => x.Tool).Distinct().ToList();
                 var speeds = program.Targets.Select(x => x.Speed).Distinct().ToList();
@@ -102,7 +103,7 @@ namespace Robots
                                 double[] joints = target.JointRotations;
                                 joints = joints.Select((x, i) => robot.RadianToDegree(x, i)).ToArray();
                                 string zone = target.Zone.IsFlyBy ? target.Zone.Name : "fine";
-                                moveText = $"MoveAbsJ [[{joints[0]:0.000}, {joints[1]:0.000}, {joints[2]:0.000}, {joints[3]:0.000}, {joints[4]:0.000}, {joints[5]:0.000}],[0,9E9,9E9,9E9,9E9,9E9]],{target.Speed.Name},{zone},{target.Tool.Name};";
+                                moveText = $"MoveAbsJ [[{joints[0]:0.000}, {joints[1]:0.000}, {joints[2]:0.000}, {joints[3]:0.000}, {joints[4]:0.000}, {joints[5]:0.000}],extj],{target.Speed.Name},{zone},{target.Tool.Name};";
                                 break;
                             }
 

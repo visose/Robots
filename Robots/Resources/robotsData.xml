@@ -1,22 +1,22 @@
 ﻿<robots>
-  
-  <robot model="KR210-2" manufacturer="KUKA">
+
+  <robot model="IRB120" manufacturer="ABB">
     <Joints>
-      <Joint number="1" a ="350" d ="750" minrange = "-185" maxrange ="185" maxspeed ="156"/>
-      <Joint number="2" a ="1250" d ="0" minrange = "-155" maxrange ="35" maxspeed ="156"/>
-      <Joint number="3" a ="-55" d ="0" minrange = "-130" maxrange ="154" maxspeed ="156"/>
-      <Joint number="4" a ="0" d ="1100" minrange = "-350" maxrange ="350" maxspeed ="330"/>
-      <Joint number="5" a ="0" d ="0" minrange = "-130" maxrange ="130" maxspeed ="330"/>
-      <Joint number="6" a ="0" d ="230" minrange = "-350" maxrange ="350" maxspeed ="615"/>
+      <Joint number="1" a ="0" d ="290" minrange = "-165" maxrange ="165" maxspeed ="0"/>
+      <Joint number="2" a ="270" d ="0" minrange = "-110" maxrange ="110" maxspeed ="0"/>
+      <Joint number="3" a ="70" d ="0" minrange = "-90" maxrange ="70" maxspeed ="0"/>
+      <Joint number="4" a ="0" d ="302" minrange = "-160" maxrange ="160" maxspeed ="0"/>
+      <Joint number="5" a ="0" d ="0" minrange = "-120" maxrange ="120" maxspeed ="0"/>
+      <Joint number="6" a ="0" d ="72" minrange = "-400" maxrange ="400" maxspeed ="0"/>
     </Joints>
     <IO>
-      <DO names="0,1,2,3,4"/>
-      <DI names="0,1,2,3,4"/>
-      <AO names="0,1"/>
-      <AI names="0,1"/>
+      <DO names="DO10_1,DO10_2,DO10_3,DO10_4,DO10_5,DO10_6,DO10_7,DO10_8,DO10_9,DO10_10,DO10_11,DO10_12,DO10_13,DO10_14,DO10_15,DO10_16"/>
+      <DI names="DI10_1,DI10_2,DI10_3,DI10_4,DI10_5,DI10_6,DI10_7,DI10_8,DI10_9,DI10_10,DI10_11,DI10_12,DI10_13,DI10_14,DI10_15,DO10_16"/>
+      <AO names="AO10_1,AO10_2"/>
+      <AI names="AI10_1,AI10_2"/>
     </IO>
   </robot>
-  
+
   <robot model="IRB1600-145" manufacturer="ABB">
     <Joints>
       <Joint number="1" a ="150" d ="486.5" minrange = "-180" maxrange ="180" maxspeed ="0"/>
@@ -31,6 +31,57 @@
       <DI names="DI10_1,DI10_2,DI10_3,DI10_4,DI10_5,DI10_6,DI10_7,DI10_8,DI10_9,DI10_10,DI10_11,DI10_12,DI10_13,DI10_14,DI10_15,DO10_16"/>
       <AO names="AO10_1,AO10_2"/>
       <AI names="AI10_1,AI10_2"/>
+    </IO>
+  </robot>
+
+  <robot model="KR6-R900" manufacturer="KUKA">
+    <Joints>
+      <Joint number="1" a ="25" d ="400" minrange = "-170" maxrange ="170" maxspeed ="0"/>
+      <Joint number="2" a ="455" d ="0" minrange = "-190" maxrange ="45" maxspeed ="0"/>
+      <Joint number="3" a ="35" d ="0" minrange = "-120" maxrange ="156" maxspeed ="0"/>
+      <Joint number="4" a ="0" d ="420" minrange = "-185" maxrange ="185" maxspeed ="0"/>
+      <Joint number="5" a ="0" d ="0" minrange = "-120" maxrange ="120" maxspeed ="0"/>
+      <Joint number="6" a ="0" d ="80" minrange = "-350" maxrange ="350" maxspeed ="0"/>
+    </Joints>
+    <IO>
+      <DO names="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
+      <DI names="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
+      <AO names="0,1"/>
+      <AI names="0,1"/>
+    </IO>
+  </robot>
+
+  <robot model="KR60-HA" manufacturer="KUKA">
+    <Joints>
+      <Joint number="1" a ="350" d ="815" minrange = "-170" maxrange ="170" maxspeed ="0"/>
+      <Joint number="2" a ="850" d ="0" minrange = "-190" maxrange ="45" maxspeed ="0"/>
+      <Joint number="3" a ="145" d ="0" minrange = "-120" maxrange ="156" maxspeed ="0"/>
+      <Joint number="4" a ="0" d ="820" minrange = "-185" maxrange ="185" maxspeed ="0"/>
+      <Joint number="5" a ="0" d ="0" minrange = "-120" maxrange ="120" maxspeed ="0"/>
+      <Joint number="6" a ="0" d ="170" minrange = "-350" maxrange ="350" maxspeed ="0"/>
+    </Joints>
+    <IO>
+      <DO names="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
+      <DI names="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
+      <AO names="0,1"/>
+      <AI names="0,1"/>
+    </IO>
+  </robot>
+
+  <robot model="KR210-2" manufacturer="KUKA">
+    <Joints>
+      <Joint number="1" a ="350" d ="750" minrange = "-185" maxrange ="185" maxspeed ="156"/>
+      <Joint number="2" a ="1250" d ="0" minrange = "-155" maxrange ="35" maxspeed ="156"/>
+      <Joint number="3" a ="-55" d ="0" minrange = "-130" maxrange ="154" maxspeed ="156"/>
+      <Joint number="4" a ="0" d ="1100" minrange = "-350" maxrange ="350" maxspeed ="330"/>
+      <Joint number="5" a ="0" d ="0" minrange = "-130" maxrange ="130" maxspeed ="330"/>
+      <Joint number="6" a ="0" d ="230" minrange = "-350" maxrange ="350" maxspeed ="615"/>
+    </Joints>
+    <IO>
+      <DO names="0,1,2,3,4"/>
+      <DI names="0,1,2,3,4"/>
+      <AO names="0,1"/>
+      <AI names="0,1"/>
     </IO>
   </robot>
 
@@ -50,5 +101,5 @@
       <AI names="0,1"/>
     </IO>
   </robot>
-  
+
 </robots>

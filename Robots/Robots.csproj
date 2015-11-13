@@ -126,6 +126,21 @@
   <ItemGroup>
     <None Include="Resources\icons\iconTool.png" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icons\iconAngles.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icons\iconCustomCode.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icons\iconSave.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icons\iconSimulation.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icons\iconURRemote.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

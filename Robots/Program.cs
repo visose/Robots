@@ -14,13 +14,13 @@ namespace Robots
     {
         public string Name { get; }
         public Robot Robot { get; }
-        public List<Target> Targets { get; private set; }
+        public List<Target> Targets { get; }
         public Commands.Group InitCommands { get; }
         public List<string> Warnings { get; }
         public List<string> Errors { get; }
-        public List<string> Code { get; private set; }
-        public bool HasCustomCode { get; private set; } = false;
-        public double Duration { get; private set; }
+        public List<string> Code { get; }
+        public bool HasCustomCode { get; } = false;
+        public double Duration { get; }
 
         Simulation simulation;
 
@@ -39,16 +39,22 @@ namespace Robots
                 Code = Robot.Code(this);
 
             this.simulation = new Simulation(this);
+            this.Duration = simulation.duration;
         }
 
-        public void ChangeCode(IEnumerable<string> code)
+        public Program(string name, Robot robot, IEnumerable<string> code)
         {
-            Code = code.ToList();
-            HasCustomCode = true;
+            this.Name = name;
+            this.Robot = robot;
+            this.Code = code.ToList();
+            this.HasCustomCode = true;
         }
+
+        public Program CustomCode(IEnumerable<string> code) => new Program(this.Name, this.Robot, code);
 
         public Robot.KinematicSolution Animate(double time, bool isNormalized = true)
         {
+            if (HasCustomCode) throw new Exception(" Programs with custom code can't be simulated");
             return simulation.Step(time, isNormalized);
         }
 
@@ -61,8 +67,13 @@ namespace Robots
             File.WriteAllText(file, joinedCode);
         }
 
-        public override string ToString() => $"Program ({Name} with {Targets.Count} targets and {Duration} seconds long)";
-
+        public override string ToString()
+        {
+            if (HasCustomCode)
+                return $"Program ({Name} with custom code)";
+            else
+                return $"Program ({Name} with {Targets.Count} targets and {Duration:0.0} seconds long";
+        }
 
         class CheckProgram
         {
@@ -74,7 +85,10 @@ namespace Robots
             internal CheckProgram(Program program, IEnumerable<Target> targets)
             {
                 if (targets.Count() == 0)
-                    throw new Exception(" Program has to contain at least 1 target");
+                {
+                    errors.Add(" The program has to contain at least 1 target");
+                    return;
+                }
 
                 this.program = program;
                 var dupTargets = targets.Select(x => x.Duplicate()).ToList();
@@ -107,11 +121,11 @@ namespace Robots
                     }
                     else
                     {
-                        kinematics = GetClosestSolution(i);
+                        kinematics = GetClosestSolution(targets[i - 1], target, i);
                     }
 
-                    target.jointRotations = kinematics.JointRotations;
                     target.plane = kinematics.Planes[7];
+                    target.jointRotations = kinematics.JointRotations;
 
                     if (kinematics.Errors.Count > 0)
                     {
@@ -143,17 +157,25 @@ namespace Robots
                 }
             }
 
-            Robot.KinematicSolution GetClosestSolution(int i)
+            double SquaredDifference(double a, double b)
+            {
+                double difference = Abs(a - b);
+               if (difference > PI)
+                   difference = PI * 2 - difference;
+                return difference * difference;
+            }
+
+            Robot.KinematicSolution GetClosestSolution(Target prevTarget, Target target, int i)
             {
                 Robot.KinematicSolution[] solutions = new Robot.KinematicSolution[8];
                 double[] differences = new double[8];
 
                 System.Threading.Tasks.Parallel.For(0, 8, j =>
                       {
-                          var targetCopy = fixedTargets[i].Duplicate();
+                          var targetCopy = target.Duplicate();
                           targetCopy.Configuration = (Target.RobotConfigurations)j;
                           solutions[j] = program.Robot.Kinematics(targetCopy);
-                          differences[j] = fixedTargets[i-1].JointRotations.Zip(solutions[j].JointRotations, (x, y) => Pow(Abs(x - y), 2)).Sum();
+                          differences[j] = prevTarget.JointRotations.Zip(solutions[j].JointRotations, (x, y) => SquaredDifference(x, y)).Sum();
                       });
 
                 Robot.KinematicSolution closestKinematics = null;
@@ -162,36 +184,56 @@ namespace Robots
 
                 for (int j = 0; j < 8; j++)
                 {
-                    if (solutions[j].Errors.Count > 0) continue;
-
+                  //  if (solutions[j].Errors.Count > 0) continue;
                     if (differences[j] < closestDifference)
                     {
+                        closestConfiguration = (Target.RobotConfigurations)j;
                         closestDifference = differences[j];
                         closestKinematics = solutions[j];
-                        closestConfiguration = (Target.RobotConfigurations)j;
                     }
                 }
 
                 if (closestKinematics == null)
                 {
                     errors.Add($"No valid kinematic configuration found for target {i}");
-                    closestKinematics = solutions[(int)fixedTargets[i - 1].Configuration];
+                    closestKinematics = solutions[(int)prevTarget.Configuration];
+                }
+                else
+                {
+                    if (prevTarget.Configuration != closestConfiguration)
+                        warnings.Add($"Configuration changed to \"{closestConfiguration.ToString()}\" on target {i}");
+                    target.Configuration = closestConfiguration;
+
+                    double[] joints = new double[6];
+                    
+                    for (int j = 0; j < 6; j++)
+                    {
+                        double prevJoint = prevTarget.jointRotations[j];
+                        double joint = closestKinematics.JointRotations[j];
+                        double difference = Abs(joint - prevJoint);
+                        if (difference > PI)
+                        {
+                            prevJoint += Sign(prevJoint) * (PI * 2 - difference);
+                           joints[j] = prevJoint;
+                        }
+                        else
+                        {
+                            joints[j] = joint;
+                        }
+                    }
+
+                     closestKinematics = program.Robot.Kinematics(new Target(joints));
                 }
 
-                if (fixedTargets[i-1].Configuration != closestConfiguration)
-                    warnings.Add($"Configuration changed to \"{closestConfiguration.ToString()}\" on target {i}");
-
-                fixedTargets[i].Configuration = closestConfiguration;
                 return closestKinematics;
             }
         }
 
-
         class Simulation
         {
             Robot robot;
-            double duration;
-            List<SimuTarget> targets = new List<SimuTarget>();
+            internal double duration;
+            List<SimuTarget> simuTargets = new List<SimuTarget>();
 
             double currentTime = 0;
             int currentTarget = 0;
@@ -200,47 +242,36 @@ namespace Robots
             {
                 this.robot = program.Robot;
                 this.duration = Initialize(program);
-                program.Duration = this.duration;
             }
 
             double Initialize(Program program)
             {
                 double time = 0;
-
-                {
-                    var target = program.Targets[0];
-                    targets.Add(new SimuTarget(0, target.Plane, target.JointRotations, target.Configuration, true));
-                }
+                simuTargets.Add(new SimuTarget(0, program.Targets[0]));
 
                 for (int i = 1; i < program.Targets.Count; i++)
                 {
-                    var prevTarget = targets[targets.Count - 1];
+                    var prevTarget = simuTargets[simuTargets.Count - 1];
                     var target = program.Targets[i];
-
-                    Plane plane = target.Plane;
-                    double[] joints = target.JointRotations;
-                    var configuration = target.Configuration;
 
                     if (target.Motion == Target.Motions.Linear)
                     {
-                        double distance = prevTarget.plane.Origin.DistanceTo(target.Plane.Origin);
+                        double distance = prevTarget.target.Plane.Origin.DistanceTo(target.Plane.Origin);
                         double deltaLinearTime = distance / target.Speed.TranslationSpeed;
 
-                        double angle = Vector3d.VectorAngle(prevTarget.plane.Normal, target.Plane.Normal);
+                        double angle = Vector3d.VectorAngle(prevTarget.target.Plane.Normal, target.Plane.Normal);
                         double deltaRotationTime = angle / target.Speed.RotationSpeed;
 
                         double deltaTime = Max(deltaLinearTime, deltaRotationTime);
-
                         time += deltaTime;
-                        targets.Add(new SimuTarget(time, plane, joints, configuration, false));
                     }
                     else
                     {
-                        double maxAxisDelta = joints.Zip(prevTarget.joints, (x, y) => Abs(x - y)).Max();
+                        double maxAxisDelta = target.JointRotations.Zip(prevTarget.target.JointRotations, (x, y) => Abs(x - y)).Max();
                         double deltaTime = maxAxisDelta / target.Speed.AxisSpeed;
                         time += deltaTime;
-                        targets.Add(new SimuTarget(time, plane, joints, configuration, true));
                     }
+                    simuTargets.Add(new SimuTarget(time, target));
 
                     {
                         double waitTime = 0;
@@ -253,7 +284,7 @@ namespace Robots
                         if (waitTime > Tol)
                         {
                             time += waitTime;
-                            targets.Add(new SimuTarget(time, plane, joints, configuration, true));
+                            simuTargets.Add(new SimuTarget(time, target));
                         }
                     }
                 }
@@ -275,14 +306,16 @@ namespace Robots
 
             internal Robot.KinematicSolution Step(double time, bool isNormalized)
             {
+                if (simuTargets.Count == 1) return robot.Kinematics(simuTargets[0].target, true);
+
                 if (isNormalized) time *= duration;
                 time = Clamp(time, 0, duration);
 
                 if (time >= currentTime)
                 {
-                    for (int i = currentTarget; i < targets.Count - 1; i++)
+                    for (int i = currentTarget; i < simuTargets.Count - 1; i++)
                     {
-                        if (targets[i + 1].time >= time)
+                        if (simuTargets[i + 1].time >= time)
                         {
                             currentTarget = i;
                             break;
@@ -293,7 +326,7 @@ namespace Robots
                 {
                     for (int i = currentTarget; i >= 0; i--)
                     {
-                        if (targets[i].time <= time)
+                        if (simuTargets[i].time <= time)
                         {
                             currentTarget = i;
                             break;
@@ -303,19 +336,20 @@ namespace Robots
 
                 currentTime = time;
 
-                var target = targets[currentTarget + 1];
-                var prevTarget = targets[currentTarget];
+                var simuTarget = simuTargets[currentTarget + 1];
+                var prevTarget = simuTargets[currentTarget];
 
-                if (target.isJoint)
+                if (simuTarget.target.Motion == Target.Motions.JointCartesian || simuTarget.target.Motion == Target.Motions.JointRotations)
                 {
-                    var joints = JointLerp(prevTarget.joints, target.joints, currentTime, prevTarget.time, target.time);
-                    return robot.Kinematics(new Target(joints), true);
+                    var joints = JointLerp(prevTarget.target.JointRotations, simuTarget.target.JointRotations, currentTime, prevTarget.time, simuTarget.time);
+                    return robot.Kinematics(new Target(joints, simuTarget.target.Tool), true);
                 }
                 else
                 {
-                    var plane = CartesianLerp(prevTarget.plane, target.plane, currentTime, prevTarget.time, target.time);
-                    Target.RobotConfigurations configuration = (Abs(prevTarget.time - currentTime) < Abs(target.time - currentTime)) ? prevTarget.configuration : target.configuration;
-                    return robot.Kinematics(new Target(plane, configuration: configuration), true);
+                    var plane = CartesianLerp(prevTarget.target.Plane, simuTarget.target.Plane, currentTime, prevTarget.time, simuTarget.time);
+                    //Target.RobotConfigurations configuration = (Abs(prevTarget.time - currentTime) < Abs(target.time - currentTime)) ? prevTarget.configuration : target.configuration;
+                    Target.RobotConfigurations configuration = simuTarget.target.Configuration;
+                    return robot.Kinematics(new Target(plane, simuTarget.target.Tool, configuration: configuration), true);
                 }
             }
 
@@ -325,7 +359,6 @@ namespace Robots
             Plane CartesianLerp(Plane a, Plane b, double t, double min, double max)
             {
                 t = (t - min) / (max - min);
-
                 var newOrigin = a.Origin * (1 - t) + b.Origin * t;
 
                 Quaternion q = Quaternion.Rotation(a, b);
@@ -348,18 +381,12 @@ namespace Robots
             class SimuTarget
             {
                 internal double time;
-                internal Plane plane;
-                internal double[] joints;
-                internal Target.RobotConfigurations configuration;
-                internal bool isJoint;
+                internal Target target;
 
-                internal SimuTarget(double time, Plane plane, double[] joints, Target.RobotConfigurations configuration, bool isJoint)
+                internal SimuTarget(double time, Target target)
                 {
                     this.time = time;
-                    this.plane = plane;
-                    this.joints = joints;
-                    this.configuration = configuration;
-                    this.isJoint = isJoint;
+                    this.target = target;
                 }
             }
         }

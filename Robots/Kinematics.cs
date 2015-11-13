@@ -120,7 +120,7 @@ namespace Robots
 
                 double l2 = Sqrt(a[2] * a[2] + d[3] * d[3]);
                 double ad2 = Atan2(a[2], d[3]);
-                Point3d center = flange.Origin + flange.Normal * -d[5];
+                Point3d center = flange.Origin - flange.Normal * d[5];
                 joints[0] = Atan2(center.Y, center.X);
                 double ll = Sqrt(center.X * center.X + center.Y * center.Y);
                 Point3d p1 = new Point3d(a[0] * center.X / ll, a[0] * center.Y / ll, d[0]);
@@ -140,11 +140,13 @@ namespace Robots
                     beta = 0;
                     isUnreachable = true;
                 }
-                if (elbow)
-                    beta *= -1;
+               if (elbow)
+                   beta *= -1;
 
                 double ttl = new Vector3d(center.X - p1.X, center.Y - p1.Y, 0).Length;
-                if (p1.X * (center.X - p1.X) < 0) ttl = -ttl;
+                // if (p1.X * (center.X - p1.X) < 0)
+                if (shoulder)
+                ttl = -ttl;
                 double al = Atan2(center.Z - p1.Z, ttl);
 
                 joints[1] = beta + al;

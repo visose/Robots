@@ -13,7 +13,7 @@ namespace Robots.Grasshopper.Commands
         public override Guid ComponentGuid => new Guid("{D15B1F9D-B3B9-4105-A365-234C1329B092}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Name", "N", "Name", GH_ParamAccess.item, "Custom command");
             pManager.AddTextParameter("ABB", "A", "ABB code", GH_ParamAccess.item, "");
@@ -21,7 +21,7 @@ namespace Robots.Grasshopper.Commands
             pManager.AddTextParameter("UR", "U", "UR code", GH_ParamAccess.item, "");
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
         }
@@ -47,12 +47,12 @@ namespace Robots.Grasshopper.Commands
         public override Guid ComponentGuid => new Guid("{17485955-818B-4D0E-9986-26264E1F86DC}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddParameter(new CommandParameter(), "Commands", "C", "Group of commands", GH_ParamAccess.list);      
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
         }
@@ -77,12 +77,12 @@ namespace Robots.Grasshopper.Commands
         public override Guid ComponentGuid => new Guid("{5E7BA355-7EAC-4A5D-B736-286043AB0A45}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand; 
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddNumberParameter("Time", "T", "Time in seconds", GH_ParamAccess.item);
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
         }
@@ -105,13 +105,13 @@ namespace Robots.Grasshopper.Commands
         public override Guid ComponentGuid => new Guid("{C2F263E3-BF97-4E48-B2CB-42D3A5FE6190}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddIntegerParameter("DO", "D", "Digital output number", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Value", "V", "Digital output value", GH_ParamAccess.item);
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
         }
