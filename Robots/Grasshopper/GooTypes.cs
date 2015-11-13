@@ -4,10 +4,11 @@ using System.Collections.Generic;
 using Rhino.Geometry;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
+using System.Drawing;
 
 namespace Robots.Grasshopper
 {
-    public class GH_Robot : GH_Goo<Robot>
+    public class GH_Robot : GH_Goo<Robot>, IGH_PreviewData
     {
         public GH_Robot() { this.Value = null; }
         public GH_Robot(GH_Robot goo) { this.Value = goo.Value; }
@@ -34,8 +35,33 @@ namespace Robots.Grasshopper
             }
             return false;
         }
+
+        public BoundingBox ClippingBox
+        {
+            get
+            {
+                var box = new BoundingBox();
+                foreach (var mesh in Value.GetMeshes()) box.Union(mesh.GetBoundingBox(true));
+                return box;
+            }
+        }
+
+        public void DrawViewportMeshes(GH_PreviewMeshArgs args)
+        {
+            foreach (var mesh in Value.GetMeshes())
+                args.Pipeline.DrawMeshShaded(mesh,args.Material);
+ 
+        }
+
+        public void DrawViewportWires(GH_PreviewWireArgs args)
+        {
+         //   foreach (var mesh in Value.GetMeshes())
+         //       args.Pipeline.DrawMeshWires(mesh,args.Color);
+        }
+
     }
 
+   
     public class GH_Program : GH_Goo<Program>
     {
         public GH_Program() { this.Value = null; }
@@ -61,7 +87,7 @@ namespace Robots.Grasshopper
 
     public class GH_Target : GH_Goo<Target>
     {
-        public GH_Target() { this.Value = null; }
+        public GH_Target() { this.Value = Target.Default; }
         public GH_Target(GH_Target goo) { this.Value = goo.Value; }
         public GH_Target(Target native) { this.Value = native; }
         public override IGH_Goo Duplicate() => new GH_Target(this);

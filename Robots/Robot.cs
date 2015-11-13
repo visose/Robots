@@ -24,16 +24,13 @@ namespace Robots
         readonly Mesh baseMesh;
         readonly Joint[] joints;
 
-        public Mesh[] GetMeshes()
+        internal Mesh[] GetMeshes()
         {
-            return joints.Select(x => x.Mesh).ToArray();
+            var meshes = new Mesh[7];
+            meshes[0] = baseMesh;
+            for(int i=0;i<6;i++) meshes[i+1] = joints[i].Mesh;
+            return meshes;
         }
-
-        public Plane[] GetPlanes()
-        {
-            return joints.Select(x => x.Plane).ToArray();
-        }
-
 
         internal Robot(string model, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io)
         {

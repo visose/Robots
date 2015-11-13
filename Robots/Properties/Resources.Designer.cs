@@ -63,9 +63,9 @@ namespace Robots.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap iconCheckProgram {
+        internal static System.Drawing.Bitmap iconAngles {
             get {
-                object obj = ResourceManager.GetObject("iconCheckProgram", resourceCulture);
+                object obj = ResourceManager.GetObject("iconAngles", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -96,6 +96,16 @@ namespace Robots.Properties {
         internal static System.Drawing.Bitmap iconCreateTarget {
             get {
                 object obj = ResourceManager.GetObject("iconCreateTarget", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconCustomCode {
+            get {
+                object obj = ResourceManager.GetObject("iconCustomCode", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -153,9 +163,39 @@ namespace Robots.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap iconSave {
+            get {
+                object obj = ResourceManager.GetObject("iconSave", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconSimulation {
+            get {
+                object obj = ResourceManager.GetObject("iconSimulation", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap iconTool {
             get {
                 object obj = ResourceManager.GetObject("iconTool", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconURRemote {
+            get {
+                object obj = ResourceManager.GetObject("iconURRemote", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -172,14 +212,14 @@ namespace Robots.Properties {
         
         /// <summary>
         ///   Looks up a localized string similar to &lt;robots&gt;
-        ///  
-        ///  &lt;robot model=&quot;KR210-2&quot; manufacturer=&quot;KUKA&quot;&gt;
+        ///
+        ///  &lt;robot model=&quot;IRB120&quot; manufacturer=&quot;ABB&quot;&gt;
         ///    &lt;Joints&gt;
-        ///      &lt;Joint number=&quot;1&quot; a =&quot;350&quot; d =&quot;750&quot; minrange = &quot;-185&quot; maxrange =&quot;185&quot; maxspeed =&quot;156&quot;/&gt;
-        ///      &lt;Joint number=&quot;2&quot; a =&quot;1250&quot; d =&quot;0&quot; minrange = &quot;-155&quot; maxrange =&quot;35&quot; maxspeed =&quot;156&quot;/&gt;
-        ///      &lt;Joint number=&quot;3&quot; a =&quot;-55&quot; d =&quot;0&quot; minrange = &quot;-130&quot; maxrange =&quot;154&quot; maxspeed =&quot;156&quot;/&gt;
-        ///      &lt;Joint number=&quot;4&quot; a =&quot;0&quot; d =&quot;1100&quot; minrange = &quot;-350&quot; maxrange =&quot;350&quot; maxspeed =&quot;330&quot;/&gt;
-        ///      &lt;Joint number=&quot;5&quot; a =&quot;0&quot; d =&quot;0&quot; minrange = &quot;-130&quot; maxran [rest of string was truncated]&quot;;.
+        ///      &lt;Joint number=&quot;1&quot; a =&quot;0&quot; d =&quot;290&quot; minrange = &quot;-165&quot; maxrange =&quot;165&quot; maxspeed =&quot;0&quot;/&gt;
+        ///      &lt;Joint number=&quot;2&quot; a =&quot;270&quot; d =&quot;0&quot; minrange = &quot;-110&quot; maxrange =&quot;110&quot; maxspeed =&quot;0&quot;/&gt;
+        ///      &lt;Joint number=&quot;3&quot; a =&quot;70&quot; d =&quot;0&quot; minrange = &quot;-90&quot; maxrange =&quot;70&quot; maxspeed =&quot;0&quot;/&gt;
+        ///      &lt;Joint number=&quot;4&quot; a =&quot;0&quot; d =&quot;302&quot; minrange = &quot;-160&quot; maxrange =&quot;160&quot; maxspeed =&quot;0&quot;/&gt;
+        ///      &lt;Joint number=&quot;5&quot; a =&quot;0&quot; d =&quot;0&quot; minrange = &quot;-120&quot; maxrange =&quot;120&quot; maxspeed [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string robotsData {
             get {

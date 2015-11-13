@@ -53,10 +53,7 @@ namespace Robots.Commands
             foreach (ICommand item in source) Add(item);
         }
 
-        public string Code(Robot robot, Target target)
-        {
-            return string.Join("\r\n", this.Select(command => command.Code(robot, target)));
-        }
+        public string Code(Robot robot, Target target) => string.Join("\r\n", this.Select(command => command.Code(robot, target)));
 
         public override string ToString() => $"Command (Group with {Count} commands)";
     }

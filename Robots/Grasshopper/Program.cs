@@ -13,7 +13,7 @@ namespace Robots.Grasshopper
         public override Guid ComponentGuid => new Guid("{5186EFD5-C042-4CA9-A7D2-E143F4848DEF}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCreateProgram;
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Name", "N", "Program name", GH_ParamAccess.item, "DefaultProgram");
             pManager.AddParameter(new RobotParameter(), "Robot", "R", "Robot", GH_ParamAccess.item);
@@ -22,7 +22,7 @@ namespace Robots.Grasshopper
             pManager[2].Optional = true;
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
             pManager.AddTextParameter("Code", "C", "Code", GH_ParamAccess.list);
@@ -71,16 +71,16 @@ namespace Robots.Grasshopper
         public SaveProgram() : base("Save program", "SaveProg", "Save a program", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.quinary;
         public override Guid ComponentGuid => new Guid("{1DE69EAA-AA4C-44F2-8748-F19B041F8F58}");
-        protected override System.Drawing.Bitmap Icon => null;  // return Properties.Resources.visualstudio; 
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconSave;
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
             pManager.AddTextParameter("Folder", "F", "Folder", GH_ParamAccess.item);
             pManager[1].Optional = true;
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
         }
 
@@ -102,15 +102,15 @@ namespace Robots.Grasshopper
         public CustomCode() : base("Custom code", "Custom", "Custom code", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.tertiary;
         public override Guid ComponentGuid => new Guid("{FF997511-4A84-4426-AB62-AF94D19FF58F}");
-        protected override System.Drawing.Bitmap Icon => null;  // return Properties.Resources.visualstudio; 
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCustomCode;
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
             pManager.AddTextParameter("Code", "C", "Custom code", GH_ParamAccess.list);
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
         }
@@ -122,8 +122,8 @@ namespace Robots.Grasshopper
 
             if (!DA.GetData(0, ref program)) { return; }
             if (!DA.GetDataList(1, code)) { return; }
-            program.Value.ChangeCode(code);
-            DA.SetData(0, program);
+            var newProgram = program.Value.CustomCode(code);
+            DA.SetData(0, new GH_Program(newProgram));
         }
     }
 

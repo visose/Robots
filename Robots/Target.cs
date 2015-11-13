@@ -28,6 +28,14 @@ namespace Robots
         public RobotConfigurations Configuration { get; set; }
         public bool IsCartesian { get; private set; }
 
+        public static Target Default { get; }
+
+        static Target()
+        {
+            Default = new Target(new double[] { 0, PI / 2, 0, 0, 0, 0 });
+        }
+
+
         public Target(Plane plane, Tool tool = null, Motions motion = Motions.JointCartesian, Speed speed = null, Zone zone = null, IEnumerable<Commands.ICommand> commands = null, RobotConfigurations configuration = 0)
         {
             this.Plane = plane;
@@ -60,11 +68,11 @@ namespace Robots
 
         public override string ToString()
         {
-            string motion = IsCartesian ? $"Cartesian ({Plane.OriginX:0.00},{Plane.OriginY:0.00},{Plane.OriginZ:0.00})" : $"Joint ({string.Join(",", JointRotations.Select(x => $"{x:0.00})"))}";
+            string motion = IsCartesian ? $"Cartesian ({Plane.OriginX:0.00},{Plane.OriginY:0.00},{Plane.OriginZ:0.00})" : $"Joint ({string.Join(",", JointRotations.Select(x => $"{x:0.00}"))})";
             string tool = Tool != null ? $", {Tool}" : "";
             string speed = Speed != null ? $", {Speed}" : "";
             string zone = Zone != null ? $", {Zone}" : "";
-            string commands = (Commands.Count > 0) ? ", (Contains commands)" : "";
+            string commands = (Commands.Count > 0) ? ", Contains commands" : "";
             return $"Target ({motion}{tool}{speed}{zone}{commands})";
         }
         }
@@ -106,7 +114,7 @@ namespace Robots
 
         static Speed()
         {
-            Default = new Speed(100, "DefaultZone");
+            Default = new Speed(100, "DefaultSpeed");
         }
 
         public Speed(double translation, string name = null)

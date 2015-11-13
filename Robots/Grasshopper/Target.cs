@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Drawing;
 
 using Rhino.Geometry;
+using Grasshopper;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Parameters;
 using static System.Math;
 using static Robots.Util;
@@ -31,12 +35,12 @@ namespace Robots.Grasshopper
         public override Guid ComponentGuid => new Guid("{BC68DC2C-EED6-4717-9F49-80A2B21B75B6}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCreateTarget;
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             Params.RegisterInputParam(parameters[1]);
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddParameter(new TargetParameter(), "Target", "T", "Target", GH_ParamAccess.item);
         }
@@ -145,7 +149,7 @@ namespace Robots.Grasshopper
             else
             {
                 int insertIndex = Params.Input.Count;
-                for (int i=0;i<Params.Input.Count;i++)
+                for (int i = 0; i < Params.Input.Count; i++)
                 {
                     int otherIndex = Array.FindIndex(parameters, x => x.Name == Params.Input[i].Name);
                     if (otherIndex > index)
@@ -153,7 +157,7 @@ namespace Robots.Grasshopper
                         insertIndex = i;
                         break;
                     }
-                    }
+                }
                 Params.RegisterInputParam(parameter, insertIndex);
             }
             Params.OnParametersChanged();
@@ -187,17 +191,81 @@ namespace Robots.Grasshopper
                 AddParam(2);
         }
         private void AddTool(object sender, EventArgs e) => AddParam(3);
-        private void AddMotion(object sender, EventArgs e) => AddParam(4);
+        private void AddMotion(object sender, EventArgs e)
+        {
+            AddParam(4);
+            var parameter = parameters[4];
+
+            if (Params.Input.Any(x => x.Name == parameter.Name))
+            {
+                var valueList = new GH_ValueList();
+                valueList.CreateAttributes();
+                valueList.Attributes.Pivot = new PointF(parameter.Attributes.InputGrip.X - 130, parameter.Attributes.InputGrip.Y - 11);
+                valueList.ListItems.Clear();
+                valueList.ListItems.Add(new GH_ValueListItem("Joint cartesian", "\"JointCartesian\""));
+                valueList.ListItems.Add(new GH_ValueListItem("Joint rotations", "\"JointRotations\""));
+                valueList.ListItems.Add(new GH_ValueListItem("Linear", "\"Linear\""));
+                Instances.ActiveCanvas.Document.AddObject(valueList, false);
+                parameter.AddSource(valueList);
+                parameter.CollectData();
+                ExpireSolution(true);
+            }
+        }
+
         private void AddSpeed(object sender, EventArgs e) => AddParam(5);
         private void AddZone(object sender, EventArgs e) => AddParam(6);
         private void AddCommand(object sender, EventArgs e) => AddParam(7);
-        private void AddConfig(object sender, EventArgs e) => AddParam(8);
+        private void AddConfig(object sender, EventArgs e)
+        {
+            AddParam(8);
+            var parameter = parameters[8];
+
+            if (Params.Input.Any(x => x.Name == parameter.Name))
+            {
+                var configParm = new ConfigParam();
+                configParm.CreateAttributes();
+                configParm.Attributes.Pivot = new PointF(parameter.Attributes.InputGrip.X - 110, parameter.Attributes.InputGrip.Y - 33);
+                configParm.ListItems.Clear();
+                configParm.ListMode = GH_ValueListMode.CheckList;
+                configParm.ListItems.Add(new GH_ValueListItem("Shoulder", "1"));
+                configParm.ListItems.Add(new GH_ValueListItem("Elbow", "2"));
+                configParm.ListItems.Add(new GH_ValueListItem("Wrist", "4"));
+                Instances.ActiveCanvas.Document.AddObject(configParm, false);
+                parameter.AddSource(configParm);
+                parameter.CollectData();
+
+                ExpireSolution(true);
+            }
+        }
 
         bool IGH_VariableParameterComponent.CanInsertParameter(GH_ParameterSide side, int index) => false;
         bool IGH_VariableParameterComponent.CanRemoveParameter(GH_ParameterSide side, int index) => false;
         IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index) => null;
         bool IGH_VariableParameterComponent.DestroyParameter(GH_ParameterSide side, int index) => false;
         void IGH_VariableParameterComponent.VariableParameterMaintenance() { }
+
+        class ConfigParam : GH_ValueList
+        {
+            public override string Name => "Flag fields";
+            public override string Description => "Modified value list parameter for flag fields";
+            public override Guid ComponentGuid => new Guid("{0381B555-BF9C-4D68-8E5C-10B2FCB16F30}");
+
+            protected override void OnVolatileDataCollected()
+            {
+                int config = 0;
+                if (VolatileDataCount > 0)
+                {
+                    var values = VolatileData.get_Branch(0);
+                    foreach (var value in values)
+                    {
+                        if (value is GH_Integer)
+                            config += (value as GH_Integer).Value;
+                    }
+                }
+                VolatileData.Clear();
+                AddVolatileData(new GH_Path(0), 0, new GH_Integer(config));
+            }
+        }
     }
 
     public class DeconstructTarget : GH_Component, IGH_VariableParameterComponent
@@ -224,12 +292,12 @@ namespace Robots.Grasshopper
         public override Guid ComponentGuid => new Guid("{3252D880-59F9-4C9A-8A92-A6CD4C0BA591}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconDeconstructTarget;
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddParameter(new TargetParameter(), "Target", "T", "Target", GH_ParamAccess.item);
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             Params.RegisterOutputParam(parameters[0]);
         }
@@ -345,7 +413,7 @@ namespace Robots.Grasshopper
         public override Guid ComponentGuid => new Guid("{E59E634B-7AD5-4682-B2C1-F18B73AE05C6}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconTool;
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Name", "N", "Name", GH_ParamAccess.item, "DefaultTool");
             pManager.AddPlaneParameter("TCP", "P", "TCP plane", GH_ParamAccess.item, Plane.WorldXY);
@@ -355,7 +423,7 @@ namespace Robots.Grasshopper
             pManager[3].Optional = true;
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddParameter(new ToolParameter(), "Tool", "T", "Tool", GH_ParamAccess.item);
         }
@@ -376,4 +444,5 @@ namespace Robots.Grasshopper
             DA.SetData(0, new GH_Tool(tool));
         }
     }
+
 }

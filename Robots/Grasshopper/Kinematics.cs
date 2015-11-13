@@ -17,13 +17,14 @@ namespace Robots.Grasshopper
         public override Guid ComponentGuid => new Guid("{EFDA05EB-B281-4703-9C9E-B5F98A9B2E1D}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconKinematics;
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddParameter(new RobotParameter(), "Robot", "R", "Robot", GH_ParamAccess.item);
             pManager.AddParameter(new TargetParameter(), "Target", "T", "Target", GH_ParamAccess.item);
+            pManager[1].Optional = true;
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddMeshParameter("Robot meshes", "M", "Robot meshes", GH_ParamAccess.list);
             pManager.AddNumberParameter("Joint rotations", "J", "Joint rotations", GH_ParamAccess.list);
@@ -34,10 +35,10 @@ namespace Robots.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             GH_Robot robot = null;
-            GH_Target target = null;
+            GH_Target target = new GH_Target();
 
             if (!DA.GetData(0, ref robot)) { return; }
-            if (!DA.GetData(1, ref target)) { return; }
+            DA.GetData(1, ref target);
 
             var kinematics = robot.Value.Kinematics(target.Value, true);
 
@@ -59,15 +60,15 @@ namespace Robots.Grasshopper
         public DegreesToRadians() : base("Degrees to radians", "DegToRad", "Manufacturer dependent degrees to radians conversion.", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.quarternary;
         public override Guid ComponentGuid => new Guid("{C10B3A17-5C19-4805-ACCF-839B85C4D21C}");
-        protected override System.Drawing.Bitmap Icon => null;  // return Properties.Resources.visualstudio; 
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconAngles;
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddNumberParameter("Degrees", "D", "Degrees", GH_ParamAccess.list);
             pManager.AddParameter(new RobotParameter(), "Robot", "R", "Robot", GH_ParamAccess.item);
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Radians", "R", "Radians", GH_ParamAccess.item);
         }
@@ -95,16 +96,16 @@ namespace Robots.Grasshopper
         }
         public override GH_Exposure Exposure => GH_Exposure.quarternary;
         public override Guid ComponentGuid => new Guid("{6CE35140-A625-4686-B8B3-B734D9A36CFC}");
-        protected override System.Drawing.Bitmap Icon => null;// Properties.Resources.iconCheckProgram;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconSimulation;
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
             pManager.AddNumberParameter("Time", "T", "Advance the simulation to this time", GH_ParamAccess.item, 0);
             pManager.AddBooleanParameter("Normalized", "N", "Time value is normalized (from 0 to 1)", GH_ParamAccess.item, true);
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddMeshParameter("Robot meshes", "M", "Robot meshes", GH_ParamAccess.list);
             pManager.AddNumberParameter("Joint rotations", "J", "Joint rotations", GH_ParamAccess.list);

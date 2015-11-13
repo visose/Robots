@@ -130,12 +130,6 @@
   <data name="robotsData" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\resources\robotsdata.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
-  <data name="iconCheckProgram" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\icons\iconCheckProgram.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="iconCommand" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\icons\iconCommand.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
   <data name="iconCreateProgram" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\icons\iconCreateProgram.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -153,5 +147,23 @@
   </data>
   <data name="iconTool" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\icons\iconTool.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconAngles" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconAngles.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconCommand" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconCommand.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconCustomCode" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconCustomCode.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconSave" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconSave.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconSimulation" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconSimulation.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconURRemote" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconURRemote.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

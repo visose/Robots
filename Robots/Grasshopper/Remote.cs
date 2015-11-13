@@ -13,9 +13,9 @@ namespace Robots.Grasshopper
         public RemoteUR() : base("Remote UR", "RemoteUR", "Remote connection with UR robot", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.quinary;
         public override Guid ComponentGuid => new Guid("{19A5E3A3-E2BC-4798-8C54-13873FD2973A}");
-        protected override System.Drawing.Bitmap Icon => null;  // return Properties.Resources.visualstudio; 
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconURRemote;
 
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
             pManager.AddTextParameter("IP", "IP", "IP address of robot", GH_ParamAccess.item);
@@ -26,7 +26,7 @@ namespace Robots.Grasshopper
             pManager[1].Optional = true;
         }
 
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Log", "L", "Log", GH_ParamAccess.list);
         }
