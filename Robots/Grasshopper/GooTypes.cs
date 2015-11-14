@@ -36,27 +36,15 @@ namespace Robots.Grasshopper
             return false;
         }
 
-        public BoundingBox ClippingBox
-        {
-            get
-            {
-                var box = new BoundingBox();
-                foreach (var mesh in Value.GetMeshes()) box.Union(mesh.GetBoundingBox(true));
-                return box;
-            }
-        }
+        public BoundingBox ClippingBox => Value.DisplayMesh.GetBoundingBox(true);
 
         public void DrawViewportMeshes(GH_PreviewMeshArgs args)
         {
-            foreach (var mesh in Value.GetMeshes())
-                args.Pipeline.DrawMeshShaded(mesh,args.Material);
- 
+                args.Pipeline.DrawMeshShaded(Value.DisplayMesh,args.Material);
         }
 
         public void DrawViewportWires(GH_PreviewWireArgs args)
         {
-         //   foreach (var mesh in Value.GetMeshes())
-         //       args.Pipeline.DrawMeshWires(mesh,args.Color);
         }
 
     }

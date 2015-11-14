@@ -68,21 +68,22 @@ namespace Robots
             Mesh[] DisplayMeshes(Plane[] jointPlanes, Tool tool)
             {
                 var meshes = new Mesh[8];
-                meshes[0] = robot.baseMesh.DuplicateMesh();
-                meshes[0].Transform(Transform.PlaneToPlane(Plane.WorldXY, robot.basePlane));
-
-                Mesh[] jointMeshes = robot.joints.Select(joint => joint.Mesh.DuplicateMesh()).ToArray();
+                {
+                    meshes[0] = robot.baseMesh.DuplicateMesh();
+                    meshes[0].Transform(Transform.PlaneToPlane(Plane.WorldXY, jointPlanes[0]));
+                }
 
                 for (int i = 0; i < 6; i++)
                 {
-                    jointMeshes[i].Transform(Transform.PlaneToPlane(robot.joints[i].Plane, jointPlanes[i + 1]));
-                    meshes[i + 1] = jointMeshes[i];
+                    var jointMesh = robot.joints[i].Mesh.DuplicateMesh();
+                    jointMesh.Transform(Transform.PlaneToPlane(robot.joints[i].Plane, jointPlanes[i+1]));
+                    meshes[i + 1] = jointMesh;
                 }
 
                 if (tool?.Mesh != null)
                 {
                     Mesh toolMesh = tool.Mesh.DuplicateMesh();
-                    toolMesh.Transform(Transform.PlaneToPlane(Plane.WorldXY, jointPlanes[5]));
+                    toolMesh.Transform(Transform.PlaneToPlane(Plane.WorldXY, jointPlanes[6]));
                     meshes[7] = toolMesh;
                 }
                 return meshes;
@@ -140,13 +141,13 @@ namespace Robots
                     beta = 0;
                     isUnreachable = true;
                 }
-               if (elbow)
-                   beta *= -1;
+                if (elbow)
+                    beta *= -1;
 
                 double ttl = new Vector3d(center.X - p1.X, center.Y - p1.Y, 0).Length;
                 // if (p1.X * (center.X - p1.X) < 0)
                 if (shoulder)
-                ttl = -ttl;
+                    ttl = -ttl;
                 double al = Atan2(center.Z - p1.Z, ttl);
 
                 joints[1] = beta + al;
@@ -276,7 +277,7 @@ namespace Robots
                         joints[0] = -arccos + arctan;
                 }
 
-               // wrist 2
+                // wrist 2
                 {
                     double numer = (transform[0, 3] * Sin(joints[0]) - transform[1, 3] * Cos(joints[0]) - d[3]);
                     double div = numer / d[5];
@@ -303,7 +304,7 @@ namespace Robots
                     double s5 = Sin(joints[4]);
 
                     joints[5] = Atan2(Sign(s5) * -(transform[0, 1] * s1 - transform[1, 1] * c1), Sign(s5) * (transform[0, 0] * s1 - transform[1, 0] * c1));
-                    
+
                     double c6 = Cos(joints[5]), s6 = Sin(joints[5]);
                     double x04x = -s5 * (transform[0, 2] * c1 + transform[1, 2] * s1) - c5 * (s6 * (transform[0, 1] * c1 + transform[1, 1] * s1) - c6 * (transform[0, 0] * c1 + transform[1, 0] * s1));
                     double x04y = c5 * (transform[2, 0] * c6 - transform[2, 1] * s6) - transform[2, 2] * s5;
@@ -342,7 +343,7 @@ namespace Robots
                 if (isUnreachable)
                     Errors.Add($"Target out of reach.");
 
-             //   joints[5] += PI / 2;
+                //   joints[5] += PI / 2;
 
                 for (int i = 0; i < 6; i++)
                 {
