@@ -20,17 +20,13 @@ namespace Robots
         public string Model => $"{Manufacturer.ToString()}.{model}";
         internal string Extension { get; set; }
         public RobotIO IO { get; }
+        public Mesh DisplayMesh { get; }
         protected Plane basePlane;
         readonly Mesh baseMesh;
         readonly Joint[] joints;
 
-        internal Mesh[] GetMeshes()
-        {
-            var meshes = new Mesh[7];
-            meshes[0] = baseMesh;
-            for(int i=0;i<6;i++) meshes[i+1] = joints[i].Mesh;
-            return meshes;
-        }
+        public Plane[] GetPlanes() => joints.Select(x => x.Plane).ToArray();
+        
 
         internal Robot(string model, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io)
         {
@@ -45,7 +41,33 @@ namespace Robots
 
             var kinematics = Kinematics(new Target(GetStartPose()));
             for (int i = 0; i < 6; i++)
-                joints[i].Plane = kinematics.Planes[i + 1];
+            {
+                Plane plane = kinematics.Planes[i + 1];
+                plane.Transform(Transform.PlaneToPlane(basePlane, Plane.WorldXY));
+                joints[i].Plane = plane;
+            }
+
+            this.DisplayMesh = CreateDisplayMesh();
+        }
+
+        internal Mesh CreateDisplayMesh()
+        {
+            var mesh = new Mesh();
+            var transform = Transform.PlaneToPlane(Plane.WorldXY, basePlane);
+            {
+                var dupMesh = baseMesh.DuplicateMesh();
+                dupMesh.Transform(transform);
+                mesh.Append(dupMesh);
+            }
+
+            for (int i = 0; i < 6; i++)
+            {
+                var dupMesh = joints[i].Mesh.DuplicateMesh();
+                dupMesh.Transform(transform);
+                mesh.Append(dupMesh);
+            }
+
+            return mesh;
         }
 
         public static List<string> ListRobots(bool fromFile = false)
@@ -62,7 +84,7 @@ namespace Robots
             else
                 robotsData = XElement.Parse(Properties.Resources.robotsData);
 
-             foreach (var element in robotsData.Elements())
+            foreach (var element in robotsData.Elements())
             {
                 names.Add($"{element.Attribute(XName.Get("manufacturer")).Value}.{element.Attribute(XName.Get("model")).Value}");
             }
@@ -135,7 +157,7 @@ namespace Robots
 
             for (int i = 0; i < 6; i++)
             {
-                var jointLayer = robotsGeometry.Layers.First(x => (x.Name == $"{i+1}") && (x.ParentLayerId == robotLayer.Id));
+                var jointLayer = robotsGeometry.Layers.First(x => (x.Name == $"{i + 1}") && (x.ParentLayerId == robotLayer.Id));
                 meshes[i + 1] = robotsGeometry.Objects.First(x => x.Attributes.LayerIndex == jointLayer.LayerIndex).Geometry as Mesh;
             }
 
@@ -200,7 +222,7 @@ namespace Robots
 
                 for (int i = 0; i < 6; i++)
                 {
-                    var jointLayer = robotsGeometry.Layers.First(x => (x.Name == $"{i+1}") && (x.ParentLayerId == layer.Id));
+                    var jointLayer = robotsGeometry.Layers.First(x => (x.Name == $"{i + 1}") && (x.ParentLayerId == layer.Id));
                     meshes[i + 1] = robotsGeometry.Objects.First(x => x.Attributes.LayerIndex == jointLayer.LayerIndex).Geometry as Mesh;
                 }
                 robotMeshes.Meshes.Add(meshes);
