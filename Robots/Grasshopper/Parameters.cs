@@ -109,7 +109,7 @@ namespace Robots.Grasshopper
 
     public class ZoneParameter : GH_PersistentParam<GH_Zone>
     {
-        public ZoneParameter() : base("Zone parameter", "Zone", "This is an aproximation zone", "Robots", "Parameters") { }
+        public ZoneParameter() : base("Zone parameter", "Zone", "This is a robot aproximation zone", "Robots", "Parameters") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconParamProgram;
         public override System.Guid ComponentGuid => new Guid("{458855D3-F671-4A50-BDA1-6AD3B7A5EC70}");

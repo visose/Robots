@@ -10,7 +10,7 @@ namespace Robots.Grasshopper
 {
     public class LoadRobot : GH_Component
     {
-        public LoadRobot() : base("Load Robot", "LoadRobot", "Load a robot", "Robots", "Components") { }
+        public LoadRobot() : base("Load Robot", "LoadRobot", "Loads a robot either from the library or from a custom file", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.primary;
         public override Guid ComponentGuid => new Guid("{7722D7E3-98DE-49B5-9B1D-E0D1B938B4A7}");
         protected override System.Drawing.Bitmap Icon =>  Properties.Resources.iconRobot; 
@@ -45,7 +45,7 @@ namespace Robots.Grasshopper
 
     public class ListRobots : GH_Component
     {
-        public ListRobots() : base("List robots", "ListRobots", "Lists all the robots contained in the library", "Robots", "Components") { }
+        public ListRobots() : base("List robots", "ListRobots", "Lists all the robots contained in the library or a custom file", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.primary;
         public override Guid ComponentGuid => new Guid("{8126494B-21AC-4612-BD95-1814A5FD36C8}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconRobotList; 

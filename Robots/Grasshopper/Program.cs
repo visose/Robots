@@ -8,7 +8,7 @@ namespace Robots.Grasshopper
 {
     public class CreateProgram : GH_Component
     {
-        public CreateProgram() : base("Create program", "Program", "Create a program", "Robots", "Components") { }
+        public CreateProgram() : base("Create program", "Program", "Creates a program, checks for possible issues and fixes common mistakes", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.tertiary;
         public override Guid ComponentGuid => new Guid("{5186EFD5-C042-4CA9-A7D2-E143F4848DEF}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCreateProgram;
@@ -68,7 +68,7 @@ namespace Robots.Grasshopper
 
     public class SaveProgram : GH_Component
     {
-        public SaveProgram() : base("Save program", "SaveProg", "Save a program", "Robots", "Components") { }
+        public SaveProgram() : base("Save program", "SaveProg", "Saves a program to a text file", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.quinary;
         public override Guid ComponentGuid => new Guid("{1DE69EAA-AA4C-44F2-8748-F19B041F8F58}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconSave;
@@ -99,7 +99,7 @@ namespace Robots.Grasshopper
 
     public class CustomCode : GH_Component
     {
-        public CustomCode() : base("Custom code", "Custom", "Custom code", "Robots", "Components") { }
+        public CustomCode() : base("Custom code", "Custom", "Creates a program using manufacturer specific custom code. This program cannot be simulated", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.tertiary;
         public override Guid ComponentGuid => new Guid("{FF997511-4A84-4426-AB62-AF94D19FF58F}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCustomCode;

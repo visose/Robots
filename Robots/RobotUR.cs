@@ -10,7 +10,7 @@ namespace Robots
     class RobotUR : Robot
     {
         public RemoteConnection Remote { get; } = new RemoteConnection();
-        internal RobotUR(string model, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io) : base(model, basePlane, baseMesh, joints, io)
+        internal RobotUR(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io) : base(model, payload, basePlane, baseMesh, joints, io)
         {
             this.Manufacturer = Manufacturers.UR;
             this.Extension = "URS";
@@ -18,7 +18,7 @@ namespace Robots
 
         public override KinematicSolution Kinematics(Target target, bool calculateMeshes = true) => new OffsetWristKinematics(target, this, calculateMeshes);
         internal override List<string> Code(Program program) => new URScriptPostProcessor(this, program).Code;
-        protected override double[] GetStartPose() => new double[] { 0, -PI / 2, 0, -PI / 2, 0, 0};
+        protected override double[] GetStartPose() => new double[] { 0, -PI / 2, 0, -PI / 2, 0, 0 };
         public override double DegreeToRadian(double degree, int i) => degree * (PI / 180);
         public override double RadianToDegree(double radian, int i) => radian * (180 / PI);
 
@@ -208,7 +208,6 @@ namespace Robots
                     code.Add(initCommands);
 
                 Tool currentTool = null;
-                Plane originPlane = new Plane(Point3d.Origin, -Vector3d.YAxis, Vector3d.XAxis);
 
                 foreach (Target target in program.Targets)
                 {
@@ -227,7 +226,7 @@ namespace Robots
                         plane = target.Plane;
                         plane.Transform(Transform.PlaneToPlane(robot.basePlane, Plane.WorldXY));
                         origin = target.Plane.Origin / 1000;
-                        axisAngle = AxisAngle(plane, originPlane);
+                        axisAngle = AxisAngle(plane, Plane.WorldXY);
                     }
 
                     switch (target.Motion)
@@ -235,7 +234,9 @@ namespace Robots
                         case Target.Motions.JointRotations:
                             {
                                 double[] joints = target.JointRotations;
-                                double axisSpeed = target.Speed.AxisSpeed;
+                                double maxAxisSpeed = robot.Joints.Max(x => x.MaxSpeed);
+                                double percentage = (target.Speed.AxisSpeed > 0) ? target.Speed.AxisSpeed : (target.Time > 0) ? target.MinTime / target.Time : 0.1;
+                                double axisSpeed = percentage * maxAxisSpeed;
                                 double axisAccel = target.Speed.AxisAccel;
                                 double zone = target.Zone.Distance / 1000;
                                 string moveText = $"  movej([{joints[0]:0.0000}, {joints[1]:0.0000}, {joints[2]:0.0000}, {joints[3]:0.0000}, {joints[4]:0.0000}, {joints[5]:0.0000}], a={axisAccel:0.0000}, v={axisSpeed:0.000}, r={zone:0.00000})";
@@ -245,7 +246,9 @@ namespace Robots
 
                         case Target.Motions.JointCartesian:
                             {
-                                double axisSpeed = target.Speed.AxisSpeed;
+                                double maxAxisSpeed = robot.Joints.Max(x => x.MaxSpeed);
+                                double percentage = (target.Speed.AxisSpeed > 0) ? target.Speed.AxisSpeed : (target.Time > 0) ? target.MinTime / target.Time : 0.1;
+                                double axisSpeed = percentage * maxAxisSpeed;
                                 double axisAccel = target.Speed.AxisAccel;
                                 double zone = target.Zone.Distance / 1000;
                                 string moveText = $"  movej(p[{origin.X:0.00000}, {origin.Y:0.00000}, {origin.Z:0.00000}, {axisAngle[0]:0.0000}, {axisAngle[1]:0.0000}, {axisAngle[2]:0.0000}],a={axisAccel:0.00000},v={axisSpeed:0.00000},r={zone:0.00000})";
@@ -280,11 +283,10 @@ namespace Robots
             string Tool(Tool tool)
             {
                 Plane tcp = tool.Tcp;
-                // tcp.Rotate(PI / 2, tcp.Normal);
+                Plane originPlane = new Plane(Point3d.Origin, -Vector3d.YAxis, Vector3d.XAxis);
+                tcp.Transform(Transform.PlaneToPlane(Plane.WorldXY, originPlane));
                 Point3d origin = tcp.Origin / 1000;
-                Plane originPlane = new Plane(Point3d.Origin, Vector3d.XAxis, Vector3d.YAxis);
-                // originPlane.Rotate(PI / 2,originPlane.Normal);
-                double[] axisAngle = AxisAngle(tcp, originPlane);
+                double[] axisAngle = AxisAngle(tcp, Plane.WorldXY);
                 string pos = $"  set_tcp(p[{origin.X:0.00000}, {origin.Y:0.00000}, {origin.Z:0.00000}, {axisAngle[0]:0.0000}, {axisAngle[1]:0.0000}, {axisAngle[2]:0.0000}])";
                 string mass = $"  set_payload({tool.Weight:0.000})";
                 return $"{pos}\n{mass}";

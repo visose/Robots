@@ -31,9 +31,9 @@ namespace Robots
                     JointRotations = InverseKinematics(transform, target.Configuration);
                 }
 
-                var rotationErrors = robot.joints
-                     .Where((x, i) => !x.Range.IncludesParameter(JointRotations[i]))
-                     .Select((x, i) => $"Angle for joint {i + 1} is outside the permited range.");
+                var rotationErrors = robot.Joints
+                     .Where(x => !x.Range.IncludesParameter(JointRotations[x.Index]))
+                     .Select(x => $"Angle for joint {x.Index + 1} is outside the permited range.");
                 Errors.AddRange(rotationErrors);
 
                 // Planes
@@ -75,8 +75,8 @@ namespace Robots
 
                 for (int i = 0; i < 6; i++)
                 {
-                    var jointMesh = robot.joints[i].Mesh.DuplicateMesh();
-                    jointMesh.Transform(Transform.PlaneToPlane(robot.joints[i].Plane, jointPlanes[i+1]));
+                    var jointMesh = robot.Joints[i].Mesh.DuplicateMesh();
+                    jointMesh.Transform(Transform.PlaneToPlane(robot.Joints[i].Plane, jointPlanes[i + 1]));
                     meshes[i + 1] = jointMesh;
                 }
 
@@ -111,8 +111,8 @@ namespace Robots
 
                 bool isUnreachable = false;
 
-                double[] a = robot.joints.Select(joint => joint.A).ToArray();
-                double[] d = robot.joints.Select(joint => joint.D).ToArray();
+                double[] a = robot.Joints.Select(joint => joint.A).ToArray();
+                double[] d = robot.Joints.Select(joint => joint.D).ToArray();
 
                 Plane flange = Plane.WorldXY;
                 flange.Transform(transform);
@@ -212,8 +212,8 @@ namespace Robots
                 var transforms = new Transform[6];
                 double[] c = jointRotations.Select(x => Cos(x)).ToArray();
                 double[] s = jointRotations.Select(x => Sin(x)).ToArray();
-                double[] a = robot.joints.Select(joint => joint.A).ToArray();
-                double[] d = robot.joints.Select(joint => joint.D).ToArray();
+                double[] a = robot.Joints.Select(joint => joint.A).ToArray();
+                double[] d = robot.Joints.Select(joint => joint.D).ToArray();
 
                 transforms[0] = ToTransform(new double[4, 4] { { c[0], 0, c[0], c[0] + a[0] * c[0] }, { s[0], -c[0], s[0], s[0] + a[0] * s[0] }, { 0, 0, 0, d[0] }, { 0, 0, 0, 1 } });
                 transforms[1] = ToTransform(new double[4, 4] { { c[0] * (c[1] - s[1]), s[0], c[0] * (c[1] + s[1]), c[0] * ((c[1] - s[1]) + a[1] * c[1]) + a[0] * c[0] }, { s[0] * (c[1] - s[1]), -c[0], s[0] * (c[1] + s[1]), s[0] * ((c[1] - s[1]) + a[1] * c[1]) + a[0] * s[0] }, { s[1] + c[1], 0, s[1] - c[1], (s[1] + c[1]) + a[1] * s[1] + d[0] }, { 0, 0, 0, 1 } });
@@ -253,8 +253,8 @@ namespace Robots
 
                 transform *= Transform.Rotation(PI / 2, Point3d.Origin);
 
-                double[] a = robot.joints.Select(joint => joint.A).ToArray();
-                double[] d = robot.joints.Select(joint => joint.D).ToArray();
+                double[] a = robot.Joints.Select(joint => joint.A).ToArray();
+                double[] d = robot.Joints.Select(joint => joint.D).ToArray();
 
                 // shoulder
                 {
@@ -359,8 +359,8 @@ namespace Robots
                 var transforms = new Transform[6];
                 double[] c = jointRotations.Select(x => Cos(x)).ToArray();
                 double[] s = jointRotations.Select(x => Sin(x)).ToArray();
-                double[] a = robot.joints.Select(joint => joint.A).ToArray();
-                double[] d = robot.joints.Select(joint => joint.D).ToArray();
+                double[] a = robot.Joints.Select(joint => joint.A).ToArray();
+                double[] d = robot.Joints.Select(joint => joint.D).ToArray();
                 double s23 = Sin(jointRotations[1] + jointRotations[2]);
                 double c23 = Cos(jointRotations[1] + jointRotations[2]);
                 double s234 = Sin(jointRotations[1] + jointRotations[2] + jointRotations[3]);

@@ -15,9 +15,12 @@ namespace Robots
         public string Name { get; }
         public Robot Robot { get; }
         public List<Target> Targets { get; }
+        public List<Tool> Tools { get; private set; }
+        public List<Speed> Speeds { get; private set; }
+        public List<Zone> Zones { get; private set; }
         public Commands.Group InitCommands { get; }
-        public List<string> Warnings { get; }
-        public List<string> Errors { get; }
+        public List<string> Warnings { get; private set; } = new List<string>();
+        public List<string> Errors { get; private set; } = new List<string>();
         public List<string> Code { get; }
         public bool HasCustomCode { get; } = false;
         public double Duration { get; }
@@ -26,20 +29,23 @@ namespace Robots
 
         public Program(string name, Robot robot, IEnumerable<Target> targets, Commands.Group initCommands = null)
         {
+            if (targets.Count() == 0)
+                throw new Exception(" The program has to contain at least 1 target");
+
             this.Name = name;
             this.Robot = robot;
             this.InitCommands = (initCommands != null) ? initCommands : new Commands.Group();
 
+            FixTargetAttributes(targets.ToList());
+
             var checkProgram = new CheckProgram(this, targets);
             this.Targets = checkProgram.fixedTargets;
-            this.Warnings = checkProgram.warnings;
-            this.Errors = checkProgram.errors;
-
-            if (Errors.Count == 0)
-                Code = Robot.Code(this);
 
             this.simulation = new Simulation(this);
             this.Duration = simulation.duration;
+
+            if (Errors.Count == 0)
+                Code = Robot.Code(this);
         }
 
         public Program(string name, Robot robot, IEnumerable<string> code)
@@ -48,6 +54,43 @@ namespace Robots
             this.Robot = robot;
             this.Code = code.ToList();
             this.HasCustomCode = true;
+        }
+
+        void FixTargetAttributes(List<Target> targets)
+        {
+            for (int i = 0; i < targets.Count; i++)
+            {
+                Target target = targets[i];
+
+                if (target.Tool == null)
+                {
+                    target.Tool = Tool.Default;
+                    Warnings.Add($"Tool set to default for target {i}");
+                }
+
+                if (target.Speed == null)
+                {
+                    target.Speed = Speed.Default;
+                    Warnings.Add($"Speed set to default for target {i}");
+                }
+
+                if (target.Zone == null)
+                {
+                    target.Zone = Zone.Default;
+                    Warnings.Add($"Approximation zone set to default for target {i}");
+                }
+            }
+
+            Tools = targets.Select(x => x.Tool).Distinct().ToList();
+            Speeds = targets.Select(x => x.Speed).Distinct().ToList();
+            Zones = targets.Select(x => x.Zone).Distinct().ToList();
+
+            for (int i = 0; i < Tools.Count; i++) if (Tools[i].Name == null) Tools[i].Name = $"tool{i:000}";
+            for (int i = 0; i < Speeds.Count; i++) if (Speeds[i].Name == null) Speeds[i].Name = $"speed{i:000}";
+            for (int i = 0; i < Zones.Count; i++) if (Zones[i].Name == null) Zones[i].Name = $"zone{i:000}";
+
+            foreach (var tool in Tools)
+                if (tool.Weight > Robot.Payload) Errors.Add($"Payload for tool {tool.Name} exceeds maximum robot payload of {Robot.Payload} kg");
         }
 
         public Program CustomCode(IEnumerable<string> code) => new Program(this.Name, this.Robot, code);
@@ -78,18 +121,10 @@ namespace Robots
         class CheckProgram
         {
             Program program;
-            internal List<string> warnings = new List<string>();
-            internal List<string> errors = new List<string>();
             internal List<Target> fixedTargets = new List<Target>();
 
             internal CheckProgram(Program program, IEnumerable<Target> targets)
             {
-                if (targets.Count() == 0)
-                {
-                    errors.Add(" The program has to contain at least 1 target");
-                    return;
-                }
-
                 this.program = program;
                 var dupTargets = targets.Select(x => x.Duplicate()).ToList();
 
@@ -98,7 +133,7 @@ namespace Robots
                     if (firstTarget.Motion != Target.Motions.JointRotations)
                     {
                         firstTarget.Motion = Target.Motions.JointRotations;
-                        warnings.Add($"First target changed to a joint motion using axis rotations");
+                        program.Warnings.Add($"First target changed to a joint motion using axis rotations");
                     }
                 }
 
@@ -112,56 +147,31 @@ namespace Robots
                     var target = targets[i];
                     fixedTargets.Add(target);
 
-                    CheckForDefaults(target, i);
-                    Robot.KinematicSolution kinematics = null;
-
                     if (target.Motion == Target.Motions.JointRotations)
                     {
-                        kinematics = program.Robot.Kinematics(target);
+                        var kinematics = program.Robot.Kinematics(target);
+                        target.jointRotations = kinematics.JointRotations;
+                        target.plane = kinematics.Planes[7];
+                        program.Errors.AddRange(kinematics.Errors);
                     }
                     else
                     {
-                        kinematics = GetClosestSolution(targets[i - 1], target, i);
+                        GetClosestSolution(targets[i - 1], target, i);
                     }
 
-                    target.plane = kinematics.Planes[7];
-                    target.jointRotations = kinematics.JointRotations;
-
-                    if (kinematics.Errors.Count > 0)
+                    if (program.Errors.Count > 0)
                     {
-                        errors.Add($"Kinematic error in target {i}");
-                        errors.AddRange(kinematics.Errors);
+                        program.Errors.Insert(0, $"Kinematic error in target {i}:");
                         return;
                     }
-                }
-            }
-
-            void CheckForDefaults(Target target, int i)
-            {
-                if (target.Tool == null)
-                {
-                    target.Tool = Tool.Default;
-                    warnings.Add($"Tool set to default for target {i}");
-                }
-
-                if (target.Speed == null)
-                {
-                    target.Speed = Speed.Default;
-                    warnings.Add($"Speed set to default for target {i}");
-                }
-
-                if (target.Zone == null)
-                {
-                    target.Zone = Zone.Default;
-                    warnings.Add($"Approximation zone set to default for target {i}");
                 }
             }
 
             double SquaredDifference(double a, double b)
             {
                 double difference = Abs(a - b);
-               if (difference > PI)
-                   difference = PI * 2 - difference;
+                if (difference > PI)
+                    difference = PI * 2 - difference;
                 return difference * difference;
             }
 
@@ -184,7 +194,6 @@ namespace Robots
 
                 for (int j = 0; j < 8; j++)
                 {
-                  //  if (solutions[j].Errors.Count > 0) continue;
                     if (differences[j] < closestDifference)
                     {
                         closestConfiguration = (Target.RobotConfigurations)j;
@@ -195,17 +204,19 @@ namespace Robots
 
                 if (closestKinematics == null)
                 {
-                    errors.Add($"No valid kinematic configuration found for target {i}");
+                    program.Errors.Add($"No valid kinematic configuration found for target {i}");
                     closestKinematics = solutions[(int)prevTarget.Configuration];
                 }
                 else
                 {
+                    program.Errors.AddRange(closestKinematics.Errors);
+
                     if (prevTarget.Configuration != closestConfiguration)
-                        warnings.Add($"Configuration changed to \"{closestConfiguration.ToString()}\" on target {i}");
+                        program.Warnings.Add($"Configuration changed to \"{closestConfiguration.ToString()}\" on target {i}");
                     target.Configuration = closestConfiguration;
 
                     double[] joints = new double[6];
-                    
+
                     for (int j = 0; j < 6; j++)
                     {
                         double prevJoint = prevTarget.jointRotations[j];
@@ -214,15 +225,18 @@ namespace Robots
                         if (difference > PI)
                         {
                             prevJoint += Sign(prevJoint) * (PI * 2 - difference);
-                           joints[j] = prevJoint;
+                            joints[j] = prevJoint;
                         }
                         else
                         {
                             joints[j] = joint;
                         }
                     }
+                    target.jointRotations = closestKinematics.JointRotations;
+                    target.plane = closestKinematics.Planes[7];
 
-                     closestKinematics = program.Robot.Kinematics(new Target(joints));
+                    closestKinematics = program.Robot.Kinematics(new Target(joints, target.Tool));
+                    program.Errors.AddRange(closestKinematics.Errors);
                 }
 
                 return closestKinematics;
@@ -254,23 +268,93 @@ namespace Robots
                     var prevTarget = simuTargets[simuTargets.Count - 1];
                     var target = program.Targets[i];
 
-                    if (target.Motion == Target.Motions.Linear)
+                 //   if (target.Motion == Target.Motions.Linear || robot.Manufacturer == Robot.Manufacturers.ABB)
                     {
-                        double distance = prevTarget.target.Plane.Origin.DistanceTo(target.Plane.Origin);
+                        Plane prevPlane = prevTarget.target.Plane;
+                        if (prevTarget.target.Tool != target.Tool)
+                            prevPlane.Transform(Transform.PlaneToPlane(target.Tool.Tcp, prevTarget.target.Tool.Tcp));
+
+                        //Translation
+                        double distance = prevPlane.Origin.DistanceTo(target.Plane.Origin);
                         double deltaLinearTime = distance / target.Speed.TranslationSpeed;
 
-                        double angle = Vector3d.VectorAngle(prevTarget.target.Plane.Normal, target.Plane.Normal);
+                        //Rotation
+                        double angleSwivel = Vector3d.VectorAngle(prevTarget.target.Plane.Normal, target.Plane.Normal);
+                        double angleRotation = Vector3d.VectorAngle(prevTarget.target.Plane.XAxis, target.Plane.XAxis);
+                        double angle = Max(angleSwivel, angleRotation);
                         double deltaRotationTime = angle / target.Speed.RotationSpeed;
 
-                        double deltaTime = Max(deltaLinearTime, deltaRotationTime);
+                        //Axis
+                        double deltaAxisTime = 0;
+                        int leadingJoint = -1;
+
+                        for (int j = 0; j < 6; j++)
+                        {
+                            double deltaCurrentAxisTime = Abs(target.JointRotations[j] - prevTarget.target.JointRotations[j]) / robot.Joints[j].MaxSpeed;
+
+                            if (deltaCurrentAxisTime > deltaAxisTime)
+                            {
+                                deltaAxisTime = deltaCurrentAxisTime;
+                                leadingJoint = j;
+                            }
+                        }
+
+                        double[] deltaTimes = new double[] { deltaLinearTime, deltaRotationTime, deltaAxisTime };
+                        double deltaTime = 0;
+                        double deltaIndex = -1;
+                        for (int j = 0; j < deltaTimes.Length; j++)
+                        {
+                            if (deltaTimes[j] > deltaTime)
+                            {
+                                deltaTime = deltaTimes[j];
+                                deltaIndex = j;
+                            }
+                        }
+
+                        if (deltaIndex == 1) program.Warnings.Add($"Rotation speed limit reached in target {i}");
+                        if (deltaIndex == 2) program.Warnings.Add($"Joint {leadingJoint+1} speed limit reached in target {i}");
+
+
+                        if (robot.Manufacturer == Robot.Manufacturers.UR)
+                        {
+                            deltaAxisTime = 0;
+
+                            for (int j = 0; j < 6; j++)
+                            {
+                                double maxSpeed = robot.Joints.Max(x => x.MaxSpeed);
+                                double deltaCurrentAxisTime = Abs(target.JointRotations[j] - prevTarget.target.JointRotations[j]) / maxSpeed;
+                                if (deltaCurrentAxisTime > deltaAxisTime) deltaAxisTime = deltaCurrentAxisTime;
+                            }
+                        }
+
                         time += deltaTime;
+                        target.Time = deltaTime;
+                        target.MinTime = deltaAxisTime;
+                        target.LeadingJoint = leadingJoint;
                     }
+                    /*
                     else
                     {
-                        double maxAxisDelta = target.JointRotations.Zip(prevTarget.target.JointRotations, (x, y) => Abs(x - y)).Max();
-                        double deltaTime = maxAxisDelta / target.Speed.AxisSpeed;
-                        time += deltaTime;
+                        double deltaAxisTime = 0;
+
+                        for (int j = 0; j < 6; j++)
+                        {
+                            double deltaCurrentAxisTime = 0;
+                            switch (robot.Manufacturer)
+                            {
+                                case Robot.Manufacturers.KUKA:
+                                    deltaCurrentAxisTime = Abs(target.JointRotations[j] - prevTarget.target.JointRotations[j]) / (robot.Joints[j].MaxSpeed * target.Speed.AxisSpeed);
+                                    break;
+                                case Robot.Manufacturers.UR:
+                                    deltaCurrentAxisTime = Abs(target.JointRotations[j] - prevTarget.target.JointRotations[j]) / (robot.Joints.Max(x=>x.MaxSpeed) * target.Speed.AxisSpeed);
+                                    break;
+                            }
+                            if (deltaCurrentAxisTime > deltaAxisTime) deltaAxisTime = deltaCurrentAxisTime;
+                        }
+                        
+                        time += deltaAxisTime;
                     }
+                    */
                     simuTargets.Add(new SimuTarget(time, target));
 
                     {
@@ -346,16 +430,26 @@ namespace Robots
                 }
                 else
                 {
-                    var plane = CartesianLerp(prevTarget.target.Plane, simuTarget.target.Plane, currentTime, prevTarget.time, simuTarget.time);
-                    //Target.RobotConfigurations configuration = (Abs(prevTarget.time - currentTime) < Abs(target.time - currentTime)) ? prevTarget.configuration : target.configuration;
-                    Target.RobotConfigurations configuration = simuTarget.target.Configuration;
-                    return robot.Kinematics(new Target(plane, simuTarget.target.Tool, configuration: configuration), true);
+                    Plane prevPlane = prevTarget.target.Plane;
+                    if (prevTarget.target.Tool != simuTarget.target.Tool)
+                        prevPlane.Transform(Transform.PlaneToPlane(simuTarget.target.Tool.Tcp, prevTarget.target.Tool.Tcp));
+                    var plane = CartesianLerp(prevPlane, simuTarget.target.Plane, currentTime, prevTarget.time, simuTarget.time);
+                    Target.RobotConfigurations configuration = (Abs(prevTarget.time - currentTime) < Abs(simuTarget.time - currentTime)) ? prevTarget.target.Configuration : simuTarget.target.Configuration;
+                    //Target.RobotConfigurations configuration = simuTarget.target.Configuration;
+                    var kinematics = robot.Kinematics(new Target(plane, simuTarget.target.Tool, configuration: configuration), true);
+                    return kinematics;
                 }
             }
 
             /// <summary>
             /// Quaternion interpolation based on: http://www.grasshopper3d.com/group/lobster/forum/topics/lobster-reloaded
             /// </summary>
+            /// <param name="a"></param>
+            /// <param name="b"></param>
+            /// <param name="t"></param>
+            /// <param name="min"></param>
+            /// <param name="max"></param>
+            /// <returns></returns>
             Plane CartesianLerp(Plane a, Plane b, double t, double min, double max)
             {
                 t = (t - min) / (max - min);

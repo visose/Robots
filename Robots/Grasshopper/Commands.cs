@@ -8,7 +8,7 @@ namespace Robots.Grasshopper.Commands
 {
     public class Custom : GH_Component
     {
-        public Custom() : base("Custom command", "CustomCmd", "Custom command", "Robots", "Commands") { }
+        public Custom() : base("Custom command", "CustomCmd", "Custom command written in the manufacturer specific language", "Robots", "Commands") { }
         public override GH_Exposure Exposure => GH_Exposure.primary;
         public override Guid ComponentGuid => new Guid("{D15B1F9D-B3B9-4105-A365-234C1329B092}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
@@ -165,7 +165,7 @@ namespace Robots.Grasshopper.Commands
 
     public class Wait : GH_Component
     {
-        public Wait() : base("Wait command", "WaitCmd", "Wait command", "Robots", "Commands") { }
+        public Wait() : base("Wait", "Wait", "Stops the program for a specific amount of time", "Robots", "Commands") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{5E7BA355-7EAC-4A5D-B736-286043AB0A45}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
@@ -193,7 +193,7 @@ namespace Robots.Grasshopper.Commands
 
     public class WaitDI : GH_Component
     {
-        public WaitDI() : base("Wait DI", "WaitDI", "Waits until a digital input is turned on", "Robots", "Commands") { }
+        public WaitDI() : base("Wait DI", "WaitDI", "Stops the program until a digital input is turned on", "Robots", "Commands") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{8A930C8F-3BCE-4476-9E30-3F5C23DB2FB9}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
@@ -244,7 +244,7 @@ namespace Robots.Grasshopper.Commands
 
     public class Message : GH_Component
     {
-        public Message() : base("Message", "Message", "Sends a message to the teach pendant", "Robots", "Commands") { }
+        public Message() : base("Message", "Message", "Sends a text message to the teach pendant", "Robots", "Commands") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{CFAABB24-CAEE-49FC-850F-BE9F70F070CA}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
