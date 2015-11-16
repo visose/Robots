@@ -10,7 +10,7 @@ namespace Robots.Grasshopper
     {
         bool connected = false;
 
-        public RemoteUR() : base("Remote UR", "RemoteUR", "Remote connection with UR robot", "Robots", "Components") { }
+        public RemoteUR() : base("Remote UR", "RemoteUR", "Connects to a UR robot through a network connection", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.quinary;
         public override Guid ComponentGuid => new Guid("{19A5E3A3-E2BC-4798-8C54-13873FD2973A}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconURRemote;

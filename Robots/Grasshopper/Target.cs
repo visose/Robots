@@ -30,7 +30,7 @@ namespace Robots.Grasshopper
          new Param_Integer() { Name = "RobConf", NickName = "F", Description = "Robot configuration", Optional = true }
         };
 
-        public CreateTarget() : base("Create target", "Target", "Creates a target", "Robots", "Components") { }
+        public CreateTarget() : base("Create target", "Target", "Creates or modifies a target. Right click for additional inputs", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{BC68DC2C-EED6-4717-9F49-80A2B21B75B6}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCreateTarget;
@@ -284,7 +284,7 @@ namespace Robots.Grasshopper
          new Param_Integer() { Name = "RobConf", NickName = "F", Description = "Robot configuration", Optional = true }
 };
 
-        public DeconstructTarget() : base("Deconstruct target", "DeTarget", "Deconstructs a target", "Robots", "Components")
+        public DeconstructTarget() : base("Deconstruct target", "DeTarget", "Deconstructs a target. Right click for additional outputs", "Robots", "Components")
         {
 
         }
@@ -415,7 +415,7 @@ namespace Robots.Grasshopper
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Name", "N", "Name", GH_ParamAccess.item, "DefaultTool");
+            pManager.AddTextParameter("Name", "N", "Name", GH_ParamAccess.item, "DefaultGHTool");
             pManager.AddPlaneParameter("TCP", "P", "TCP plane", GH_ParamAccess.item, Plane.WorldXY);
             pManager.AddNumberParameter("Weight", "W", "Tool weight", GH_ParamAccess.item, 0.0);
             pManager.AddMeshParameter("Mesh", "M", "Tool geometry", GH_ParamAccess.item);
@@ -440,7 +440,7 @@ namespace Robots.Grasshopper
             if (!DA.GetData(2, ref weight)) { return; }
             DA.GetData(3, ref mesh);
 
-            var tool = new Tool(name, tcp.Value, weight, mesh?.Value);
+            var tool = new Tool(tcp.Value, name, weight, mesh?.Value);
             DA.SetData(0, new GH_Tool(tool));
         }
     }

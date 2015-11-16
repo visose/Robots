@@ -12,7 +12,7 @@ namespace Robots.Grasshopper
 {
     public class Kinematics : GH_Component
     {
-        public Kinematics() : base("Kinematics", "K", "Inverse and forward kinematics", "Robots", "Components") { }
+        public Kinematics() : base("Kinematics", "K", "Inverse and forward kinematics for a single target", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.quarternary;
         public override Guid ComponentGuid => new Guid("{EFDA05EB-B281-4703-9C9E-B5F98A9B2E1D}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconKinematics;
@@ -21,14 +21,13 @@ namespace Robots.Grasshopper
         {
             pManager.AddParameter(new RobotParameter(), "Robot", "R", "Robot", GH_ParamAccess.item);
             pManager.AddParameter(new TargetParameter(), "Target", "T", "Target", GH_ParamAccess.item);
-            pManager[1].Optional = true;
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddMeshParameter("Robot meshes", "M", "Robot meshes", GH_ParamAccess.list);
             pManager.AddNumberParameter("Joint rotations", "J", "Joint rotations", GH_ParamAccess.list);
-            pManager.AddPlaneParameter("Planes", "P", "Planes", GH_ParamAccess.list);
+            pManager.AddPlaneParameter("Plane", "P", "Plane", GH_ParamAccess.item);
             pManager.AddTextParameter("Errors", "E", "Errors", GH_ParamAccess.list);
         }
 
@@ -38,7 +37,7 @@ namespace Robots.Grasshopper
             GH_Target target = new GH_Target();
 
             if (!DA.GetData(0, ref robot)) { return; }
-            DA.GetData(1, ref target);
+            if (!DA.GetData(1, ref target)) { return; }
 
             var kinematics = robot.Value.Kinematics(target.Value, true);
 
@@ -49,9 +48,8 @@ namespace Robots.Grasshopper
 
             DA.SetDataList(0, kinematics.Meshes.Select(x => new GH_Mesh(x)));
             DA.SetDataList(1, kinematics.JointRotations);
-            DA.SetDataList(2, kinematics.Planes);
+            DA.SetData(2, kinematics.Planes[7]);
             DA.SetDataList(3, kinematics.Errors);
-
         }
     }
 
@@ -90,10 +88,11 @@ namespace Robots.Grasshopper
 
     public class Simulation : GH_Component
     {
-        public Simulation() : base("Program simulation", "Sim", "Simulation of the robot program", "Robots", "Components")
+        public Simulation() : base("Program simulation", "Sim", "Rough simulation of the robot program, right click for playback controls. Currently not factoring acceleration, axis speed limits, aproximation zones, among others", "Robots", "Components")
         {
             form = new AnimForm(this);
         }
+
         public override GH_Exposure Exposure => GH_Exposure.quarternary;
         public override Guid ComponentGuid => new Guid("{6CE35140-A625-4686-B8B3-B734D9A36CFC}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconSimulation;
@@ -109,7 +108,7 @@ namespace Robots.Grasshopper
         {
             pManager.AddMeshParameter("Robot meshes", "M", "Robot meshes", GH_ParamAccess.list);
             pManager.AddNumberParameter("Joint rotations", "J", "Joint rotations", GH_ParamAccess.list);
-            pManager.AddPlaneParameter("Planes", "P", "Planes", GH_ParamAccess.list);
+            pManager.AddPlaneParameter("Planes", "P", "Planes", GH_ParamAccess.item);
             pManager.AddTextParameter("Errors", "E", "Errors", GH_ParamAccess.list);
         }
 
@@ -131,7 +130,7 @@ namespace Robots.Grasshopper
 
             DA.SetDataList(0, kinematics.Meshes.Select(x => new GH_Mesh(x)));
             DA.SetDataList(1, kinematics.JointRotations);
-            DA.SetDataList(2, kinematics.Planes);
+            DA.SetData(2, kinematics.Planes[7]);
             DA.SetDataList(3, kinematics.Errors);
 
             if (form.Visible && form.play.Checked)
@@ -143,6 +142,7 @@ namespace Robots.Grasshopper
                 this.ExpireSolution(true);
             }
         }
+
 
         // Form
         AnimForm form;

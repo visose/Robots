@@ -40,16 +40,14 @@ namespace Robots.Grasshopper
 
         public void DrawViewportMeshes(GH_PreviewMeshArgs args)
         {
-                args.Pipeline.DrawMeshShaded(Value.DisplayMesh,args.Material);
+            args.Pipeline.DrawMeshShaded(Value.DisplayMesh, args.Material);
         }
 
         public void DrawViewportWires(GH_PreviewWireArgs args)
         {
         }
-
     }
 
-   
     public class GH_Program : GH_Goo<Program>
     {
         public GH_Program() { this.Value = null; }
@@ -71,11 +69,11 @@ namespace Robots.Grasshopper
             }
             return false;
         }
-        }
+    }
 
     public class GH_Target : GH_Goo<Target>
     {
-        public GH_Target() { this.Value = Target.Default; }
+        public GH_Target() { this.Value = null; }
         public GH_Target(GH_Target goo) { this.Value = goo.Value; }
         public GH_Target(Target native) { this.Value = native; }
         public override IGH_Goo Duplicate() => new GH_Target(this);
@@ -173,14 +171,22 @@ namespace Robots.Grasshopper
 
             if (source is GH_String)
             {
-                double value = 0;
-                if (GH_Convert.ToDouble_Secondary((source as GH_String).Value, ref value))
+                string[] texts = (source as GH_String).Value.Split(',');
+                double[] values = new double[texts.Length];
+
+                for (int i = 0; i < texts.Length; i++)
+                    if (!GH_Convert.ToDouble_Secondary(texts[i], ref values[i])) return false;
+
+                if (texts.Length == 1)
                 {
-                    Value = new Speed(value);
+                    Value = new Speed(values[0]);
                     return true;
                 }
                 else
-                    return false;
+                {
+                    Value = new Speed(values[0], values[1]);
+                    return true;
+                }
             }
             return false;
         }

@@ -13,7 +13,7 @@ namespace Robots
 {
     public class RobotKUKA : Robot
     {
-        internal RobotKUKA(string model, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io) : base(model, basePlane, baseMesh, joints, io)
+        internal RobotKUKA(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io) : base(model, payload, basePlane, baseMesh, joints, io)
         {
             this.Manufacturer = Manufacturers.KUKA;
             this.Extension = "SRC";
@@ -95,18 +95,6 @@ namespace Robots
 DEF {program.Name}()
 ;Init Code
 BAS (#INITMOV,0)
-$VEL_AXIS[1]=100
-$VEL_AXIS[2]=100
-$VEL_AXIS[3]=100
-$VEL_AXIS[4]=100
-$VEL_AXIS[5]=100
-$VEL_AXIS[6]=100
-$ACC_AXIS[1]=100
-$ACC_AXIS[2]=100
-$ACC_AXIS[3]=100
-$ACC_AXIS[4]=100
-$ACC_AXIS[5]=100
-$ACC_AXIS[6]=100
 $ADVANCE=5
 $APO.CPTP=100
 ");
@@ -136,8 +124,21 @@ $APO.CPTP=100
 
                     if (currentSpeed == null || target.Speed != currentSpeed)
                     {
-                        code.Add($"$VEL={{CP {target.Speed.TranslationSpeed / 1000:0.00000},ORI1 {target.Speed.RotationSpeed:0.000},ORI2 {target.Speed.RotationSpeed:0.000} }}");
-                        currentSpeed = target.Speed;
+                        double rotation = target.Speed.RotationSpeed * 180 / PI;
+                        if (target.Motion != Target.Motions.JointCartesian && target.Motion != Target.Motions.JointRotations)
+                        {
+                            code.Add($"$VEL={{CP {target.Speed.TranslationSpeed / 1000:0.00000},ORI1 {rotation:0.000},ORI2 {rotation:0.000} }}");
+                            //else
+                            // code.Add($"BAS(#VEL_PTP, {target.Speed.AxisSpeed*100:0})");
+                            currentSpeed = target.Speed;
+                        }
+                    }
+
+                    if (target.Motion == Target.Motions.JointCartesian || target.Motion == Target.Motions.JointRotations)
+                    {
+                        double percentage = (target.Speed.AxisSpeed > 0) ? target.Speed.AxisSpeed : (target.Time > 0) ? target.MinTime/target.Time : 0.1;
+                        percentage *= 100;
+                        code.Add($"BAS(#VEL_PTP, {percentage:0})");
                     }
 
                     Plane plane = Plane.Unset;
@@ -156,9 +157,9 @@ $APO.CPTP=100
                         case Target.Motions.JointRotations:
                             {
                                 double[] joints = target.JointRotations;
-                                joints = joints.Select((x, i) => robot.RadianToDegree(x,i)).ToArray();
+                                joints = joints.Select((x, i) => robot.RadianToDegree(x, i)).ToArray();
                                 moveText = $"PTP {{A1 {joints[0]:0.000},A2 {joints[1]:0.000},A3 {joints[2]:0.000},A4 {joints[3]:0.000},A5 {joints[4]:0.000},A6 {joints[5]:0.000},E1 0,E2 0,E3 0,E4 0,E5 0,E6 0}}";
-                                if (target.Zone.IsFlyBy) moveText += " C_PTP";                                
+                                if (target.Zone.IsFlyBy) moveText += " C_PTP";
                                 break;
                             }
 
@@ -192,7 +193,7 @@ $APO.CPTP=100
             {
                 var basePlane = new Plane(Point3d.Origin, -Vector3d.XAxis, -Vector3d.YAxis);
                 double[] eulerAngles = EulerAngles(basePlane, tool.Tcp);
-                string toolTxt =$"$TOOL={{X {tool.Tcp.OriginX:0.000},Y {tool.Tcp.OriginY:0.000},Z {tool.Tcp.OriginZ:0.000},A {eulerAngles[0]:0.000},B {eulerAngles[1]:0.000},C {eulerAngles[2]:0.000} }} ;{tool.Name}";
+                string toolTxt = $"$TOOL={{X {tool.Tcp.OriginX:0.000},Y {tool.Tcp.OriginY:0.000},Z {tool.Tcp.OriginZ:0.000},A {eulerAngles[0]:0.000},B {eulerAngles[1]:0.000},C {eulerAngles[2]:0.000} }} ;{tool.Name}";
                 string load = $"$LOAD.M={tool.Weight}";
                 Point3d centroid = tool.Tcp.Origin / 2;
                 string centroidTxt = $"$LOAD.CM={{X {centroid.X:0.000},Y {centroid.Y:0.000},Z {centroid.Z:0.000},A 0,B 0,C 0}}";

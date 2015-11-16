@@ -11,7 +11,7 @@ namespace Robots
 {
     class RobotABB : Robot
     {
-        internal RobotABB(string model, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io) : base(model, basePlane, baseMesh, joints, io)
+        internal RobotABB(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io) : base(model, payload, basePlane, baseMesh, joints, io)
         {
             this.Manufacturer = Manufacturers.ABB;
             this.Extension = "MOD";
@@ -57,21 +57,11 @@ namespace Robots
                 var code = new List<string>();
                 code.Add("MODULE MainModule");
                 code.Add("VAR extjoint extj := [9E9,9E9,9E9,9E9,9E9,9E9];");
-                // code.Add("VAR confdata conf := [0,-2,1,0];");
                 code.Add("VAR confdata conf := [0,0,0,0];");
 
-                var tools = program.Targets.Select(x => x.Tool).Distinct().ToList();
-                var speeds = program.Targets.Select(x => x.Speed).Distinct().ToList();
-                var zones = program.Targets.Select(x => x.Zone).Distinct().ToList();
-
-                foreach (var tool in tools)
-                    code.Add(Tool(tool));
-
-                for (int i = 0; i < speeds.Count; i++)
-                    code.Add(Speed(speeds[i], i));
-
-                for (int i = 0; i < zones.Count; i++)
-                    if (zones[i].IsFlyBy) code.Add(Zone(zones[i], i));
+                foreach (var tool in program.Tools) code.Add(Tool(tool));
+                foreach (var speed in program.Speeds) code.Add(Speed(speed));
+                foreach (var zone in program.Zones) code.Add(Zone(zone));
 
                 code.Add("PROC Main()");
                 code.Add("ConfJ \\Off;");
@@ -80,8 +70,6 @@ namespace Robots
                 string initCommands = program.InitCommands.Code(program.Robot, new Target(Plane.Unset));
                 if (initCommands.Length > 0)
                     code.Add(initCommands);
-
-                Plane originPlane = new Plane(Point3d.Origin, -Vector3d.XAxis, -Vector3d.YAxis);
 
                 foreach (Target target in program.Targets)
                 {
@@ -93,7 +81,7 @@ namespace Robots
                     {
                         plane = target.Plane;
                         plane.Transform(Transform.PlaneToPlane(robot.basePlane, Plane.WorldXY));
-                        quaternion = Quaternion.Rotation(originPlane, plane);
+                        quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
                     }
 
                     switch (target.Motion)
@@ -142,33 +130,34 @@ namespace Robots
 
             string Tool(Tool tool)
             {
-                Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, tool.Tcp);
+                Plane originPlane = new Plane(Point3d.Origin, -Vector3d.XAxis, -Vector3d.YAxis);
+                Plane tcp = tool.Tcp;
+                tcp.Transform(Transform.PlaneToPlane(Plane.WorldXY, originPlane));
+
+                Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, tcp);
                 double weight = (tool.Weight > 0.001) ? tool.Weight : 0.001;
 
-                Point3d centroid = tool.Tcp.Origin / 2;
+                Point3d centroid = tcp.Origin / 2;
                 if (centroid.DistanceTo(Point3d.Origin) < 0.001)
                     centroid = new Point3d(0, 0, 0.001);
 
-                string pos = $"[{tool.Tcp.OriginX:0.000},{tool.Tcp.OriginY:0.000},{tool.Tcp.OriginZ:0.000}]";
+                string pos = $"[{tcp.OriginX:0.000},{tcp.OriginY:0.000},{tcp.OriginZ:0.000}]";
                 string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
                 string loaddata = $"[{weight:0.000},[{centroid.X:0.000},{centroid.Y:0.000},{centroid.Z:0.000}],[1,0,0,0],0,0,0]";
                 return $"PERS tooldata {tool.Name}:=[TRUE,[{pos},{orient}],{loaddata}];";
             }
 
-            string Speed(Speed speed, int i)
+            string Speed(Speed speed)
             {
-                if (speed.Name == null) speed.Name = $"speed{i:000}";
-                double rotaion = speed.RotationSpeed * (180 / PI);
-                return $"VAR speeddata {speed.Name}:=[{speed.TranslationSpeed:0.00},{rotaion:0.00},200,15];";
+                double rotation = speed.RotationSpeed * (180 / PI);
+                return $"VAR speeddata {speed.Name}:=[{speed.TranslationSpeed:0.00},{rotation:0.00},200,15];";
             }
 
-            string Zone(Zone zone, int i)
+            string Zone(Zone zone)
             {
-                if (zone.Name == null) zone.Name = $"zone{i:000}";
                 double angle = 0.1;
                 return $"VAR zonedata {zone.Name}:=[FALSE,{zone.Distance:0.00},{zone.Rotation:0.00},{zone.Distance:0.00},{angle:0.00},{zone.Rotation:0.00},{angle:0.00}];";
             }
         }
-
     }
 }

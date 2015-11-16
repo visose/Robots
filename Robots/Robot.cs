@@ -19,25 +19,34 @@ namespace Robots
         public Manufacturers Manufacturer { get; protected set; }
         public string Model => $"{Manufacturer.ToString()}.{model}";
         internal string Extension { get; set; }
-        public RobotIO IO { get; }
+        public double Payload { get; }
+        internal RobotIO IO { get; }
         public Mesh DisplayMesh { get; }
         protected Plane basePlane;
         readonly Mesh baseMesh;
-        readonly Joint[] joints;
+        internal Joint[] Joints { get; }
 
-        public Plane[] GetPlanes() => joints.Select(x => x.Plane).ToArray();
+        public Plane[] GetPlanes() => Joints.Select(x => x.Plane).ToArray();
         
 
-        internal Robot(string model, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io)
+        internal Robot(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io)
         {
             this.model = model;
+            this.Payload = payload;
             this.basePlane = basePlane;
             this.baseMesh = baseMesh;
-            this.joints = joints;
+            this.Joints = joints;
             this.IO = io;
 
             for (int i = 0; i < 6; i++)
+            {
                 joints[i].Range = new Interval(DegreeToRadian(joints[i].Range.T0, i), DegreeToRadian(joints[i].Range.T1, i));
+
+                if (joints[i].MaxSpeed == 0)
+                    joints[i].MaxSpeed = double.MaxValue;
+                else
+                    joints[i].MaxSpeed *= PI / 180;
+            }
 
             var kinematics = Kinematics(new Target(GetStartPose()));
             for (int i = 0; i < 6; i++)
@@ -62,7 +71,7 @@ namespace Robots
 
             for (int i = 0; i < 6; i++)
             {
-                var dupMesh = joints[i].Mesh.DuplicateMesh();
+                var dupMesh = Joints[i].Mesh.DuplicateMesh();
                 dupMesh.Transform(transform);
                 mesh.Append(dupMesh);
             }
@@ -169,6 +178,7 @@ namespace Robots
             var modelName = robotElement.Attribute(XName.Get("model")).Value;
             var manufacturer = (Manufacturers)Enum.Parse(typeof(Manufacturers), robotElement.Attribute(XName.Get("manufacturer")).Value);
             var baseMesh = meshes[0].DuplicateMesh();
+            double payload = Convert.ToDouble(robotElement.Attribute(XName.Get("payload")).Value);
 
             var jointElements = robotElement.Element(XName.Get("Joints")).Descendants().ToArray();
             Joint[] joints = new Joint[6];
@@ -184,7 +194,7 @@ namespace Robots
                 double maxSpeed = Convert.ToDouble(jointElement.Attribute(XName.Get("maxspeed")).Value);
                 Mesh mesh = meshes[i + 1].DuplicateMesh();
 
-                joints[i] = new Joint() { A = a, D = d, Range = range, MaxSpeed = maxSpeed, Mesh = mesh };
+                joints[i] = new Joint() { Index = i,  A = a, D = d, Range = range, MaxSpeed = maxSpeed, Mesh = mesh };
             }
 
             var ioElement = robotElement.Element(XName.Get("IO"));
@@ -198,11 +208,11 @@ namespace Robots
             switch (manufacturer)
             {
                 case (Manufacturers.ABB):
-                    return new RobotABB(modelName, basePlane, baseMesh, joints, io);
+                    return new RobotABB(modelName, payload, basePlane, baseMesh, joints, io);
                 case (Manufacturers.KUKA):
-                    return new RobotKUKA(modelName, basePlane, baseMesh, joints, io);
+                    return new RobotKUKA(modelName, payload, basePlane, baseMesh, joints, io);
                 case (Manufacturers.UR):
-                    return new RobotUR(modelName, basePlane, baseMesh, joints, io);
+                    return new RobotUR(modelName, payload, basePlane, baseMesh, joints, io);
                 default:
                     return null;
             }
@@ -247,20 +257,21 @@ namespace Robots
 
         internal class Joint
         {
-            public double A { get; set; }
-            public double D { get; set; }
-            public Interval Range { get; set; }
-            public double MaxSpeed { get; set; }
-            public Plane Plane { get; set; }
-            public Mesh Mesh { get; set; }
+            internal int Index { get; set; }
+            internal double A { get; set; }
+            internal double D { get; set; }
+            internal Interval Range { get; set; }
+            internal double MaxSpeed { get; set; }
+            internal Plane Plane { get; set; }
+            internal Mesh Mesh { get; set; }
         }
 
-        public class RobotIO
+        internal class RobotIO
         {
-            public string[] DO { get; internal set; }
-            public string[] DI { get; internal set; }
-            public string[] AO { get; internal set; }
-            public string[] AI { get; internal set; }
+            internal string[] DO { get; set; }
+            internal string[] DI { get; set; }
+            internal string[] AO { get; set; }
+            internal string[] AI { get; set; }
         }
 
         [Serializable]
