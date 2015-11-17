@@ -232,7 +232,8 @@ namespace Robots
                             joints[j] = joint;
                         }
                     }
-                    target.jointRotations = closestKinematics.JointRotations;
+                    target.jointRotations = joints;
+                   // target.jointRotations = closestKinematics.JointRotations;
                     target.plane = closestKinematics.Planes[7];
 
                     closestKinematics = program.Robot.Kinematics(new Target(joints, target.Tool));
