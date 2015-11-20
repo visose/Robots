@@ -32,7 +32,38 @@ namespace Robots
             return plane;
         }
 
-        public static string AssemblyDirectory
+        /// <summary>
+        /// Quaternion interpolation based on: http://www.grasshopper3d.com/group/lobster/forum/topics/lobster-reloaded
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="t"></param>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <returns></returns>
+        internal static Plane CartesianLerp(Plane a, Plane b, double t, double min, double max)
+        {
+            t = (t - min) / (max - min);
+            var newOrigin = a.Origin * (1 - t) + b.Origin * t;
+
+            Quaternion q = Quaternion.Rotation(a, b);
+            double angle;
+            Vector3d axis;
+            q.GetRotation(out angle, out axis);
+            angle = (angle > PI) ? angle - 2 * PI : angle;
+            a.Rotate(t * angle, axis, a.Origin);
+
+            a.Origin = newOrigin;
+            return a;
+        }
+
+        internal static double[] JointLerp(double[] a, double[] b, double t, double min, double max)
+        {
+            t = (t - min) / (max - min);
+            return a.Zip(b, (x, y) => (x * (1 - t) + y * t)).ToArray();
+        }
+
+        internal static string AssemblyDirectory
         {
             get
             {

@@ -1,17 +1,14 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Drawing;
-
-using Rhino.Geometry;
-using Grasshopper;
+﻿using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
-using Grasshopper.Kernel.Types;
-using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Parameters;
-using static System.Math;
-using static Robots.Util;
+using Grasshopper.Kernel.Special;
+using Grasshopper.Kernel.Types;
+using Rhino.Geometry;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
 
 namespace Robots.Grasshopper
 {
@@ -243,29 +240,6 @@ namespace Robots.Grasshopper
         IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index) => null;
         bool IGH_VariableParameterComponent.DestroyParameter(GH_ParameterSide side, int index) => false;
         void IGH_VariableParameterComponent.VariableParameterMaintenance() { }
-
-        class ConfigParam : GH_ValueList
-        {
-            public override string Name => "Flag fields";
-            public override string Description => "Modified value list parameter for flag fields";
-            public override Guid ComponentGuid => new Guid("{0381B555-BF9C-4D68-8E5C-10B2FCB16F30}");
-
-            protected override void OnVolatileDataCollected()
-            {
-                int config = 0;
-                if (VolatileDataCount > 0)
-                {
-                    var values = VolatileData.get_Branch(0);
-                    foreach (var value in values)
-                    {
-                        if (value is GH_Integer)
-                            config += (value as GH_Integer).Value;
-                    }
-                }
-                VolatileData.Clear();
-                AddVolatileData(new GH_Path(0), 0, new GH_Integer(config));
-            }
-        }
     }
 
     public class DeconstructTarget : GH_Component, IGH_VariableParameterComponent
@@ -406,43 +380,28 @@ namespace Robots.Grasshopper
         void IGH_VariableParameterComponent.VariableParameterMaintenance() { }
     }
 
-    public class CreateTool : GH_Component
+
+    public class ConfigParam : GH_ValueList
     {
-        public CreateTool() : base("Create tool", "Tool", "Creates a tool or end effector.", "Robots", "Components") { }
-        public override GH_Exposure Exposure => GH_Exposure.secondary;
-        public override Guid ComponentGuid => new Guid("{E59E634B-7AD5-4682-B2C1-F18B73AE05C6}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconTool;
+        public override string Name => "Flag fields";
+        public override string Description => "Modified value list parameter for flag fields";
+        public override Guid ComponentGuid => new Guid("{0381B555-BF9C-4D68-8E5C-10B2FCB16F30}");
+        public override GH_Exposure Exposure => GH_Exposure.hidden;
 
-        protected override void RegisterInputParams(GH_InputParamManager pManager)
+        protected override void OnVolatileDataCollected()
         {
-            pManager.AddTextParameter("Name", "N", "Name", GH_ParamAccess.item, "DefaultGHTool");
-            pManager.AddPlaneParameter("TCP", "P", "TCP plane", GH_ParamAccess.item, Plane.WorldXY);
-            pManager.AddNumberParameter("Weight", "W", "Tool weight", GH_ParamAccess.item, 0.0);
-            pManager.AddMeshParameter("Mesh", "M", "Tool geometry", GH_ParamAccess.item);
+            int config = 0;
+            if (VolatileDataCount > 0)
+            {
+                var values = VolatileData.get_Branch(0);
 
-            pManager[3].Optional = true;
-        }
+                foreach (var value in values)
+                    if (value is GH_Integer)
+                        config += (value as GH_Integer).Value;
+            }
 
-        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
-        {
-            pManager.AddParameter(new ToolParameter(), "Tool", "T", "Tool", GH_ParamAccess.item);
-        }
-
-        protected override void SolveInstance(IGH_DataAccess DA)
-        {
-            string name = null;
-            GH_Plane tcp = null;
-            double weight = 0;
-            GH_Mesh mesh = null;
-
-            if (!DA.GetData(0, ref name)) { return; }
-            if (!DA.GetData(1, ref tcp)) { return; }
-            if (!DA.GetData(2, ref weight)) { return; }
-            DA.GetData(3, ref mesh);
-
-            var tool = new Tool(tcp.Value, name, weight, mesh?.Value);
-            DA.SetData(0, new GH_Tool(tool));
+            VolatileData.Clear();
+            AddVolatileData(new GH_Path(0), 0, new GH_Integer(config));
         }
     }
-
 }

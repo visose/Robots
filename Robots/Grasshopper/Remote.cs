@@ -49,10 +49,10 @@ namespace Robots.Grasshopper
             if (!DA.GetData("Pause", ref pause)) { return; }
 
             if (connect && !connected) { robotUR.Remote.Connect(); connected = true; }
-            if (!connect) { robotUR.Remote.Disconnect(); connected = false; }
-            if (upload) robotUR.Remote.UploadProgram(program.Value);
-            if (play) robotUR.Remote.Play();
-            if (pause) robotUR.Remote.Pause();
+            if (!connect && connected) { robotUR.Remote.Disconnect(); connected = false; }
+            if (upload && connected) robotUR.Remote.UploadProgram(program.Value);
+            if (play && connected) robotUR.Remote.Play();
+            if (pause && connected) robotUR.Remote.Pause();
 
             DA.SetDataList(0, robotUR.Remote.Log);
         }

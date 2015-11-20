@@ -30,6 +30,8 @@ namespace Robots
         public double Time { get; internal set; }
         public double MinTime { get; internal set; }
         public int LeadingJoint { get; internal set; }
+        public bool ChangesConfiguration { get; internal set; } = false;
+        public int Index { get; internal set; }
 
         public Target(Plane plane, Tool tool = null, Motions motion = Motions.JointCartesian, Speed speed = null, Zone zone = null, IEnumerable<Commands.ICommand> commands = null, RobotConfigurations configuration = 0)
         {
