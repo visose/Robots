@@ -52,7 +52,7 @@ namespace Robots.Grasshopper.Commands
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddParameter(new CommandParameter(), "Commands", "C", "Group of commands", GH_ParamAccess.list);      
+            pManager.AddParameter(new CommandParameter(), "Commands", "C", "Group of commands", GH_ParamAccess.list);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -62,12 +62,12 @@ namespace Robots.Grasshopper.Commands
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            var commands = new List<GH_Command> ();
+            var commands = new List<GH_Command>();
 
             if (!DA.GetDataList(0, commands)) { return; }
 
             var command = new Robots.Commands.Group();
-            command.AddRange(commands.Select(x=>x.Value));
+            command.AddRange(commands.Select(x => x.Value));
             DA.SetData(0, new GH_Command(command));
         }
     }
@@ -99,7 +99,7 @@ namespace Robots.Grasshopper.Commands
             if (!DA.GetData(0, ref DO)) { return; }
             if (!DA.GetData(1, ref value)) { return; }
 
-            var command = new Robots.Commands.SetDO(DO,value);
+            var command = new Robots.Commands.SetDO(DO, value);
             DA.SetData(0, new GH_Command(command));
         }
     }
@@ -156,7 +156,7 @@ namespace Robots.Grasshopper.Commands
         {
             int DO = 0;
 
-            if (!DA.GetData(0, ref DO)) { return; }
+            if (!DA.GetData(0, ref DO)) return;
 
             var command = new Robots.Commands.PulseDO(DO);
             DA.SetData(0, new GH_Command(command));
@@ -180,14 +180,14 @@ namespace Robots.Grasshopper.Commands
             pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
         }
 
-        protected override void SolveInstance(IGH_DataAccess DA)
+        protected override void SolveInstance(IGH_DataAccess da)
         {
             double time = 0;
 
-            if (!DA.GetData(0, ref time)) { return; }
+            if (!da.GetData(0, ref time))  return; 
 
             var command = new Robots.Commands.Wait(time);
-            DA.SetData(0, new GH_Command(command));
+            da.SetData(0, new GH_Command(command));
         }
     }
 

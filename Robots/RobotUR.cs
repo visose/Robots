@@ -160,19 +160,27 @@ namespace Robots
                 }
             }
 
-            public void Send(string message)
+            public void Send(string message, bool verbose = false)
             {
-                if (!IsConnected) return;
-                message += '\n';
+                if (!IsConnected)
+                {
+                    Log.Add("Can't send message, not connected");
+                    return;
+                }
+
+                    message += '\n';
                 var asen = new System.Text.ASCIIEncoding();
                 byte[] byteArray = asen.GetBytes(message);
                 NetworkStream stream = client.GetStream();
                 stream.Write(byteArray, 0, byteArray.Length);
 
-                string firstLine = message.Substring(0, message.IndexOf('\n'));
-                if (firstLine.Length + 1 < message.Length) firstLine += " ...";
-                Log.Add($"Sending: {firstLine}");
-            }
+                if (verbose)
+                {
+                    string firstLine = message.Substring(0, message.IndexOf('\n'));
+                    if (firstLine.Length + 1 < message.Length) firstLine += " ...";
+                    Log.Add($"Sending: {firstLine}");
+                }
+                }
 
             public void UploadProgram(Program program)
             {

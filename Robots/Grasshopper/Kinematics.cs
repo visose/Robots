@@ -88,7 +88,7 @@ namespace Robots.Grasshopper
 
     public class Simulation : GH_Component
     {
-        public Simulation() : base("Program simulation", "Sim", "Rough simulation of the robot program, right click for playback controls. Currently not factoring acceleration, axis speed limits, aproximation zones, among others", "Robots", "Components")
+        public Simulation() : base("Program simulation", "Sim", "Rough simulation of the robot program, right click for playback controls", "Robots", "Components")
         {
             form = new AnimForm(this);
         }
