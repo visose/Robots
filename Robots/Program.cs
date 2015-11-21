@@ -130,7 +130,7 @@ namespace Robots
             internal CheckProgram(Program program, IEnumerable<Target> targets)
             {
                 this.program = program;
-                var dupTargets = targets.Select(x => 
+                var dupTargets = targets.Select(x =>
                 {
                     var dup = x.Duplicate();
                     dup.Index = x.Index;
@@ -181,34 +181,53 @@ namespace Robots
                         double realStep = distance / divisions;
 
                         double t = realStep;
-                        double time = 0; 
-                        double minTime = 0;
+                        double time = 0;
+                        double lastTime = 0;
+                        double currentTime = 0;
                         bool changesConfiguration = false;
+
+                        var prevInterTarget = target.Duplicate();
+                        prevInterTarget.plane = targets[i - 1].Plane;
+                        prevInterTarget.jointRotations = targets[i - 1].JointRotations;
+                        prevInterTarget.Configuration = targets[i - 1].Configuration;
+                        prevInterTarget.Index = target.Index;
+                        prevInterTarget.Commands.Clear();
 
                         for (int j = 0; j < divisions; j++)
                         {
                             var interTarget = target.Duplicate();
-                            interTarget.Index = target.Index;
-                            interTarget.Commands.Clear();
-                            Target prevTarget = animTargets[animTargets.Count - 1];
-                            Plane plane = CartesianLerp(targets[i-1].Plane, target.Plane, t, 0, distance);
+                            interTarget.Index = prevInterTarget.Index;
+                            Plane plane = CartesianLerp(targets[i - 1].Plane, target.Plane, t, 0, distance);
                             interTarget.Plane = plane;
-                            GetClosestSolution(prevTarget, interTarget);
-                            GetSlowestTime(prevTarget, interTarget);
+                        
+                            GetClosestSolution(prevInterTarget, interTarget);
+                            if (program.Errors.Count > 0) break;
+                            GetSlowestTime(prevInterTarget, interTarget);
 
+                            double thisTime = interTarget.Time;
+                            time += thisTime;
+
+                            interTarget.Time = currentTime;
                             if (interTarget.ChangesConfiguration) changesConfiguration = true;
 
-                            animTargets.Add(interTarget);
+                            if (j > 0 && (Abs(thisTime - lastTime) > 1E-08 || interTarget.ChangesConfiguration))
+                            {
+                                prevInterTarget.Time = currentTime;
+                                animTargets.Add(prevInterTarget);
+                                currentTime = 0;
+                            }
+
+                            prevInterTarget = interTarget;
+                            currentTime += thisTime;
+                            lastTime = thisTime;
                             t += realStep;
-                            time += interTarget.Time;
-                            minTime += interTarget.MinTime;
+                            if (j == divisions - 1) animTargets.Add(interTarget);
                         }
 
                         Target last = animTargets[animTargets.Count - 1];
                         target.plane = last.Plane;
                         target.jointRotations = last.JointRotations;
                         target.Time = time;
-                        target.MinTime = minTime;
                         target.Configuration = last.Configuration;
                         target.ChangesConfiguration = changesConfiguration;
                     }
@@ -270,6 +289,7 @@ namespace Robots
                         target.ChangesConfiguration = true;
                         program.Warnings.Add($"Configuration changed to \"{closestConfiguration.ToString()}\" on target {target.Index}");
                     }
+
                     target.Configuration = closestConfiguration;
 
                     double[] joints = new double[6];
@@ -464,7 +484,7 @@ namespace Robots
                     var joints = JointLerp(prevTarget.target.JointRotations, simuTarget.target.JointRotations, currentTime, prevTarget.time, simuTarget.time);
                     return program.Robot.Kinematics(new Target(joints, simuTarget.target.Tool), true);
                 }
-                else
+                else if (simuTarget.target.Motion == Target.Motions.Linear)
                 {
                     Plane prevPlane = prevTarget.target.Plane;
                     if (prevTarget.target.Tool != simuTarget.target.Tool)
@@ -474,6 +494,10 @@ namespace Robots
                     //Target.RobotConfigurations configuration = simuTarget.target.Configuration;
                     var kinematics = program.Robot.Kinematics(new Target(plane, simuTarget.target.Tool, configuration: configuration), true);
                     return kinematics;
+                }
+                else
+                {
+                    return null;
                 }
             }
 

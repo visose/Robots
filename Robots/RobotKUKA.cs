@@ -121,7 +121,6 @@ $APO.CPTP=100
                 Tool currentTool = null;
                 Speed currentSpeed = null;
                 Zone currentZone = null;
-                Plane KukaBasePlane = new Plane(Point3d.Origin, Vector3d.XAxis, Vector3d.YAxis);
 
                 foreach (Target target in program.Targets)
                 {
@@ -162,7 +161,7 @@ $APO.CPTP=100
                     {
                         plane = target.Plane;
                         plane.Transform(Transform.PlaneToPlane(robot.basePlane, Plane.WorldXY));
-                        euler = EulerAngles(KukaBasePlane, plane);
+                        euler = EulerAngles(Plane.WorldXY, plane);
                     }
 
                     switch (target.Motion)
