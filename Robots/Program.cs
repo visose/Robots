@@ -41,7 +41,7 @@ namespace Robots
             var checkProgram = new CheckProgram(this, targets);
             this.Targets = checkProgram.fixedTargets;
 
-            this.simulation = new Simulation(this, checkProgram.animTargets);
+            this.simulation = new Simulation(this, checkProgram.keyframes);
             this.Duration = simulation.duration;
 
             if (Errors.Count == 0)
@@ -123,7 +123,7 @@ namespace Robots
         {
             Program program;
             internal List<Target> fixedTargets = new List<Target>();
-            internal List<Target> animTargets = new List<Target>();
+            internal List<Target> keyframes = new List<Target>();
             int limit = -1;
             int joint = -1;
 
@@ -165,13 +165,13 @@ namespace Robots
                         target.plane = kinematics.Planes[7];
                         program.Errors.AddRange(kinematics.Errors);
                         if (i > 0) GetSlowestTime(targets[i - 1], target);
-                        animTargets.Add(target);
+                        keyframes.Add(target);
                     }
                     else if (target.Motion == Target.Motions.JointCartesian)
                     {
                         GetClosestSolution(targets[i - 1], target);
                         GetSlowestTime(targets[i - 1], target);
-                        animTargets.Add(target);
+                        keyframes.Add(target);
                     }
                     else if (target.Motion == Target.Motions.Linear)
                     {
@@ -213,7 +213,7 @@ namespace Robots
                             if (j > 0 && (Abs(thisTime - lastTime) > 1E-08 || interTarget.ChangesConfiguration))
                             {
                                 prevInterTarget.Time = currentTime;
-                                animTargets.Add(prevInterTarget);
+                                keyframes.Add(prevInterTarget);
                                 currentTime = 0;
                             }
 
@@ -221,10 +221,10 @@ namespace Robots
                             currentTime += thisTime;
                             lastTime = thisTime;
                             t += realStep;
-                            if (j == divisions - 1) animTargets.Add(interTarget);
+                            if (j == divisions - 1) keyframes.Add(interTarget);
                         }
 
-                        Target last = animTargets[animTargets.Count - 1];
+                        Target last = keyframes[keyframes.Count - 1];
                         target.plane = last.Plane;
                         target.jointRotations = last.JointRotations;
                         target.Time = time;
@@ -390,7 +390,7 @@ namespace Robots
         {
             Program program;
             internal double duration;
-            List<SimuTarget> simuTargets = new List<SimuTarget>();
+            List<SimuTarget> keyframes = new List<SimuTarget>();
 
             double currentTime = 0;
             int currentTarget = 0;
@@ -404,14 +404,14 @@ namespace Robots
             double Initialize(List<Target> targets)
             {
                 double time = 0;
-                simuTargets.Add(new SimuTarget(0, targets[0]));
+                keyframes.Add(new SimuTarget(0, targets[0]));
 
                 for (int i = 1; i < targets.Count; i++)
                 {
                     var target = targets[i];
 
                     time += target.Time;
-                    simuTargets.Add(new SimuTarget(time, target));
+                    keyframes.Add(new SimuTarget(time, target));
 
                     {
                         double waitTime = 0;
@@ -424,7 +424,7 @@ namespace Robots
                         if (waitTime > Tol)
                         {
                             time += waitTime;
-                            simuTargets.Add(new SimuTarget(time, target));
+                            keyframes.Add(new SimuTarget(time, target));
                         }
                     }
                 }
@@ -446,16 +446,16 @@ namespace Robots
 
             internal Robot.KinematicSolution Step(double time, bool isNormalized)
             {
-                if (simuTargets.Count == 1) return program.Robot.Kinematics(simuTargets[0].target, true);
+                if (keyframes.Count == 1) return program.Robot.Kinematics(keyframes[0].target, true);
 
                 if (isNormalized) time *= duration;
                 time = Clamp(time, 0, duration);
 
                 if (time >= currentTime)
                 {
-                    for (int i = currentTarget; i < simuTargets.Count - 1; i++)
+                    for (int i = currentTarget; i < keyframes.Count - 1; i++)
                     {
-                        if (simuTargets[i + 1].time >= time)
+                        if (keyframes[i + 1].time >= time)
                         {
                             currentTarget = i;
                             break;
@@ -466,7 +466,7 @@ namespace Robots
                 {
                     for (int i = currentTarget; i >= 0; i--)
                     {
-                        if (simuTargets[i].time <= time)
+                        if (keyframes[i].time <= time)
                         {
                             currentTarget = i;
                             break;
@@ -476,8 +476,8 @@ namespace Robots
 
                 currentTime = time;
 
-                var simuTarget = simuTargets[currentTarget + 1];
-                var prevTarget = simuTargets[currentTarget];
+                var simuTarget = keyframes[currentTarget + 1];
+                var prevTarget = keyframes[currentTarget];
 
                 if (simuTarget.target.Motion == Target.Motions.JointCartesian || simuTarget.target.Motion == Target.Motions.JointRotations)
                 {

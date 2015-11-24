@@ -25,7 +25,7 @@ namespace Robots
 
         public override double DegreeToRadian(double degree, int i)
         {
-            double radian = degree * PI / 180;
+            double radian = degree.ToRadians();
             if (i == 2) radian -= 0.5 * PI;
             // if (i == 5) radian += PI;
             radian = -radian;
@@ -34,11 +34,10 @@ namespace Robots
 
         public override double RadianToDegree(double radian, int i)
         {
-            double degree = -radian;
-            if (i == 2) degree += 0.5 * PI;
+            radian = -radian;
+            if (i == 2) radian += 0.5 * PI;
             // if (i == 5) degree -= PI;
-            degree = degree * 180 / PI;
-            return degree;
+            return radian.ToDegrees();
         }
 
 
@@ -76,7 +75,7 @@ namespace Robots
 
             for (int i = 0; i < 3; i++)
             {
-                values[i] *= 180.0 / PI;
+                values[i] = values[i].ToDegrees();
                 if (Abs(values[i] - -180.0) < Tol) values[i] = 180.0;
             }
 
@@ -108,7 +107,7 @@ DEF {program.Name}()
 INT I
 BAS (#INITMOV,0)
 FOR I=1 TO 6
-$VEL_AXIS[I] = 100 ;all axis velocities to 100%
+$VEL_AXIS[I] = 100
 ENDFOR
 $ADVANCE=5
 $APO.CPTP=100
@@ -138,7 +137,7 @@ $APO.CPTP=100
 
                     if (currentSpeed == null || target.Speed != currentSpeed)
                     {
-                        double rotation = target.Speed.RotationSpeed * 180 / PI;
+                        double rotation = target.Speed.RotationSpeed.ToDegrees();
                         if (target.Motion != Target.Motions.JointCartesian && target.Motion != Target.Motions.JointRotations)
                         {
                             code.Add($"$VEL={{CP {target.Speed.TranslationSpeed / 1000:0.00000},ORI1 {rotation:0.000},ORI2 {rotation:0.000} }}");

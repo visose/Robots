@@ -114,16 +114,19 @@ namespace Robots.Grasshopper
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Name", "N", "Name", GH_ParamAccess.item, "DefaultGHTool");
+            pManager.AddTextParameter("Name", "N", "Tool name", GH_ParamAccess.item, "DefaultGHTool");
             pManager.AddPlaneParameter("TCP", "P", "TCP plane", GH_ParamAccess.item, Plane.WorldXY);
+            pManager.AddPlaneParameter("Calibration", "C", "4 point TCP calibration. Orient the tool in 4 different ways around the same point in space and input the 4 planes that correspond to the flange", GH_ParamAccess.list);
             pManager.AddNumberParameter("Weight", "W", "Tool weight", GH_ParamAccess.item, 0.0);
             pManager.AddMeshParameter("Mesh", "M", "Tool geometry", GH_ParamAccess.item);
-            pManager[3].Optional = true;
+            pManager[2].Optional = true;
+            pManager[4].Optional = true;
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddParameter(new ToolParameter(), "Tool", "T", "Tool", GH_ParamAccess.item);
+            pManager.AddPlaneParameter("TCP", "P", "TCP plane. It might be different from the original if the 4 point calibration is used", GH_ParamAccess.item);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -132,14 +135,26 @@ namespace Robots.Grasshopper
             GH_Plane tcp = null;
             double weight = 0;
             GH_Mesh mesh = null;
+            List<GH_Plane> planes = new List<GH_Plane>();
 
             if (!DA.GetData(0, ref name)) { return; }
             if (!DA.GetData(1, ref tcp)) { return; }
-            if (!DA.GetData(2, ref weight)) { return; }
-            DA.GetData(3, ref mesh);
+            DA.GetDataList(2, planes);
+            if (!DA.GetData(3, ref weight)) { return; }
+            DA.GetData(4, ref mesh);
 
             var tool = new Tool(tcp.Value, name, weight, mesh?.Value);
+
+            if (planes.Count > 0)
+            {
+                if (planes.Count != 4)
+                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " Calibration input must be 4 planes");
+                else
+                    tool.FourPointCalibration(planes[0].Value, planes[1].Value, planes[2].Value, planes[3].Value);
+            }
+
             DA.SetData(0, new GH_Tool(tool));
+            DA.SetData(1, tool.Tcp);
         }
     }
 }
