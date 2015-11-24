@@ -23,7 +23,7 @@ namespace Robots
 
         public override double DegreeToRadian(double degree, int i)
         {
-            double radian = degree * PI / 180;
+            double radian = degree.ToRadians();
             if (i == 1) radian = -radian + PI * 0.5;
             if (i == 2) radian *= -1;
             if (i == 4) radian *= -1;
@@ -35,8 +35,7 @@ namespace Robots
             if (i == 1) { radian -= PI * 0.5; radian = -radian; }
             if (i == 2) radian *= -1;
             if (i == 4) radian *= -1;
-            double degree = radian * 180 / PI;
-            return degree;
+            return radian.ToDegrees();
         }
 
         class RapidPostProcessor
@@ -149,14 +148,14 @@ namespace Robots
 
             string Speed(Speed speed)
             {
-                double rotation = speed.RotationSpeed * (180 / PI);
+                double rotation = speed.RotationSpeed.ToDegrees();
                 return $"VAR speeddata {speed.Name}:=[{speed.TranslationSpeed:0.00},{rotation:0.00},200,15];";
             }
 
             string Zone(Zone zone)
             {
-                double angle = 0.1;
-                return $"VAR zonedata {zone.Name}:=[FALSE,{zone.Distance:0.00},{zone.Rotation:0.00},{zone.Distance:0.00},{angle:0.00},{zone.Rotation:0.00},{angle:0.00}];";
+                double angle = zone.Rotation.ToDegrees();    
+                return $"VAR zonedata {zone.Name}:=[FALSE,{zone.Distance:0.00},{zone.Distance:0.00},{zone.Distance:0.00},{angle:0.00},{zone.Distance:0.00},{angle:0.00}];";
             }
         }
     }

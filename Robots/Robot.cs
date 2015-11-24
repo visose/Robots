@@ -26,7 +26,7 @@ namespace Robots
         readonly Mesh baseMesh;
         internal Joint[] Joints { get; }
 
-        public Plane[] GetPlanes() => Joints.Select(x => x.Plane).ToArray();
+      //  public Plane[] GetPlanes() => Joints.Select(x => x.Plane).ToArray();
         
 
         internal Robot(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints, RobotIO io)
@@ -45,7 +45,7 @@ namespace Robots
                 if (joints[i].MaxSpeed == 0)
                     joints[i].MaxSpeed = double.MaxValue;
                 else
-                    joints[i].MaxSpeed *= PI / 180;
+                    joints[i].MaxSpeed = joints[i].MaxSpeed.ToRadians();
             }
 
             var kinematics = Kinematics(new Target(GetStartPose()));

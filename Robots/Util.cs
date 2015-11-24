@@ -73,5 +73,15 @@ namespace Robots
                 return Path.GetDirectoryName(path);
             }
         }
+
+        internal static double ToRadians(this double value)
+        {
+            return value * (PI / 180);
+        }
+
+        internal static double ToDegrees(this double value)
+        {
+            return value * (180 / PI);
+        }
     }
 }
