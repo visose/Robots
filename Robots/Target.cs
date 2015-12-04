@@ -338,7 +338,7 @@ namespace Robots
             Default = new Speed(100, PI, "DefaultSpeed");
         }
 
-        public Speed(double translation = 100, double rotationSpeed = PI, string name = null)
+        public Speed(double translation = 100, double rotationSpeed = PI/2, string name = null)
         {
             this.Name = name;
             this.TranslationSpeed = translation;

@@ -23,7 +23,9 @@ namespace Robots
         public List<string> Errors { get; } = new List<string>();
         public List<string> Code { get; }
         public bool HasCustomCode { get; } = false;
-        public double Duration { get; }
+        public double Duration => simulation.duration;
+        public Target CurrentSimulationTarget => simulation.CurrentProgramTarget;
+        public double CurrentSimulationTime => simulation.currentTime;
 
         Simulation simulation;
 
@@ -42,7 +44,6 @@ namespace Robots
             this.Targets = checkProgram.fixedTargets;
 
             this.simulation = new Simulation(this, checkProgram.keyframes);
-            this.Duration = simulation.duration;
 
             if (Errors.Count == 0)
                 Code = Robot.Code(this);
@@ -199,7 +200,7 @@ namespace Robots
                             interTarget.Index = prevInterTarget.Index;
                             Plane plane = CartesianLerp(targets[i - 1].Plane, target.Plane, t, 0, distance);
                             interTarget.Plane = plane;
-                        
+
                             GetClosestSolution(prevInterTarget, interTarget);
                             if (program.Errors.Count > 0) break;
                             GetSlowestTime(prevInterTarget, interTarget);
@@ -330,14 +331,14 @@ namespace Robots
                 double deltaAxisTime = 0;
                 int leadingJoint = -1;
 
-                for (int j = 0; j < 6; j++)
+                for (int i = 0; i < 6; i++)
                 {
-                    double deltaCurrentAxisTime = Abs(target.JointRotations[j] - prevTarget.JointRotations[j]) / program.Robot.Joints[j].MaxSpeed;
+                    double deltaCurrentAxisTime = Abs(target.JointRotations[i] - prevTarget.JointRotations[i]) / program.Robot.Joints[i].MaxSpeed;
 
                     if (deltaCurrentAxisTime > deltaAxisTime)
                     {
                         deltaAxisTime = deltaCurrentAxisTime;
-                        leadingJoint = j;
+                        leadingJoint = i;
                     }
                 }
 
@@ -345,12 +346,13 @@ namespace Robots
                 double[] deltaTimes = new double[] { deltaLinearTime, deltaRotationTime, deltaAxisTime };
                 double deltaTime = 0;
                 int deltaIndex = -1;
-                for (int j = 0; j < deltaTimes.Length; j++)
+
+                for (int i = 0; i < deltaTimes.Length; i++)
                 {
-                    if (deltaTimes[j] > deltaTime)
+                    if (deltaTimes[i] > deltaTime)
                     {
-                        deltaTime = deltaTimes[j];
-                        deltaIndex = j;
+                        deltaTime = deltaTimes[i];
+                        deltaIndex = i;
                     }
                 }
 
@@ -392,8 +394,10 @@ namespace Robots
             internal double duration;
             List<SimuTarget> keyframes = new List<SimuTarget>();
 
-            double currentTime = 0;
-            int currentTarget = 0;
+            internal double currentTime = 0;
+            internal int currentTarget = 0;
+
+            internal Target CurrentProgramTarget => keyframes[currentTarget].target; 
 
             internal Simulation(Program program, List<Target> targets)
             {
@@ -415,9 +419,8 @@ namespace Robots
 
                     {
                         double waitTime = 0;
-                        var commands = Flatten(target.Commands);
 
-                        foreach (var command in target.Commands)
+                        foreach (var command in Flatten(target.Commands))
                             if (command is Commands.Wait)
                                 waitTime += (command as Commands.Wait).Seconds;
 
