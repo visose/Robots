@@ -109,6 +109,8 @@ namespace Robots.Grasshopper
             pManager.AddMeshParameter("Robot meshes", "M", "Robot meshes", GH_ParamAccess.list);
             pManager.AddNumberParameter("Joint rotations", "J", "Joint rotations", GH_ParamAccess.list);
             pManager.AddPlaneParameter("Planes", "P", "Planes", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Index", "I", "Current target index", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Time", "T", "Current time in seconds", GH_ParamAccess.item);
             pManager.AddTextParameter("Errors", "E", "Errors", GH_ParamAccess.list);
         }
 
@@ -131,7 +133,9 @@ namespace Robots.Grasshopper
             DA.SetDataList(0, kinematics.Meshes.Select(x => new GH_Mesh(x)));
             DA.SetDataList(1, kinematics.JointRotations);
             DA.SetData(2, kinematics.Planes[7]);
-            DA.SetDataList(3, kinematics.Errors);
+            DA.SetData(3, program.Value.CurrentSimulationTarget.Index);
+            DA.SetData(4, program.Value.CurrentSimulationTime);
+            DA.SetDataList(5, kinematics.Errors);
 
             if (form.Visible && form.play.Checked)
             {

@@ -117,7 +117,7 @@ namespace Robots.Grasshopper
             pManager.AddTextParameter("Name", "N", "Tool name", GH_ParamAccess.item, "DefaultGHTool");
             pManager.AddPlaneParameter("TCP", "P", "TCP plane", GH_ParamAccess.item, Plane.WorldXY);
             pManager.AddPlaneParameter("Calibration", "C", "4 point TCP calibration. Orient the tool in 4 different ways around the same point in space and input the 4 planes that correspond to the flange", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Weight", "W", "Tool weight", GH_ParamAccess.item, 0.0);
+            pManager.AddNumberParameter("Weight", "W", "Tool weight in kg", GH_ParamAccess.item, 0.0);
             pManager.AddMeshParameter("Mesh", "M", "Tool geometry", GH_ParamAccess.item);
             pManager[2].Optional = true;
             pManager[4].Optional = true;

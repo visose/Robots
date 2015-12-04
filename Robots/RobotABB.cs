@@ -60,7 +60,7 @@ namespace Robots
 
                 foreach (var tool in program.Tools) code.Add(Tool(tool));
                 foreach (var speed in program.Speeds) code.Add(Speed(speed));
-                foreach (var zone in program.Zones) code.Add(Zone(zone));
+                foreach (var zone in program.Zones) if (zone.IsFlyBy) code.Add(Zone(zone));
 
                 code.Add("PROC Main()");
                 code.Add("ConfJ \\Off;");

@@ -112,7 +112,7 @@ namespace Robots.Grasshopper
                 if (hasMotion && motionText != null) target.Motion = motion;
                 if (hasSpeed && speed != null) target.Speed = speed.Value;
                 if (hasZone && zone != null) target.Zone = zone.Value;
-                if (hasCommand && command != null) { target.Commands.Clear(); target.Commands.Add(command.Value); }
+                if (hasCommand) { target.Commands.Clear();  if (command != null) target.Commands.Add(command.Value); }
                 if (hasConfig && config != null) target.Configuration = (Target.RobotConfigurations)config.Value;
             }
             DA.SetData(0, new GH_Target(target));
