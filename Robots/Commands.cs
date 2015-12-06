@@ -53,6 +53,20 @@ namespace Robots.Commands
             foreach (ICommand item in source) Add(item);
         }
 
+        public IEnumerable<ICommand> Flatten()
+        {
+            var commands = new List<ICommand>();
+            foreach (var command in this)
+            {
+                if (command is Group)
+                    commands.AddRange((command as Group).Flatten());
+                else
+                    commands.Add(command);
+            }
+
+            return commands;
+        }
+
         public string Code(Robot robot, Target target) => string.Join("\r\n", this.Select(command => command.Code(robot, target)));
 
         public override string ToString() => $"Command (Group with {Count} commands)";
@@ -61,13 +75,13 @@ namespace Robots.Commands
 
     public class SetDO : ICommand
     {
-        int DO = 0;
-        bool value;
+        public int DO { get; }
+        public bool Value { get; }
 
         public SetDO(int DO, bool value)
         {
             this.DO = DO;
-            this.value = value;
+            this.Value = value;
         }
 
         public string Code(Robot robot, Target target)
@@ -76,7 +90,7 @@ namespace Robots.Commands
             {
                 case (Robot.Manufacturers.ABB):
                     {
-                        string textValue = value ? "1" : "0";
+                        string textValue = Value ? "1" : "0";
 
                         if (target.Zone.IsFlyBy)
                             return $"SetDO {robot.IO.DO[DO]},{textValue};";
@@ -86,7 +100,7 @@ namespace Robots.Commands
 
                 case (Robot.Manufacturers.KUKA):
                     {
-                        string textValue = value ? "TRUE" : "FALSE";
+                        string textValue = Value ? "TRUE" : "FALSE";
 
                         if (target.Zone.IsFlyBy)
                             return $"CONTINUE\r\n$OUT[{robot.IO.DO[DO]}] = {textValue}";
@@ -96,7 +110,7 @@ namespace Robots.Commands
 
                 case (Robot.Manufacturers.UR):
                     {
-                        string textValue = value ? "True" : "False";
+                        string textValue = Value ? "True" : "False";
 
                         if (target.Zone.IsFlyBy)
                             return $"set_digital_out({robot.IO.DO[DO]},{textValue})";
@@ -109,18 +123,18 @@ namespace Robots.Commands
             }
         }
 
-        public override string ToString() => $"Command (DO {DO} set to {value})";
+        public override string ToString() => $"Command (DO {DO} set to {Value})";
     }
 
     public class SetAO : ICommand
     {
-        int AO = 0;
-        double value;
+        public int AO { get; }
+        public double Value { get; }
 
         public SetAO(int AO, double value)
         {
             this.AO = AO;
-            this.value = value;
+            this.Value = value;
         }
 
         public string Code(Robot robot, Target target)
@@ -130,26 +144,26 @@ namespace Robots.Commands
                 case (Robot.Manufacturers.ABB):
                     {
                         if (target.Zone.IsFlyBy)
-                            return $"SetAO {robot.IO.AO[AO]},{value:0.00};";
+                            return $"SetAO {robot.IO.AO[AO]},{Value:0.00};";
                         else
-                            return $"SetAO {robot.IO.AO[AO]},{value:0.00};";
+                            return $"SetAO {robot.IO.AO[AO]},{Value:0.00};";
                     }
 
                 case (Robot.Manufacturers.KUKA):
                     {
                         if (target.Zone.IsFlyBy)
-                            return $"CONTINUE\r\n$ANOUT[{robot.IO.AO[AO]}] = {value:0.00}";
+                            return $"CONTINUE\r\n$ANOUT[{robot.IO.AO[AO]}] = {Value:0.00}";
                         else
-                            return $@"$ANOUT[{robot.IO.AO[AO]}] = {value:0.00}";
+                            return $@"$ANOUT[{robot.IO.AO[AO]}] = {Value:0.00}";
 
                     }
 
                 case (Robot.Manufacturers.UR):
                     {
                         if (target.Zone.IsFlyBy)
-                            return $"set_analog_out({robot.IO.AO[AO]},{value:0.00})";
+                            return $"set_analog_out({robot.IO.AO[AO]},{Value:0.00})";
                         else
-                            return $"set_analog_out({robot.IO.AO[AO]},{value:0.00})";
+                            return $"set_analog_out({robot.IO.AO[AO]},{Value:0.00})";
                     }
 
                 default:
@@ -157,12 +171,12 @@ namespace Robots.Commands
             }
         }
 
-        public override string ToString() => $"Command (AO {AO} set to \"{value}\")";
+        public override string ToString() => $"Command (AO {AO} set to \"{Value}\")";
     }
 
     public class PulseDO : ICommand
     {
-        int DO = 0;
+        public int DO { get; }
         double length;
 
         public PulseDO(int DO, double length = 0.2)
@@ -209,7 +223,7 @@ namespace Robots.Commands
 
     public class Wait : ICommand
     {
-        internal double Seconds { get; }
+        public double Seconds { get; }
 
         public Wait(double seconds)
         {
@@ -254,13 +268,13 @@ namespace Robots.Commands
 
     public class WaitDI : ICommand
     {
-        int DI = 0;
-        bool value = true;
+        public int DI { get; }
+        public bool Value { get; } = true;
 
         public WaitDI(int DI, bool value = true)
         {
             this.DI = DI;
-            this.value = value;
+            this.Value = value;
         }
 
         public string Code(Robot robot, Target target)
@@ -269,19 +283,19 @@ namespace Robots.Commands
             {
                 case (Robot.Manufacturers.ABB):
                     {
-                        string textValue = value ? "1" : "0";
+                        string textValue = Value ? "1" : "0";
                         return $"WaitDI {robot.IO.DI[DI]},{textValue};";
                     }
 
                 case (Robot.Manufacturers.KUKA):
                     {
-                        string textValue = value ? "TRUE" : "FALSE";
+                        string textValue = Value ? "TRUE" : "FALSE";
                         return $"WAIT FOR $IN[{robot.IO.DI[DI]}]=={textValue}";
                     }
 
                 case (Robot.Manufacturers.UR):
                     {
-                        string textValue = value ? "True" : "False";
+                        string textValue = Value ? "True" : "False";
                         return $"while get_digital_in({robot.IO.DI[DI]}) = {textValue}: end";
                     }
 
@@ -290,7 +304,7 @@ namespace Robots.Commands
             }
         }
 
-        public override string ToString() => $"Command (WaitDI until {DI} is {value})";
+        public override string ToString() => $"Command (WaitDI until {DI} is {Value})";
     }
 
     public class Stop : ICommand

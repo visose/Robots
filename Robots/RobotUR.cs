@@ -168,7 +168,7 @@ namespace Robots
                     return;
                 }
 
-                    message += '\n';
+                message += '\n';
                 var asen = new System.Text.ASCIIEncoding();
                 byte[] byteArray = asen.GetBytes(message);
                 NetworkStream stream = client.GetStream();
@@ -180,7 +180,7 @@ namespace Robots
                     if (firstLine.Length + 1 < message.Length) firstLine += " ...";
                     Log.Add($"Sending: {firstLine}");
                 }
-                }
+            }
 
             public void UploadProgram(Program program)
             {
@@ -211,13 +211,13 @@ namespace Robots
                 var code = new List<string>();
                 code.Add("def Program():");
 
-                string initCommands = program.InitCommands.Code(program.Robot, new Target(Plane.WorldXY));
+                string initCommands = program.InitCommands.Code(program.Robot, Target.Default);
                 if (initCommands.Length > 0)
                     code.Add(initCommands);
 
                 Tool currentTool = null;
 
-                foreach (Target target in program.Targets)
+                foreach (ProgramTarget target in program.Targets)
                 {
                     if (currentTool == null || target.Tool != currentTool)
                     {
@@ -225,55 +225,50 @@ namespace Robots
                         currentTool = target.Tool;
                     }
 
-                    Plane plane = Plane.Unset;
-                    Point3d origin = Point3d.Unset;
-                    double[] axisAngle = null;
+                    string moveText = null;
 
-                    if (target.Motion != Target.Motions.JointRotations)
+                    if (!target.IsCartesian || (target.Motion == Target.Motions.Joint && target.ForcedConfiguration))
                     {
-                        plane = target.Plane;
+                        double[] joints = target.Joints;
+                        double maxAxisSpeed = robot.Joints.Max(x => x.MaxSpeed);
+                        double percentage = (target.Speed.AxisSpeed > 0) ? target.Speed.AxisSpeed : (target.Time > 0) ? target.MinTime / target.Time : 0.1;
+                        double axisSpeed = percentage * maxAxisSpeed;
+                        double axisAccel = target.Speed.AxisAccel;
+                        double zone = target.Zone.Distance / 1000;
+                        moveText = $"  movej([{joints[0]:0.0000}, {joints[1]:0.0000}, {joints[2]:0.0000}, {joints[3]:0.0000}, {joints[4]:0.0000}, {joints[5]:0.0000}], a={axisAccel:0.0000}, v={axisSpeed:0.000}, r={zone:0.00000})";
+                    }
+                    else
+                    {
+                        var plane = target.Plane;
                         plane.Transform(Transform.PlaneToPlane(robot.basePlane, Plane.WorldXY));
-                        origin = target.Plane.Origin / 1000;
-                        axisAngle = AxisAngle(plane, Plane.WorldXY);
+                        var origin = target.Plane.Origin / 1000;
+                        var axisAngle = AxisAngle(plane, Plane.WorldXY);
+
+                        switch (target.Motion)
+                        {
+                            case Target.Motions.Joint:
+                                {
+                                    double maxAxisSpeed = robot.Joints.Max(x => x.MaxSpeed);
+                                    double percentage = (target.Speed.AxisSpeed > 0) ? target.Speed.AxisSpeed : (target.Time > 0) ? target.MinTime / target.Time : 0.1;
+                                    double axisSpeed = percentage * maxAxisSpeed;
+                                    double axisAccel = target.Speed.AxisAccel;
+                                    double zone = target.Zone.Distance / 1000;
+                                    moveText = $"  movej(p[{origin.X:0.00000}, {origin.Y:0.00000}, {origin.Z:0.00000}, {axisAngle[0]:0.0000}, {axisAngle[1]:0.0000}, {axisAngle[2]:0.0000}],a={axisAccel:0.00000},v={axisSpeed:0.00000},r={zone:0.00000})";
+                                    break;
+                                }
+
+                            case Target.Motions.Linear:
+                                {
+                                    double linearSpeed = target.Speed.TranslationSpeed / 1000;
+                                    double linearAccel = target.Speed.TranslationAccel / 1000;
+                                    double zone = target.Zone.Distance / 1000;
+                                    moveText = $"  movel(p[{origin.X:0.00000}, {origin.Y:0.00000}, {origin.Z:0.00000}, {axisAngle[0]:0.0000}, {axisAngle[1]:0.0000}, {axisAngle[2]:0.0000}],a={linearAccel:0.00000},v={linearSpeed:0.00000},r={zone:0.00000})";
+                                    break;
+                                }
+                        }
                     }
 
-                    switch (target.Motion)
-                    {
-                        case Target.Motions.JointRotations:
-                            {
-                                double[] joints = target.JointRotations;
-                                double maxAxisSpeed = robot.Joints.Max(x => x.MaxSpeed);
-                                double percentage = (target.Speed.AxisSpeed > 0) ? target.Speed.AxisSpeed : (target.Time > 0) ? target.MinTime / target.Time : 0.1;
-                                double axisSpeed = percentage * maxAxisSpeed;
-                                double axisAccel = target.Speed.AxisAccel;
-                                double zone = target.Zone.Distance / 1000;
-                                string moveText = $"  movej([{joints[0]:0.0000}, {joints[1]:0.0000}, {joints[2]:0.0000}, {joints[3]:0.0000}, {joints[4]:0.0000}, {joints[5]:0.0000}], a={axisAccel:0.0000}, v={axisSpeed:0.000}, r={zone:0.00000})";
-                                code.Add(moveText);
-                                break;
-                            }
-
-                        case Target.Motions.JointCartesian:
-                            {
-                                double maxAxisSpeed = robot.Joints.Max(x => x.MaxSpeed);
-                                double percentage = (target.Speed.AxisSpeed > 0) ? target.Speed.AxisSpeed : (target.Time > 0) ? target.MinTime / target.Time : 0.1;
-                                double axisSpeed = percentage * maxAxisSpeed;
-                                double axisAccel = target.Speed.AxisAccel;
-                                double zone = target.Zone.Distance / 1000;
-                                string moveText = $"  movej(p[{origin.X:0.00000}, {origin.Y:0.00000}, {origin.Z:0.00000}, {axisAngle[0]:0.0000}, {axisAngle[1]:0.0000}, {axisAngle[2]:0.0000}],a={axisAccel:0.00000},v={axisSpeed:0.00000},r={zone:0.00000})";
-                                code.Add(moveText);
-                                break;
-                            }
-
-                        case Target.Motions.Linear:
-                            {
-                                double linearSpeed = target.Speed.TranslationSpeed / 1000;
-                                double linearAccel = target.Speed.TranslationAccel / 1000;
-                                double zone = target.Zone.Distance / 1000;
-                                string moveText = $"  movel(p[{origin.X:0.00000}, {origin.Y:0.00000}, {origin.Z:0.00000}, {axisAngle[0]:0.0000}, {axisAngle[1]:0.0000}, {axisAngle[2]:0.0000}],a={linearAccel:0.00000},v={linearSpeed:0.00000},r={zone:0.00000})";
-                                code.Add(moveText);
-                                break;
-                            }
-                    }
+                    code.Add(moveText);
 
                     string commands = target.Commands.Code(program.Robot, target);
                     if (commands.Length > 0)

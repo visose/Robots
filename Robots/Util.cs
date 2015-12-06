@@ -44,6 +44,7 @@ namespace Robots
         internal static Plane CartesianLerp(Plane a, Plane b, double t, double min, double max)
         {
             t = (t - min) / (max - min);
+            if (double.IsNaN(t)) t = 0;
             var newOrigin = a.Origin * (1 - t) + b.Origin * t;
 
             Quaternion q = Quaternion.Rotation(a, b);
@@ -60,6 +61,7 @@ namespace Robots
         internal static double[] JointLerp(double[] a, double[] b, double t, double min, double max)
         {
             t = (t - min) / (max - min);
+            if (double.IsNaN(t)) t = 0;
             return a.Zip(b, (x, y) => (x * (1 - t) + y * t)).ToArray();
         }
 

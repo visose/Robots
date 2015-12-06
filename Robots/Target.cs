@@ -10,70 +10,149 @@ using static Rhino.RhinoMath;
 
 namespace Robots
 {
-    public class Target
+    public abstract class Target
     {
-        public enum Motions { JointRotations, JointCartesian, Linear, Circular, Spline }
         [Flags] public enum RobotConfigurations { None = 0, Shoulder = 1, Elbow = 2, Wrist = 4 }
+        public enum Motions { Joint, Linear, Circular, Spline }
 
-        internal Plane plane;
-        internal double[] jointRotations;
-
-        public Plane Plane { get { return plane; } set { plane = value; IsCartesian = true; } }
-        public double[] JointRotations { get { return jointRotations; } set { jointRotations = value; IsCartesian = false; } }
         public Tool Tool { get; set; }
-        public Motions Motion { get; set; }
         public Speed Speed { get; set; }
         public Zone Zone { get; set; }
         public Commands.Group Commands { get; set; } = new Commands.Group();
-        public RobotConfigurations Configuration { get; set; }
-        public bool IsCartesian { get; private set; }
-        public double Time { get; internal set; }
-        public double MinTime { get; internal set; }
-        public int LeadingJoint { get; internal set; }
-        public bool ChangesConfiguration { get; internal set; } = false;
-        public int Index { get; internal set; }
 
-        public Target(Plane plane, Tool tool = null, Motions motion = Motions.JointCartesian, Speed speed = null, Zone zone = null, IEnumerable<Commands.ICommand> commands = null, RobotConfigurations configuration = 0)
+        public static Target Default { get; }
+
+        static Target()
         {
-            this.Plane = plane;
+            Default = new JointTarget(new double[] { 0, PI / 2, 0, 0, 0, 0 }, Tool.Default, Speed.Default, Zone.Default);
+        }
+
+
+        public Target(Tool tool, Speed speed, Zone zone, IEnumerable<Commands.ICommand> commands)
+        {
             this.Tool = tool;
-            this.Motion = motion;
             this.Speed = speed;
             this.Zone = zone;
             if (commands != null) Commands.AddRange(commands);
+        }
+    }
+
+    public class CartesianTarget : Target
+    {
+        public Plane Plane { get; set; }
+        public RobotConfigurations? Configuration { get; set; }
+        public Motions Motion { get; set; }
+
+        public CartesianTarget(Plane plane, RobotConfigurations? configuration = null, Motions motion = Motions.Joint, Tool tool = null, Speed speed = null, Zone zone = null, IEnumerable<Commands.ICommand> commands = null) : base(tool, speed, zone, commands)
+        {
+            this.Plane = plane;
+            this.Motion = motion;
             this.Configuration = configuration;
         }
 
-        public Target(double[] jointRotations, Tool tool = null, Speed speed = null, Zone zone = null, IEnumerable<Commands.ICommand> commands = null)
-        {
-            this.Plane = Plane.Unset;
-            this.JointRotations = jointRotations;
-            this.Motion = Motions.JointRotations;
-            this.Tool = tool;
-            this.Speed = speed;
-            this.Zone = zone;
-            if (commands != null) Commands.AddRange(commands);
-        }
-
-        public Target Duplicate()
-        {
-            if (IsCartesian)
-                return new Target(Plane, Tool, Motion, Speed, Zone, Commands.ToList(), Configuration);
-            else
-                return new Target(JointRotations, Tool, Speed, Zone, Commands.ToList());
-        }
+        public CartesianTarget(Plane plane, Target target, RobotConfigurations? configuration = null, Motions motion = Motions.Joint) : this(plane, configuration, motion, target.Tool, target.Speed, target.Zone, target.Commands) { }
 
         public override string ToString()
         {
-            string type = IsCartesian ? $"Cartesian ({Plane.OriginX:0.00},{Plane.OriginY:0.00},{Plane.OriginZ:0.00})" : $"Joint ({string.Join(",", JointRotations.Select(x => $"{x:0.00}"))})";
+            string type = $"Cartesian ({Plane.OriginX:0.00},{Plane.OriginY:0.00},{Plane.OriginZ:0.00})";
             string motion = $", {Motion.ToString()}";
+            string configuration = Configuration != null ? $", \"{Configuration.ToString()}\"" : "";
             string tool = Tool != null ? $", {Tool}" : "";
             string speed = Speed != null ? $", {Speed}" : "";
             string zone = Zone != null ? $", {Zone}" : "";
-            string configuration = Configuration != RobotConfigurations.None ? $", \"{Configuration.ToString()}\"" : "";
             string commands = (Commands.Count > 0) ? ", Contains commands" : "";
             return $"Target ({type}{motion}{tool}{speed}{zone}{configuration}{commands})";
         }
+
+        public CartesianTarget ShallowClone() => MemberwiseClone() as CartesianTarget;
+    }
+
+    public class JointTarget : Target
+    {
+        public double[] Joints { get; set; }
+
+        public JointTarget(double[] joints, Tool tool = null, Speed speed = null, Zone zone = null, IEnumerable<Commands.ICommand> commands = null) : base(tool, speed, zone, commands)
+        {
+            this.Joints = joints;
+        }
+
+        public JointTarget(double[] joints, Target target) : this(joints, target.Tool, target.Speed, target.Zone, target.Commands) { }
+
+
+        public override string ToString()
+        {
+            string type = $"Joint ({string.Join(",", (this as JointTarget).Joints.Select(x => $"{x:0.00}"))})";
+            string tool = Tool != null ? $", {Tool}" : "";
+            string speed = Speed != null ? $", {Speed}" : "";
+            string zone = Zone != null ? $", {Zone}" : "";
+            string commands = (Commands.Count > 0) ? ", Contains commands" : "";
+            return $"Target ({type}{tool}{speed}{zone}{commands})";
+        }
+
+        public JointTarget ShallowClone() => MemberwiseClone() as JointTarget;
+    }
+
+    public class ProgramTarget : Target
+    {
+        public Plane Plane { get; internal set; }
+        public double[] Joints { get; internal set; }
+        public bool IsCartesian { get; internal set; }
+        public Motions Motion { get; internal set; }
+        public RobotConfigurations? Configuration { get; internal set; }
+
+        public int Index { get; internal set; }
+        public bool ForcedConfiguration { get; internal set; }
+        public bool ChangesConfiguration { get; internal set; } = false;
+        public List<string> Warnings { get; internal set; }
+        public double Time { get; internal set; }
+        public double MinTime { get; internal set; }
+        public double TotalTime { get; internal set; }
+        public int LeadingJoint { get; internal set; }
+
+        public bool isJointMotion => !IsCartesian || Motion == Motions.Joint;
+
+        internal ProgramTarget(Target target) : base(target.Tool, target.Speed, target.Zone, target.Commands)
+        {
+            if (target is CartesianTarget)
+            {
+                var cartesianTarget = target as CartesianTarget;
+                this.Plane = cartesianTarget.Plane;
+                this.IsCartesian = true;
+                this.Motion = cartesianTarget.Motion;
+                this.Configuration = cartesianTarget.Configuration;
+                this.ForcedConfiguration = (this.Configuration != null);
+            }
+            else if (target is JointTarget)
+            {
+                this.Joints = (target as JointTarget).Joints;
+                this.IsCartesian = false;
+            }
+
+            else if (target is ProgramTarget)
+                /*
+{
+    var programTarget = target as ProgramTarget;
+
+    this.Plane = programTarget.Plane;
+    this.Joints = programTarget.Joints;
+    this.IsCartesian = programTarget.IsCartesian;
+    this.Motion = programTarget.Motion;
+    this.Configuration = programTarget.Configuration;
+
+    this.Index = programTarget.Index;
+    this.ForcedConfiguration = programTarget.ForcedConfiguration;
+    this.ChangesConfiguration = programTarget.ChangesConfiguration;
+    this.Warnings = programTarget.Warnings;
+    this.Time = programTarget.Time;
+    this.MinTime = programTarget.MinTime;
+    this.TotalTime = programTarget.TotalTime;
+    this.LeadingJoint = programTarget.LeadingJoint;
+}
+*/
+                throw new InvalidCastException("Use ShallowClone() method for duplicating a ProgramTarget");
+        }
+
+        public ProgramTarget ShallowClone() => MemberwiseClone() as ProgramTarget;
     }
 
     public class Tool
@@ -98,14 +177,11 @@ namespace Robots
             this.Mesh = mesh;
         }
 
-        /// <summary>
-        /// Sets the TCP position given 4 different orientations of the tool around the same point in space  
-        /// </summary>
-        /// <param name="a">Flange plane A</param>
-        /// <param name="b">Flange plane B</param>
-        /// <param name="c">Flange plane C</param>
-        /// <param name="d">Flange plane D</param>
-        /// <returns>Returns the calibrated TCP point, but not orientation</returns>
+        internal Tool SetName(string name)
+        {
+            return new Tool(this.Tcp, name, this.Weight, this.Mesh);
+        }
+
         public void FourPointCalibration(Plane a, Plane b, Plane c, Plane d)
         {
             var calibrate = new CircumcentreSolver(a.Origin, b.Origin, c.Origin, d.Origin);
@@ -127,13 +203,7 @@ namespace Robots
         {
             private double x, y, z;
             private double radius;
-            private double[,] p =
-                    {
-                { 0, 0, 0 },
-                { 0, 0, 0 },
-                { 0, 0, 0 },
-                { 0, 0, 0 }
-            };
+            private double[,] p = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
 
             internal Point3d Center => new Point3d(x, y, z);
             internal double Radius => radius;
@@ -180,13 +250,7 @@ namespace Robots
             private void Sphere()
             {
                 double m11, m12, m13, m14, m15;
-                double[,] a =
-                        {
-                    { 0, 0, 0, 0 },
-                    { 0, 0, 0, 0 },
-                    { 0, 0, 0, 0 },
-                    { 0, 0, 0, 0 }
-                };
+                double[,] a = { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } };
 
                 // Find minor 1, 1.
                 for (int i = 0; i < 4; i++)
@@ -338,11 +402,20 @@ namespace Robots
             Default = new Speed(100, PI, "DefaultSpeed");
         }
 
-        public Speed(double translation = 100, double rotationSpeed = PI/2, string name = null)
+        public Speed(double translation = 100, double rotationSpeed = PI / 2, string name = null)
         {
             this.Name = name;
             this.TranslationSpeed = translation;
             this.RotationSpeed = rotationSpeed;
+        }
+
+        internal Speed SetName(string name)
+        {
+            var speed = new Speed(TranslationSpeed, RotationSpeed, name);
+            speed.AxisSpeed = AxisSpeed;
+            speed.TranslationAccel = TranslationAccel;
+            speed.AxisAccel = AxisAccel;
+            return speed;
         }
 
         public override string ToString() => (Name != null) ? $"Speed ({Name})" : $"Speed ({TranslationSpeed:0.0} mm/s)";
@@ -376,6 +449,13 @@ namespace Robots
             this.Name = name;
             this.Distance = distance;
             this.Rotation = (distance / 10).ToRadians();
+        }
+
+        internal Zone SetName(string name)
+        {
+            var zone = new Zone(Distance, name);
+            zone.Rotation = Rotation;
+            return zone;
         }
 
         public override string ToString() => (Name != null) ? $"Zone ({Name})" : IsFlyBy ? $"Zone ({Distance:0.00} mm)" : $"Zone (Stop point)";

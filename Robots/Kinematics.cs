@@ -12,7 +12,7 @@ namespace Robots
         public abstract class KinematicSolution
         {
             protected Robot robot;
-            public double[] JointRotations { get; }
+            public double[] Joints { get; }
             public Plane[] Planes { get; }
             public Mesh[] Meshes { get; }
             public List<string> Errors { get; } = new List<string>();
@@ -22,24 +22,25 @@ namespace Robots
                 this.robot = robot;
 
                 // Joints
-                if (!target.IsCartesian)
-                    JointRotations = target.JointRotations;
+                if (target is JointTarget)
+                    Joints = (target as JointTarget).Joints;
                 else
                 {
+                    var cartesianTarget = target as CartesianTarget;
                     Plane tcp = (target.Tool != null) ? target.Tool.Tcp : Plane.WorldXY;
-                    var transform = Transform.PlaneToPlane(robot.basePlane, Plane.WorldXY) * Transform.PlaneToPlane(tcp, target.Plane);
-                    JointRotations = InverseKinematics(transform, target.Configuration);
+                    var transform = Transform.PlaneToPlane(robot.basePlane, Plane.WorldXY) * Transform.PlaneToPlane(tcp, cartesianTarget.Plane);
+                    Joints = InverseKinematics(transform, (cartesianTarget.Configuration != null) ? (Target.RobotConfigurations)cartesianTarget.Configuration : 0);
                 }
 
                 var rotationErrors = robot.Joints
-                     .Where(x => !x.Range.IncludesParameter(JointRotations[x.Index]))
+                     .Where(x => !x.Range.IncludesParameter(Joints[x.Index]))
                      .Select(x => $"Angle for joint {x.Index + 1} is outside the permited range.");
                 Errors.AddRange(rotationErrors);
 
                 // Planes
                 Planes = new Plane[8];
                 Planes[0] = robot.basePlane;
-                var jointTransforms = ForwardKinematics(JointRotations);
+                var jointTransforms = ForwardKinematics(Joints);
 
                 for (int i = 0; i < 6; i++)
                 {
@@ -63,7 +64,7 @@ namespace Robots
             }
 
             protected abstract double[] InverseKinematics(Transform transform, Target.RobotConfigurations configuration);
-            protected abstract Transform[] ForwardKinematics(double[] jointRotations);
+            protected abstract Transform[] ForwardKinematics(double[] joints);
 
             Mesh[] DisplayMeshes(Plane[] jointPlanes, Tool tool)
             {
@@ -199,19 +200,22 @@ namespace Robots
                 }
 
                 if (isUnreachable)
-                    Errors.Add($"Target out of reach.");
+                    Errors.Add($"Target out of reach");
 
                 if (Abs(1 - mr[2, 2]) < 0.0001)
-                    Errors.Add($"Near wrist singularity.");
+                    Errors.Add($"Near wrist singularity");
+
+                if (new Vector3d(center.X,center.Y,0).Length < a[0]+SingularityTol)
+                    Errors.Add($"Near overhead singularity");
 
                 return joints;
             }
 
-            override protected Transform[] ForwardKinematics(double[] jointRotations)
+            override protected Transform[] ForwardKinematics(double[] joints)
             {
                 var transforms = new Transform[6];
-                double[] c = jointRotations.Select(x => Cos(x)).ToArray();
-                double[] s = jointRotations.Select(x => Sin(x)).ToArray();
+                double[] c = joints.Select(x => Cos(x)).ToArray();
+                double[] s = joints.Select(x => Sin(x)).ToArray();
                 double[] a = robot.Joints.Select(joint => joint.A).ToArray();
                 double[] d = robot.Joints.Select(joint => joint.D).ToArray();
 
@@ -354,17 +358,17 @@ namespace Robots
                 return joints;
             }
 
-            override protected Transform[] ForwardKinematics(double[] jointRotations)
+            override protected Transform[] ForwardKinematics(double[] joints)
             {
                 var transforms = new Transform[6];
-                double[] c = jointRotations.Select(x => Cos(x)).ToArray();
-                double[] s = jointRotations.Select(x => Sin(x)).ToArray();
+                double[] c = joints.Select(x => Cos(x)).ToArray();
+                double[] s = joints.Select(x => Sin(x)).ToArray();
                 double[] a = robot.Joints.Select(joint => joint.A).ToArray();
                 double[] d = robot.Joints.Select(joint => joint.D).ToArray();
-                double s23 = Sin(jointRotations[1] + jointRotations[2]);
-                double c23 = Cos(jointRotations[1] + jointRotations[2]);
-                double s234 = Sin(jointRotations[1] + jointRotations[2] + jointRotations[3]);
-                double c234 = Cos(jointRotations[1] + jointRotations[2] + jointRotations[3]);
+                double s23 = Sin(joints[1] + joints[2]);
+                double c23 = Cos(joints[1] + joints[2]);
+                double s234 = Sin(joints[1] + joints[2] + joints[3]);
+                double c234 = Cos(joints[1] + joints[2] + joints[3]);
 
                 transforms[0] = ToTransform(new double[4, 4] { { c[0], 0, s[0], 0 }, { s[0], 0, -c[0], 0 }, { 0, 1, 0, d[0] }, { 0, 0, 0, 1 } });
                 transforms[1] = ToTransform(new double[4, 4] { { c[0] * c[1], -c[0] * s[1], s[0], a[1] * c[0] * c[1] }, { c[1] * s[0], -s[0] * s[1], -c[0], a[1] * c[1] * s[0] }, { s[1], c[1], 0, d[0] + a[1] * s[1] }, { 0, 0, 0, 1 } });

@@ -48,7 +48,7 @@ namespace Robots
                     joints[i].MaxSpeed = joints[i].MaxSpeed.ToRadians();
             }
 
-            var kinematics = Kinematics(new Target(GetStartPose()));
+            var kinematics = Kinematics(new JointTarget(GetStartPose()));
             for (int i = 0; i < 6; i++)
             {
                 Plane plane = kinematics.Planes[i + 1];
