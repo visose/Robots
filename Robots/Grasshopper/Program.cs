@@ -55,7 +55,7 @@ namespace Robots.Grasshopper
             if (program.Warnings.Count > 0)
             {
                 DA.SetDataList(3, program.Warnings);
-                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Warnigs in program");
+                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Warnings in program");
             }
 
             if (program.Errors.Count > 0)

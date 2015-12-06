@@ -63,56 +63,74 @@ namespace Robots
                 foreach (var zone in program.Zones) if (zone.IsFlyBy) code.Add(Zone(zone));
 
                 code.Add("PROC Main()");
-                code.Add("ConfJ \\Off;");
+                //code.Add("ConfJ \\Off;");
                 code.Add("ConfL \\Off;");
 
-                string initCommands = program.InitCommands.Code(program.Robot, new Target(Plane.Unset));
+                string initCommands = program.InitCommands.Code(program.Robot, Target.Default);
                 if (initCommands.Length > 0)
                     code.Add(initCommands);
 
-                foreach (Target target in program.Targets)
+                foreach (ProgramTarget target in program.Targets)
                 {
-                    Plane plane = Plane.Unset;
-                    Quaternion quaternion = Quaternion.Zero;
                     string moveText = null;
 
-                    if (target.Motion != Target.Motions.JointRotations)
+                    if (!target.IsCartesian)
                     {
-                        plane = target.Plane;
-                        plane.Transform(Transform.PlaneToPlane(robot.basePlane, Plane.WorldXY));
-                        quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
+                        double[] joints = target.Joints;
+                        joints = joints.Select((x, i) => robot.RadianToDegree(x, i)).ToArray();
+                        string zone = target.Zone.IsFlyBy ? target.Zone.Name : "fine";
+                        moveText = $"MoveAbsJ [[{joints[0]:0.000}, {joints[1]:0.000}, {joints[2]:0.000}, {joints[3]:0.000}, {joints[4]:0.000}, {joints[5]:0.000}],extj],{target.Speed.Name},{zone},{target.Tool.Name};";
                     }
-
-                    switch (target.Motion)
+                    else
                     {
-                        case Target.Motions.JointRotations:
-                            {
-                                double[] joints = target.JointRotations;
-                                joints = joints.Select((x, i) => robot.RadianToDegree(x, i)).ToArray();
-                                string zone = target.Zone.IsFlyBy ? target.Zone.Name : "fine";
-                                moveText = $"MoveAbsJ [[{joints[0]:0.000}, {joints[1]:0.000}, {joints[2]:0.000}, {joints[3]:0.000}, {joints[4]:0.000}, {joints[5]:0.000}],extj],{target.Speed.Name},{zone},{target.Tool.Name};";
-                                break;
-                            }
+                        var plane = target.Plane;
+                        plane.Transform(Transform.PlaneToPlane(robot.basePlane, Plane.WorldXY));
+                        var quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
 
-                        case Target.Motions.JointCartesian:
-                            {
-                                string pos = $"[{plane.OriginX:0.00},{plane.OriginY:0.00},{plane.OriginZ:0.00}]";
-                                string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
-                                string robtarget = $"[{pos},{orient},conf,extj]";
-                                string zone = target.Zone.IsFlyBy ? target.Zone.Name : "fine";
-                                moveText = $"MoveJ {robtarget}, {target.Speed.Name}, {zone}, {target.Tool.Name};";
-                                break;
-                            }
+                        switch (target.Motion)
+                        {
+                            case Target.Motions.Joint:
+                                {
+                                    string pos = $"[{plane.OriginX:0.00},{plane.OriginY:0.00},{plane.OriginZ:0.00}]";
+                                    string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
 
-                        case Target.Motions.Linear:
-                            {
-                                string pos = $"[{plane.OriginX:0.00},{plane.OriginY:0.00},{plane.OriginZ:0.00}]";
-                                string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
-                                string robtarget = $"[{pos},{orient},conf,extj]";
-                                string zone = target.Zone.IsFlyBy ? target.Zone.Name : "fine";
-                                moveText = $"MoveL {robtarget}, {target.Speed.Name}, {zone}, {target.Tool.Name};";
-                                break;
-                            }
+                                    int cf1 = (int)Floor(target.Joints[0] / (PI / 2));
+                                    int cf4 = (int)Floor(target.Joints[3] / (PI / 2));
+                                    int cf6 = (int)Floor(target.Joints[5] / (PI / 2));
+
+                                    if (cf1 < 0) cf1--;
+                                    if (cf4 < 0) cf4--;
+                                    if (cf6 < 0) cf6--;
+
+                                    Target.RobotConfigurations configuration = (Target.RobotConfigurations)target.Configuration;
+                                    bool shoulder = configuration.HasFlag(Target.RobotConfigurations.Shoulder);
+                                    bool elbow = configuration.HasFlag(Target.RobotConfigurations.Elbow);
+                                    if (shoulder) elbow = !elbow;
+                                    bool wrist = configuration.HasFlag(Target.RobotConfigurations.Wrist);
+
+                                    int cfx = 0;
+                                    if (wrist) cfx += 1;
+                                    if (elbow) cfx += 2;
+                                    if (shoulder) cfx += 4;
+
+                                    string conf = $"[{cf1},{cf4},{cf6},{cfx}]";
+
+                                    string robtarget = $"[{pos},{orient},{conf},extj]";
+                                    string zone = target.Zone.IsFlyBy ? target.Zone.Name : "fine";
+                                    moveText = $"MoveJ {robtarget}, {target.Speed.Name}, {zone}, {target.Tool.Name};";
+                                    break;
+                                }
+
+                            case Target.Motions.Linear:
+                                {
+                                    string pos = $"[{plane.OriginX:0.00},{plane.OriginY:0.00},{plane.OriginZ:0.00}]";
+                                    string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
+                                    string robtarget = $"[{pos},{orient},conf,extj]";
+                                    string zone = target.Zone.IsFlyBy ? target.Zone.Name : "fine";
+                                    moveText = $"MoveL {robtarget}, {target.Speed.Name}, {zone}, {target.Tool.Name};";
+                                    break;
+                                }
+                        }
                     }
 
                     code.Add(moveText);
@@ -154,7 +172,7 @@ namespace Robots
 
             string Zone(Zone zone)
             {
-                double angle = zone.Rotation.ToDegrees();    
+                double angle = zone.Rotation.ToDegrees();
                 return $"VAR zonedata {zone.Name}:=[FALSE,{zone.Distance:0.00},{zone.Distance:0.00},{zone.Distance:0.00},{angle:0.00},{zone.Distance:0.00},{angle:0.00}];";
             }
         }

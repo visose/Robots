@@ -47,7 +47,7 @@ namespace Robots.Grasshopper
             }
 
             DA.SetDataList(0, kinematics.Meshes.Select(x => new GH_Mesh(x)));
-            DA.SetDataList(1, kinematics.JointRotations);
+            DA.SetDataList(1, kinematics.Joints);
             DA.SetData(2, kinematics.Planes[7]);
             DA.SetDataList(3, kinematics.Errors);
         }
@@ -131,7 +131,7 @@ namespace Robots.Grasshopper
             }
 
             DA.SetDataList(0, kinematics.Meshes.Select(x => new GH_Mesh(x)));
-            DA.SetDataList(1, kinematics.JointRotations);
+            DA.SetDataList(1, kinematics.Joints);
             DA.SetData(2, kinematics.Planes[7]);
             DA.SetData(3, program.Value.CurrentSimulationTarget.Index);
             DA.SetData(4, program.Value.CurrentSimulationTime);

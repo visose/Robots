@@ -93,13 +93,13 @@ namespace Robots.Grasshopper
 
             if (source is GH_Point)
             {
-                Value = new Target(new Plane((source as GH_Point).Value, Vector3d.XAxis, Vector3d.YAxis));
+                Value = new CartesianTarget(new Plane((source as GH_Point).Value, Vector3d.XAxis, Vector3d.YAxis));
                 return true;
             }
 
             if (source is GH_Plane)
             {
-                Value = new Target((source as GH_Plane).Value);
+                Value = new CartesianTarget((source as GH_Plane).Value);
                 return true;
             }
 
@@ -113,7 +113,7 @@ namespace Robots.Grasshopper
                 for (int i = 0; i < 6; i++)
                     if (!GH_Convert.ToDouble_Secondary(jointsText[i], ref joints[i])) return false;
 
-                Value = new Target(joints);
+                Value = new JointTarget(joints);
                 return true;
             }
             return false;
