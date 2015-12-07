@@ -14,7 +14,7 @@ namespace Robots
     {
         public string Name { get; }
         public Robot Robot { get; }
-        public  List<ProgramTarget> Targets { get; }
+        public List<ProgramTarget> Targets { get; }
         public List<Tool> Tools { get; private set; }
         public List<Speed> Speeds { get; private set; }
         public List<Zone> Zones { get; private set; }
@@ -97,7 +97,7 @@ namespace Robots
                     var firstTarget = targets[0];
                     if (firstTarget.IsCartesian)
                     {
-                        firstTarget.Joints = program.Robot.Kinematics(new CartesianTarget(firstTarget.Plane, firstTarget)).Joints;
+                        firstTarget.Joints = program.Robot.Kinematics(new CartesianTarget(firstTarget.Plane, firstTarget,firstTarget.Configuration)).Joints;
                         firstTarget.IsCartesian = false;
                         program.Warnings.Add($"First target changed to a joint motion using axis rotations");
                     }
@@ -442,7 +442,7 @@ namespace Robots
 
             internal double currentTime = 0;
             internal int currentTarget = 0;
-            internal ProgramTarget currentSimulationTarget;           
+            internal ProgramTarget currentSimulationTarget;
 
             internal Simulation(Program program, List<ProgramTarget> targets)
             {
@@ -494,7 +494,7 @@ namespace Robots
                     else
                         kinenematicTarget = new JointTarget(firstTarget.Joints, firstTarget);
 
-                   return program.Robot.Kinematics(kinenematicTarget, true);                                 
+                    return program.Robot.Kinematics(kinenematicTarget, true);
                 }
 
                 if (isNormalized) time *= duration;
@@ -533,7 +533,7 @@ namespace Robots
                 if (target.isJointMotion)
                 {
                     var joints = JointLerp(prevTarget.Joints, target.Joints, currentTime, prevTarget.TotalTime, target.TotalTime);
-                    kinematics= program.Robot.Kinematics(new JointTarget(joints, target), true);
+                    kinematics = program.Robot.Kinematics(new JointTarget(joints, target), true);
                 }
                 else if (target.Motion == Target.Motions.Linear)
                 {
@@ -543,7 +543,7 @@ namespace Robots
                     var plane = CartesianLerp(prevPlane, target.Plane, currentTime, prevTarget.TotalTime, target.TotalTime);
                     Target.RobotConfigurations? configuration = (Abs(prevTarget.TotalTime - currentTime) < Abs(target.TotalTime - currentTime)) ? prevTarget.Configuration : target.Configuration;
                     //Target.RobotConfigurations configuration = simuTarget.target.Configuration;
-                     kinematics = program.Robot.Kinematics(new CartesianTarget(plane, target, configuration), true);
+                    kinematics = program.Robot.Kinematics(new CartesianTarget(plane, target, configuration), true);
                 }
                 else
                 {

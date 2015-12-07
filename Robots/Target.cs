@@ -127,29 +127,8 @@ namespace Robots
                 this.Joints = (target as JointTarget).Joints;
                 this.IsCartesian = false;
             }
-
-            else if (target is ProgramTarget)
-                /*
-{
-    var programTarget = target as ProgramTarget;
-
-    this.Plane = programTarget.Plane;
-    this.Joints = programTarget.Joints;
-    this.IsCartesian = programTarget.IsCartesian;
-    this.Motion = programTarget.Motion;
-    this.Configuration = programTarget.Configuration;
-
-    this.Index = programTarget.Index;
-    this.ForcedConfiguration = programTarget.ForcedConfiguration;
-    this.ChangesConfiguration = programTarget.ChangesConfiguration;
-    this.Warnings = programTarget.Warnings;
-    this.Time = programTarget.Time;
-    this.MinTime = programTarget.MinTime;
-    this.TotalTime = programTarget.TotalTime;
-    this.LeadingJoint = programTarget.LeadingJoint;
-}
-*/
-                throw new InvalidCastException("Use ShallowClone() method for duplicating a ProgramTarget");
+            else if (target is ProgramTarget)       
+                throw new InvalidCastException("Use the ShallowClone() method for duplicating a ProgramTarget");
         }
 
         public ProgramTarget ShallowClone() => MemberwiseClone() as ProgramTarget;
