@@ -52,7 +52,7 @@ namespace Robots.Grasshopper
             Tool tool = null;
             Speed speed = null;
             Zone zone = null;
-            List<Robots.Commands.ICommand> commands = null;
+            var commands = new List<Robots.Commands.ICommand>();
 
 
             if (hasJoints)
@@ -139,7 +139,6 @@ namespace Robots.Grasshopper
 
             if (hasCommand)
             {
-                commands = new List<Robots.Commands.ICommand>();
                 GH_Command commandGH = null;
                 DA.GetData("Command", ref commandGH);
                 if (commandGH != null) commands.Add(commandGH.Value);
