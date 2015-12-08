@@ -29,7 +29,7 @@ namespace Robots
 
         Simulation simulation;
 
-        public Program(string name, Robot robot, IEnumerable<Target> targets, Commands.Group initCommands = null)
+        public Program(string name, Robot robot, IEnumerable<Target> targets, Commands.Group initCommands = null, double stepSize = 1)
         {
             if (targets.Count() == 0)
                 throw new Exception(" The program has to contain at least 1 target");
@@ -39,7 +39,7 @@ namespace Robots
             this.InitCommands = (initCommands != null) ? initCommands : new Commands.Group();
 
             var programTargets = targets.Select(x => new ProgramTarget(x)).ToList();
-            var checkProgram = new CheckProgram(this, programTargets);
+            var checkProgram = new CheckProgram(this, programTargets, stepSize);
             this.Targets = checkProgram.fixedTargets;
 
             this.simulation = new Simulation(this, checkProgram.keyframes);
@@ -89,7 +89,7 @@ namespace Robots
             int limit = -1;
             int joint = -1;
 
-            internal CheckProgram(Program program, List<ProgramTarget> targets)
+            internal CheckProgram(Program program, List<ProgramTarget> targets, double stepSize)
             {
                 this.program = program;
 
@@ -103,7 +103,7 @@ namespace Robots
                     }
                 }
                 FixTargetAttributes(targets);
-                FixTargetMotions(targets);
+                FixTargetMotions(targets, stepSize);
             }
 
             void FixTargetAttributes(List<ProgramTarget> targets)
@@ -170,7 +170,7 @@ namespace Robots
                     if (tool.Weight > program.Robot.Payload) program.Errors.Add($"Payload for tool {tool.Name} exceeds maximum robot payload of {program.Robot.Payload} kg");
             }
 
-            void FixTargetMotions(List<ProgramTarget> targets)
+            void FixTargetMotions(List<ProgramTarget> targets, double stepSize)
             {
                 for (int i = 0; i < targets.Count; i++)
                 {
@@ -211,9 +211,8 @@ namespace Robots
                     }
                     else if (target.Motion == Target.Motions.Linear)
                     {
-                        double step = 1;
                         double distance = targets[i - 1].Plane.Origin.DistanceTo(target.Plane.Origin);
-                        double divisions = Ceiling(distance / step);
+                        double divisions = Ceiling(distance / stepSize);
                         double realStep = distance / divisions;
 
                         double t = realStep;

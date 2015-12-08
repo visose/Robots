@@ -16,10 +16,11 @@ namespace Robots.Grasshopper
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Name", "N", "Program name", GH_ParamAccess.item, "DefaultProgram");
-            pManager.AddParameter(new RobotParameter(), "Robot", "R", "Robot", GH_ParamAccess.item);
-            pManager.AddParameter(new CommandParameter(), "Init commands", "C", "Initialization commands", GH_ParamAccess.list);
-            pManager.AddParameter(new TargetParameter(), "Targets", "T", "Targets", GH_ParamAccess.list);
-            pManager[2].Optional = true;
+            pManager.AddParameter(new RobotParameter(), "Robot", "R", "Robot used in program", GH_ParamAccess.item);
+            pManager.AddParameter(new TargetParameter(), "Targets", "T", "List of targets", GH_ParamAccess.list);
+            pManager.AddParameter(new CommandParameter(), "Init commands", "C", "Optional list of commands that will run at the start of the program", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Step Size", "S", "Distance in mm to step through linear motions, used for error checking and program simulation. Smaller is more accurate but slower", GH_ParamAccess.item, 1);
+            pManager[3].Optional = true;
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -37,16 +38,18 @@ namespace Robots.Grasshopper
             GH_Robot robot = null;
             var commands = new List<GH_Command>();
             var targets = new List<GH_Target>();
+            double stepSize = 1;
 
             if (!DA.GetData(0, ref name)) { return; }
             if (!DA.GetData(1, ref robot)) { return; }
-            DA.GetDataList(2, commands);
-            if (!DA.GetDataList(3, targets)) { return; }
+            if (!DA.GetDataList(2, targets)) { return; }
+            DA.GetDataList(3, commands);
+            if (!DA.GetData(4, ref stepSize)) { return; }
 
             var initCommand = new Robots.Commands.Group();
             initCommand.AddRange(commands.Select(x => x.Value));
 
-            var program = new Program(name, robot.Value, targets.Select(x => x.Value).ToList(), initCommand);
+            var program = new Program(name, robot.Value, targets.Select(x => x.Value).ToList(), initCommand, stepSize);
 
             DA.SetData(0, new GH_Program(program));
             DA.SetDataList(1, program.Code);
