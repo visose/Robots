@@ -21,12 +21,13 @@ namespace Robots.Grasshopper
         {
             pManager.AddParameter(new RobotParameter(), "Robot", "R", "Robot", GH_ParamAccess.item);
             pManager.AddParameter(new TargetParameter(), "Target", "T", "Target", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Geometry", "M", "Generate mesh geometry of the robot", GH_ParamAccess.item, false);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddMeshParameter("Robot meshes", "M", "Robot meshes", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Joint rotations", "J", "Joint rotations", GH_ParamAccess.list);
+            pManager.AddTextParameter("Joint rotations", "J", "Joint rotations", GH_ParamAccess.item);
             pManager.AddPlaneParameter("Plane", "P", "Plane", GH_ParamAccess.item);
             pManager.AddTextParameter("Errors", "E", "Errors", GH_ParamAccess.list);
         }
@@ -35,19 +36,24 @@ namespace Robots.Grasshopper
         {
             GH_Robot robot = null;
             GH_Target target = new GH_Target();
+            bool drawMeshes = false;
 
             if (!DA.GetData(0, ref robot)) { return; }
             if (!DA.GetData(1, ref target)) { return; }
+            if (!DA.GetData(2, ref drawMeshes)) { return; }
 
-            var kinematics = robot.Value.Kinematics(target.Value, true);
+            var kinematics = robot.Value.Kinematics(target.Value, drawMeshes);
 
             if (kinematics.Errors.Count > 0)
             {
                 this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Errors in solution");
             }
 
-            DA.SetDataList(0, kinematics.Meshes.Select(x => new GH_Mesh(x)));
-            DA.SetDataList(1, kinematics.Joints);
+            var strings = kinematics.Joints.Select(x => new GH_Number(x).ToString());
+            var joints = string.Join(",", strings);
+
+            if (kinematics.Meshes != null) DA.SetDataList(0, kinematics.Meshes.Select(x => new GH_Mesh(x)));
+            DA.SetData(1, joints);     
             DA.SetData(2, kinematics.Planes[7]);
             DA.SetDataList(3, kinematics.Errors);
         }
