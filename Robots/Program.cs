@@ -64,6 +64,11 @@ namespace Robots
             return simulation.Step(time, isNormalized);
         }
 
+        public Collision CheckCollisions(IEnumerable<int> first = null, IEnumerable<int> second = null, double linearStep = 100, double angularStep = PI / 4)
+        {
+            return new Collision(this, first ?? new int[] { 7 }, second ?? new int[] { 4 }, linearStep, angularStep);
+        }
+
         public void Save(string folder)
         {
             if (!Directory.Exists(folder)) throw new DirectoryNotFoundException($" Folder \"{folder}\" not found");
@@ -78,7 +83,13 @@ namespace Robots
             if (HasCustomCode)
                 return $"Program ({Name} with custom code)";
             else
-                return $"Program ({Name} with {Targets.Count} targets and {Duration:0.0} seconds long";
+            {
+                int seconds = (int)Duration;
+                int milliseconds = (int)((Duration - (double)seconds) * 1000);
+                string format = @"hh\:mm\:ss";
+                var span = new TimeSpan(0, 0, 0, seconds, milliseconds);
+                return $"Program ({Name} with {Targets.Count} targets and {span.ToString(format)} (h:m:s) long)";
+            }
         }
 
         class CheckProgram
@@ -95,10 +106,10 @@ namespace Robots
 
                 {
                     var firstTarget = targets[0];
-                    if (firstTarget.IsCartesian)
+                    if (!firstTarget.IsJointTarget)
                     {
-                        firstTarget.Joints = program.Robot.Kinematics(new CartesianTarget(firstTarget.Plane, firstTarget,firstTarget.Configuration)).Joints;
-                        firstTarget.IsCartesian = false;
+                        firstTarget.Joints = program.Robot.Kinematics(new CartesianTarget(firstTarget.Plane, firstTarget, firstTarget.Configuration)).Joints;
+                        firstTarget.IsJointTarget = true;
                         program.Warnings.Add($"First target changed to a joint motion using axis rotations");
                     }
                 }
@@ -179,7 +190,7 @@ namespace Robots
                     var target = targets[i];
                     fixedTargets.Add(target);
 
-                    if (!target.IsCartesian)
+                    if (target.IsJointTarget)
                     {
                         var kinematics = program.Robot.Kinematics(new JointTarget(target.Joints, target));
                         target.Joints = kinematics.Joints;
@@ -225,23 +236,21 @@ namespace Robots
                         prevInterTarget.Plane = targets[i - 1].Plane;
                         prevInterTarget.Joints = targets[i - 1].Joints;
                         prevInterTarget.Configuration = targets[i - 1].Configuration;
-                        prevInterTarget.Commands = new Commands.Group();
 
                         for (int j = 0; j < divisions; j++)
                         {
                             var interTarget = target.ShallowClone();
-                            Plane plane = CartesianLerp(targets[i - 1].Plane, target.Plane, t, 0, distance);
+                            Plane plane = CartesianTarget.Lerp(targets[i - 1].Plane, target.Plane, t, 0, distance);
                             interTarget.Plane = plane;
 
                             SetClosestSolution(prevInterTarget, interTarget);
                             SetClosestJoints(prevInterTarget, interTarget);
-                            if (program.Errors.Count > 0) break;
                             SetSpeed(prevInterTarget, interTarget);
 
                             double thisTime = interTarget.Time;
                             time += thisTime;
+                            interTarget.Time += currentTime;
 
-                            interTarget.Time = currentTime;
                             if (interTarget.ChangesConfiguration) changesConfiguration = true;
 
                             if (j > 0 && (Abs(thisTime - lastTime) > 1E-08 || interTarget.ChangesConfiguration))
@@ -255,6 +264,8 @@ namespace Robots
                             currentTime += thisTime;
                             lastTime = thisTime;
                             t += realStep;
+
+                            if (program.Errors.Count > 0) break;
                         }
 
                         target.Plane = prevInterTarget.Plane;
@@ -263,7 +274,7 @@ namespace Robots
                         target.Configuration = prevInterTarget.Configuration;
                         target.ChangesConfiguration = changesConfiguration;
 
-                        keyframes.Add(target);
+                        keyframes.Add(prevInterTarget);
                     }
 
                     if (program.Errors.Count > 0)
@@ -402,13 +413,16 @@ namespace Robots
                     }
                 }
 
-                if (deltaIndex == 1 && limit != 1)
+                if (deltaTime < TimeTol)
+                {
+                    program.Warnings.Add($"Position and orientation don't change for {target.Index}");
+                }
+                else if (deltaIndex == 1 && limit != 1)
                 {
                     program.Warnings.Add($"Rotation speed limit reached in target {target.Index}");
                     limit = deltaIndex;
                 }
-
-                if (deltaIndex == 2 && limit != 2 && joint != leadingJoint)
+                else if (deltaIndex == 2 && limit != 2 && joint != leadingJoint)
                 {
                     program.Warnings.Add($"Joint {leadingJoint + 1} speed limit reached in target {target.Index}");
                     limit = 2;
@@ -462,6 +476,7 @@ namespace Robots
 
                     time += target.Time;
                     target.TotalTime = time;
+                    program.Targets[target.Index].TotalTime = time;
                     keyframes.Add(target);
 
                     {
@@ -470,7 +485,7 @@ namespace Robots
                             if (command is Commands.Wait)
                                 waitTime += (command as Commands.Wait).Seconds;
 
-                        if (waitTime > Tol)
+                        if (waitTime > TimeTol)
                         {
                             time += waitTime;
                             var dupTarget = target.ShallowClone();
@@ -488,10 +503,10 @@ namespace Robots
                 {
                     ProgramTarget firstTarget = keyframes[0];
                     Target kinenematicTarget = null;
-                    if (firstTarget.IsCartesian)
-                        kinenematicTarget = new CartesianTarget(firstTarget.Plane, firstTarget, firstTarget.Configuration);
+                    if (firstTarget.IsJointTarget)
+                        kinenematicTarget = new JointTarget(firstTarget.Joints, firstTarget);                
                     else
-                        kinenematicTarget = new JointTarget(firstTarget.Joints, firstTarget);
+                        kinenematicTarget = new CartesianTarget(firstTarget.Plane, firstTarget, firstTarget.Configuration);
 
                     return program.Robot.Kinematics(kinenematicTarget, true);
                 }
@@ -529,9 +544,9 @@ namespace Robots
                 Robot.KinematicSolution kinematics = null;
                 ProgramTarget newSimulationTarget = program.Targets[target.Index].ShallowClone();
 
-                if (target.isJointMotion)
+                if (target.IsJointMotion)
                 {
-                    var joints = JointLerp(prevTarget.Joints, target.Joints, currentTime, prevTarget.TotalTime, target.TotalTime);
+                    var joints = JointTarget.Lerp(prevTarget.Joints, target.Joints, currentTime, prevTarget.TotalTime, target.TotalTime);
                     kinematics = program.Robot.Kinematics(new JointTarget(joints, target), true);
                 }
                 else if (target.Motion == Target.Motions.Linear)
@@ -539,7 +554,7 @@ namespace Robots
                     Plane prevPlane = prevTarget.Plane;
                     if (prevTarget.Tool != target.Tool)
                         prevPlane.Transform(Transform.PlaneToPlane(target.Tool.Tcp, prevTarget.Tool.Tcp));
-                    var plane = CartesianLerp(prevPlane, target.Plane, currentTime, prevTarget.TotalTime, target.TotalTime);
+                    var plane = CartesianTarget.Lerp(prevPlane, target.Plane, currentTime, prevTarget.TotalTime, target.TotalTime);
                     Target.RobotConfigurations? configuration = (Abs(prevTarget.TotalTime - currentTime) < Abs(target.TotalTime - currentTime)) ? prevTarget.Configuration : target.Configuration;
                     //Target.RobotConfigurations configuration = simuTarget.target.Configuration;
                     kinematics = program.Robot.Kinematics(new CartesianTarget(plane, target, configuration), true);
@@ -553,6 +568,80 @@ namespace Robots
                 newSimulationTarget.Joints = kinematics.Joints;
                 currentSimulationTarget = newSimulationTarget;
                 return kinematics;
+            }
+        }
+
+        public class Collision
+        {
+            Program program;
+            double linearStep;
+            double angularStep;
+            IEnumerable<int> first;
+            IEnumerable<int> second;
+
+            public bool HasCollision { get; private set; } = false;
+            public Mesh[] Meshes { get; private set; }
+            public ProgramTarget Target { get; private set; }
+
+
+            internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, double linearStep, double angularStep)
+            {
+                this.program = program;
+                this.linearStep = linearStep;
+                this.angularStep = angularStep;
+                this.first = first;
+                this.second = second;
+
+                Collide();
+            }
+
+            void Collide()
+            {
+                System.Threading.Tasks.Parallel.ForEach(program.Targets, (target, state) =>
+                {
+                    if (target.Index == 0) return;
+                    var prevTarget = program.Targets[target.Index - 1];
+
+                    double distance = prevTarget.Plane.Origin.DistanceTo(target.Plane.Origin);
+                    double linearDivisions = Ceiling(distance / linearStep);
+
+                    double maxAngle = target.Joints.Zip(prevTarget.Joints, (x, y) => Abs(x - y)).Max();
+                    double angularDivisions = Ceiling(maxAngle / angularStep);
+
+                    double divisions = Max(linearDivisions, angularDivisions);
+                    double step = 1.0 / divisions;
+
+                    int j = (target.Index != 1) ? 0 : 1;
+                    var ts = Enumerable.Range(j, (int)divisions + 1 - j).Select(x => step * x);
+
+                    foreach (double t in ts)
+                    {
+                        Robot.KinematicSolution kinematics = null;
+                        if (target.IsJointMotion)
+                        {
+                            var joints = JointTarget.Lerp(prevTarget.Joints, target.Joints, t, 0, 1);
+                            kinematics = program.Robot.Kinematics(new JointTarget(joints, target), true);
+                        }
+                        else
+                        {
+                            var plane = CartesianTarget.Lerp(prevTarget.Plane, target.Plane, t, 0, 1);
+                            kinematics = program.Robot.Kinematics(new CartesianTarget(plane, target), true);
+                        }
+
+                        var setA = first.Select(x => kinematics.Meshes[x]);
+                        var setB = second.Select(x => kinematics.Meshes[x]);
+
+                        var meshClash = Rhino.Geometry.Intersect.MeshClash.Search(setA, setB, 0, 1);
+
+                        if (meshClash.Length > 0 && (!HasCollision || Target.Index > target.Index))
+                        {
+                            HasCollision = true;
+                            Meshes = new Mesh[] { meshClash[0].MeshA, meshClash[0].MeshB };
+                            Target = target;
+                            state.Break();
+                        }
+                    }
+                });
             }
         }
     }

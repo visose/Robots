@@ -73,6 +73,16 @@ namespace Robots.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap iconCollision {
+            get {
+                object obj = ResourceManager.GetObject("iconCollision", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap iconCommand {
             get {
                 object obj = ResourceManager.GetObject("iconCommand", resourceCulture);

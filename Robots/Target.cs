@@ -52,6 +52,32 @@ namespace Robots
 
         public CartesianTarget(Plane plane, Target target, RobotConfigurations? configuration = null, Motions motion = Motions.Joint) : this(plane, configuration, motion, target.Tool, target.Speed, target.Zone, target.Commands) { }
 
+        /// <summary>
+        /// Quaternion interpolation based on: http://www.grasshopper3d.com/group/lobster/forum/topics/lobster-reloaded
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="t"></param>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <returns></returns>
+        public static Plane Lerp(Plane a, Plane b, double t, double min, double max)
+        {
+            t = (t - min) / (max - min);
+            if (double.IsNaN(t)) t = 0;
+            var newOrigin = a.Origin * (1 - t) + b.Origin * t;
+
+            Quaternion q = Quaternion.Rotation(a, b);
+            double angle;
+            Vector3d axis;
+            q.GetRotation(out angle, out axis);
+            angle = (angle > PI) ? angle - 2 * PI : angle;
+            a.Rotate(t * angle, axis, a.Origin);
+
+            a.Origin = newOrigin;
+            return a;
+        }
+
         public override string ToString()
         {
             string type = $"Cartesian ({Plane.OriginX:0.00},{Plane.OriginY:0.00},{Plane.OriginZ:0.00})";
@@ -78,6 +104,12 @@ namespace Robots
 
         public JointTarget(double[] joints, Target target) : this(joints, target.Tool, target.Speed, target.Zone, target.Commands) { }
 
+        public static double[] Lerp(double[] a, double[] b, double t, double min, double max)
+        {
+            t = (t - min) / (max - min);
+            if (double.IsNaN(t)) t = 0;
+            return a.Zip(b, (x, y) => (x * (1 - t) + y * t)).ToArray();
+        }
 
         public override string ToString()
         {
@@ -96,7 +128,7 @@ namespace Robots
     {
         public Plane Plane { get; internal set; }
         public double[] Joints { get; internal set; }
-        public bool IsCartesian { get; internal set; }
+        public bool IsJointTarget { get; internal set; }
         public Motions Motion { get; internal set; }
         public RobotConfigurations? Configuration { get; internal set; }
 
@@ -109,7 +141,7 @@ namespace Robots
         public double TotalTime { get; internal set; }
         public int LeadingJoint { get; internal set; }
 
-        public bool isJointMotion => !IsCartesian || Motion == Motions.Joint;
+        public bool IsJointMotion => IsJointTarget || Motion == Motions.Joint;
 
         internal ProgramTarget(Target target) : base(target.Tool, target.Speed, target.Zone, target.Commands)
         {
@@ -117,7 +149,7 @@ namespace Robots
             {
                 var cartesianTarget = target as CartesianTarget;
                 this.Plane = cartesianTarget.Plane;
-                this.IsCartesian = true;
+                this.IsJointTarget = false;
                 this.Motion = cartesianTarget.Motion;
                 this.Configuration = cartesianTarget.Configuration;
                 this.ForcedConfiguration = (this.Configuration != null);
@@ -125,7 +157,7 @@ namespace Robots
             else if (target is JointTarget)
             {
                 this.Joints = (target as JointTarget).Joints;
-                this.IsCartesian = false;
+                this.IsJointTarget = true;
             }
             else if (target is ProgramTarget)       
                 throw new InvalidCastException("Use the ShallowClone() method for duplicating a ProgramTarget");
@@ -182,7 +214,7 @@ namespace Robots
         {
             private double x, y, z;
             private double radius;
-            private double[,] p = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
+            private double[,] p = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
 
             internal Point3d Center => new Point3d(x, y, z);
             internal double Radius => radius;
@@ -414,7 +446,7 @@ namespace Robots
         /// The zone size for the tool reorientation in radians.
         /// </summary>
         public double Rotation { get; set; }
-        public bool IsFlyBy => Distance > Tol;
+        public bool IsFlyBy => Distance > DistanceTol;
 
         public static Zone Default { get; }
 

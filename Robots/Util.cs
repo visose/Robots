@@ -11,11 +11,15 @@ namespace Robots
 {
     static class Util
     {
-        public const double Tol = 0.001;
+        public const double DistanceTol = 0.001;
+        public const double AngleTol = 0.001;
+        public const double TimeTol = 0.0001;
+        public const double UnitTol = 0.000001;
         internal const double SingularityTol = 0.0001;
+
         internal const string ResourcesFolder = @"C:\Users\Vicente\Documents\Trabajo\Bartlett\RobotsApp\Robots\Robots\Resources";
 
-        internal static Transform ToTransform(double[,] matrix)
+        internal static Transform ToTransform(this double[,] matrix)
         {
             var transform = new Transform();
             for (int i = 0; i < 4; i++)
@@ -25,44 +29,11 @@ namespace Robots
             return transform;
         }
 
-        internal static Plane ToPlane(Transform transform)
+        internal static Plane ToPlane(this Transform transform)
         {
             Plane plane = Plane.WorldXY;
             plane.Transform(transform);
             return plane;
-        }
-
-        /// <summary>
-        /// Quaternion interpolation based on: http://www.grasshopper3d.com/group/lobster/forum/topics/lobster-reloaded
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <param name="t"></param>
-        /// <param name="min"></param>
-        /// <param name="max"></param>
-        /// <returns></returns>
-        internal static Plane CartesianLerp(Plane a, Plane b, double t, double min, double max)
-        {
-            t = (t - min) / (max - min);
-            if (double.IsNaN(t)) t = 0;
-            var newOrigin = a.Origin * (1 - t) + b.Origin * t;
-
-            Quaternion q = Quaternion.Rotation(a, b);
-            double angle;
-            Vector3d axis;
-            q.GetRotation(out angle, out axis);
-            angle = (angle > PI) ? angle - 2 * PI : angle;
-            a.Rotate(t * angle, axis, a.Origin);
-
-            a.Origin = newOrigin;
-            return a;
-        }
-
-        internal static double[] JointLerp(double[] a, double[] b, double t, double min, double max)
-        {
-            t = (t - min) / (max - min);
-            if (double.IsNaN(t)) t = 0;
-            return a.Zip(b, (x, y) => (x * (1 - t) + y * t)).ToArray();
         }
 
         internal static string AssemblyDirectory
