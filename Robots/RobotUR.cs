@@ -227,7 +227,7 @@ namespace Robots
 
                     string moveText = null;
 
-                    if (!target.IsCartesian || (target.Motion == Target.Motions.Joint && target.ForcedConfiguration))
+                    if (target.IsJointTarget || (target.Motion == Target.Motions.Joint && target.ForcedConfiguration))
                     {
                         double[] joints = target.Joints;
                         double maxAxisSpeed = robot.Joints.Max(x => x.MaxSpeed);

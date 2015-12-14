@@ -74,7 +74,7 @@ namespace Robots
                 {
                     string moveText = null;
 
-                    if (!target.IsCartesian)
+                    if (target.IsJointTarget)
                     {
                         double[] joints = target.Joints;
                         joints = joints.Select((x, i) => robot.RadianToDegree(x, i)).ToArray();

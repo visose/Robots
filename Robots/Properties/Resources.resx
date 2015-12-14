@@ -166,4 +166,7 @@
   <data name="iconURRemote" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\icons\iconURRemote.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="iconCollision" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconCollision.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
 </root>

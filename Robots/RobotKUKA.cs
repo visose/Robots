@@ -52,13 +52,13 @@ namespace Robots
             Transform matrix = Transform.PlaneToPlane(basePlane, targetPlane);
             double heading, attitude, bank;
 
-            if (matrix.M10 > Tol)
+            if (matrix.M10 > (1- UnitTol))
             { // singularity at north pole
                 heading = Atan2(matrix.M02, matrix.M22);
                 attitude = PI / 2;
                 bank = 0;
             }
-            else if (matrix.M10 < -Tol)
+            else if (matrix.M10 < -(1- UnitTol))
             { // singularity at south pole
                 heading = Atan2(matrix.M02, matrix.M22);
                 attitude = -PI / 2;
@@ -76,7 +76,7 @@ namespace Robots
             for (int i = 0; i < 3; i++)
             {
                 values[i] = values[i].ToDegrees();
-                if (Abs(values[i] - -180.0) < Tol) values[i] = 180.0;
+                if (Abs(values[i] - -180.0) < AngleTol.ToDegrees()) values[i] = 180.0;
             }
 
             return values;
@@ -104,11 +104,7 @@ namespace Robots
 &PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
 &PARAM EDITMASK = *
 DEF {program.Name}()
-INT I
 BAS (#INITMOV,0)
-FOR I=1 TO 6
-$VEL_AXIS[I] = 100
-ENDFOR
 $ADVANCE=5
 $APO.CPTP=100
 ");
@@ -138,14 +134,14 @@ $APO.CPTP=100
                     if (currentSpeed == null || target.Speed != currentSpeed)
                     {
                         double rotation = target.Speed.RotationSpeed.ToDegrees();
-                        if (!target.isJointMotion)
+                        if (!target.IsJointMotion)
                         {
-                            code.Add($"$VEL={{CP {target.Speed.TranslationSpeed / 1000:0.00000},ORI1 {rotation:0.000},ORI2 {rotation:0.000} }}");
+                            code.Add($"$VEL={{CP {target.Speed.TranslationSpeed / 1000:0.00000},ORI1 {rotation:0.000},ORI2 {rotation:0.000}}}");
                             currentSpeed = target.Speed;
                         }
                     }
 
-                    if (target.isJointMotion)
+                    if (target.IsJointMotion)
                     {
                         double percentage = (target.Speed.AxisSpeed > 0) ? target.Speed.AxisSpeed : (target.Time > 0) ? target.MinTime / target.Time : 0.1;
                         percentage *= 100;
@@ -155,7 +151,7 @@ $APO.CPTP=100
 
                     string moveText = null;
 
-                    if (!target.IsCartesian)
+                    if (target.IsJointTarget)
                     {
                         double[] joints = target.Joints;
                         joints = joints.Select((x, i) => robot.RadianToDegree(x, i)).ToArray();
@@ -195,14 +191,14 @@ $APO.CPTP=100
                                         bits = $@", S'B{status:000}',T'B{turn:000000}'";
                                     }
 
-                                    moveText = $"PTP {{X {plane.OriginX:0.00},Y {plane.OriginY:0.00},Z {plane.OriginZ:0.00},A {euler[0]:0.000},B {euler[1]:0.000},C {euler[2]:0.000}{bits} }}";
+                                    moveText = $"PTP {{X {plane.OriginX:0.00},Y {plane.OriginY:0.00},Z {plane.OriginZ:0.00},A {euler[1]:0.000},B {euler[0]:0.000},C {euler[2]:0.000}{bits}}}";
                                     if (target.Zone.IsFlyBy) moveText += " C_PTP";
                                     break;
                                 }
 
                             case Target.Motions.Linear:
                                 {
-                                    moveText = $"LIN {{X {plane.OriginX:0.00},Y {plane.OriginY:0.00},Z {plane.OriginZ:0.00},A {euler[0]:0.000},B {euler[1]:0.000},C {euler[2]:0.000} }}";
+                                    moveText = $"LIN {{X {plane.OriginX:0.00},Y {plane.OriginY:0.00},Z {plane.OriginZ:0.00},A {euler[1]:0.000},B {euler[0]:0.000},C {euler[2]:0.000}}}";
                                     if (target.Zone.IsFlyBy) moveText += " C_DIS";
                                     break;
                                 }
@@ -223,11 +219,9 @@ $APO.CPTP=100
             {
                 var basePlane = new Plane(Point3d.Origin, -Vector3d.XAxis, -Vector3d.YAxis);
                 Plane tcp = tool.Tcp;
-                tcp = new Plane(tcp.Origin, tcp.YAxis, -tcp.ZAxis);
                 tcp.Transform(Transform.PlaneToPlane(Plane.WorldXY, basePlane));
-
                 double[] eulerAngles = EulerAngles(Plane.WorldXY, tcp);
-                string toolTxt = $"$TOOL={{X {tcp.OriginX:0.000},Y {tcp.OriginY:0.000},Z {tcp.OriginZ:0.000},A {eulerAngles[0]:0.000},B {eulerAngles[1]:0.000},C {eulerAngles[2]:0.000} }} ;{tool.Name}";
+                string toolTxt = $"$TOOL={{X {tcp.OriginX:0.000},Y {tcp.OriginY:0.000},Z {tcp.OriginZ:0.000},A {eulerAngles[2]:0.000},B {eulerAngles[0]:0.000},C {eulerAngles[1]:0.000}}} ;{tool.Name}";
                 string load = $"$LOAD.M={tool.Weight}";
                 Point3d centroid = tcp.Origin / 2;
                 string centroidTxt = $"$LOAD.CM={{X {centroid.X:0.000},Y {centroid.Y:0.000},Z {centroid.Z:0.000},A 0,B 0,C 0}}";

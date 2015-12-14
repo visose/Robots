@@ -53,7 +53,7 @@ namespace Robots.Grasshopper
             var joints = string.Join(",", strings);
 
             if (kinematics.Meshes != null) DA.SetDataList(0, kinematics.Meshes.Select(x => new GH_Mesh(x)));
-            DA.SetData(1, joints);     
+            DA.SetData(1, joints);
             DA.SetData(2, kinematics.Planes[7]);
             DA.SetDataList(3, kinematics.Errors);
         }
@@ -99,6 +99,9 @@ namespace Robots.Grasshopper
             form = new AnimForm(this);
         }
 
+        double time = 0;
+        double sliderTime = 0;
+
         public override GH_Exposure Exposure => GH_Exposure.quarternary;
         public override Guid ComponentGuid => new Guid("{6CE35140-A625-4686-B8B3-B734D9A36CFC}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconSimulation;
@@ -123,18 +126,20 @@ namespace Robots.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             GH_Program program = null;
-            GH_Number time = null;
+            GH_Number sliderTimeGH = null;
             GH_Boolean isNormalized = null;
             if (!DA.GetData(0, ref program)) { return; }
-            if (!DA.GetData(1, ref time)) { return; }
+            if (!DA.GetData(1, ref sliderTimeGH)) { return; }
             if (!DA.GetData(2, ref isNormalized)) { return; }
 
-            var kinematics = program.Value.Animate((form.Visible) ? formTime : time.Value, (form.Visible) ? false : isNormalized.Value);
+
+            sliderTime = (isNormalized.Value) ? sliderTimeGH.Value * program.Value.Duration : sliderTimeGH.Value;
+            if (!form.Visible) time = sliderTime;
+
+            var kinematics = program.Value.Animate(time, false);
 
             if (kinematics.Errors.Count > 0)
-            {
                 this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Errors in solution");
-            }
 
             DA.SetDataList(0, kinematics.Meshes.Select(x => new GH_Mesh(x)));
             DA.SetDataList(1, kinematics.Joints);
@@ -147,7 +152,7 @@ namespace Robots.Grasshopper
             {
                 var currentTime = DateTime.Now;
                 TimeSpan delta = currentTime - lastTime;
-                formTime += delta.TotalSeconds * speed;
+                time += delta.TotalSeconds * speed;
                 lastTime = currentTime;
                 this.ExpireSolution(true);
             }
@@ -156,7 +161,6 @@ namespace Robots.Grasshopper
 
         // Form
         AnimForm form;
-        double formTime = 0;
         double speed = 1;
         DateTime lastTime;
 
@@ -185,7 +189,7 @@ namespace Robots.Grasshopper
         void ClickStop(object sender, EventArgs e)
         {
             form.play.Checked = false;
-            formTime = 0.0;
+            time = sliderTime;
             ExpireSolution(true);
         }
 
@@ -244,8 +248,8 @@ namespace Robots.Grasshopper
                 Controls.Add(play);
                 Controls.Add(stop);
 
-               // AutoScaleDimensions = new SizeF(6F, 13F);
-                AutoScaleMode  = AutoScaleMode.None;
+                // AutoScaleDimensions = new SizeF(6F, 13F);
+                AutoScaleMode = AutoScaleMode.None;
                 AutoSize = false;
                 MinimumSize = new Size(0, 0);
                 Size = new Size(138, 320);
@@ -307,20 +311,20 @@ namespace Robots.Grasshopper
                 group.Controls.Add(slider);
 
                 // Slider labels
-                int count = (slider.Maximum - slider.Minimum)/ slider.TickFrequency; 
+                int count = (slider.Maximum - slider.Minimum) / slider.TickFrequency;
 
-                for(int i=0;i<=count;i++)
+                for (int i = 0; i <= count; i++)
                 {
                     var label = new Label();
 
-                    label.Location = new Point(51, 16+i*29);
+                    label.Location = new Point(51, 16 + i * 29);
                     label.Size = new Size(60, 20);
                     label.Text = (slider.Maximum - i * 100).ToString() + "%";
                     label.Font = labelFont;
                     label.TextAlign = ContentAlignment.MiddleLeft;
                     group.Controls.Add(label);
-                }   
-    }
+                }
+            }
         }
     }
 

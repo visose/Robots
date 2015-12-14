@@ -24,7 +24,7 @@ namespace Robots
         public Mesh DisplayMesh { get; }
         protected Plane basePlane;
         readonly Mesh baseMesh;
-        internal Joint[] Joints { get; }
+        public Joint[] Joints { get; }
 
       //  public Plane[] GetPlanes() => Joints.Select(x => x.Plane).ToArray();
         
@@ -255,23 +255,23 @@ namespace Robots
         public abstract double DegreeToRadian(double degree, int i);
         public abstract double RadianToDegree(double radian, int i);
 
-        internal class Joint
+        public class Joint
         {
-            internal int Index { get; set; }
+            public int Index { get; set; }
             internal double A { get; set; }
             internal double D { get; set; }
-            internal Interval Range { get; set; }
-            internal double MaxSpeed { get; set; }
+            public Interval Range { get; internal set; }
+            public double MaxSpeed { get; internal set; }
             internal Plane Plane { get; set; }
             internal Mesh Mesh { get; set; }
         }
 
-        internal class RobotIO
+        public class RobotIO
         {
-            internal string[] DO { get; set; }
-            internal string[] DI { get; set; }
-            internal string[] AO { get; set; }
-            internal string[] AI { get; set; }
+            public string[] DO { get; internal set; }
+            public string[] DI { get; internal set; }
+            public string[] AO { get; internal set; }
+            public string[] AI { get; internal set; }
         }
 
         [Serializable]
