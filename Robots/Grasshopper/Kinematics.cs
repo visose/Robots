@@ -104,11 +104,11 @@ namespace Robots.Grasshopper
 
         public override GH_Exposure Exposure => GH_Exposure.quarternary;
         public override Guid ComponentGuid => new Guid("{6CE35140-A625-4686-B8B3-B734D9A36CFC}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconSimulation;
+        protected override Bitmap Icon => Properties.Resources.iconSimulation;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
+            pManager.AddParameter(new ProgramParameter(), "Program", "P", "Robot program to simulate", GH_ParamAccess.item);
             pManager.AddNumberParameter("Time", "T", "Advance the simulation to this time", GH_ParamAccess.item, 0);
             pManager.AddBooleanParameter("Normalized", "N", "Time value is normalized (from 0 to 1)", GH_ParamAccess.item, true);
         }
@@ -117,9 +117,10 @@ namespace Robots.Grasshopper
         {
             pManager.AddMeshParameter("Robot meshes", "M", "Robot meshes", GH_ParamAccess.list);
             pManager.AddNumberParameter("Joint rotations", "J", "Joint rotations", GH_ParamAccess.list);
-            pManager.AddPlaneParameter("Planes", "P", "Planes", GH_ParamAccess.item);
+            pManager.AddPlaneParameter("Plane", "P", "TCP position", GH_ParamAccess.item);
             pManager.AddIntegerParameter("Index", "I", "Current target index", GH_ParamAccess.item);
             pManager.AddNumberParameter("Time", "T", "Current time in seconds", GH_ParamAccess.item);
+            pManager.AddParameter(new ProgramParameter(), "Program", "P", "This is the same program as the input program. Use this output to update other visualization components along with the simulation.", GH_ParamAccess.item);
             pManager.AddTextParameter("Errors", "E", "Errors", GH_ParamAccess.list);
         }
 
@@ -146,7 +147,8 @@ namespace Robots.Grasshopper
             DA.SetData(2, kinematics.Planes[7]);
             DA.SetData(3, program.Value.CurrentSimulationTarget.Index);
             DA.SetData(4, program.Value.CurrentSimulationTime);
-            DA.SetDataList(5, kinematics.Errors);
+            DA.SetData(5, new GH_Program(program.Value));
+            DA.SetDataList(6, kinematics.Errors);
 
             if (form.Visible && form.play.Checked)
             {

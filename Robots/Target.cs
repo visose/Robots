@@ -200,10 +200,12 @@ namespace Robots
             foreach (Plane plane in new Plane[] { a, b, c, d })
             {
                 Point3d remappedPoint;
-                a.RemapToPlaneSpace(calibrate.Center, out remappedPoint);
+                plane.RemapToPlaneSpace(calibrate.Center, out remappedPoint);
                 tcp += remappedPoint;
             }
             tcp /= 4;
+          //  var planeOrigin = new Plane(Point3d.Origin, Tcp.XAxis, Tcp.YAxis);
+          //  Point3d pointOrigin = planeOrigin.PointAt(tcp.X, tcp.Y, tcp.Z);
             Tcp = new Plane(tcp, Tcp.XAxis, Tcp.YAxis);
         }
 

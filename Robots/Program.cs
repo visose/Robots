@@ -631,7 +631,7 @@ namespace Robots
                         var setA = first.Select(x => kinematics.Meshes[x]);
                         var setB = second.Select(x => kinematics.Meshes[x]);
 
-                        var meshClash = Rhino.Geometry.Intersect.MeshClash.Search(setA, setB, 0, 1);
+                        var meshClash = Rhino.Geometry.Intersect.MeshClash.Search(setA, setB, 1, 1);
 
                         if (meshClash.Length > 0 && (!HasCollision || Target.Index > target.Index))
                         {

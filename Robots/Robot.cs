@@ -10,7 +10,6 @@ using static System.Math;
 
 namespace Robots
 {
-
     public abstract partial class Robot
     {
         public enum Manufacturers { ABB, KUKA, UR };
