@@ -36,12 +36,12 @@
 
   <robot model="KR6-R900" manufacturer="KUKA" payload="6">
     <Joints>
-      <Joint number="1" a ="25" d ="400" minrange = "-185" maxrange ="185" maxspeed ="156"/>
-      <Joint number="2" a ="455" d ="0" minrange = "-155" maxrange ="35" maxspeed ="156"/>
-      <Joint number="3" a ="35" d ="0" minrange = "-130" maxrange ="154" maxspeed ="156"/>
-      <Joint number="4" a ="0" d ="420" minrange = "-350" maxrange ="350" maxspeed ="343"/>
-      <Joint number="5" a ="0" d ="0" minrange = "-130" maxrange ="130" maxspeed ="362"/>
-      <Joint number="6" a ="0" d ="80" minrange = "-350" maxrange ="350" maxspeed ="659"/>
+      <Joint number="1" a ="25" d ="400" minrange = "-170" maxrange ="170" maxspeed ="360"/>
+      <Joint number="2" a ="455" d ="0" minrange = "-190" maxrange ="45" maxspeed ="300"/>
+      <Joint number="3" a ="35" d ="0" minrange = "-120" maxrange ="156" maxspeed ="360"/>
+      <Joint number="4" a ="0" d ="420" minrange = "-185" maxrange ="185" maxspeed ="381"/>
+      <Joint number="5" a ="0" d ="0" minrange = "-120" maxrange ="120" maxspeed ="388"/>
+      <Joint number="6" a ="0" d ="80" minrange = "-350" maxrange ="350" maxspeed ="615"/>
     </Joints>
     <IO>
       <DO names="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>

@@ -320,7 +320,7 @@ namespace Robots.Grasshopper
         public DeconstructTarget() : base("Deconstruct target", "DeTarget", "Deconstructs a target. Right click for additional outputs", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{3252D880-59F9-4C9A-8A92-A6CD4C0BA591}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconDeconstructTarget;
+        protected override Bitmap Icon => Properties.Resources.iconDeconstructTarget;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
@@ -337,8 +337,8 @@ namespace Robots.Grasshopper
             GH_Target target = null;
             if (!DA.GetData("Target", ref target)) return;
 
-            bool isTargetCartesian = target.Value is CartesianTarget;
-            if (isTargetCartesian != isCartesian) SwitchCartesian();
+            bool isCartesian = target.Value is CartesianTarget;
+           // if (isTargetCartesian != isCartesian) SwitchCartesian();
 
             bool hasJoints = Params.Output.Any(x => x.Name == "Joints");
             bool hasPlane = Params.Output.Any(x => x.Name == "Plane");
@@ -349,10 +349,10 @@ namespace Robots.Grasshopper
             bool hasZone = Params.Output.Any(x => x.Name == "Zone");
             bool hasCommand = Params.Output.Any(x => x.Name == "Command");
 
-            if (hasJoints) DA.SetData("Joints", new GH_String(string.Join(",", (target.Value as JointTarget).Joints.Select(x => $"{x:0.000}"))));
-            if (hasPlane) DA.SetData("Plane", new GH_Plane((target.Value as CartesianTarget).Plane));
-            if (hasConfig) DA.SetData("RobConf", (target.Value as CartesianTarget).Configuration == null ? null : new GH_Integer((int)(target.Value as CartesianTarget).Configuration));
-            if (hasMotion) DA.SetData("Motion", new GH_String((target.Value as CartesianTarget).Motion.ToString()));
+            if (hasJoints) DA.SetData("Joints", isCartesian ? null : new GH_String(string.Join(",", (target.Value as JointTarget).Joints.Select(x => $"{x:0.000}"))));
+            if (hasPlane) DA.SetData("Plane", isCartesian ? new GH_Plane((target.Value as CartesianTarget).Plane) : null);
+            if (hasConfig) DA.SetData("RobConf", isCartesian ?  (target.Value as CartesianTarget).Configuration == null ? null : new GH_Integer((int)(target.Value as CartesianTarget).Configuration) : null);
+            if (hasMotion) DA.SetData("Motion", isCartesian ? new GH_String((target.Value as CartesianTarget).Motion.ToString()) : null);
             if (hasTool && (target.Value.Tool != null)) DA.SetData("Tool", new GH_Tool(target.Value.Tool));
             if (hasSpeed && (target.Value.Speed != null)) DA.SetData("Speed", new GH_Speed(target.Value.Speed));
             if (hasZone && (target.Value.Zone != null)) DA.SetData("Zone", new GH_Zone(target.Value.Zone));
@@ -361,7 +361,7 @@ namespace Robots.Grasshopper
 
         // Variable outputs
 
-        bool isCartesian = false;
+        //bool isCartesian = false;
 
         IGH_Param[] parameters = new IGH_Param[8]
 {
@@ -379,11 +379,11 @@ namespace Robots.Grasshopper
 
         protected override void AppendAdditionalComponentMenuItems(System.Windows.Forms.ToolStripDropDown menu)
         {
-            Menu_AppendItem(menu, "Joints output", AddJoints, !isCartesian, Params.Output.Any(x => x.Name == "Joints"));
+            Menu_AppendItem(menu, "Joints output", AddJoints, true, Params.Output.Any(x => x.Name == "Joints"));
+            Menu_AppendItem(menu, "Plane output", AddPlane, true, Params.Output.Any(x => x.Name == "Plane"));
             Menu_AppendSeparator(menu);
-            Menu_AppendItem(menu, "Plane output", AddPlane, isCartesian, Params.Output.Any(x => x.Name == "Plane"));
-            Menu_AppendItem(menu, "Config output", AddConfig, isCartesian, Params.Output.Any(x => x.Name == "RobConf"));
-            Menu_AppendItem(menu, "Motion output", AddMotion, isCartesian, Params.Output.Any(x => x.Name == "Motion"));
+            Menu_AppendItem(menu, "Config output", AddConfig, true, Params.Output.Any(x => x.Name == "RobConf"));
+            Menu_AppendItem(menu, "Motion output", AddMotion, true, Params.Output.Any(x => x.Name == "Motion"));
             Menu_AppendSeparator(menu);
             Menu_AppendItem(menu, "Tool output", AddTool, true, Params.Output.Any(x => x.Name == "Tool"));
             Menu_AppendItem(menu, "Speed output", AddSpeed, true, Params.Output.Any(x => x.Name == "Speed"));
@@ -392,7 +392,7 @@ namespace Robots.Grasshopper
         }
 
         // Varible methods
-
+/*
         private void SwitchCartesian()
         {
             if (isCartesian)
@@ -413,6 +413,7 @@ namespace Robots.Grasshopper
         }
         private void SwitchCartesianEvent(object sender, EventArgs e) => SwitchCartesian();
 
+        */
         private void AddParam(int index)
         {
             IGH_Param parameter = parameters[index];

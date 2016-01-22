@@ -40,46 +40,14 @@ namespace Robots
             return radian.ToDegrees();
         }
 
-
-        /// <summary>
-        /// Lifted from http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToEuler
-        /// </summary>
-        /// <param name="basePlane"></param>
-        /// <param name="targetPlane"></param>
-        /// <returns></returns>
-        public static double[] EulerAngles(Plane basePlane, Plane targetPlane)
+        public static double[] EulerAngles(Plane targetPlane)
         {
-            Transform matrix = Transform.PlaneToPlane(basePlane, targetPlane);
-            double heading, attitude, bank;
-
-            if (matrix.M10 > (1- UnitTol))
-            { // singularity at north pole
-                heading = Atan2(matrix.M02, matrix.M22);
-                attitude = PI / 2;
-                bank = 0;
-            }
-            else if (matrix.M10 < -(1- UnitTol))
-            { // singularity at south pole
-                heading = Atan2(matrix.M02, matrix.M22);
-                attitude = -PI / 2;
-                bank = 0;
-            }
-            else
-            {
-                heading = Atan2(-matrix.M20, matrix.M00);
-                bank = Atan2(-matrix.M12, matrix.M11);
-                attitude = Asin(matrix.M10);
-            }
-
-            double[] values = new double[] { heading, attitude, bank };
-
-            for (int i = 0; i < 3; i++)
-            {
-                values[i] = values[i].ToDegrees();
-                if (Abs(values[i] - -180.0) < AngleTol.ToDegrees()) values[i] = 180.0;
-            }
-
-            return values;
+            Transform matrix = Transform.PlaneToPlane(Plane.WorldXY, targetPlane);
+            double a = Atan2(-matrix.M10, matrix.M00);
+            double b = Atan2(matrix.M20, Sqrt(1 - matrix.M20 * matrix.M20));
+            double c = Atan2(-matrix.M21, matrix.M22);
+            var euler = new double[] { a, b, c };
+            return euler.Select(x => -x.ToDegrees()).ToArray();
         }
 
         class KRLPostProcessor
@@ -148,7 +116,6 @@ $APO.CPTP=100
                         code.Add($"BAS(#VEL_PTP, {percentage:0})");
                     }
 
-
                     string moveText = null;
 
                     if (target.IsJointTarget)
@@ -162,7 +129,7 @@ $APO.CPTP=100
                     {
                         var plane = target.Plane;
                         plane.Transform(Transform.PlaneToPlane(robot.basePlane, Plane.WorldXY));
-                        var euler = EulerAngles(Plane.WorldXY, plane);
+                        var euler = EulerAngles(plane);
 
                         switch (target.Motion)
                         {
@@ -191,14 +158,14 @@ $APO.CPTP=100
                                         bits = $@", S'B{status:000}',T'B{turn:000000}'";
                                     }
 
-                                    moveText = $"PTP {{X {plane.OriginX:0.00},Y {plane.OriginY:0.00},Z {plane.OriginZ:0.00},A {euler[1]:0.000},B {euler[0]:0.000},C {euler[2]:0.000}{bits}}}";
+                                    moveText = $"PTP {{X {plane.OriginX:0.00},Y {plane.OriginY:0.00},Z {plane.OriginZ:0.00},A {euler[0]:0.000},B {euler[1]:0.000},C {euler[2]:0.000}{bits}}}";
                                     if (target.Zone.IsFlyBy) moveText += " C_PTP";
                                     break;
                                 }
 
                             case Target.Motions.Linear:
                                 {
-                                    moveText = $"LIN {{X {plane.OriginX:0.00},Y {plane.OriginY:0.00},Z {plane.OriginZ:0.00},A {euler[1]:0.000},B {euler[0]:0.000},C {euler[2]:0.000}}}";
+                                    moveText = $"LIN {{X {plane.OriginX:0.00},Y {plane.OriginY:0.00},Z {plane.OriginZ:0.00},A {euler[0]:0.000},B {euler[1]:0.000},C {euler[2]:0.000}}}";
                                     if (target.Zone.IsFlyBy) moveText += " C_DIS";
                                     break;
                                 }
@@ -220,8 +187,8 @@ $APO.CPTP=100
                 var basePlane = new Plane(Point3d.Origin, -Vector3d.XAxis, -Vector3d.YAxis);
                 Plane tcp = tool.Tcp;
                 tcp.Transform(Transform.PlaneToPlane(Plane.WorldXY, basePlane));
-                double[] eulerAngles = EulerAngles(Plane.WorldXY, tcp);
-                string toolTxt = $"$TOOL={{X {tcp.OriginX:0.000},Y {tcp.OriginY:0.000},Z {tcp.OriginZ:0.000},A {eulerAngles[2]:0.000},B {eulerAngles[0]:0.000},C {eulerAngles[1]:0.000}}} ;{tool.Name}";
+                double[] eulerAngles = EulerAngles(tcp);
+                string toolTxt = $"$TOOL={{X {tcp.OriginX:0.000},Y {tcp.OriginY:0.000},Z {tcp.OriginZ:0.000},A {eulerAngles[0]:0.000},B {eulerAngles[1]:0.000},C {eulerAngles[2]:0.000}}} ;{tool.Name}";
                 string load = $"$LOAD.M={tool.Weight}";
                 Point3d centroid = tcp.Origin / 2;
                 string centroidTxt = $"$LOAD.CM={{X {centroid.X:0.000},Y {centroid.Y:0.000},Z {centroid.Z:0.000},A 0,B 0,C 0}}";
