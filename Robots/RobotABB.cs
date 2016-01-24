@@ -147,18 +147,14 @@ namespace Robots
 
             string Tool(Tool tool)
             {
-                Plane originPlane = new Plane(Point3d.Origin, -Vector3d.XAxis, -Vector3d.YAxis);
-                Plane tcp = tool.Tcp;
-                tcp.Transform(Transform.PlaneToPlane(Plane.WorldXY, originPlane));
-
-                Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, tcp);
+                Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, tool.Tcp);
                 double weight = (tool.Weight > 0.001) ? tool.Weight : 0.001;
 
-                Point3d centroid = tcp.Origin / 2;
+                Point3d centroid = tool.Tcp.Origin / 2;
                 if (centroid.DistanceTo(Point3d.Origin) < 0.001)
                     centroid = new Point3d(0, 0, 0.001);
 
-                string pos = $"[{tcp.OriginX:0.000},{tcp.OriginY:0.000},{tcp.OriginZ:0.000}]";
+                string pos = $"[{tool.Tcp.OriginX:0.000},{tool.Tcp.OriginY:0.000},{tool.Tcp.OriginZ:0.000}]";
                 string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
                 string loaddata = $"[{weight:0.000},[{centroid.X:0.000},{centroid.Y:0.000},{centroid.Z:0.000}],[1,0,0,0],0,0,0]";
                 return $"PERS tooldata {tool.Name}:=[TRUE,[{pos},{orient}],{loaddata}];";

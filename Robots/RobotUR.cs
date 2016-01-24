@@ -286,7 +286,8 @@ namespace Robots
             string Tool(Tool tool)
             {
                 Plane tcp = tool.Tcp;
-                Plane originPlane = new Plane(Point3d.Origin, -Vector3d.YAxis, Vector3d.XAxis);
+                //Plane originPlane = new Plane(Point3d.Origin, -Vector3d.YAxis, Vector3d.XAxis);
+                Plane originPlane = new Plane(Point3d.Origin, Vector3d.YAxis, -Vector3d.XAxis);
                 tcp.Transform(Transform.PlaneToPlane(Plane.WorldXY, originPlane));
                 Point3d origin = tcp.Origin / 1000;
                 double[] axisAngle = AxisAngle(tcp, Plane.WorldXY);
