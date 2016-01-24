@@ -28,6 +28,7 @@ namespace Robots
                 {
                     var cartesianTarget = target as CartesianTarget;
                     Plane tcp = (target.Tool != null) ? target.Tool.Tcp : Plane.WorldXY;
+                    tcp.Rotate(PI, Vector3d.ZAxis, Point3d.Origin);
                     var transform = Transform.PlaneToPlane(robot.basePlane, Plane.WorldXY) * Transform.PlaneToPlane(tcp, cartesianTarget.Plane);
                     Joints = InverseKinematics(transform, (cartesianTarget.Configuration != null) ? (Target.RobotConfigurations)cartesianTarget.Configuration : 0);
                 }
@@ -46,6 +47,7 @@ namespace Robots
                 {
                     var plane = jointTransforms[i].ToPlane();
                     plane.Transform(Transform.PlaneToPlane(Plane.WorldXY, robot.basePlane));
+                    plane.Rotate(PI, plane.ZAxis);
                     Planes[i + 1] = plane;
                 }
 
@@ -84,7 +86,7 @@ namespace Robots
                 if (tool?.Mesh != null)
                 {
                     Mesh toolMesh = tool.Mesh.DuplicateMesh();
-                    toolMesh.Transform(Transform.PlaneToPlane(Plane.WorldXY, jointPlanes[6]));
+                    toolMesh.Transform(Transform.PlaneToPlane(tool.Tcp, jointPlanes[7]));
                     meshes[7] = toolMesh;
                 }
                 return meshes;

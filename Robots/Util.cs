@@ -32,6 +32,7 @@ namespace Robots
         internal static Plane ToPlane(this Transform transform)
         {
             Plane plane = Plane.WorldXY;
+           // Plane plane = new Plane(Point3d.Origin, -Vector3d.XAxis, -Vector3d.YAxis);
             plane.Transform(transform);
             return plane;
         }

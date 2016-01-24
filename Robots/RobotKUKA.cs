@@ -184,13 +184,10 @@ $APO.CPTP=100
 
             string Tool(Tool tool)
             {
-                var basePlane = new Plane(Point3d.Origin, -Vector3d.XAxis, -Vector3d.YAxis);
-                Plane tcp = tool.Tcp;
-                tcp.Transform(Transform.PlaneToPlane(Plane.WorldXY, basePlane));
-                double[] eulerAngles = EulerAngles(tcp);
-                string toolTxt = $"$TOOL={{X {tcp.OriginX:0.000},Y {tcp.OriginY:0.000},Z {tcp.OriginZ:0.000},A {eulerAngles[0]:0.000},B {eulerAngles[1]:0.000},C {eulerAngles[2]:0.000}}} ;{tool.Name}";
+                double[] eulerAngles = EulerAngles(tool.Tcp);
+                string toolTxt = $"$TOOL={{X {tool.Tcp.OriginX:0.000},Y {tool.Tcp.OriginY:0.000},Z {tool.Tcp.OriginZ:0.000},A {eulerAngles[0]:0.000},B {eulerAngles[1]:0.000},C {eulerAngles[2]:0.000}}} ;{tool.Name}";
                 string load = $"$LOAD.M={tool.Weight}";
-                Point3d centroid = tcp.Origin / 2;
+                Point3d centroid = tool.Tcp.Origin / 2;
                 string centroidTxt = $"$LOAD.CM={{X {centroid.X:0.000},Y {centroid.Y:0.000},Z {centroid.Z:0.000},A 0,B 0,C 0}}";
                 return $"{toolTxt}\r\n{load}\r\n{centroidTxt}";
             }
