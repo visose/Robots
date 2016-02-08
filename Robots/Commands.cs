@@ -151,9 +151,9 @@ namespace Robots.Commands
 
                 case (Robot.Manufacturers.KUKA):
                     {
-                        if (target.Zone.IsFlyBy)
-                            return $"CONTINUE\r\n$ANOUT[{robot.IO.AO[AO]}] = {Value:0.00}";
-                        else
+                     //   if (target.Zone.IsFlyBy)
+                       //     return $"CONTINUE\r\n$ANOUT[{robot.IO.AO[AO]}] = {Value:0.00}";
+                     //   else
                             return $@"$ANOUT[{robot.IO.AO[AO]}] = {Value:0.00}";
 
                     }
