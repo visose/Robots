@@ -31,7 +31,7 @@ namespace Robots
                 Polyline.Clear();
 
             time = program.CurrentSimulationTime;
-            Polyline.Add(program.CurrentSimulationTarget.Plane.Origin);
+            Polyline.Add(program.CurrentSimulationTargets[0].WorldPlane.Origin);
 
             while (Polyline.Length > Length)
                 Polyline.RemoveAt(0);

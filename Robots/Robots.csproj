@@ -42,17 +42,17 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="RhinoCommon">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files (x86)\Rhinoceros 5\System\rhinocommon.dll</HintPath>
+      <HintPath>C:\Program Files\Rhinoceros 5 (64-bit)\System\rhinocommon.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Grasshopper">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Users\vicente\AppData\Roaming\McNeel\Rhinoceros\5.0\Plug-ins\Grasshopper (b45a29b1-4343-4035-989e-044e8580d9cf)\0.9.76.0\Grasshopper.dll</HintPath>
+      <HintPath>C:\Program Files\Common Files\McNeel\Rhinoceros\5.0\Plug-ins\Grasshopper (b45a29b1-4343-4035-989e-044e8580d9cf)\0.9.76.0\Grasshopper.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="GH_IO">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Users\vicente\AppData\Roaming\McNeel\Rhinoceros\5.0\Plug-ins\Grasshopper (b45a29b1-4343-4035-989e-044e8580d9cf)\0.9.76.0\GH_IO.dll</HintPath>
+      <HintPath>C:\Program Files\Common Files\McNeel\Rhinoceros\5.0\Plug-ins\Grasshopper (b45a29b1-4343-4035-989e-044e8580d9cf)\0.9.76.0\GH_IO.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System.XML" />
@@ -60,28 +60,32 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Commands.cs" />
-    <Compile Include="Grasshopper\GooTypes.cs" />
-    <Compile Include="Grasshopper\Kinematics.cs" />
-    <Compile Include="Grasshopper\Commands.cs" />
-    <Compile Include="Grasshopper\Parameters.cs" />
-    <Compile Include="Grasshopper\Program.cs" />
-    <Compile Include="Grasshopper\Remote.cs" />
-    <Compile Include="Grasshopper\Target.cs" />
-    <Compile Include="Grasshopper\Visualization.cs" />
+    <Compile Include="External.cs" />
+    <Compile Include="GrasshopperWrapper\GooTypes.cs" />
+    <Compile Include="GrasshopperWrapper\Kinematics.cs" />
+    <Compile Include="GrasshopperWrapper\Commands.cs" />
+    <Compile Include="GrasshopperWrapper\Parameters.cs" />
+    <Compile Include="GrasshopperWrapper\Program.cs" />
+    <Compile Include="GrasshopperWrapper\Remote.cs" />
+    <Compile Include="GrasshopperWrapper\Target.cs" />
+    <Compile Include="GrasshopperWrapper\Visualization.cs" />
     <Compile Include="Kinematics.cs" />
+    <Compile Include="RobotSystem.cs" />
+    <Compile Include="Mechanism.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Robot.cs" />
-    <Compile Include="Grasshopper\Robot.cs" />
-    <Compile Include="Grasshopper\RobotsInfo.cs" />
+    <Compile Include="RobotArm.cs" />
+    <Compile Include="GrasshopperWrapper\Machine.cs" />
+    <Compile Include="GrasshopperWrapper\RobotsInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RobotUR.cs" />
-    <Compile Include="RobotABB.cs" />
-    <Compile Include="RobotKUKA.cs" />
+    <Compile Include="RobotCell.cs" />
+    <Compile Include="RobotCellUR.cs" />
+    <Compile Include="RobotCellAbb.cs" />
+    <Compile Include="RobotCellKuka.cs" />
     <Compile Include="Target.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="Visualization.cs" />
@@ -95,7 +99,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Meshes.rob" />
-    <None Include="Resources\robotsData.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\robotsGeometry.3dm" />
@@ -148,6 +151,11 @@
   <ItemGroup>
     <None Include="Resources\icons\iconCollision.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\robotsData.xml">
+      <SubType>Designer</SubType>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -169,5 +177,9 @@ Erase "$(TargetPath)"</PostBuildEvent>
     </StartArguments>
     <StartAction>Program</StartAction>
     <Prefer32Bit>false</Prefer32Bit>
+    <DocumentationFile>
+    </DocumentationFile>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
 </Project>
