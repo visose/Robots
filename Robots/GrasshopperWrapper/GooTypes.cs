@@ -8,46 +8,6 @@ using System.Drawing;
 
 namespace Robots.Grasshopper
 {
-    public class GH_Robot : GH_Goo<Robot>, IGH_PreviewData
-    {
-        public GH_Robot() { this.Value = null; }
-        public GH_Robot(GH_Robot goo) { this.Value = goo.Value; }
-        public GH_Robot(Robot native) { this.Value = native; }
-        public override IGH_Goo Duplicate() => new GH_Robot(this);
-        public override bool IsValid => true;
-        public override string TypeName => "Robot";
-        public override string TypeDescription => "Robot";
-        public override string ToString() => this.Value.ToString();
-        public override object ScriptVariable() => Value;
-
-        public override bool CastFrom(object source)
-        {
-            if (source is Robot)
-            {
-                Value = source as Robot;
-                return true;
-            }
-
-            if (source is GH_String)
-            {
-                Value = Robot.LoadFromLibrary((source as GH_String).Value, Plane.WorldXY);
-                return true;
-            }
-            return false;
-        }
-
-        public BoundingBox ClippingBox => Value.DisplayMesh.GetBoundingBox(true);
-
-        public void DrawViewportMeshes(GH_PreviewMeshArgs args)
-        {
-            args.Pipeline.DrawMeshShaded(Value.DisplayMesh, args.Material);
-        }
-
-        public void DrawViewportWires(GH_PreviewWireArgs args)
-        {
-        }
-    }
-
     public class GH_Program : GH_Goo<Program>
     {
         public GH_Program() { this.Value = null; }
@@ -182,9 +142,16 @@ namespace Robots.Grasshopper
                     Value = new Speed(values[0]);
                     return true;
                 }
-                else
+                else if (texts.Length == 2)
                 {
                     Value = new Speed(values[0], values[1]);
+                    return true;
+                }
+                else if (texts.Length == 3)
+                {
+                    var speed = new Speed(values[0], values[1]);
+                    speed.AxisSpeed = values[2];
+                    Value = speed;
                     return true;
                 }
             }
@@ -229,11 +196,45 @@ namespace Robots.Grasshopper
         }
     }
 
-    public class GH_Command : GH_Goo<Robots.Commands.ICommand>
+    public class GH_Frame : GH_Goo<Frame>
+    {
+        public GH_Frame() { this.Value = null; }
+        public GH_Frame(GH_Frame goo) { this.Value = goo.Value; }
+        public GH_Frame(Frame native) { this.Value = native; }
+        public override IGH_Goo Duplicate() => new GH_Frame(this);
+        public override bool IsValid => true;
+        public override string TypeName => "Frame";
+        public override string TypeDescription => "Frame";
+        public override string ToString() => this.Value.ToString();
+        public override object ScriptVariable() => Value;
+
+        public override bool CastFrom(object source)
+        {
+            if (source is Frame)
+            {
+                Value = source as Frame;
+                return true;
+            }
+            else if (source is GH_Plane)
+            {
+                Value = new Frame((source as GH_Plane).Value);
+                return true;
+            }
+            if (source is GH_Point)
+            {
+                Value = new Frame(new Plane((source as GH_Point).Value, Vector3d.XAxis, Vector3d.YAxis));
+                return true;
+            }
+            else
+                return false;
+        }
+    }
+
+    public class GH_Command : GH_Goo<Command>
     {
         public GH_Command() { this.Value = null; }
         public GH_Command(GH_Command goo) { this.Value = goo.Value; }
-        public GH_Command(Robots.Commands.ICommand native) { this.Value = native; }
+        public GH_Command(Command native) { this.Value = native; }
         public override IGH_Goo Duplicate() => new GH_Command(this);
         public override bool IsValid => true;
         public override string TypeName => "Command";
@@ -243,12 +244,50 @@ namespace Robots.Grasshopper
 
         public override bool CastFrom(object source)
         {
-            if (source is Robots.Commands.ICommand)
+            if (source is Command)
             {
-                Value = source as Robots.Commands.ICommand;
+                Value = source as Command;
                 return true;
             }
             return false;
         }
+    }
+
+    public class GH_RobotSystem : GH_Goo<RobotSystem>, IGH_PreviewData
+    {
+        public GH_RobotSystem() { this.Value = null; }
+        public GH_RobotSystem(GH_RobotSystem goo) { this.Value = goo.Value; }
+        public GH_RobotSystem(RobotSystem native) { this.Value = native; }
+        public override IGH_Goo Duplicate() => new GH_RobotSystem(this);
+        public override bool IsValid => true;
+        public override string TypeName => "RobotSystem";
+        public override string TypeDescription => "RobotSystem";
+        public override string ToString() => this.Value.ToString();
+        public override object ScriptVariable() => Value;
+
+        public override bool CastFrom(object source)
+        {
+            if (source is RobotSystem)
+            {
+                Value = source as RobotSystem;
+                return true;
+            }
+            else
+                return false;
+        }
+
+        public BoundingBox ClippingBox => Value.DisplayMesh.GetBoundingBox(true); 
+ 
+ 
+         public void DrawViewportMeshes(GH_PreviewMeshArgs args)
+         { 
+             args.Pipeline.DrawMeshShaded(Value.DisplayMesh, args.Material); 
+         } 
+ 
+ 
+         public void DrawViewportWires(GH_PreviewWireArgs args)
+         { 
+         } 
+
     }
 }

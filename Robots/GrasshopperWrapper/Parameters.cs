@@ -5,31 +5,6 @@ using Rhino.Geometry;
 
 namespace Robots.Grasshopper
 {
-    public class RobotParameter : GH_PersistentParam<GH_Robot>, IGH_PreviewObject
-    {
-        public RobotParameter() : base("Robot parameter", "Robot", "This is a robot", "Robots", "Parameters") { }
-        public override GH_Exposure Exposure => GH_Exposure.primary;
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconParamProgram;
-        public override System.Guid ComponentGuid => new Guid("{AFF10EB3-6BA5-431C-BF2A-A50941540FF3}");
-
-        protected override GH_GetterResult Prompt_Singular(ref GH_Robot value)
-        {
-            value = new GH_Robot();
-            return GH_GetterResult.success;
-        }
-        protected override GH_GetterResult Prompt_Plural(ref List<GH_Robot> values)
-        {
-            values = new List<GH_Robot>();
-            return GH_GetterResult.success;
-        }
-
-        public bool Hidden { get; set; }
-        public bool IsPreviewCapable => true;
-        public BoundingBox ClippingBox => base.Preview_ComputeClippingBox();
-        public void DrawViewportWires(IGH_PreviewArgs args) => base.Preview_DrawMeshes(args);
-        public void DrawViewportMeshes(IGH_PreviewArgs args) => base.Preview_DrawMeshes(args);
-    }
-
     public class ProgramParameter : GH_PersistentParam<GH_Program>
     {
         public ProgramParameter() : base("Program parameter", "Program", "This is a robot program", "Robots", "Parameters") { }
@@ -125,6 +100,24 @@ namespace Robots.Grasshopper
         }
     }
 
+    public class FrameParameter : GH_PersistentParam<GH_Frame>
+    {
+        public FrameParameter() : base("Frame parameter", "Frame", "This is a robot base frame", "Robots", "Parameters") { }
+        public override GH_Exposure Exposure => GH_Exposure.secondary;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconParamProgram;
+        public override System.Guid ComponentGuid => new Guid("{6A012ECB-D161-4F93-BB60-D03391DF1A7C}");
+        protected override GH_GetterResult Prompt_Singular(ref GH_Frame value)
+        {
+            value = new GH_Frame();
+            return GH_GetterResult.success;
+        }
+        protected override GH_GetterResult Prompt_Plural(ref List<GH_Frame> values)
+        {
+            values = new List<GH_Frame>();
+            return GH_GetterResult.success;
+        }
+    }
+
     public class CommandParameter : GH_PersistentParam<GH_Command>
     {
         public CommandParameter() : base("Command parameter", "Command", "This is a robot command", "Robots", "Parameters") { }
@@ -142,5 +135,31 @@ namespace Robots.Grasshopper
             values = new List<GH_Command>();
             return GH_GetterResult.success;
         }
+    }
+
+    public class RobotSystemParameter : GH_PersistentParam<GH_RobotSystem>, IGH_PreviewObject
+    {
+        public RobotSystemParameter() : base("RobotSystem parameter", "RobotSystem", "This is a robot RobotSystem", "Robots", "Parameters") { }
+        public override GH_Exposure Exposure => GH_Exposure.primary;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconParamProgram;
+        public override System.Guid ComponentGuid => new Guid("{3DBDF573-248C-44B5-8D46-184657A56BCB}");
+
+        protected override GH_GetterResult Prompt_Singular(ref GH_RobotSystem value)
+        {
+            value = new GH_RobotSystem();
+            return GH_GetterResult.success;
+        }
+        protected override GH_GetterResult Prompt_Plural(ref List<GH_RobotSystem> values)
+        {
+            values = new List<GH_RobotSystem>();
+            return GH_GetterResult.success;
+        }
+
+        public bool Hidden { get; set; }
+        public bool IsPreviewCapable => true;
+        public BoundingBox ClippingBox => base.Preview_ComputeClippingBox();
+        public void DrawViewportWires(IGH_PreviewArgs args) => base.Preview_DrawMeshes(args);
+        public void DrawViewportMeshes(IGH_PreviewArgs args) => base.Preview_DrawMeshes(args);
+
     }
 }

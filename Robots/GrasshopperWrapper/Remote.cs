@@ -38,9 +38,9 @@ namespace Robots.Grasshopper
 
             if (!DA.GetData(0, ref program)) { return; }
 
-            var robotUR = program.Value.Robot as RobotUR;
+            var robotCellUR = program.Value.RobotSystem as RobotCellUR;
             if (DA.GetData(1, ref ip) && ip != null)
-                robotUR.Remote.IP = ip.Value;
+                robotCellUR.Remote.IP = ip.Value;
 
             bool connect = false, upload = false, play = false, pause = false;
             if (!DA.GetData("Connect", ref connect)) { return; }
@@ -48,13 +48,13 @@ namespace Robots.Grasshopper
             if (!DA.GetData("Play", ref play)) { return; }
             if (!DA.GetData("Pause", ref pause)) { return; }
 
-            if (connect && !connected) { robotUR.Remote.Connect(); connected = true; }
-            if (!connect && connected) { robotUR.Remote.Disconnect(); connected = false; }
-            if (upload && connected) robotUR.Remote.UploadProgram(program.Value);
-            if (play && connected) robotUR.Remote.Play();
-            if (pause && connected) robotUR.Remote.Pause();
+            if (connect && !connected) { robotCellUR.Remote.Connect(); connected = true; }
+            if (!connect && connected) { robotCellUR.Remote.Disconnect(); connected = false; }
+            if (upload && connected) robotCellUR.Remote.UploadProgram(program.Value);
+            if (play && connected) robotCellUR.Remote.Play();
+            if (pause && connected) robotCellUR.Remote.Pause();
 
-            DA.SetDataList(0, robotUR.Remote.Log);
+            DA.SetDataList(0, robotCellUR.Remote.Log);
         }
     }
 }

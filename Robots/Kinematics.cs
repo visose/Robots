@@ -7,97 +7,138 @@ using static System.Math;
 
 namespace Robots
 {
-    public abstract partial class Robot
+    public abstract class KinematicSolution
     {
-        public abstract class KinematicSolution
+        public double[] Joints { get; internal set; }
+        public Plane[] Planes { get; internal set; }
+        public Mesh[] Meshes { get; internal set; }
+        public List<string> Errors { get; internal set; } = new List<string>();
+        public Target.RobotConfigurations Configuration { get; internal set; }
+    }
+
+    public abstract partial class RobotArm
+    {
+        protected abstract class RobotKinematics : MechanismKinematics
         {
-            protected Robot robot;
-            public double[] Joints { get; }
-            public Plane[] Planes { get; }
-            public Mesh[] Meshes { get; }
-            public List<string> Errors { get; } = new List<string>();
+            protected RobotKinematics(RobotArm robot, Target target, double[] prevJoints = null, bool displayMeshes = false, Plane? basePlane = null) : base(robot, target, prevJoints, displayMeshes, basePlane) { }
 
-            protected KinematicSolution(Target target, Robot robot, bool displayMeshes)
+            protected override void SetJoints(Target target, double[] prevJoints)
             {
-                this.robot = robot;
-
-                // Joints
                 if (target is JointTarget)
+                {
                     Joints = (target as JointTarget).Joints;
-                else
+                }
+                else if (target is CartesianTarget)
                 {
                     var cartesianTarget = target as CartesianTarget;
                     Plane tcp = (target.Tool != null) ? target.Tool.Tcp : Plane.WorldXY;
                     tcp.Rotate(PI, Vector3d.ZAxis, Point3d.Origin);
-                    var transform = Transform.PlaneToPlane(robot.basePlane, Plane.WorldXY) * Transform.PlaneToPlane(tcp, cartesianTarget.Plane);
-                    Joints = InverseKinematics(transform, (cartesianTarget.Configuration != null) ? (Target.RobotConfigurations)cartesianTarget.Configuration : 0);
+
+                    Plane targetPlane = cartesianTarget.Plane;
+                    if (target.Frame != null)
+                        targetPlane.Transform(target.Frame.Plane.ToTransform());
+
+                    var transform = Transform.PlaneToPlane(Planes[0], Plane.WorldXY) * Transform.PlaneToPlane(tcp, targetPlane);
+
+                    List<string> errors;
+
+                    if (cartesianTarget.Configuration != null || prevJoints == null)
+                    {
+                        Configuration = cartesianTarget.Configuration ?? Target.RobotConfigurations.None;
+                        Joints = InverseKinematics(transform, Configuration, out errors);
+                    }
+                    else
+                    {
+                        Target.RobotConfigurations configuration = Target.RobotConfigurations.None;
+                        Joints = GetClosestSolution(transform, prevJoints, out configuration, out errors);
+                        Configuration = configuration;
+                    }
+
+                    if (prevJoints!= null) Joints = JointTarget.GetAbsoluteJoints(Joints, prevJoints);
+                    Errors.AddRange(errors);
                 }
+            }
 
-                var rotationErrors = robot.Joints
-                     .Where(x => !x.Range.IncludesParameter(Joints[x.Index]))
-                     .Select(x => $"Angle for joint {x.Index + 1} is outside the permited range.");
-                Errors.AddRange(rotationErrors);
-
-                // Planes
-                Planes = new Plane[8];
-                Planes[0] = robot.basePlane;
+            protected override void SetPlanes(Target target)
+            {
                 var jointTransforms = ForwardKinematics(Joints);
+
+                if (target is JointTarget)
+                {
+                    Target.RobotConfigurations configuration;
+                    List<string> errors;
+                    var closest = GetClosestSolution(jointTransforms[jointTransforms.Length - 1], Joints, out configuration, out errors);
+                    this.Configuration = configuration;
+                }
 
                 for (int i = 0; i < 6; i++)
                 {
                     var plane = jointTransforms[i].ToPlane();
-                    plane.Transform(Transform.PlaneToPlane(Plane.WorldXY, robot.basePlane));
                     plane.Rotate(PI, plane.ZAxis);
                     Planes[i + 1] = plane;
                 }
 
-                // Tool plane
-                if (target.Tool != null)
-                {
-                    Planes[7] = target.Tool.Tcp;
-                    Planes[7].Transform(Transform.PlaneToPlane(Plane.WorldXY, Planes[6]));
-                }
-                else
-                    Planes[7] = Planes[6];
 
-                // Display meshes
-                if (displayMeshes)
-                    Meshes = DisplayMeshes(Planes, target.Tool);
+                /* if (target.Tool != null)
+                 {
+                     Planes[7] = target.Tool.Tcp;
+                     Planes[7].Transform(Planes[6].ToTransform());
+                 }
+                 else
+                     Planes[7] = Planes[6]; */
             }
 
-            protected abstract double[] InverseKinematics(Transform transform, Target.RobotConfigurations configuration);
+            protected abstract double[] InverseKinematics(Transform transform, Target.RobotConfigurations configuration, out List<string> errors);
             protected abstract Transform[] ForwardKinematics(double[] joints);
 
-            Mesh[] DisplayMeshes(Plane[] jointPlanes, Tool tool)
+            double SquaredDifference(double a, double b)
             {
-                var meshes = new Mesh[8];
-                {
-                    meshes[0] = robot.baseMesh.DuplicateMesh();
-                    meshes[0].Transform(Transform.PlaneToPlane(Plane.WorldXY, jointPlanes[0]));
-                }
-
-                for (int i = 0; i < 6; i++)
-                {
-                    var jointMesh = robot.Joints[i].Mesh.DuplicateMesh();
-                    jointMesh.Transform(Transform.PlaneToPlane(robot.Joints[i].Plane, jointPlanes[i + 1]));
-                    meshes[i + 1] = jointMesh;
-                }
-
-                if (tool?.Mesh != null)
-                {
-                    Mesh toolMesh = tool.Mesh.DuplicateMesh();
-                    toolMesh.Transform(Transform.PlaneToPlane(tool.Tcp, jointPlanes[7]));
-                    meshes[7] = toolMesh;
-                }
-                return meshes;
+                double difference = Abs(a - b);
+                if (difference > PI)
+                    difference = PI * 2 - difference;
+                return difference * difference;
             }
+
+            double[] GetClosestSolution(Transform transform, double[] prevJoints, out Target.RobotConfigurations configuration, out List<string> errors)
+            {
+                var solutions = new double[8][];
+                var solutionsErrors = new List<List<string>>(8);
+
+                for (int i = 0; i < 8; i++)
+                {
+                    List<string> solutionErrors;
+                    solutions[i] = InverseKinematics(transform, (Target.RobotConfigurations)i, out solutionErrors);
+                  
+                    solutions[i] = JointTarget.GetAbsoluteJoints(solutions[i], prevJoints);
+                    solutionsErrors.Add(solutionErrors);
+                }
+
+                int closestSolutionIndex = 0;
+                double closestDifference = double.MaxValue;
+
+                for (int i = 0; i < 8; i++)
+                {
+                    double difference = prevJoints.Zip(solutions[i], (x, y) => SquaredDifference(x, y)).Sum();
+
+                    if (difference < closestDifference)
+                    {
+                        closestSolutionIndex = i;
+                        closestDifference = difference;
+                    }
+                }
+
+                configuration = (Target.RobotConfigurations)closestSolutionIndex;
+                errors = solutionsErrors[closestSolutionIndex];
+                return solutions[closestSolutionIndex];
+            }
+
         }
 
-        protected class SphericalWristKinematics : KinematicSolution
+        protected class SphericalWristKinematics : RobotKinematics
         {
-            static double[] StartPosition = new double[] { 0, PI / 2, 0, 0, 0, -PI };
+            //   static double[] StartPosition = new double[] { 0, PI / 2, 0, 0, 0, -PI };
 
-            public SphericalWristKinematics(Target target, Robot robot, bool displayMeshes) : base(target, robot, displayMeshes) { }
+            public SphericalWristKinematics(RobotArm robot, Target target, double[] prevJoints, bool displayMeshes, Plane? basePlane) : base(robot, target, prevJoints, displayMeshes, basePlane) { }
 
             /// <summary>
             /// Inverse kinematics for a spherical wrist 6 axis robot.
@@ -105,8 +146,10 @@ namespace Robots
             /// </summary>
             /// <param name="target">Cartesian target</param>
             /// <returns>Returns the 6 rotation values in radians.</returns>
-            override protected double[] InverseKinematics(Transform transform, Target.RobotConfigurations configuration)
+            override protected double[] InverseKinematics(Transform transform, Target.RobotConfigurations configuration, out List<string> errors)
             {
+                errors = new List<string>();
+
                 bool shoulder = configuration.HasFlag(Target.RobotConfigurations.Shoulder);
                 bool elbow = configuration.HasFlag(Target.RobotConfigurations.Elbow);
                 if (shoulder) elbow = !elbow;
@@ -114,8 +157,8 @@ namespace Robots
 
                 bool isUnreachable = false;
 
-                double[] a = robot.Joints.Select(joint => joint.A).ToArray();
-                double[] d = robot.Joints.Select(joint => joint.D).ToArray();
+                double[] a = mechanism.Joints.Select(joint => joint.A).ToArray();
+                double[] d = mechanism.Joints.Select(joint => joint.D).ToArray();
 
                 Plane flange = Plane.WorldXY;
                 flange.Transform(transform);
@@ -202,14 +245,19 @@ namespace Robots
                 }
 
                 if (isUnreachable)
-                    Errors.Add($"Target out of reach");
+                    errors.Add($"Target out of reach");
 
                 if (Abs(1 - mr[2, 2]) < 0.0001)
-                    Errors.Add($"Near wrist singularity");
+                    errors.Add($"Near wrist singularity");
 
-                if (new Vector3d(center.X,center.Y,0).Length < a[0]+SingularityTol)
-                    Errors.Add($"Near overhead singularity");
+                if (new Vector3d(center.X, center.Y, 0).Length < a[0] + SingularityTol)
+                    errors.Add($"Near overhead singularity");
 
+
+                for(int i=0;i<6;i++)
+                {
+                    if (double.IsNaN(joints[i])) joints[i] = 0;
+                }
                 return joints;
             }
 
@@ -218,8 +266,8 @@ namespace Robots
                 var transforms = new Transform[6];
                 double[] c = joints.Select(x => Cos(x)).ToArray();
                 double[] s = joints.Select(x => Sin(x)).ToArray();
-                double[] a = robot.Joints.Select(joint => joint.A).ToArray();
-                double[] d = robot.Joints.Select(joint => joint.D).ToArray();
+                double[] a = mechanism.Joints.Select(joint => joint.A).ToArray();
+                double[] d = mechanism.Joints.Select(joint => joint.D).ToArray();
 
                 transforms[0] = new double[4, 4] { { c[0], 0, c[0], c[0] + a[0] * c[0] }, { s[0], -c[0], s[0], s[0] + a[0] * s[0] }, { 0, 0, 0, d[0] }, { 0, 0, 0, 1 } }.ToTransform();
                 transforms[1] = new double[4, 4] { { c[0] * (c[1] - s[1]), s[0], c[0] * (c[1] + s[1]), c[0] * ((c[1] - s[1]) + a[1] * c[1]) + a[0] * c[0] }, { s[0] * (c[1] - s[1]), -c[0], s[0] * (c[1] + s[1]), s[0] * ((c[1] - s[1]) + a[1] * c[1]) + a[0] * s[0] }, { s[1] + c[1], 0, s[1] - c[1], (s[1] + c[1]) + a[1] * s[1] + d[0] }, { 0, 0, 0, 1 } }.ToTransform(); ;
@@ -236,9 +284,9 @@ namespace Robots
             }
         }
 
-        protected class OffsetWristKinematics : KinematicSolution
+        protected class OffsetWristKinematics : RobotKinematics
         {
-            public OffsetWristKinematics(Target target, Robot robot, bool displayMeshes) : base(target, robot, displayMeshes) { }
+            public OffsetWristKinematics(RobotArm robot, Target target, double[] prevJoints, bool displayMeshes, Plane? basePlane) : base(robot, target, prevJoints, displayMeshes, basePlane) { }
 
             /// <summary>
             /// Inverse kinematics for a offset wrist 6 axis robot.
@@ -246,8 +294,10 @@ namespace Robots
             /// </summary>
             /// <param name="target">Cartesian target</param>
             /// <returns>Returns the 6 rotation values in radians.</returns>
-            override protected double[] InverseKinematics(Transform transform, Target.RobotConfigurations configuration)
+            override protected double[] InverseKinematics(Transform transform, Target.RobotConfigurations configuration, out List<string> errors)
             {
+                errors = new List<string>();
+
                 bool shoulder = configuration.HasFlag(Target.RobotConfigurations.Shoulder);
                 bool elbow = configuration.HasFlag(Target.RobotConfigurations.Elbow);
                 if (shoulder) elbow = !elbow;
@@ -259,8 +309,8 @@ namespace Robots
 
                 transform *= Transform.Rotation(PI / 2, Point3d.Origin);
 
-                double[] a = robot.Joints.Select(joint => joint.A).ToArray();
-                double[] d = robot.Joints.Select(joint => joint.D).ToArray();
+                double[] a = mechanism.Joints.Select(joint => joint.A).ToArray();
+                double[] d = mechanism.Joints.Select(joint => joint.D).ToArray();
 
                 // shoulder
                 {
@@ -271,7 +321,7 @@ namespace Robots
                     double arccos = Acos(d[3] / Sqrt(R));
                     if (double.IsNaN(arccos))
                     {
-                        Errors.Add($"Overhead singularity.");
+                        errors.Add($"Overhead singularity.");
                         arccos = 0;
                     }
 
@@ -291,7 +341,7 @@ namespace Robots
                     double arccos = Acos(div);
                     if (double.IsNaN(arccos))
                     {
-                        Errors.Add($"Overhead singularity 2.");
+                        errors.Add($"Overhead singularity 2.");
                         arccos = PI;
                         isUnreachable = true;
                     }
@@ -347,7 +397,7 @@ namespace Robots
                 }
 
                 if (isUnreachable)
-                    Errors.Add($"Target out of reach.");
+                    errors.Add($"Target out of reach.");
 
                 //   joints[5] += PI / 2;
 
@@ -365,8 +415,8 @@ namespace Robots
                 var transforms = new Transform[6];
                 double[] c = joints.Select(x => Cos(x)).ToArray();
                 double[] s = joints.Select(x => Sin(x)).ToArray();
-                double[] a = robot.Joints.Select(joint => joint.A).ToArray();
-                double[] d = robot.Joints.Select(joint => joint.D).ToArray();
+                double[] a = mechanism.Joints.Select(joint => joint.A).ToArray();
+                double[] d = mechanism.Joints.Select(joint => joint.D).ToArray();
                 double s23 = Sin(joints[1] + joints[2]);
                 double c23 = Cos(joints[1] + joints[2]);
                 double s234 = Sin(joints[1] + joints[2] + joints[3]);

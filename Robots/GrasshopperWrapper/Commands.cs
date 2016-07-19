@@ -16,12 +16,18 @@ namespace Robots.Grasshopper.Commands
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Name", "N", "Name", GH_ParamAccess.item, "Custom command");
-            pManager.AddTextParameter("ABB", "A", "ABB code", GH_ParamAccess.item);
-            pManager.AddTextParameter("KUKA", "K", "KUKA code", GH_ParamAccess.item);
-            pManager.AddTextParameter("UR", "U", "UR code", GH_ParamAccess.item);
+            pManager.AddTextParameter("ABB decl", "Ad", "ABB variable declaration and assignment", GH_ParamAccess.item);
+            pManager.AddTextParameter("KUKA decl", "Kd", "KUKA variable declaration and assignment", GH_ParamAccess.item);
+            pManager.AddTextParameter("UR decl", "Ud", "UR variable declaration and assignment", GH_ParamAccess.item);
+            pManager.AddTextParameter("ABB code", "A", "ABB code", GH_ParamAccess.item);
+            pManager.AddTextParameter("KUKA code", "K", "KUKA code", GH_ParamAccess.item);
+            pManager.AddTextParameter("UR code", "U", "UR code", GH_ParamAccess.item);
             pManager[1].Optional = true;
             pManager[2].Optional = true;
             pManager[3].Optional = true;
+            pManager[4].Optional = true;
+            pManager[5].Optional = true;
+            pManager[6].Optional = true;
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -31,14 +37,19 @@ namespace Robots.Grasshopper.Commands
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            string name = null, abb = null, kuka = null, ur = null;
+            string name = null;
+            string abbDeclaration = null, kukaDeclaration = null, urDeclaration = null;
+            string abbCode = null, kukaCode = null, urCode = null;
 
             if (!DA.GetData(0, ref name)) { return; }
-            DA.GetData(1, ref abb);
-            DA.GetData(2, ref kuka);
-            DA.GetData(3, ref ur);
+            DA.GetData(1, ref abbDeclaration);
+            DA.GetData(2, ref kukaDeclaration);
+            DA.GetData(3, ref urDeclaration);
+            DA.GetData(4, ref abbCode);
+            DA.GetData(5, ref kukaCode);
+            DA.GetData(6, ref urCode);
 
-            var command = new Robots.Commands.Custom(name, abb, kuka, ur);
+            var command = new Robots.Commands.Custom(name, abbDeclaration, kukaDeclaration, urDeclaration, abbCode, kukaCode, urCode);
             DA.SetData(0, new GH_Command(command));
         }
     }
@@ -145,6 +156,7 @@ namespace Robots.Grasshopper.Commands
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddIntegerParameter("DO", "D", "Digital output number", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Time", "T", "Duration of pulse", GH_ParamAccess.item,0.2);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -155,10 +167,12 @@ namespace Robots.Grasshopper.Commands
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             int DO = 0;
+            double length = 0;
 
             if (!DA.GetData(0, ref DO)) return;
+            if (!DA.GetData(1, ref length)) return;
 
-            var command = new Robots.Commands.PulseDO(DO);
+            var command = new Robots.Commands.PulseDO(DO, length);
             DA.SetData(0, new GH_Command(command));
         }
     }

@@ -19,14 +19,16 @@ namespace Robots.Grasshopper
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddParameter(new RobotParameter(), "Robot", "R", "Robot", GH_ParamAccess.item);
-            pManager.AddParameter(new TargetParameter(), "Target", "T", "Target", GH_ParamAccess.item);
+            pManager.AddParameter(new RobotSystemParameter(), "Robot system", "R", "Robot system", GH_ParamAccess.item);
+            pManager.AddParameter(new TargetParameter(), "Target", "T", "One target per robot", GH_ParamAccess.list);
+            pManager.AddTextParameter("PrevJoints", "J", "Optional previous joint values. If the pose is ambigous is will select one based on this previous position.", GH_ParamAccess.list);
             pManager.AddBooleanParameter("Geometry", "M", "Generate mesh geometry of the robot", GH_ParamAccess.item, false);
+            pManager[2].Optional = true;
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddMeshParameter("Robot meshes", "M", "Robot meshes", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Mechanism meshes", "M", "Mechanism meshes", GH_ParamAccess.list);
             pManager.AddTextParameter("Joint rotations", "J", "Joint rotations", GH_ParamAccess.item);
             pManager.AddPlaneParameter("Plane", "P", "Plane", GH_ParamAccess.item);
             pManager.AddTextParameter("Errors", "E", "Errors", GH_ParamAccess.list);
@@ -34,28 +36,58 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            GH_Robot robot = null;
-            GH_Target target = new GH_Target();
+            GH_RobotSystem robotSystem = null;
+            var targets = new List<GH_Target>();
+            var prevJointsText = new List<GH_String>();
             bool drawMeshes = false;
 
-            if (!DA.GetData(0, ref robot)) { return; }
-            if (!DA.GetData(1, ref target)) { return; }
-            if (!DA.GetData(2, ref drawMeshes)) { return; }
+            if (!DA.GetData(0, ref robotSystem)) { return; }
+            if (!DA.GetDataList(1, targets)) { return; }
+            DA.GetDataList(2, prevJointsText);
+            if (!DA.GetData(3, ref drawMeshes)) { return; }
 
-            var kinematics = robot.Value.Kinematics(target.Value, drawMeshes);
+            List<double[]> prevJoints = null;
 
-            if (kinematics.Errors.Count > 0)
+            if (prevJointsText.Count > 0)
             {
-                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Errors in solution");
+                prevJoints = new List<double[]>();
+
+                foreach (var text in prevJointsText)
+                {
+                    if (text != null)
+                    {
+                        string[] jointsText = text.Value.Split(',');
+                        var prevJoint = new double[jointsText.Length];
+
+                        for (int i = 0; i < 6; i++)
+                            if (!GH_Convert.ToDouble_Secondary(jointsText[i], ref prevJoint[i])) return;
+
+                        prevJoints.Add(prevJoint);
+                    }
+                }
             }
 
-            var strings = kinematics.Joints.Select(x => new GH_Number(x).ToString());
+            var kinematics = robotSystem.Value.Kinematics(targets.Select(x => x.Value).ToList(), prevJoints, drawMeshes);
+
+            var errors = kinematics.SelectMany(x => x.Errors);
+            if (errors.Count() > 0)
+            {
+                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in solution");
+            }
+
+            var strings = kinematics.SelectMany(x => x.Joints).Select(x => new GH_Number(x).ToString());
             var joints = string.Join(",", strings);
 
-            if (kinematics.Meshes != null) DA.SetDataList(0, kinematics.Meshes.Select(x => new GH_Mesh(x)));
+            var planes = kinematics.SelectMany(x => x.Planes);
+            if (drawMeshes)
+            {
+                var meshes = kinematics.SelectMany(x => x.Meshes);
+                DA.SetDataList(0, meshes.Select(x => new GH_Mesh(x)));
+            }
+
             DA.SetData(1, joints);
-            DA.SetData(2, kinematics.Planes[7]);
-            DA.SetDataList(3, kinematics.Errors);
+            DA.SetDataList(2, planes.Select(x => new GH_Plane(x)));
+            DA.SetDataList(3, errors);
         }
     }
 
@@ -69,7 +101,8 @@ namespace Robots.Grasshopper
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddNumberParameter("Degrees", "D", "Degrees", GH_ParamAccess.list);
-            pManager.AddParameter(new RobotParameter(), "Robot", "R", "Robot", GH_ParamAccess.item);
+            pManager.AddParameter(new RobotSystemParameter(), "Robot system", "R", "Robot system", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Mechanical group", "G", "Mechanical group index", 0);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -80,12 +113,14 @@ namespace Robots.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             List<double> degrees = new List<double>();
-            GH_Robot robot = null;
+            GH_RobotSystem robotSystem = null;
+            int group = 0;
 
             if (!DA.GetDataList(0, degrees)) { return; }
-            if (!DA.GetData(1, ref robot)) { return; }
+            if (!DA.GetData(1, ref robotSystem)) { return; }
+            if (!DA.GetData(2, ref group)) { return; }
 
-            var radians = degrees.Select((x, i) => robot.Value.DegreeToRadian(x, i));
+            var radians = degrees.Select((x, i) => (robotSystem.Value as RobotCell).MechanicalGroups[group].DegreeToRadian(x, i));
             string radiansText = string.Join(",", radians.Select(x => $"{x:0.00}"));
 
             DA.SetData(0, radiansText);
@@ -108,16 +143,16 @@ namespace Robots.Grasshopper
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddParameter(new ProgramParameter(), "Program", "P", "Robot program to simulate", GH_ParamAccess.item);
+            pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program to simulate", GH_ParamAccess.item);
             pManager.AddNumberParameter("Time", "T", "Advance the simulation to this time", GH_ParamAccess.item, 0);
             pManager.AddBooleanParameter("Normalized", "N", "Time value is normalized (from 0 to 1)", GH_ParamAccess.item, true);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddMeshParameter("Robot meshes", "M", "Robot meshes", GH_ParamAccess.list);
+            pManager.AddMeshParameter("System meshes", "M", "System meshes", GH_ParamAccess.list);
             pManager.AddNumberParameter("Joint rotations", "J", "Joint rotations", GH_ParamAccess.list);
-            pManager.AddPlaneParameter("Plane", "P", "TCP position", GH_ParamAccess.item);
+            pManager.AddPlaneParameter("Plane", "P", "TCP position", GH_ParamAccess.list);
             pManager.AddIntegerParameter("Index", "I", "Current target index", GH_ParamAccess.item);
             pManager.AddNumberParameter("Time", "T", "Current time in seconds", GH_ParamAccess.item);
             pManager.AddParameter(new ProgramParameter(), "Program", "P", "This is the same program as the input program. Use this output to update other visualization components along with the simulation.", GH_ParamAccess.item);
@@ -137,18 +172,24 @@ namespace Robots.Grasshopper
             sliderTime = (isNormalized.Value) ? sliderTimeGH.Value * program.Value.Duration : sliderTimeGH.Value;
             if (!form.Visible) time = sliderTime;
 
-            var kinematics = program.Value.Animate(time, false);
+            program.Value.Animate(time, false);
+            var kinematics = program.Value.CurrentSimulationKinematics;
 
-            if (kinematics.Errors.Count > 0)
-                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Errors in solution");
+            var errors = kinematics.SelectMany(x => x.Errors);
+            var meshes = kinematics.SelectMany(x => x.Meshes);
+            var joints = kinematics.SelectMany(x => x.Joints);
+            var planes = kinematics.SelectMany(x => x.Planes);
 
-            DA.SetDataList(0, kinematics.Meshes.Select(x => new GH_Mesh(x)));
-            DA.SetDataList(1, kinematics.Joints);
-            DA.SetData(2, kinematics.Planes[7]);
-            DA.SetData(3, program.Value.CurrentSimulationTarget.Index);
+            if (errors.Count() > 0)
+                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in solution");
+
+            DA.SetDataList(0, meshes.Select(x => new GH_Mesh(x)));
+            DA.SetDataList(1, joints);
+            DA.SetDataList(2, planes.Select(x => new GH_Plane(x)));
+            DA.SetData(3, program.Value.CurrentSimulationTargets[0].Index);
             DA.SetData(4, program.Value.CurrentSimulationTime);
             DA.SetData(5, new GH_Program(program.Value));
-            DA.SetDataList(6, kinematics.Errors);
+            DA.SetDataList(6, errors);
 
             if (form.Visible && form.play.Checked)
             {
