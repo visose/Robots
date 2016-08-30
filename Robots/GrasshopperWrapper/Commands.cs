@@ -59,7 +59,7 @@ namespace Robots.Grasshopper.Commands
         public Group() : base("Group command", "GroupCmd", "Group of commands", "Robots", "Commands") { }
         public override GH_Exposure Exposure => GH_Exposure.primary;
         public override Guid ComponentGuid => new Guid("{17485955-818B-4D0E-9986-26264E1F86DC}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconGroupCommand;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
@@ -89,7 +89,7 @@ namespace Robots.Grasshopper.Commands
         public SetDO() : base("Set DO", "SetDO", "Set digital output", "Robots", "Commands") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{C2F263E3-BF97-4E48-B2CB-42D3A5FE6190}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconSetDO;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
@@ -120,7 +120,7 @@ namespace Robots.Grasshopper.Commands
         public SetAO() : base("Set AO", "SetAO", "Set analog output", "Robots", "Commands") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{CAA1A764-D588-4D63-95EA-9C8D43374B8D}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconSetAO;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
@@ -151,7 +151,7 @@ namespace Robots.Grasshopper.Commands
         public PulseDO() : base("Pulse DO", "PulseDO", "Send a pulse to a digital output", "Robots", "Commands") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{3CBDCD59-9621-4A0F-86BF-F4CC876E360D}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconPulseDO;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
@@ -182,7 +182,7 @@ namespace Robots.Grasshopper.Commands
         public Wait() : base("Wait", "Wait", "Stops the program for a specific amount of time", "Robots", "Commands") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{5E7BA355-7EAC-4A5D-B736-286043AB0A45}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconWait;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
@@ -210,7 +210,7 @@ namespace Robots.Grasshopper.Commands
         public WaitDI() : base("Wait DI", "WaitDI", "Stops the program until a digital input is turned on", "Robots", "Commands") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{8A930C8F-3BCE-4476-9E30-3F5C23DB2FB9}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconWaitDI;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
@@ -238,7 +238,7 @@ namespace Robots.Grasshopper.Commands
         public Stop() : base("Stop program", "Stop", "Stops the program until an operator starts it again", "Robots", "Commands") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{80E4E1AD-D1C0-441F-BDC5-5E810BCECE61}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconStop;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
@@ -261,7 +261,7 @@ namespace Robots.Grasshopper.Commands
         public Message() : base("Message", "Message", "Sends a text message to the teach pendant", "Robots", "Commands") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{CFAABB24-CAEE-49FC-850F-BE9F70F070CA}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCommand;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconMessage;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {

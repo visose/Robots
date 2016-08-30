@@ -169,4 +169,64 @@
   <data name="iconCollision" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\icons\iconCollision.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="iconCommandParam" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconCommandParam.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconCreateTarget1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconCreateTarget.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconCustomCode1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconCustomCode.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconDeconstructTarget1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconDeconstructTarget.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconFrameParam" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconFrameParam.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconGroupCommand" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconGroupCommand.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconKinematics1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconKinematics.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconMessage" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconMessage.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconPulseDO" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconPulseDO.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconRobotParam" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconRobotParam.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconSetAO" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconSetAO.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconSetDO" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconSetDO.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconSimpleTrail" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconSimpleTrail.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconSpeedParam" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconSpeedParam.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconStop" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconStop.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconTargetParam" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconTargetParam.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconToolParam" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconToolParam.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconWait" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconWait.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconWaitDI" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconWaitDI.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="iconZoneParam" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icons\iconZoneParam.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
 </root>

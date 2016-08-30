@@ -93,6 +93,16 @@ namespace Robots.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap iconCommandParam {
+            get {
+                object obj = ResourceManager.GetObject("iconCommandParam", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap iconCreateProgram {
             get {
                 object obj = ResourceManager.GetObject("iconCreateProgram", resourceCulture);
@@ -113,9 +123,29 @@ namespace Robots.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap iconCreateTarget1 {
+            get {
+                object obj = ResourceManager.GetObject("iconCreateTarget1", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap iconCustomCode {
             get {
                 object obj = ResourceManager.GetObject("iconCustomCode", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconCustomCode1 {
+            get {
+                object obj = ResourceManager.GetObject("iconCustomCode1", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -133,6 +163,36 @@ namespace Robots.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap iconDeconstructTarget1 {
+            get {
+                object obj = ResourceManager.GetObject("iconDeconstructTarget1", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconFrameParam {
+            get {
+                object obj = ResourceManager.GetObject("iconFrameParam", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconGroupCommand {
+            get {
+                object obj = ResourceManager.GetObject("iconGroupCommand", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap iconKinematics {
             get {
                 object obj = ResourceManager.GetObject("iconKinematics", resourceCulture);
@@ -143,9 +203,39 @@ namespace Robots.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap iconKinematics1 {
+            get {
+                object obj = ResourceManager.GetObject("iconKinematics1", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconMessage {
+            get {
+                object obj = ResourceManager.GetObject("iconMessage", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap iconParamProgram {
             get {
                 object obj = ResourceManager.GetObject("iconParamProgram", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconPulseDO {
+            get {
+                object obj = ResourceManager.GetObject("iconPulseDO", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -173,9 +263,49 @@ namespace Robots.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap iconRobotParam {
+            get {
+                object obj = ResourceManager.GetObject("iconRobotParam", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap iconSave {
             get {
                 object obj = ResourceManager.GetObject("iconSave", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconSetAO {
+            get {
+                object obj = ResourceManager.GetObject("iconSetAO", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconSetDO {
+            get {
+                object obj = ResourceManager.GetObject("iconSetDO", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconSimpleTrail {
+            get {
+                object obj = ResourceManager.GetObject("iconSimpleTrail", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -193,9 +323,49 @@ namespace Robots.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap iconSpeedParam {
+            get {
+                object obj = ResourceManager.GetObject("iconSpeedParam", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconStop {
+            get {
+                object obj = ResourceManager.GetObject("iconStop", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconTargetParam {
+            get {
+                object obj = ResourceManager.GetObject("iconTargetParam", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap iconTool {
             get {
                 object obj = ResourceManager.GetObject("iconTool", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconToolParam {
+            get {
+                object obj = ResourceManager.GetObject("iconToolParam", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -211,6 +381,36 @@ namespace Robots.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconWait {
+            get {
+                object obj = ResourceManager.GetObject("iconWait", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconWaitDI {
+            get {
+                object obj = ResourceManager.GetObject("iconWaitDI", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconZoneParam {
+            get {
+                object obj = ResourceManager.GetObject("iconZoneParam", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
         internal static byte[] Meshes {
@@ -221,15 +421,16 @@ namespace Robots.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to &lt;robots&gt;
+        ///   Looks up a localized string similar to &lt;RobotSystems&gt;
         ///
-        ///  &lt;robot model=&quot;IRB120&quot; manufacturer=&quot;ABB&quot; payload=&quot;3&quot;&gt;
-        ///    &lt;Joints&gt;
-        ///      &lt;Joint number=&quot;1&quot; a =&quot;0&quot; d =&quot;290&quot; minrange = &quot;-165&quot; maxrange =&quot;165&quot; maxspeed =&quot;250&quot;/&gt;
-        ///      &lt;Joint number=&quot;2&quot; a =&quot;270&quot; d =&quot;0&quot; minrange = &quot;-110&quot; maxrange =&quot;110&quot; maxspeed =&quot;250&quot;/&gt;
-        ///      &lt;Joint number=&quot;3&quot; a =&quot;70&quot; d =&quot;0&quot; minrange = &quot;-110&quot; maxrange =&quot;70&quot; maxspeed =&quot;250&quot;/&gt;
-        ///      &lt;Joint number=&quot;4&quot; a =&quot;0&quot; d =&quot;302&quot; minrange = &quot;-160&quot; maxrange =&quot;160&quot; maxspeed =&quot;320&quot;/&gt;
-        ///      &lt;Joint number=&quot;5&quot; a =&quot;0&quot; d =&quot;0&quot; minrange = &quot;-120&quot; max [rest of string was truncated]&quot;;.
+        ///  &lt;RobotCell name=&quot;Bartlett-IRB120&quot; manufacturer=&quot;ABB&quot;&gt;
+        ///    &lt;Mechanisms&gt;
+        ///      &lt;RobotArm model=&quot;IRB120&quot; manufacturer=&quot;ABB&quot; payload=&quot;3&quot;&gt;
+        ///        &lt;Base x=&quot;0.000&quot; y=&quot;0.000&quot; z=&quot;0.000&quot; q1=&quot;1.000&quot; q2=&quot;0.000&quot; q3=&quot;0.000&quot; q4=&quot;0.000&quot;/&gt;
+        ///        &lt;Joints&gt;
+        ///          &lt;Revolute number=&quot;1&quot; a =&quot;0&quot; d =&quot;290&quot; minrange = &quot;-165&quot; maxrange =&quot;165&quot; maxspeed =&quot;250&quot;/&gt;
+        ///          &lt;Revolute number=&quot;2&quot; a =&quot;270&quot; d =&quot;0&quot; minrange = &quot;-110&quot; maxrange =&quot;110&quot; maxspeed =&quot;250&quot;/&gt;
+        ///          &lt;Revolute number=&quot;3&quot; a =&quot;70&quot; d =&quot;0&quot; minrange  [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string robotsData {
             get {
