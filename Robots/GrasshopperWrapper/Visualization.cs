@@ -18,7 +18,7 @@ namespace Robots.Grasshopper
         public DrawSimpleTrail() : base("Simple trail", "Trail", "Draws a trail behind the TCP. To be used with the simulation component.", "Robots", "Visualization") { }
         public override GH_Exposure Exposure => GH_Exposure.primary;
         public override Guid ComponentGuid => new Guid("{20F09C83-25A5-453B-B0C9-673CD784A52F}");
-        protected override Bitmap Icon => Properties.Resources.iconSimulation;
+        protected override Bitmap Icon => Properties.Resources.iconSimpleTrail;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
