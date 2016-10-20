@@ -2,6 +2,7 @@
 using Grasshopper.Kernel.Types;
 using Grasshopper.GUI;
 using Grasshopper;
+using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -88,42 +89,6 @@ namespace Robots.Grasshopper
             DA.SetData(1, joints);
             DA.SetDataList(2, planes.Select(x => new GH_Plane(x)));
             DA.SetDataList(3, errors);
-        }
-    }
-
-    public class DegreesToRadians : GH_Component
-    {
-        public DegreesToRadians() : base("Degrees to radians", "DegToRad", "Manufacturer dependent degrees to radians conversion.", "Robots", "Components") { }
-        public override GH_Exposure Exposure => GH_Exposure.quarternary;
-        public override Guid ComponentGuid => new Guid("{C10B3A17-5C19-4805-ACCF-839B85C4D21C}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconAngles;
-
-        protected override void RegisterInputParams(GH_InputParamManager pManager)
-        {
-            pManager.AddNumberParameter("Degrees", "D", "Degrees", GH_ParamAccess.list);
-            pManager.AddParameter(new RobotSystemParameter(), "Robot system", "R", "Robot system", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("Mechanical group", "G", "Mechanical group index", 0);
-        }
-
-        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
-        {
-            pManager.AddTextParameter("Radians", "R", "Radians", GH_ParamAccess.item);
-        }
-
-        protected override void SolveInstance(IGH_DataAccess DA)
-        {
-            List<double> degrees = new List<double>();
-            GH_RobotSystem robotSystem = null;
-            int group = 0;
-
-            if (!DA.GetDataList(0, degrees)) { return; }
-            if (!DA.GetData(1, ref robotSystem)) { return; }
-            if (!DA.GetData(2, ref group)) { return; }
-
-            var radians = degrees.Select((x, i) => (robotSystem.Value as RobotCell).MechanicalGroups[group].DegreeToRadian(x, i));
-            string radiansText = string.Join(",", radians.Select(x => $"{x:0.00}"));
-
-            DA.SetData(0, radiansText);
         }
     }
 
@@ -306,7 +271,7 @@ namespace Robots.Grasshopper
                 TransparencyKey = Color.White;
 
                 // Play
-                play.Location = new Point(6, 6);
+                play.Location = new System.Drawing.Point(6, 6);
                 play.Size = new Size(60, 60);
                 play.Name = "Play";
                 play.Text = "\u25B6";
@@ -318,7 +283,7 @@ namespace Robots.Grasshopper
                 play.Appearance = Appearance.Button;
 
                 // Stop
-                stop.Location = new Point(66, 6);
+                stop.Location = new System.Drawing.Point(66, 6);
                 stop.Size = new Size(60, 60);
                 stop.Name = "Pause";
                 stop.Text = "\u25FC";
@@ -331,14 +296,14 @@ namespace Robots.Grasshopper
 
                 // Slider group
                 var group = new GroupBox();
-                group.Location = new Point(6, 66);
+                group.Location = new System.Drawing.Point(6, 66);
                 group.Size = new Size(120, 220);
                 group.Text = "Speed";
                 group.Font = labelFont;
                 this.Controls.Add(group);
 
                 // Slider
-                slider.Location = new Point(6, 14);
+                slider.Location = new System.Drawing.Point(6, 14);
                 slider.Size = new Size(45, 200);
                 slider.Orientation = Orientation.Vertical;
                 slider.Name = "Speed";
@@ -360,7 +325,7 @@ namespace Robots.Grasshopper
                 {
                     var label = new Label();
 
-                    label.Location = new Point(51, 16 + i * 29);
+                    label.Location = new System.Drawing.Point(51, 16 + i * 29);
                     label.Size = new Size(60, 20);
                     label.Text = (slider.Maximum - i * 100).ToString() + "%";
                     label.Font = labelFont;

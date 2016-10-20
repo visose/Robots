@@ -68,6 +68,7 @@
     <Compile Include="GrasshopperWrapper\Program.cs" />
     <Compile Include="GrasshopperWrapper\Remote.cs" />
     <Compile Include="GrasshopperWrapper\Target.cs" />
+    <Compile Include="GrasshopperWrapper\Util.cs" />
     <Compile Include="GrasshopperWrapper\Visualization.cs" />
     <Compile Include="Kinematics.cs" />
     <Compile Include="RobotSystem.cs" />
@@ -98,63 +99,39 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\Meshes.rob" />
+    <Resource Include="Resources\icons\iconCustomCommand.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\robotsGeometry.3dm" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconRobot.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconRobotList.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconCheckProgram.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconCommand.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconCreateProgram.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconCreateTarget.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconDeconstructTarget.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconKinematics.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconParamProgram.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconTool.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconAngles.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconCustomCode.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconSave.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconSimulation.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconURRemote.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\icons\iconCollision.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Resources\robotsData.xml">
-      <SubType>Designer</SubType>
-    </Content>
+    <Resource Include="Resources\icons\iconAngles.png" />
+    <Resource Include="Resources\icons\iconCheckCollisions.png" />
+    <Resource Include="Resources\icons\iconCommandParam.png" />
+    <Resource Include="Resources\icons\iconCreateProgram.png" />
+    <Resource Include="Resources\icons\iconCreateTarget.png" />
+    <Resource Include="Resources\icons\iconCustomCode.png" />
+    <Resource Include="Resources\icons\iconDeconstructTarget.png" />
+    <Resource Include="Resources\icons\iconFrameParam.png" />
+    <Resource Include="Resources\icons\iconGetPlane.png" />
+    <Resource Include="Resources\icons\iconGroupCommand.png" />
+    <Resource Include="Resources\icons\iconKinematics.png" />
+    <Resource Include="Resources\icons\iconMessage.png" />
+    <Resource Include="Resources\icons\iconProgramParam.png" />
+    <Resource Include="Resources\icons\iconPulseDO.png" />
+    <Resource Include="Resources\icons\iconRobot.png" />
+    <Resource Include="Resources\icons\iconRobotParam.png" />
+    <Resource Include="Resources\icons\iconSave.png" />
+    <Resource Include="Resources\icons\iconSetAO.png" />
+    <Resource Include="Resources\icons\iconSetDO.png" />
+    <Resource Include="Resources\icons\iconSimpleTrail.png" />
+    <Resource Include="Resources\icons\iconSimulation.png" />
+    <Resource Include="Resources\icons\iconSpeedParam.png" />
+    <Resource Include="Resources\icons\iconStopCommand.png" />
+    <Resource Include="Resources\icons\iconTargetParam.png" />
+    <Resource Include="Resources\icons\iconTool.png" />
+    <Resource Include="Resources\icons\iconToolParam.png" />
+    <Resource Include="Resources\icons\iconURRemote.png" />
+    <Resource Include="Resources\icons\iconWait.png" />
+    <Resource Include="Resources\icons\iconWaitDI.png" />
+    <Resource Include="Resources\icons\iconZoneParam.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

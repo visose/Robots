@@ -59,7 +59,8 @@ namespace Robots
         static List<Mesh> GetMeshes(string model)
         {
             var meshes = new List<Mesh>();
-            var index = 0;
+
+            /*
             using (var stream = new MemoryStream(Properties.Resources.Meshes))
             {
                 var formatter = new BinaryFormatter();
@@ -67,9 +68,8 @@ namespace Robots
                 index = jointMeshes.Names.FindIndex(x => x == model);
                 if (index != -1) meshes = jointMeshes.Meshes[index];
             }
+            */
 
-            if (index == -1)
-            {
                 string folder = $@"{AssemblyDirectory}\robots";
 
                 if (Directory.Exists(folder))
@@ -84,11 +84,10 @@ namespace Robots
 
                         if (layer != null)
                         {
-                            meshes.Add(geometry.Objects.First(x => x.Attributes.LayerIndex == layer.LayerIndex).Geometry as Mesh);
                             int i = 0;
                             while (true)
                             {
-                                string name = $"{i++ + 1}";
+                                string name = $"{i++}";
                                 var jointLayer = geometry.Layers.FirstOrDefault(x => (x.Name == name) && (x.ParentLayerId == layer.Id));
                                 if (jointLayer == null) break;
                                 meshes.Add(geometry.Objects.First(x => x.Attributes.LayerIndex == jointLayer.LayerIndex).Geometry as Mesh);
@@ -99,7 +98,6 @@ namespace Robots
                     if (layer == null)
                         throw new InvalidOperationException($" Robot \"{model}\" is not in the geometry file.");
                 }
-            }
 
             return meshes;
         }
@@ -127,7 +125,7 @@ namespace Robots
             double q2 = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("q2")).Value);
             double q3 = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("q3")).Value);
             double q4 = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("q4")).Value);
-            var basePlane = QuaternionToPlane(x, y, z, q1, q2, q3, q4);
+            var basePlane = RobotCellAbb.QuaternionToPlane(x, y, z, q1, q2, q3, q4);
 
             var jointElements = element.Element(XName.Get("Joints")).Descendants().ToArray();
             Joint[] joints = new Joint[jointElements.Length];
@@ -177,6 +175,7 @@ namespace Robots
 
         }
 
+        /*
         public static void WriteMeshes()
         {
             Rhino.FileIO.File3dm robotsGeometry = Rhino.FileIO.File3dm.Read($@"{ResourcesFolder}\robotsGeometry.3dm");
@@ -207,6 +206,7 @@ namespace Robots
                 File.WriteAllBytes($@"{ResourcesFolder}\Meshes.rob", stream.ToArray());
             }
         }
+        */
 
         public abstract KinematicSolution Kinematics(Target target, double[] prevJoints = null, bool displayMeshes = false, Plane? basePlane = null);
 

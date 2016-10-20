@@ -54,7 +54,7 @@ namespace Robots
                 }
             }
 
-            elements.AddRange(XElement.Parse(Properties.Resources.robotsData).Elements());
+          //  elements.AddRange(XElement.Parse(Properties.Resources.robotsData).Elements());
 
             foreach (var element in elements)
                 names.Add($"{element.Attribute(XName.Get("name")).Value}");
@@ -79,7 +79,10 @@ namespace Robots
                     if (element != null) break;
                 }
             }
+       
+            if (element == null) throw new InvalidOperationException($" RobotSystem \"{name}\" not found");
 
+            /*
             if (element == null)
             {
                 XElement data = XElement.Parse(Properties.Resources.robotsData);
@@ -92,6 +95,7 @@ namespace Robots
                     throw new InvalidOperationException($" RobotSystem \"{name}\" not found");
                 }
             }
+            */
 
             return Create(element, basePlane);
         }

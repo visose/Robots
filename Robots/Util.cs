@@ -32,7 +32,6 @@ namespace Robots
         internal static Plane ToPlane(this Transform transform)
         {
             Plane plane = Plane.WorldXY;
-            // Plane plane = new Plane(Point3d.Origin, -Vector3d.XAxis, -Vector3d.YAxis);
             plane.Transform(transform);
             return plane;
         }
@@ -83,22 +82,6 @@ namespace Robots
             Array.Copy(array, startIndex, subset, 0, length);
             return subset;
         }
-
-        public static Plane QuaternionToPlane(Point3d point, Quaternion quaternion)
-        {
-            Plane plane;
-            quaternion.GetRotation(out plane);
-            plane.Origin = point;
-            return plane;
-        }
-
-        public static Plane QuaternionToPlane(double x, double y, double z, double q1, double q2, double q3, double q4)
-        {
-            var point = new Point3d(x, y, z);
-            var quaternion = new Quaternion(q1, q2, q3, q4);
-            return QuaternionToPlane(point, quaternion);
-        }
-
 
         public static IEnumerable<List<T>> Transpose<T>(this IEnumerable<IEnumerable<T>> source)
         {

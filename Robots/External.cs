@@ -16,9 +16,15 @@ namespace Robots
 
         protected override void SetStartPlanes()
         {
-            Joints[0].Plane = new Plane(new Point3d(0, 0, Joints[0].D), Vector3d.YAxis, Vector3d.ZAxis);
-            if (Joints.Length > 1)
+            if (Joints.Length == 1)
+            {
+                Joints[0].Plane = new Plane(new Point3d(Joints[0].A, 0, Joints[0].D), Vector3d.YAxis, -Vector3d.XAxis);
+            }
+            else
+            {
+                Joints[0].Plane = new Plane(new Point3d(0, 0, Joints[0].D), Vector3d.YAxis, Vector3d.ZAxis);
                 Joints[1].Plane = new Plane(new Point3d(Joints[1].A, 0, Joints[0].D + Joints[1].D), Vector3d.YAxis, -Vector3d.XAxis);
+            }
         }
 
         public override double DegreeToRadian(double degree, int i) => degree * (PI / 180);
@@ -40,9 +46,9 @@ namespace Robots
                     else
                         Joints[i] = target.External[externalNum];
                 }
-                    if (prevJoints != null)
-                        Joints = JointTarget.GetAbsoluteJoints(Joints, prevJoints);
-                
+                if (prevJoints != null)
+                    Joints = JointTarget.GetAbsoluteJoints(Joints, prevJoints);
+
             }
 
             protected override void SetPlanes(Target target)

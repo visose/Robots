@@ -32,11 +32,11 @@ namespace Robots
 
         public Target(Tool tool, Speed speed, Zone zone, Command command, Frame frame = null, double[] external = null)
         {
-            this.Tool = tool;
-            this.Speed = speed;
-            this.Zone = zone;
+            this.Tool = tool ?? Tool.Default;
+            this.Speed = speed ?? Speed.Default;
+            this.Zone = zone ?? Zone.Default;
+            this.Frame = frame ?? Frame.Default;
             this.Command = command;
-            this.Frame = frame;
             this.External = external;
         }
 
@@ -89,10 +89,10 @@ namespace Robots
             string type = $"Cartesian ({Plane.OriginX:0.00},{Plane.OriginY:0.00},{Plane.OriginZ:0.00})";
             string motion = $", {Motion.ToString()}";
             string configuration = Configuration != null ? $", \"{Configuration.ToString()}\"" : "";
-            string frame = Frame != null ? $", Frame ({Frame.Plane.OriginX:0.00},{Frame.Plane.OriginY:0.00},{Frame.Plane.OriginZ:0.00})" : "";
-            string tool = Tool != null ? $", {Tool}" : "";
-            string speed = Speed != null ? $", {Speed}" : "";
-            string zone = Zone != null ? $", {Zone}" : "";
+            string frame = $", Frame ({Frame.Plane.OriginX:0.00},{Frame.Plane.OriginY:0.00},{Frame.Plane.OriginZ:0.00})";
+            string tool = $", {Tool}";
+            string speed = $", {Speed}";
+            string zone = $", {Zone}";
             string commands = Command != null ? ", Contains commands" : "";
             string external = External != null ? ", External axis" : "";
             return $"Target ({type}{motion}{configuration}{frame}{tool}{speed}{zone}{commands}{external})";
@@ -149,9 +149,9 @@ namespace Robots
         public override string ToString()
         {
             string type = $"Joint ({string.Join(",", (this as JointTarget).Joints.Select(x => $"{x:0.00}"))})";
-            string tool = Tool != null ? $", {Tool}" : "";
-            string speed = Speed != null ? $", {Speed}" : "";
-            string zone = Zone != null ? $", {Zone}" : "";
+            string tool = $", {Tool}";
+            string speed = $", {Speed}";
+            string zone = $", {Zone}";
             string commands = Command != null ? ", Contains commands" : "";
             string external = External != null ? ", External axis" : "";
             return $"Target ({type}{tool}{speed}{zone}{commands}{external})";
@@ -161,8 +161,9 @@ namespace Robots
 
     public class ProgramTarget : Target
     {
-        public Plane Plane { get; internal set; }
-        public Plane WorldPlane { get; internal set; }
+        public Plane Plane { get; internal set; } = Plane.Unset;
+        public Plane[] Planes { get; internal set; }
+        public Plane WorldPlane { get { return Planes[Planes.Length - 1]; } }
         public double[] Joints { get; internal set; }
         public bool IsJointTarget { get; internal set; }
         public Motions Motion { get; internal set; }
@@ -178,10 +179,14 @@ namespace Robots
         public double TotalTime { get; internal set; }
         public int LeadingJoint { get; internal set; }
 
+        RobotSystem robotSystem;
+
         public bool IsJointMotion => IsJointTarget || Motion == Motions.Joint;
 
-        internal ProgramTarget(Target target) : base(target.Tool, target.Speed, target.Zone, null, target.Frame, target.External)
+        internal ProgramTarget(Target target, RobotSystem robotSystem) : base(target.Tool, target.Speed, target.Zone, null, target.Frame, target.External)
         {
+            this.robotSystem = robotSystem;
+
             if (target.Command != null)
             {
                 if (target.Command is Commands.Group)
@@ -226,12 +231,24 @@ namespace Robots
 
         public Plane GetPrevPlane(ProgramTarget prevTarget)
         {
-            Plane prevPlane = prevTarget.Plane;
-            if (prevTarget.Tool != this.Tool)
-                prevPlane.Transform(Transform.PlaneToPlane(this.Tool.Tcp, prevTarget.Tool.Tcp));
-            if (prevTarget.Frame != this.Frame)
-                prevPlane.Transform(Transform.PlaneToPlane(this.Frame.Plane, prevTarget.Frame.Plane));
+            Plane prevPlane = prevTarget.WorldPlane;
 
+            if (prevTarget.Tool != this.Tool)
+            {
+                var toolPlane = this.Tool.Tcp;
+                toolPlane.Transform(Transform.PlaneToPlane(prevTarget.Tool.Tcp, prevPlane));
+                prevPlane = toolPlane;
+            }
+
+            Plane framePlane = this.Frame.Plane;
+
+            if (this.Frame.IsCoupled)
+            {
+                Plane prevCoupledPlane = prevTarget.Planes[this.Frame.CoupledPlaneIndex];
+                framePlane.Transform(Transform.PlaneToPlane(Plane.WorldXY, prevCoupledPlane));
+            }
+
+            prevPlane.Transform(Transform.PlaneToPlane(framePlane, Plane.WorldXY));
             return prevPlane;
         }
 
@@ -249,24 +266,15 @@ namespace Robots
 
         public Target Lerp(ProgramTarget prevTarget, double t, double start, double end)
         {
-           // double[] external = External;
-            //if (External != null && prevTarget != null)
-            {
-                //  external = JointTarget.Lerp(prevTarget.External, External, t, start, end);
-                //     external = JointTarget.Lerp(prevTarget.GetAbsoluteExternal(), GetAbsoluteExternal(), t, start, end);
-                // external = external.Select(x => JointTarget.GetAbsoluteJoint(x)).ToArray();
-              //  external = GetAbsoluteExternal();
-            }
-
-            double[] joints = (prevTarget != null) ? JointTarget.Lerp(prevTarget.Joints, Joints, t, start, end) : this.Joints;
+            double[] joints = (prevTarget != null) ? JointTarget.Lerp(prevTarget.Joints, this.Joints, t, start, end) : this.Joints;
 
             double[] external = External;
             if (External != null && prevTarget != null)
             {
-                int externalCount = Joints.Length - 6;
+                int externalCount = this.Joints.Length - 6;
                 external = new double[externalCount];
                 for (int i = 0; i < externalCount; i++)
-                    external[i] = Joints[i + 6];
+                    external[i] = joints[i + 6];
             }
 
             if (IsJointMotion)
@@ -275,14 +283,15 @@ namespace Robots
             }
             else if (Motion == Target.Motions.Linear)
             {
-                Plane plane = (prevTarget != null) ? CartesianTarget.Lerp(GetPrevPlane(prevTarget), Plane, t, start, end) : this.Plane;
-                Target.RobotConfigurations? configuration = (Abs(prevTarget.TotalTime - t) < TimeTol && prevTarget != null) ? prevTarget.Configuration : Configuration;
+                Plane prevPlane = GetPrevPlane(prevTarget);
+                Plane plane = CartesianTarget.Lerp(prevPlane, Plane, t, start, end);
+                //  Target.RobotConfigurations? configuration = (Abs(prevTarget.TotalTime - t) < TimeTol) ? prevTarget.Configuration : Configuration;
+                Target.RobotConfigurations? configuration = prevTarget.Configuration;
                 return new CartesianTarget(plane, this, configuration, Target.Motions.Linear, external);
             }
             else
                 return null;
         }
-
 
         public double[] GetAllJoints()
         {
@@ -307,24 +316,23 @@ namespace Robots
 
         internal void SetTargetKinematics(KinematicSolution kinematics)
         {
+            this.Planes = kinematics.Planes;
+            this.Joints = kinematics.Joints;
+            this.Configuration = kinematics.Configuration;
+
             if (this.IsJointTarget)
             {
-                this.WorldPlane = kinematics.Planes[kinematics.Planes.Length - 1];
-                Plane plane = this.WorldPlane;
-                plane.Transform(Transform.PlaneToPlane(this.Frame.Plane, Plane.WorldXY));
-                this.Plane = plane;
-                // this.Joints = this.GetAllJoints();
-                this.Joints = kinematics.Joints;
-            }
-            else
-            {
-                var worldPlane = this.Plane;
-                worldPlane.Transform(Transform.PlaneToPlane(Plane.WorldXY, this.Frame.Plane));
-                this.WorldPlane = worldPlane;
-                this.Joints = kinematics.Joints;
-            }
+                var plane = this.WorldPlane;
 
-            this.Configuration = kinematics.Configuration;
+                var framePlane = this.Frame.Plane;
+                if (this.Frame.IsCoupled)
+                {
+                    framePlane.Transform(Transform.PlaneToPlane(Plane.WorldXY, this.Planes[this.Frame.CoupledPlaneIndex]));
+                }
+
+                plane.Transform(Transform.PlaneToPlane(framePlane, Plane.WorldXY));
+                this.Plane = plane;
+            }
         }
     }
 
@@ -613,7 +621,7 @@ namespace Robots
 
         static Zone()
         {
-            Default = new Zone(1, "DefaultZone");
+            Default = new Zone(0, "DefaultZone");
         }
 
         public Zone(double distance, string name = null)
@@ -634,9 +642,10 @@ namespace Robots
         public Plane Plane { get; set; }
         public int CoupledMechanism { get; set; }
         public int CoupledMechanicalGroup { get; set; }
-        public bool IsCoupled { get { return (CoupledMechanism != -1 || CoupledMechanicalGroup != -1); } }
-
+        public bool IsCoupled { get { return (CoupledMechanicalGroup != -1); } }
         public static Frame Default { get; }
+
+        internal int CoupledPlaneIndex { get; set; }
 
         static Frame()
         {

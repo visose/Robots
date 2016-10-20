@@ -49,7 +49,7 @@ namespace Robots
                     }
                     else
                     {
-                        Target.RobotConfigurations configuration = Target.RobotConfigurations.None;
+                        Target.RobotConfigurations configuration;
                         Joints = GetClosestSolution(transform, prevJoints, out configuration, out errors);
                         Configuration = configuration;
                     }
@@ -107,8 +107,7 @@ namespace Robots
                 for (int i = 0; i < 8; i++)
                 {
                     List<string> solutionErrors;
-                    solutions[i] = InverseKinematics(transform, (Target.RobotConfigurations)i, out solutionErrors);
-                  
+                    solutions[i] = InverseKinematics(transform, (Target.RobotConfigurations)i, out solutionErrors);           
                     solutions[i] = JointTarget.GetAbsoluteJoints(solutions[i], prevJoints);
                     solutionsErrors.Add(solutionErrors);
                 }

@@ -39,6 +39,37 @@ namespace Robots
             return MechanicalGroups[group].Joints.ToArray();
         }
 
+        internal int GetPlaneIndex(Frame frame)
+        {
+            if (frame.CoupledMechanism != -1)
+            {
+                int index = -1;
+
+                for (int i = 0; i < frame.CoupledMechanicalGroup; i++)
+                {
+                    index += this.MechanicalGroups[i].Joints.Count + 2;
+                }
+
+                for (int i = 0; i <= frame.CoupledMechanism; i++)
+                {
+                    index += this.MechanicalGroups[frame.CoupledMechanicalGroup].Externals[i].Joints.Length + 1;
+                }
+
+                return index;
+            }
+            else
+            {
+                int index = -1;
+
+                for (int i = 0; i <= frame.CoupledMechanicalGroup; i++)
+                {
+                    index += this.MechanicalGroups[i].Joints.Count + 2;
+                }
+
+                return index;
+            }
+        }
+
         class RobotCellKinematics
         {
             internal List<KinematicSolution> Solutions;
@@ -54,7 +85,6 @@ namespace Robots
 
                 foreach (var target in targets)
                 {
-                    if (target.Frame == null) continue;
                     var index = target.Frame.CoupledMechanicalGroup;
                     if (index == -1) continue;
                     groups.RemoveAt(index);
@@ -65,12 +95,11 @@ namespace Robots
                 {
                     int i = group.Index;
                     Plane? coupledPlane = null;
-                    if (targets[i].Frame != null)
-                    {
-                        int coupled = targets[i].Frame.CoupledMechanicalGroup;
-                        coupledPlane = (coupled != -1) ? Solutions[coupled].Planes[Solutions[coupled].Planes.Length - 2] as Plane? : null;
-                    }
-                    var kinematics = group.Kinematics(targets[i], prevJoints == null ? null : prevJoints[i], coupledPlane, displayMeshes,cell.BasePlane);
+
+                    int coupled = targets[i].Frame.CoupledMechanicalGroup;
+                    coupledPlane = (coupled != -1 && targets[i].Frame.CoupledMechanism == -1) ? Solutions[coupled].Planes[Solutions[coupled].Planes.Length - 2] as Plane? : null;
+
+                    var kinematics = group.Kinematics(targets[i], prevJoints == null ? null : prevJoints[i], coupledPlane, displayMeshes, cell.BasePlane);
                     Solutions[i] = kinematics;
                 }
             }
@@ -88,7 +117,7 @@ namespace Robots
         internal MechanicalGroup(int index, List<Mechanism> mechanisms)
         {
             this.Index = index;
-            this.Name = $"T_ROB{index+1}";
+            this.Name = $"T_ROB{index + 1}";
             this.Joints = mechanisms.SelectMany(x => x.Joints.OrderBy(y => y.Number)).ToList();
             this.Robot = mechanisms.OfType<RobotArm>().FirstOrDefault();
             mechanisms.Remove(Robot);
@@ -156,9 +185,8 @@ namespace Robots
                 var robotBase = group.Robot.BasePlane;
                 Mechanism coupledMech = null;
 
-                if (target.Frame != null && target.Frame.CoupledMechanism != -1)
+                if (target.Frame.CoupledMechanism != -1 && target.Frame.CoupledMechanicalGroup == group.Index)
                 {
-                    if (target.Frame.CoupledMechanism > group.Externals.Count - 1) throw new Exception(" Mechanism to couple with frame not found.");
                     coupledMech = group.Externals[target.Frame.CoupledMechanism];
                 }
 
@@ -183,7 +211,7 @@ namespace Robots
                         robotBase = externalKinematics.Planes[externalKinematics.Planes.Length - 1];
                 }
 
-                if (basePlane!= null)
+                if (basePlane != null)
                 {
                     robotBase.Transform(((Plane)basePlane).ToTransform());
                 }
@@ -191,15 +219,11 @@ namespace Robots
                 // Coupling
                 if (coupledPlane != null)
                 {
-                    var cartesianTarget = target as CartesianTarget;
-                    if (cartesianTarget != null)
-                    {
-                        var coupledFrame = target.Frame.ShallowClone();
-                        var plane = coupledFrame.Plane;
-                        plane.Transform(Transform.PlaneToPlane(Plane.WorldXY, (Plane)coupledPlane));
-                        coupledFrame.Plane = plane;
-                        cartesianTarget.Frame = coupledFrame;
-                    }
+                    var coupledFrame = target.Frame.ShallowClone();
+                    var plane = coupledFrame.Plane;
+                    plane.Transform(Transform.PlaneToPlane(Plane.WorldXY, (Plane)coupledPlane));
+                    coupledFrame.Plane = plane;
+                    target.Frame = coupledFrame;
                 }
 
                 // Robot
@@ -254,5 +278,4 @@ namespace Robots
             }
         }
     }
-
 }

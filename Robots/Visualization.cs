@@ -14,13 +14,16 @@ namespace Robots
     {
         Program program;
         double time;
+        int mechanicalGroup;
+
         public double Length { get; set; }
         public Polyline Polyline { get; private set; }
 
-        public SimpleTrail(Program program, double maxLength)
+        public SimpleTrail(Program program, double maxLength, int mechanicalGroup = 0)
         {
             this.program = program;
             this.Length = maxLength;
+            this.mechanicalGroup = mechanicalGroup;
             Polyline = new Polyline();
             time = program.CurrentSimulationTime;
         }
@@ -31,7 +34,7 @@ namespace Robots
                 Polyline.Clear();
 
             time = program.CurrentSimulationTime;
-            Polyline.Add(program.CurrentSimulationTargets[0].WorldPlane.Origin);
+            Polyline.Add(program.CurrentSimulationTargets[mechanicalGroup].WorldPlane.Origin);
 
             while (Polyline.Length > Length)
                 Polyline.RemoveAt(0);

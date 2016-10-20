@@ -539,13 +539,13 @@ namespace Robots.Grasshopper
         public CreateFrame() : base("Create frame", "Frame", "Creates a frame or work plane.", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{467237C8-08F5-4104-A553-8814AACAFE51}");
-        protected override Bitmap Icon => Properties.Resources.iconRobotList;
+        protected override Bitmap Icon => Properties.Resources.iconFrameParam;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddPlaneParameter("Plane", "P", "Frame plane", GH_ParamAccess.item, Plane.WorldXY);
-            pManager.AddIntegerParameter("Coupled mechanism", "M", "Index of kinematically coupled mechanism or -1 for no coupling.", GH_ParamAccess.item, -1);
-            pManager.AddIntegerParameter("Coupled mechanical group", "G", "Index of kinematically coupled mechanical group or -1 for no coupling.", GH_ParamAccess.item, -1);
+            pManager.AddIntegerParameter("Coupled mechanical group", "G", "Index of the mechanical group where the coupled mechanism or robot belongs, or -1 for no coupling.", GH_ParamAccess.item, -1);
+            pManager.AddIntegerParameter("Coupled mechanism", "M", "Index of kinematically coupled mechanism or -1 for coupling of a robot in a multi robot cell. If input G is -1 this has no effect.", GH_ParamAccess.item, -1);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -556,12 +556,13 @@ namespace Robots.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             GH_Plane plane = null;
-            int coupledMechanism = -1;
             int coupledGroup = -1;
+            int coupledMechanism = -1;
 
             if (!DA.GetData(0, ref plane)) { return; }
-            if (!DA.GetData(1, ref coupledMechanism)) { return; }
-            if (!DA.GetData(2, ref coupledGroup)) { return; }
+            if (!DA.GetData(1, ref coupledGroup)) { return; }
+            if (!DA.GetData(2, ref coupledMechanism)) { return; }
+
 
             var frame = new Frame(plane.Value, coupledMechanism, coupledGroup);
             DA.SetData(0, new GH_Frame(frame));
