@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 using System.Linq;
 using System.IO;
 using System.Collections.Generic;
@@ -28,7 +27,7 @@ namespace Robots
             return euler.Select(x => -x.ToDegrees()).ToArray();
         }
 
-        public static Plane FromEulerAngles(double aDeg, double bDeg, double cDeg)
+        public static Plane EulerToPlane(double x, double y, double z, double aDeg, double bDeg, double cDeg)
         {
             double a = -aDeg * PI / 180;
             double b = -bDeg * PI / 180;
@@ -49,7 +48,16 @@ namespace Robots
             tt[1, 0] = -sa * cb; tt[1, 1] = ca * cc - sa * sb * sc; tt[1, 2] = ca * sc + sa * sb * cc;
             tt[2, 0] = sb; tt[2, 1] = -cb * sc; tt[2, 2] = cb * cc;
 
-            return tt.ToPlane();
+            var plane = tt.ToPlane();
+            plane.Origin = new Point3d(x, y, z);
+            return plane;
+        }
+
+        public static double[] PlaneToEuler(Plane plane)
+        {
+            var euler = EulerAngles(plane);
+            var q = Quaternion.Rotation(Plane.WorldXY, plane);
+            return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, euler[0], euler[1], euler[2] };
         }
 
         internal override List<List<List<string>>> Code(Program program) => new KRLPostProcessor(this, program).Code;
@@ -210,10 +218,8 @@ DEF {program.Name}_{groupName}_{file:000}()
                     {
                         if (target.Frame.IsCoupled)
                         {
-                            int mech = target.Frame.CoupledMechanism + 1;
-                            //  code.Add($@"BASE_DATA[17] = {program.Frames[0].Name}");
-                            //  code.Add($@"$BASE = EK(RobotSystem_DEF[2].ROOT, RobotSystem_DEF[2].MECH_TYPE, BASE_DATA[17])");
-                            code.Add($@"$BASE = EK(RobotSystem_DEF[{mech}].ROOT, RobotSystem_DEF[{mech}].MECH_TYPE, {program.Frames[0].Name})");
+                            int mech = target.Frame.CoupledMechanism + 2;
+                            code.Add($@"$BASE = EK(MACHINE_DEF[{mech}].ROOT, MACHINE_DEF[{mech}].MECH_TYPE, {target.Frame.Name})");
                             code.Add($@"$ACT_EX_AX = 2");
                         }
                         else
@@ -362,12 +368,6 @@ DEF {program.Name}_{groupName}_{file:000}()
             {
                 Plane plane = frame.Plane;
                 plane.Transform(Transform.PlaneToPlane(cell.BasePlane, Plane.WorldXY));
-                if (frame.IsCoupled)
-                {
-                    // Plane positionerPlane = cell.Positioner.Joints[1].Plane;
-                    // positionerPlane.Transform(Transform.PlaneToPlane(Plane.WorldXY, cell.Positioner.BasePlane));
-                    // plane.Transform(Transform.PlaneToPlane(positionerPlane, Plane.WorldXY));
-                }
 
                 double[] eulerAngles = EulerAngles(plane);
                 return $"DECL GLOBAL FRAME {frame.Name}={{FRAME: X {plane.OriginX:0.000},Y {plane.OriginY:0.000},Z {plane.OriginZ:0.000},A {eulerAngles[0]:0.000},B {eulerAngles[1]:0.000},C {eulerAngles[2]:0.000}}}";

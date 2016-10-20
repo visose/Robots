@@ -58,8 +58,7 @@ namespace Robots
             else
                 this.MultiFileIndices = new List<int>(new int[1]);
 
-
-            var programTargets = targets.Select(x => x.Select(y => new ProgramTarget(y)).ToList()).ToList();
+            var programTargets = targets.Select(x => x.Select(y => new ProgramTarget(y, robotSystem)).ToList()).ToList();
             var checkProgram = new CheckProgram(this, programTargets.Transpose().ToList(), stepSize);
             if (checkProgram.indexError != -1) programTargets = programTargets.Select(x => x.GetRange(0, checkProgram.indexError + 1)).ToList();
             this.Targets = programTargets;
@@ -67,7 +66,7 @@ namespace Robots
             this.simulation = new Simulation(this, checkProgram.keyframes);
 
             if (Errors.Count == 0)
-                Code = robotSystem.Code(this);
+                Code = RobotSystem.Code(this);
         }
 
         Program(string name, RobotSystem robotSystem, List<List<List<string>>> code)
@@ -110,7 +109,7 @@ namespace Robots
         class CheckProgram
         {
             Program program;
-            RobotSystem robot;
+            RobotSystem robotSystem;
             internal List<List<ProgramTarget>> keyframes;
             int lastIndex;
             internal int indexError;
@@ -118,7 +117,7 @@ namespace Robots
 
             internal CheckProgram(Program program, List<List<ProgramTarget>> targets, double stepSize)
             {
-                this.robot = program.RobotSystem;
+                this.robotSystem = program.RobotSystem;
                 this.program = program;
                 this.groupCount = targets[0].Count;
 
@@ -130,7 +129,6 @@ namespace Robots
                 }
 
                 FixFirstTarget(targets[0]);
-
                 FixTargetAttributes(targets);
                 indexError = FixTargetMotions(targets, stepSize);
             }
@@ -141,7 +139,7 @@ namespace Robots
 
                 if (fix.Count() > 0)
                 {
-                    var kinematics = robot.Kinematics(firstTargets.Select(x => x.ToTarget()).ToList());
+                    var kinematics = robotSystem.Kinematics(firstTargets.Select(x => x.ToTarget()).ToList());
 
                     foreach (var target in fix)
                     {
@@ -154,7 +152,7 @@ namespace Robots
 
             void FixTargetAttributes(List<List<ProgramTarget>> targets)
             {
-                // Set defaults to unset attributes
+                // Warn about defaults
 
                 for (int i = 0; i < targets.Count; i++)
                 {
@@ -164,28 +162,13 @@ namespace Robots
                         target.Index = i;
                         target.Group = j;
 
-                        if (target.Tool == null)
-                        {
-                            target.Tool = Tool.Default;
-                            program.Warnings.Add($"Tool set to default for target {target.Index} in robot {target.Group}");
-                        }
+                        if (target.Tool == Tool.Default) program.Warnings.Add($"Tool set to default for target {target.Index} in robot {target.Group}");
+                        if (target.Speed == Speed.Default) program.Warnings.Add($"Speed set to default for target {target.Index} in robot {target.Group}");
 
-                        if (target.Frame == null)
+                        if (target.Motion == Target.Motions.Linear && target.Configuration != null)
                         {
-                            target.Frame = Frame.Default;
-                            program.Warnings.Add($"Frame set to default for target {target.Index} in robot {target.Group}");
-                        }
-
-                        if (target.Speed == null)
-                        {
-                            target.Speed = Speed.Default;
-                            program.Warnings.Add($"Speed set to default for target {target.Index} in robot {target.Group}");
-                        }
-
-                        if (target.Zone == null)
-                        {
-                            target.Zone = Zone.Default;
-                            program.Warnings.Add($"Approximation zone set to default for target {target.Index} in robot {target.Group}");
+                            target.Configuration = null;
+                            program.Warnings.Add($"Can't force a configuration on a linear motion for target {target.Index} in robot {target.Group}");
                         }
                     }
                 }
@@ -195,7 +178,7 @@ namespace Robots
                 var tools = targets.SelectMany(x => x.Select(y => new { Tool = y.Tool, Group = y.Group })).Distinct();
                 foreach (var tool in tools)
                 {
-                    double payload = robot.Payload(tool.Group);
+                    double payload = robotSystem.Payload(tool.Group);
                     if (tool.Tool.Weight > payload) program.Warnings.Add($"Weight of tool {tool.Tool.Name} exceeds the robot {tool.Group} rated payload of {payload} kg");
                 }
 
@@ -261,6 +244,38 @@ namespace Robots
                         }
                     }
                 }
+
+                // Fix frames
+                {
+                    foreach (var frame in program.Frames)
+                    {
+                        if (frame.CoupledMechanicalGroup == -1 && frame.CoupledMechanism != -1)
+                        {
+                            throw new Exception($" Frame {frame.Name} has a coupled mechanism set but no mechanical group.");
+                        }
+
+                        if (frame.CoupledMechanicalGroup == 0 && frame.CoupledMechanism == -1)
+                        {
+                            throw new Exception($" Frame {frame.Name} is set to couple the robot rather than a mechanism.");
+                        }
+
+                        if (frame.IsCoupled)
+                        {
+                            var cell = robotSystem as RobotCell;
+                            if (frame.CoupledMechanicalGroup > cell.MechanicalGroups.Count - 1)
+                            {
+                                throw new Exception(" Frame {frame.Name} is set to couple an inexistant mechanical group.");
+                            }
+
+                            if (frame.CoupledMechanism > cell.MechanicalGroups[frame.CoupledMechanicalGroup].Externals.Count - 1)
+                            {
+                                throw new Exception(" Frame {frame.Name} is set to couple an inexistant mechanism.");
+                            }
+
+                            frame.CoupledPlaneIndex = (robotSystem as RobotCell).GetPlaneIndex(frame);
+                        }
+                    }
+                }
             }
 
             int FixTargetMotions(List<List<ProgramTarget>> targets, double stepSize)
@@ -277,16 +292,7 @@ namespace Robots
                     {
                         var kineTargets = targets[i].Select(x => x.ToTarget()).ToList();
                         var kinematics = program.RobotSystem.Kinematics(kineTargets, (i > 0) ? prevTargets.Select(x => x.Joints).ToList() : null);
-
-                        foreach (var target in targets[i])
-                        {
-                            int group = target.Group;
-                            // if (target.IsJointMotion)
-                            {
-                                target.Joints = kinematics[group].Joints;
-                            }
-                            //  SetTargetKinematics(kinematics[group], target, prevTargets[group]);
-                        }
+                        foreach (var target in targets[i]) target.SetTargetKinematics(kinematics[target.Group]);
                     }
 
                     double divisions = 1;
@@ -326,7 +332,7 @@ namespace Robots
                             }
 
                             SetTargetKinematics(kinematics[group], target, prevInterTargets[group]);
-                            SetSpeed(target, prevInterTargets[group], group);
+                            SetSpeed(target, prevInterTargets[group]);
                         }
 
                         // Set speed
@@ -363,7 +369,7 @@ namespace Robots
                     {
                         int group = target.Group;
                         target.Plane = prevInterTargets[group].Plane;
-                        target.WorldPlane = prevInterTargets[group].WorldPlane;
+                        target.Planes = prevInterTargets[group].Planes;
                         target.Joints = prevInterTargets[group].Joints;
                         target.TotalTime = prevInterTargets[group].TotalTime;
                         target.MinTime = prevInterTargets[group].MinTime;
@@ -458,6 +464,7 @@ namespace Robots
             {
 
                 target.SetTargetKinematics(kinematics);
+
                 if (kinematics.Errors.Count > 0)
                 {
                     program.Errors.Add($"Errors in target {target.Index} of robot {target.Group}:");
@@ -473,7 +480,7 @@ namespace Robots
                     target.ChangesConfiguration = false;
             }
 
-            void SetSpeed(ProgramTarget target, ProgramTarget prevTarget, int group)
+            void SetSpeed(ProgramTarget target, ProgramTarget prevTarget)
             {
                 if (prevTarget == null) return;
 
@@ -483,7 +490,7 @@ namespace Robots
                 // Axis
                 double deltaAxisTime = 0;
                 int leadingJoint = -1;
-                var joints = robot.GetJoints(group).ToArray();
+                var joints = robotSystem.GetJoints(target.Group).ToArray();
 
                 for (int i = 0; i < joints.Length; i++)
                 {
@@ -541,7 +548,7 @@ namespace Robots
                 }
                 else
                 {
-                    // Get slowest
+                    // Get slowest by time
                     double deltaTimeTime = target.Speed.Time;
                     double[] deltaTimes = new double[] { deltaTimeTime, deltaAxisTime };
                     int deltaIndex = -1;
@@ -586,11 +593,8 @@ namespace Robots
 
             internal void Step(double time, bool isNormalized)
             {
-                var kineTargets = new List<Target>();
-
                 if (keyframes[0].Count == 1)
                 {
-                    var kinetargets = keyframes.Transpose().ToArray()[0].Select(x => x.ToTarget());
                     this.currentSimulationKinematics = program.RobotSystem.Kinematics(keyframes.SelectMany(x => x).Select(x => x.ToTarget()).ToList(), displayMeshes: true);
                     return;
                 }
@@ -623,28 +627,31 @@ namespace Robots
                 }
 
                 currentTime = time;
-
+                var kineTargets = new List<Target>();
+                var prevJoints = new List<double[]>();
                 var targets = keyframes.Select(x => x[currentTarget + 1]).ToList();
                 var prevTargets = keyframes.Select(x => x[currentTarget]).ToList();
                 var newSimulationTargets = targets.Select(x => program.Targets[x.Group][x.Index].ShallowClone() as ProgramTarget).ToList();
 
                 for (int j = 0; j < groupCount; j++)
                 {
-                    var target = targets[j];
+                    var target = targets[j].ShallowClone() as ProgramTarget;
                     var prevTarget = prevTargets[j];
+                    target.Configuration = prevTarget.Configuration;
+
+                    if (target.Configuration == null) throw new Exception("No config on simulation target");
+
                     kineTargets.Add(target.Lerp(prevTarget, currentTime, prevTarget.TotalTime, target.TotalTime));
+                    prevJoints.Add(prevTarget.Joints);
                 }
 
-                var kinematics = program.RobotSystem.Kinematics(kineTargets, displayMeshes: true);
+
+                var kinematics = program.RobotSystem.Kinematics(kineTargets, null, displayMeshes: true);
 
                 for (int j = 0; j < groupCount; j++)
                 {
                     var newSimulationTarget = newSimulationTargets[j];
-                    newSimulationTarget.WorldPlane = kinematics[j].Planes[kinematics[j].Planes.Length - 1];
-                    Plane targetPlane = newSimulationTarget.WorldPlane;
-                    targetPlane.Transform(Transform.PlaneToPlane(newSimulationTarget.Frame.Plane, Plane.WorldXY));
-                    newSimulationTarget.Plane = targetPlane;
-                    newSimulationTarget.Joints = kinematics[j].Joints;
+                    newSimulationTarget.SetTargetKinematics(kinematics[j]);
                     this.currentSimulationTargets[j] = newSimulationTarget;
                 }
 
@@ -655,7 +662,7 @@ namespace Robots
         public class Collision
         {
             Program program;
-            RobotCell cell;
+            RobotSystem robotSystem;
             double linearStep;
             double angularStep;
             IEnumerable<int> first;
@@ -670,7 +677,7 @@ namespace Robots
             internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh environment, int environmentPlane, double linearStep, double angularStep)
             {
                 this.program = program;
-                this.cell = program.RobotSystem as RobotCell;
+                this.robotSystem = program.RobotSystem;
                 this.linearStep = linearStep;
                 this.angularStep = angularStep;
                 this.first = first;
@@ -689,7 +696,12 @@ namespace Robots
                     var prevTargets = program.Targets[targets[0].Index - 1];
 
                     double divisions = 0;
-                    for (int group = 0; group < cell.MechanicalGroups.Count; group++)
+
+                    int groupCount = 1;
+                    if (robotSystem is RobotCell)
+                        groupCount = (robotSystem as RobotCell).MechanicalGroups.Count;
+
+                    for (int group = 0; group < groupCount; group++)
                     {
                         var target = targets[group];
                         var prevTarget = prevTargets[group];
@@ -713,7 +725,7 @@ namespace Robots
                     {
                         var kineTargets = new List<Target>();
 
-                        for (int link = 0; link < cell.MechanicalGroups.Count; link++)
+                        for (int link = 0; link < groupCount; link++)
                         {
                             var target = targets[link];
                             var prevTarget = prevTargets[link];

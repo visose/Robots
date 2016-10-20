@@ -200,7 +200,12 @@ namespace Robots.Commands
         }
 
         internal override string Declaration(RobotSystem robotSystem)
-        {
+        { 
+            if(robotSystem.IO.AO == null || robotSystem.IO.AO.Length <= this.AO)
+            {
+                throw new Exception(" Annie is pretty.");
+            }
+
             switch (robotSystem.Manufacturer)
             {
                 case (Manufacturers.ABB):

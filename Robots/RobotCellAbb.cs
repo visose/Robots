@@ -10,9 +10,30 @@ using static Robots.Util;
 
 namespace Robots
 {
-    class RobotCellAbb : RobotCell
+    public class RobotCellAbb : RobotCell
     {
-        internal RobotCellAbb(string name, List<MechanicalGroup> mechanicalGroup, IO io, Plane basePlane, Mesh environment) : base(name, Manufacturers.ABB, mechanicalGroup, io, basePlane, environment) { }
+        internal RobotCellAbb(string name, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh environment) : base(name, Manufacturers.ABB, mechanicalGroups, io, basePlane, environment) { }
+
+        public static Plane QuaternionToPlane(Point3d point, Quaternion quaternion)
+        {
+            Plane plane;
+            quaternion.GetRotation(out plane);
+            plane.Origin = point;
+            return plane;
+        }
+
+        public static Plane QuaternionToPlane(double x, double y, double z, double q1, double q2, double q3, double q4)
+        {
+            var point = new Point3d(x, y, z);
+            var quaternion = new Quaternion(q1, q2, q3, q4);
+            return QuaternionToPlane(point, quaternion);
+        }
+
+        public static double[] PlaneToQuaternion(Plane plane)
+        {
+            var q = Quaternion.Rotation(Plane.WorldXY, plane);
+            return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, q.A, q.B, q.C, q.D };
+        }
 
         internal override void SaveCode(Program program, string folder)
         {
@@ -240,7 +261,7 @@ namespace Robots
                 string coupledBool = frame.IsCoupled ? "FALSE" : "TRUE";
                 if (frame.IsCoupled)
                 {
-                    if (frame.CoupledMechanicalGroup != -1) coupledMech = $"ROB_{frame.CoupledMechanicalGroup + 1}";
+                    if (frame.CoupledMechanism == -1) coupledMech = $"ROB_{frame.CoupledMechanicalGroup + 1}";
                 }
                 return $@"TASK PERS wobjdata {frame.Name}:=[FALSE,{coupledBool},""{coupledMech}"",[[0,0,0],[1,0,0,0]],[{pos},{orient}]];";
             }
