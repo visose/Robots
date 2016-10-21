@@ -165,7 +165,7 @@ namespace Robots.Grasshopper
 
     public class CheckCollisions : GH_Component
     {
-        public CheckCollisions() : base("Check collisions", "Collisions", "Checks for possible collisions", "Robots", "Components") { }
+        public CheckCollisions() : base("Check collisions", "Collisions", "Checks for possible collisions. Will test if any object from group A collide with any objects from group B.", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.tertiary;
         public override Guid ComponentGuid => new Guid("{2848F557-8DF4-415A-800B-261E782E92F8}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCheckCollisions;
@@ -173,8 +173,8 @@ namespace Robots.Grasshopper
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("First set", "A", "First set of objects (0 = base, 1-6 = axis, 7 = tool)", GH_ParamAccess.list, new int[] { 7 });
-            pManager.AddIntegerParameter("Second set", "B", "Second set of objects (0 = base, 1-6 = axis, 7 = tool)", GH_ParamAccess.list, new int[] { 4 });
+            pManager.AddIntegerParameter("First set", "A", "First set of objects. Input a list of index values that correspond to the first collision group. The order is the same as the meshes output of the kinematics component. The environment would be an additional last mesh.", GH_ParamAccess.list, new int[] { 7 });
+            pManager.AddIntegerParameter("Second set", "B", "Second set of objects. Input a list of index values that correspond to the second collision group. The order is the same as the meshes output of the kinematics component. The environment would be an additional last mesh.", GH_ParamAccess.list, new int[] { 4 });
             pManager.AddMeshParameter("Environment", "E", "Single mesh object representing the environment", GH_ParamAccess.item);
             pManager.AddIntegerParameter("Environment plane", "P", "If attached to the robot, plane index where the environment is attached to", GH_ParamAccess.item, -1);
             pManager.AddNumberParameter("Linear step size", "Ls", "Linear step size in mm to check for collisions", GH_ParamAccess.item, 100);
