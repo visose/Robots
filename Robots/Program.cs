@@ -690,16 +690,16 @@ namespace Robots
 
             void Collide()
             {
-                System.Threading.Tasks.Parallel.ForEach(program.Targets.Transpose(), (targets, state) =>
+                var transposedTargets = program.Targets.Transpose().ToList();
+
+                System.Threading.Tasks.Parallel.ForEach(transposedTargets, (targets, state) =>
                 {
                     if (targets[0].Index == 0) return;
-                    var prevTargets = program.Targets[targets[0].Index - 1];
+                    var prevTargets = transposedTargets[targets[0].Index - 1];
 
-                    double divisions = 0;
+                    double divisions = 1;
 
-                    int groupCount = 1;
-                    if (robotSystem is RobotCell)
-                        groupCount = (robotSystem as RobotCell).MechanicalGroups.Count;
+                    int groupCount = targets.Count;
 
                     for (int group = 0; group < groupCount; group++)
                     {
@@ -716,30 +716,23 @@ namespace Robots
                         if (tempDivisions > divisions) divisions = tempDivisions;
                     }
 
-                    double step = 1.0 / divisions;
+                  //  double step = 1.0 / divisions;
 
-                    int j = (targets[0].Index != 1) ? 0 : 1;
-                    var ts = Enumerable.Range(j, (int)divisions + 1 - j).Select(x => step * x);
+                    int j = (targets[0].Index == 1) ? 0 : 1;
 
-                    foreach (double t in ts)
+                    for(int i=j;i<divisions;i++)
                     {
+                        double t = (double)i / (double)divisions;
                         var kineTargets = new List<Target>();
 
-                        for (int link = 0; link < groupCount; link++)
+                        for (int group = 0; group < groupCount; group++)
                         {
-                            var target = targets[link];
-                            var prevTarget = prevTargets[link];
+                            var target = targets[group];
+                            var prevTarget = prevTargets[group];
 
-                            if (target.IsJointMotion)
-                            {
-                                var joints = JointTarget.Lerp(prevTarget.Joints, target.Joints, t, 0, 1);
-                                kineTargets.Add(new JointTarget(joints, target));
-                            }
-                            else
-                            {
-                                var plane = CartesianTarget.Lerp(target.GetPrevPlane(prevTarget), target.Plane, t, 0, 1);
-                                kineTargets.Add(new CartesianTarget(plane, target));
-                            }
+                            var lerpTarget = target.Lerp(prevTarget, t, 0, 1);
+                            kineTargets.Add(lerpTarget);
+
                         }
 
                         var kinematics = program.RobotSystem.Kinematics(kineTargets, displayMeshes: true);
