@@ -86,7 +86,7 @@
       </Track>
       -->
       <Positioner model="DKP-400" manufacturer="KUKA" payload="400">
-        <Base x="1335.32703" y="-1326.33301" z="-22.8664" q1="-0.411604" q2="0.000392" q3="0.003115" q4="0.911357"/>
+        <Base x="1335.32703" y="-1326.33301" z="-22.8664" q1="-0.935475" q2="0.002479" q3="0.001925" q4="0.353379"/>
         <Joints>
           <Revolute number="7" a ="0" d ="510" minrange = "-90" maxrange ="90" maxspeed ="94.5"/>
           <Revolute number="8" a ="0" d ="347" minrange = "-INF" maxrange ="INF" maxspeed ="126"/>

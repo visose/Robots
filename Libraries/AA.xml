@@ -16,7 +16,7 @@
       <Positioner model="KP1-V500" manufacturer="KUKA" payload="500">
         <Base x="300.00" y="1700.00" z="650.00" q1="0.992071" q2="-0.000807" q3="-0.000174" q4="0.125679"/>
         <Joints>
-          <Revolute number="7" a ="0" d ="60" minrange = "-INF" maxrange ="INF" maxspeed ="126"/>
+          <Revolute number="7" a ="0" d ="705" minrange = "-INF" maxrange ="INF" maxspeed ="126"/>
         </Joints>
       </Positioner>
     </Mechanisms>

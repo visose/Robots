@@ -61,7 +61,7 @@ namespace Robots.Grasshopper
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("Plane", "P", "Plane", GH_ParamAccess.item);
+            pManager.AddPlaneParameter("Plane", "P", "Plane", GH_ParamAccess.item);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)

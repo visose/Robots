@@ -662,6 +662,18 @@ namespace Robots
 
         public Frame ShallowClone() => MemberwiseClone() as Frame;
 
-        public override string ToString() => (Name != null) ? $"Frame ({Name})" : $"Frame ({Plane.Origin}" + (IsCoupled ? " Coupled" : "") + ")";
+        public override string ToString()
+        {
+
+            if (Name != null)
+            {
+                return $"Frame ({Name})";
+            }
+            else
+            {
+                string origin = $"{Plane.OriginX:0.00},{Plane.OriginY:0.00},{Plane.OriginZ:0.00}";
+                return $"Frame ({origin}" + (IsCoupled ? " Coupled" : "") + ")";
+            }
+        }
     }
 }
