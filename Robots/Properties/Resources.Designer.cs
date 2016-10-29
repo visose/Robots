@@ -133,9 +133,29 @@ namespace Robots.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap iconDeconstructProgramTarget {
+            get {
+                object obj = ResourceManager.GetObject("iconDeconstructProgramTarget", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap iconDeconstructTarget {
             get {
                 object obj = ResourceManager.GetObject("iconDeconstructTarget", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconFrame {
+            get {
+                object obj = ResourceManager.GetObject("iconFrame", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -283,6 +303,16 @@ namespace Robots.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap iconSpeed {
+            get {
+                object obj = ResourceManager.GetObject("iconSpeed", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap iconSpeedParam {
             get {
                 object obj = ResourceManager.GetObject("iconSpeedParam", resourceCulture);
@@ -326,6 +356,16 @@ namespace Robots.Properties {
         internal static System.Drawing.Bitmap iconToolParam {
             get {
                 object obj = ResourceManager.GetObject("iconToolParam", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap iconToPlane {
+            get {
+                object obj = ResourceManager.GetObject("iconToPlane", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

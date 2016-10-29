@@ -134,66 +134,12 @@ namespace Robots
             return new double[] { vector.X, vector.Y, vector.Z }; // return 180 deg rotation
         }
 
-        public class RemoteConnection
+        public override double DegreeToRadian(double degree, int i, int group = 0)
         {
-            TcpClient client = new TcpClient();
-            public string IP { get; set; }
-            public int Port { get; set; } = 30002;
-            public List<string> Log { get; } = new List<string>();
-            public bool IsConnected => client.Connected;
-
-            public void Connect()
-            {
-                if (IP == null) throw new NullReferenceException(" IP for UR robot has not been set");
-                if (IsConnected) Disconnect();
-                client.Connect(IP, Port);
-                Log.Add((IsConnected) ? "Connected" : "Not able to connect");
-            }
-
-            public void Disconnect()
-            {
-                if (IsConnected)
-                {
-                    client.Close();
-                    client = new TcpClient();
-                    Log.Add("Disconnected");
-                }
-            }
-
-            public void Send(string message, bool verbose = false)
-            {
-                if (!IsConnected)
-                {
-                    Log.Add("Can't send message, not connected");
-                    return;
-                }
-
-                message += '\n';
-                var asen = new System.Text.ASCIIEncoding();
-                byte[] byteArray = asen.GetBytes(message);
-                NetworkStream stream = client.GetStream();
-                stream.Write(byteArray, 0, byteArray.Length);
-
-                if (verbose)
-                {
-                    string firstLine = message.Substring(0, message.IndexOf('\n'));
-                    if (firstLine.Length + 1 < message.Length) firstLine += " ...";
-                    Log.Add($"Sending: {firstLine}");
-                }
-            }
-
-            public void UploadProgram(Program program)
-            {
-                var joinedCode = string.Join("\n", program.Code[0][0]);
-                Send(joinedCode);
-            }
-
-            public void Pause() => Send("pause program");
-            public void Play() => Send("resume program");
-
+            return degree.ToRadians();
         }
 
-        public override List<KinematicSolution> Kinematics(List<Target> targets, List<double[]> prevJoints = null, bool displayMeshes = false, Plane? basePlane = null)
+        public override List<KinematicSolution> Kinematics(List<Target> targets, List<double[]> prevJoints = null, bool displayMeshes = false)
         {
             var kinematics = new List<KinematicSolution>();
             var kinematic = Robot.Kinematics(targets[0], prevJoints == null ? null : prevJoints[0], displayMeshes, this.BasePlane);
@@ -250,6 +196,69 @@ namespace Robots
             string file = $@"{folder}\{program.Name}.URS";
             var joinedCode = string.Join("\r\n", program.Code[0]);
             File.WriteAllText(file, joinedCode);
+        }
+
+        public class RemoteConnection : IDisposable
+        {
+            TcpClient client = new TcpClient();
+            public string IP { get; set; }
+            public int Port { get; set; } = 30002;
+            public List<string> Log { get; } = new List<string>();
+            public bool IsConnected => client.Connected;
+
+            public void Connect()
+            {
+                if (IP == null) throw new NullReferenceException(" IP for UR robot has not been set");
+                if (IsConnected) Disconnect();
+                client.Connect(IP, Port);
+                Log.Add((IsConnected) ? "Connected" : "Not able to connect");
+            }
+
+            public void Disconnect()
+            {
+                if (IsConnected)
+                {
+                    client.Close();
+                    client = new TcpClient();
+                    Log.Add("Disconnected");
+                }
+            }
+
+            public void Send(string message, bool verbose = false)
+            {
+                if (!IsConnected)
+                {
+                    Log.Add("Can't send message, not connected");
+                    return;
+                }
+
+                message += '\n';
+                var asen = new System.Text.ASCIIEncoding();
+                byte[] byteArray = asen.GetBytes(message);
+                NetworkStream stream = client.GetStream();
+                stream.Write(byteArray, 0, byteArray.Length);
+
+                if (verbose)
+                {
+                    string firstLine = message.Substring(0, message.IndexOf('\n'));
+                    if (firstLine.Length + 1 < message.Length) firstLine += " ...";
+                    Log.Add($"Sending: {firstLine}");
+                }
+            }
+
+            public void UploadProgram(Program program)
+            {
+                var joinedCode = string.Join("\n", program.Code[0][0]);
+                Send(joinedCode);
+            }
+
+            public void Pause() => Send("pause program");
+            public void Play() => Send("resume program");
+
+            public void Dispose()
+            {
+                client.Dispose();
+            }
         }
 
         class URScriptPostProcessor
@@ -319,9 +328,8 @@ namespace Robots
 
                 // Init commands
 
-                if (program.InitCommands != null)
-                    code.Add(program.InitCommands.Code(cell, Target.Default));
-
+                foreach (var command in program.InitCommands)
+                    code.Add(command.Code(cell, Target.Default));
 
                 Tool currentTool = null;
 
@@ -342,9 +350,8 @@ namespace Robots
                     {
                         double[] joints = target.Joints;
                         double maxAxisSpeed = robot.Joints.Max(x => x.MaxSpeed);
-                        double percentage = (target.Time > 0) ? target.MinTime / target.Time : 0.1;
-                        double axisSpeed = percentage * maxAxisSpeed;             
-                         axisSpeed = Min(axisSpeed,target.Speed.AxisSpeed);
+                        double percentage = (target.DeltaTime > 0) ? target.MinTime / target.DeltaTime : 0.01;
+                        double axisSpeed = percentage * maxAxisSpeed;
                         double axisAccel = target.Speed.AxisAccel;
 
                         string speed = null;
@@ -369,9 +376,8 @@ namespace Robots
                             case Target.Motions.Joint:
                                 {
                                     double maxAxisSpeed = robot.Joints.Min(x => x.MaxSpeed);
-                                    double percentage = (target.Time > 0) ? target.MinTime / target.Time : 0.1;
+                                    double percentage = (target.DeltaTime > 0) ? target.MinTime / target.DeltaTime : 0.1;
                                     double axisSpeed = percentage * maxAxisSpeed;
-                                    axisSpeed = Min(axisSpeed, target.Speed.AxisSpeed);
                                     double axisAccel = target.Speed.AxisAccel;
 
                                     string speed = null;
@@ -404,9 +410,9 @@ namespace Robots
 
                     code.Add(moveText);
 
-                    if (target.Command != null)
+                    foreach(var command in target.Command as Commands.Group)
                     {
-                        string commands = target.Command.Code(cell, target);
+                        string commands = command.Code(cell, target);
                         commands = indent + commands.Replace("\n", "\n" + indent);
                         code.Add(commands);
                     }

@@ -31,12 +31,11 @@ namespace Robots
                 else if (target is CartesianTarget)
                 {
                     var cartesianTarget = target as CartesianTarget;
-                    Plane tcp = (target.Tool != null) ? target.Tool.Tcp : Plane.WorldXY;
+                    Plane tcp = target.Tool.Tcp;
                     tcp.Rotate(PI, Vector3d.ZAxis, Point3d.Origin);
 
                     Plane targetPlane = cartesianTarget.Plane;
-                    if (target.Frame != null)
-                        targetPlane.Transform(target.Frame.Plane.ToTransform());
+                    targetPlane.Transform(target.Frame.Plane.ToTransform());
 
                     var transform = Transform.PlaneToPlane(Planes[0], Plane.WorldXY) * Transform.PlaneToPlane(tcp, targetPlane);
 
@@ -54,7 +53,7 @@ namespace Robots
                         Configuration = configuration;
                     }
 
-                    if (prevJoints!= null) Joints = JointTarget.GetAbsoluteJoints(Joints, prevJoints);
+                    if (prevJoints != null) Joints = JointTarget.GetAbsoluteJoints(Joints, prevJoints);
                     Errors.AddRange(errors);
                 }
             }
@@ -78,14 +77,12 @@ namespace Robots
                     Planes[i + 1] = plane;
                 }
 
-
-                /* if (target.Tool != null)
+                /* 
                  {
                      Planes[7] = target.Tool.Tcp;
                      Planes[7].Transform(Planes[6].ToTransform());
                  }
-                 else
-                     Planes[7] = Planes[6]; */
+                */
             }
 
             protected abstract double[] InverseKinematics(Transform transform, Target.RobotConfigurations configuration, out List<string> errors);
@@ -107,7 +104,7 @@ namespace Robots
                 for (int i = 0; i < 8; i++)
                 {
                     List<string> solutionErrors;
-                    solutions[i] = InverseKinematics(transform, (Target.RobotConfigurations)i, out solutionErrors);           
+                    solutions[i] = InverseKinematics(transform, (Target.RobotConfigurations)i, out solutionErrors);
                     solutions[i] = JointTarget.GetAbsoluteJoints(solutions[i], prevJoints);
                     solutionsErrors.Add(solutionErrors);
                 }
@@ -253,7 +250,7 @@ namespace Robots
                     errors.Add($"Near overhead singularity");
 
 
-                for(int i=0;i<6;i++)
+                for (int i = 0; i < 6; i++)
                 {
                     if (double.IsNaN(joints[i])) joints[i] = 0;
                 }

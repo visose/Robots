@@ -27,8 +27,6 @@ namespace Robots
             this.DisplayMesh.Transform(this.BasePlane.ToTransform());
         }
 
-        public override List<KinematicSolution> Kinematics(List<Target> targets, List<double[]> prevJoints = null, bool displayMeshes = false, Plane? basePlane = null) => new RobotCellKinematics(this, targets, prevJoints, displayMeshes).Solutions;
-
         internal override double Payload(int group)
         {
             return this.MechanicalGroups[group].Robot.Payload;
@@ -70,6 +68,10 @@ namespace Robots
             }
         }
 
+        public override List<KinematicSolution> Kinematics(List<Target> targets, List<double[]> prevJoints = null, bool displayMeshes = false) => new RobotCellKinematics(this, targets, prevJoints, displayMeshes).Solutions;
+
+        public override double DegreeToRadian(double degree, int i, int group = 0) => this.MechanicalGroups[group].DegreeToRadian(degree, i);
+
         class RobotCellKinematics
         {
             internal List<KinematicSolution> Solutions;
@@ -79,7 +81,7 @@ namespace Robots
                 this.Solutions = new List<KinematicSolution>(new KinematicSolution[cell.MechanicalGroups.Count]);
 
                 if (targets.Count != cell.MechanicalGroups.Count) throw new Exception(" Incorrect number of targets.");
-                if (prevJoints != null && prevJoints.Count != cell.MechanicalGroups.Count) throw new Exception(" Incorrect number of current joint values.");
+                if (prevJoints != null && prevJoints.Count != cell.MechanicalGroups.Count) throw new Exception(" Incorrect number of previous joint values.");
 
                 var groups = cell.MechanicalGroups.ToList();
 
@@ -96,8 +98,18 @@ namespace Robots
                     int i = group.Index;
                     Plane? coupledPlane = null;
 
-                    int coupled = targets[i].Frame.CoupledMechanicalGroup;
-                    coupledPlane = (coupled != -1 && targets[i].Frame.CoupledMechanism == -1) ? Solutions[coupled].Planes[Solutions[coupled].Planes.Length - 2] as Plane? : null;
+                    int coupledGroup = targets[i].Frame.CoupledMechanicalGroup;
+
+                    if (coupledGroup != -1 && targets[i].Frame.CoupledMechanism == -1)
+                    {
+                        if (coupledGroup == i) throw new Exception(" Can't couple a robot with itself.");
+                        coupledPlane = Solutions[coupledGroup].Planes[Solutions[coupledGroup].Planes.Length - 2] as Plane?;
+                    }
+                    else
+                    {
+                        coupledPlane = null;
+                    }
+
 
                     var kinematics = group.Kinematics(targets[i], prevJoints == null ? null : prevJoints[i], coupledPlane, displayMeshes, cell.BasePlane);
                     Solutions[i] = kinematics;
@@ -181,8 +193,9 @@ namespace Robots
                 List<Mesh> meshes = (displayMeshes) ? new List<Mesh>() : null;
                 var errors = new List<string>();
 
+                Plane? robotBase = basePlane;
+
                 target = target.ShallowClone();
-                var robotBase = group.Robot.BasePlane;
                 Mechanism coupledMech = null;
 
                 if (target.Frame.CoupledMechanism != -1 && target.Frame.CoupledMechanicalGroup == group.Index)
@@ -195,7 +208,7 @@ namespace Robots
                 foreach (var external in group.Externals)
                 {
                     var externalPrevJoints = prevJoints == null ? null : prevJoints.Subset(external.Joints.Select(x => x.Number).ToArray());
-                    var externalKinematics = external.Kinematics(target, externalPrevJoints, displayMeshes);
+                    var externalKinematics = external.Kinematics(target, externalPrevJoints, displayMeshes, basePlane);
 
                     for (int i = 0; i < external.Joints.Length; i++)
                         Joints[external.Joints[i].Number] = externalKinematics.Joints[i];
@@ -209,11 +222,6 @@ namespace Robots
 
                     if (external.MovesRobot)
                         robotBase = externalKinematics.Planes[externalKinematics.Planes.Length - 1];
-                }
-
-                if (basePlane != null)
-                {
-                    robotBase.Transform(((Plane)basePlane).ToTransform());
                 }
 
                 // Coupling
@@ -247,18 +255,14 @@ namespace Robots
                 }
 
                 // Tool
-                if (target.Tool != null)
-                {
                     Plane toolPlane = target.Tool.Tcp;
                     toolPlane.Transform(planes[planes.Count - 1].ToTransform());
                     planes.Add(toolPlane);
-                }
-                else
-                    planes.Add(planes[planes.Count - 1]);
+
 
                 if (displayMeshes)
                 {
-                    if (target.Tool?.Mesh != null)
+                    if (target.Tool.Mesh != null)
                     {
                         Mesh toolMesh = target.Tool.Mesh.DuplicateMesh();
                         toolMesh.Transform(Transform.PlaneToPlane(target.Tool.Tcp, planes[planes.Count - 1]));

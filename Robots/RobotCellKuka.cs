@@ -15,34 +15,17 @@ namespace Robots
     {
         internal RobotCellKuka(string name, List<MechanicalGroup> mechanicalGroup, IO io, Plane basePlane, Mesh environment) : base(name, Manufacturers.KUKA, mechanicalGroup, io, basePlane, environment) { }
 
-        public static double[] EulerAngles(Plane targetPlane)
-        {
-            Transform matrix = Transform.PlaneToPlane(Plane.WorldXY, targetPlane);
-            double a = Atan2(-matrix.M10, matrix.M00);
-            double mult = 1.0 - matrix.M20 * matrix.M20;
-            if (Abs(mult) < UnitTol) mult = 0.0;
-            double b = Atan2(matrix.M20, Sqrt(mult));
-            double c = Atan2(-matrix.M21, matrix.M22);
-            var euler = new double[] { a, b, c };
-            return euler.Select(x => -x.ToDegrees()).ToArray();
-        }
-
         public static Plane EulerToPlane(double x, double y, double z, double aDeg, double bDeg, double cDeg)
         {
-            double a = -aDeg * PI / 180;
-            double b = -bDeg * PI / 180;
-            double c = -cDeg * PI / 180;
+            double a = -aDeg.ToRadians();
+            double b = -bDeg.ToRadians();
+            double c = -cDeg.ToRadians();
             double ca = Cos(a);
             double sa = Sin(a);
             double cb = Cos(b);
             double sb = Sin(b);
             double cc = Cos(c);
             double sc = Sin(c);
-            //          double[][] tt = new double[3][];
-            //        tt[0] = new double[] { ca * cb, sa * cc + ca * sb * sc, sa * sc - ca * sb * cc };
-            //        tt[1] = new double[] { -sa * cb, ca * cc - sa * sb * sc, ca * sc + sa * sb * cc };
-            //        tt[2] = new double[] { sb, -cb * sc, cb * cc };
-
             var tt = new Transform(1);
             tt[0, 0] = ca * cb; tt[0, 1] = sa * cc + ca * sb * sc; tt[0, 2] = sa * sc - ca * sb * cc;
             tt[1, 0] = -sa * cb; tt[1, 1] = ca * cc - sa * sb * sc; tt[1, 2] = ca * sc + sa * sb * cc;
@@ -55,8 +38,27 @@ namespace Robots
 
         public static double[] PlaneToEuler(Plane plane)
         {
-            var euler = EulerAngles(plane);
-            var q = Quaternion.Rotation(Plane.WorldXY, plane);
+            Transform matrix = Transform.PlaneToPlane(Plane.WorldXY, plane);
+            double a = Atan2(-matrix.M10, matrix.M00);
+            double mult = 1.0 - matrix.M20 * matrix.M20;
+            if (Abs(mult) < UnitTol) mult = 0.0;
+            double b = Atan2(matrix.M20, Sqrt(mult));
+            double c = Atan2(-matrix.M21, matrix.M22);
+
+            if (matrix.M20 < (-1.0 + UnitTol))
+            {
+                a = Atan2(matrix.M01, matrix.M11);
+                b = -PI / 2;
+                c = 0;
+            }
+            else if (matrix.M20 > (1.0 + UnitTol))
+            {
+                a = Atan2(matrix.M01, matrix.M11);
+                b = PI / 2;
+                c = 0;
+            }
+
+            var euler = new double[] { a, b, c }.Select(x => -x.ToDegrees()).ToArray();
             return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, euler[0], euler[1], euler[2] };
         }
 
@@ -93,7 +95,6 @@ namespace Robots
 
         class KRLPostProcessor
         {
-            RobotKuka robot;
             RobotCellKuka cell;
             Program program;
             internal List<List<List<string>>> Code { get; }
@@ -101,7 +102,6 @@ namespace Robots
             internal KRLPostProcessor(RobotCellKuka robotCell, Program program)
             {
                 this.cell = robotCell;
-                this.robot = cell.MechanicalGroups[0].Robot as RobotKuka;
                 this.program = program;
                 this.Code = new List<List<List<string>>>();
 
@@ -164,18 +164,10 @@ BAS (#INITMOV,0)
 $ADVANCE=5
 $APO.CPTP=100
 ");
-                // Attribute declarations cont.
-                // int count = 0;
-                // foreach (var tool in program.Tools)
-                //  {
-                //      double[] eulerAngles = EulerAngles(tool.Tcp);
-                //      code.Add($"$TOOL_DATA[{count}]={{X {tool.Tcp.OriginX:0.000},Y {tool.Tcp.OriginY:0.000},Z {tool.Tcp.OriginZ:0.000},A {eulerAngles[0]:0.000},B {eulerAngles[1]:0.000},C {eulerAngles[2]:0.000}}} ;{tool.Name}");
-                //       count++;
-                //   }
 
                 // Init commands
-                if (program.InitCommands != null)
-                    code.Add(program.InitCommands.Code(cell, Target.Default));
+                foreach (var command in program.InitCommands)
+                    code.Add(command.Code(cell, Target.Default));
 
 
                 for (int i = 0; i < program.MultiFileIndices.Count; i++)
@@ -202,11 +194,12 @@ DEF {program.Name}_{groupName}_{file:000}()
                 Tool currentTool = null;
                 Frame currentFrame = null;
                 Speed currentSpeed = null;
+                double currentPercentSpeed = 0;
                 Zone currentZone = null;
 
                 for (int j = start; j < end; j++)
                 {
-                    var target = program.Targets[0][j];
+                    var target = program.Targets[group][j];
 
                     if (currentTool == null || target.Tool != currentTool)
                     {
@@ -236,34 +229,40 @@ DEF {program.Name}_{groupName}_{file:000}()
                         currentZone = target.Zone;
                     }
 
-                    if (currentSpeed == null || target.Speed != currentSpeed)
+
+                    if (target.Index > 0)
                     {
-                        double rotation = target.Speed.RotationSpeed.ToDegrees();
-                        if (!target.IsJointMotion)
+                        if (target.LeadingJoint > 5)
                         {
-                            //  code.Add($"$VEL={{CP {target.Speed.Name}, ORI1 {rotation:0.000}, ORI2 {rotation:0.000}}}");
-                            code.Add($"$VEL.CP = {target.Speed.Name}");
-                            code.Add($"$VEL.ORI1 = {rotation:0.000}");
-                            code.Add($"$VEL.ORI2 = {rotation:0.000}");
-                            currentSpeed = target.Speed;
+                            code.Add(ExternalSpeed(target));
                         }
-                        if (target.Speed.AxisSpeed < 1.0)
+                        else
                         {
-                            double percentage = target.Speed.AxisSpeed * 100;
-                            percentage = Ceiling(percentage);
-                            code.Add($"BAS(#VEL_PTP, {percentage:0})");
+                            if (currentSpeed == null || target.Speed != currentSpeed)
+                            {
+                                if (!target.IsJointMotion)
+                                {
+                                    double rotation = target.Speed.RotationSpeed.ToDegrees();
+                                    //  code.Add($"$VEL={{CP {target.Speed.Name}, ORI1 {rotation:0.000}, ORI2 {rotation:0.000}}}");
+                                    code.Add($"$VEL.CP = {target.Speed.Name}\r\n$VEL.ORI1 = {rotation:0.000}\r\n$VEL.ORI2 = {rotation:0.000}");
+                                    //  if (cell.MechanicalGroups[target.Group].Externals.Count > 0) code.Add(ExternalSpeed(target));
+                                    currentSpeed = target.Speed;
+                                }
+                            }
+
+                            if (target.IsJointMotion)
+                            {
+                                double percentSpeed = target.MinTime / target.DeltaTime;
+
+                                if (Abs(currentPercentSpeed - percentSpeed) > UnitTol)
+                                {
+                                    code.Add($"BAS(#VEL_PTP, 100)");
+                                    if (target.DeltaTime > UnitTol) code.Add($"$VEL_AXIS[{target.LeadingJoint + 1}] = {percentSpeed * 100:0.000}");
+                                    currentPercentSpeed = percentSpeed;
+                                }
+                                //   if (cell.MechanicalGroups[target.Group].Externals.Count > 0) code.Add(ExternalSpeed(target));
+                            }
                         }
-
-
-                    }
-
-                    if (target.IsJointMotion)
-                    {
-                        double percentage = (target.Time > UnitTol) ? target.MinTime / target.Time : 0.1;
-                        percentage = Min(percentage, target.Speed.AxisSpeed);
-                        percentage *= 100;
-                        percentage = Ceiling(percentage);
-                        code.Add($"BAS(#VEL_PTP, {percentage:0})");
                     }
 
                     // external axes
@@ -272,7 +271,7 @@ DEF {program.Name}_{groupName}_{file:000}()
 
                     if (target.External != null)
                     {
-                        double[] values = cell.MechanicalGroups[0].RadiansToDegreesExternal(target);
+                        double[] values = cell.MechanicalGroups[group].RadiansToDegreesExternal(target);
 
                         for (int i = 0; i < target.External.Length; i++)
                         {
@@ -284,30 +283,27 @@ DEF {program.Name}_{groupName}_{file:000}()
                     // motion command
 
                     string moveText = null;
+                    double[] jointDegrees = target.Joints.Select((x, i) => cell.MechanicalGroups[group].Robot.RadianToDegree(x, i)).ToArray();
 
                     if (target.IsJointTarget)
                     {
-                        double[] joints = target.Joints;
-                        joints = joints.Select((x, i) => robot.RadianToDegree(x, i)).ToArray();
-                        moveText = $"PTP {{A1 {joints[0]:0.000},A2 {joints[1]:0.000},A3 {joints[2]:0.000},A4 {joints[3]:0.000},A5 {joints[4]:0.000},A6 {joints[5]:0.000}{external}}}";
+                        moveText = $"PTP {{A1 {jointDegrees[0]:0.000},A2 {jointDegrees[1]:0.000},A3 {jointDegrees[2]:0.000},A4 {jointDegrees[3]:0.000},A5 {jointDegrees[4]:0.000},A6 {jointDegrees[5]:0.000}{external}}}";
                         if (target.Zone.IsFlyBy) moveText += " C_PTP";
                     }
                     else
                     {
                         var plane = target.Plane;
-                        // plane.Transform(Transform.PlaneToPlane(cell.BasePlane, Plane.WorldXY));
-                        var euler = EulerAngles(plane);
+                        var euler = PlaneToEuler(plane);
 
                         switch (target.Motion)
                         {
                             case Target.Motions.Joint:
                                 {
                                     string bits = string.Empty;
-                                    if (target.ChangesConfiguration)
+                                    //  if (target.ChangesConfiguration)
                                     {
                                         int turnNum = 0;
-                                        double[] degrees = target.Joints.Select((x, i) => robot.RadianToDegree(x, i)).ToArray();
-                                        for (int i = 0; i < 6; i++) if (degrees[i] < 0) turnNum += (int)Pow(2, i);
+                                        for (int i = 0; i < 6; i++) if (jointDegrees[i] < 0) turnNum += (int)Pow(2, i);
 
                                         Target.RobotConfigurations configuration = (Target.RobotConfigurations)target.Configuration;
                                         bool shoulder = configuration.HasFlag(Target.RobotConfigurations.Shoulder);
@@ -325,14 +321,14 @@ DEF {program.Name}_{groupName}_{file:000}()
                                         bits = $@", S'B{status:000}',T'B{turn:000000}'";
                                     }
 
-                                    moveText = $"PTP {{X {plane.OriginX:0.00},Y {plane.OriginY:0.00},Z {plane.OriginZ:0.00},A {euler[0]:0.000},B {euler[1]:0.000},C {euler[2]:0.000}{external}{bits}}}";
+                                    moveText = $"PTP {{X {euler[0]:0.00},Y {euler[1]:0.00},Z {euler[2]:0.00},A {euler[3]:0.000},B {euler[4]:0.000},C {euler[5]:0.000}{external}{bits}}}";
                                     if (target.Zone.IsFlyBy) moveText += " C_PTP";
                                     break;
                                 }
 
                             case Target.Motions.Linear:
                                 {
-                                    moveText = $"LIN {{X {plane.OriginX:0.00},Y {plane.OriginY:0.00},Z {plane.OriginZ:0.00},A {euler[0]:0.000},B {euler[1]:0.000},C {euler[2]:0.000}{external}}}";
+                                    moveText = $"LIN {{X {euler[0]:0.00},Y {euler[1]:0.00},Z {euler[2]:0.00},A {euler[3]:0.000},B {euler[4]:0.000},C {euler[5]:0.000}{external}}}";
                                     if (target.Zone.IsFlyBy) moveText += " C_DIS";
                                     break;
                                 }
@@ -340,12 +336,32 @@ DEF {program.Name}_{groupName}_{file:000}()
                     }
                     code.Add(moveText);
 
-                    if (target.Command != null)
-                        code.Add(target.Command.Code(cell, target));
+                    foreach (var command in target.Command as Commands.Group)
+                        code.Add(command.Code(cell, target));
                 }
 
                 code.Add("END");
                 return code;
+            }
+
+            string ExternalSpeed(ProgramTarget target)
+            {
+                string externalSpeedCode = "";
+                var joints = cell.GetJoints(target.Group);
+                //   int externalJointsCount = target.External.Length;
+
+                // for (int i = 0; i < externalJointsCount; i++)
+                {
+                    var joint = joints[target.LeadingJoint];
+                    double percentSpeed = 0;
+                    if (joint is PrismaticJoint) percentSpeed = target.Speed.TranslationExternal / joint.MaxSpeed;
+                    if (joint is RevoluteJoint) percentSpeed = target.Speed.RotationExternal / joint.MaxSpeed;
+                    percentSpeed = Clamp(percentSpeed, 0.0, 1.0);
+                    externalSpeedCode += $"$VEL_AXIS[{target.LeadingJoint + 1}] = {percentSpeed * 100:0.000}";
+                    //     if (i < externalJointsCount - 1) externalSpeedCode += "\r\n";
+                }
+
+                return externalSpeedCode;
             }
 
             string SetTool(Tool tool)
@@ -359,9 +375,8 @@ DEF {program.Name}_{groupName}_{file:000}()
 
             string Tool(Tool tool)
             {
-                Plane plane = tool.Tcp;
-                double[] eulerAngles = EulerAngles(plane);
-                return $"DECL GLOBAL FRAME {tool.Name}={{FRAME: X {plane.OriginX:0.000},Y {plane.OriginY:0.000},Z {plane.OriginZ:0.000},A {eulerAngles[0]:0.000},B {eulerAngles[1]:0.000},C {eulerAngles[2]:0.000}}}";
+                double[] euler = PlaneToEuler(tool.Tcp);
+                return $"DECL GLOBAL FRAME {tool.Name}={{FRAME: X {euler[0]:0.000},Y {euler[1]:0.000},Z {euler[2]:0.000},A {euler[3]:0.000},B {euler[4]:0.000},C {euler[5]:0.000}}}";
             }
 
             string Frame(Frame frame)
@@ -369,8 +384,8 @@ DEF {program.Name}_{groupName}_{file:000}()
                 Plane plane = frame.Plane;
                 plane.Transform(Transform.PlaneToPlane(cell.BasePlane, Plane.WorldXY));
 
-                double[] eulerAngles = EulerAngles(plane);
-                return $"DECL GLOBAL FRAME {frame.Name}={{FRAME: X {plane.OriginX:0.000},Y {plane.OriginY:0.000},Z {plane.OriginZ:0.000},A {eulerAngles[0]:0.000},B {eulerAngles[1]:0.000},C {eulerAngles[2]:0.000}}}";
+                double[] euler = PlaneToEuler(plane);
+                return $"DECL GLOBAL FRAME {frame.Name}={{FRAME: X {euler[0]:0.000},Y {euler[1]:0.000},Z {euler[2]:0.000},A {euler[3]:0.000},B {euler[4]:0.000},C {euler[5]:0.000}}}";
             }
         }
     }

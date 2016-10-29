@@ -92,7 +92,7 @@ namespace Robots.Grasshopper
         }
     }
 
-    public class Simulation : GH_Component
+    public class Simulation : GH_Component, IDisposable
     {
         public Simulation() : base("Program simulation", "Sim", "Rough simulation of the robot program, right click for playback controls", "Robots", "Components")
         {
@@ -211,6 +211,11 @@ namespace Robots.Grasshopper
             }
 
             speed = (double)form.slider.Value / 100.0;
+        }
+
+        public void Dispose()
+        {
+            form.Dispose();
         }
 
         partial class AnimForm : Form
