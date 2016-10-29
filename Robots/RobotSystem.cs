@@ -33,9 +33,10 @@ namespace Robots
 
         internal abstract void SaveCode(Program program, string folder);
         internal abstract List<List<List<string>>> Code(Program program);
-        public abstract List<KinematicSolution> Kinematics(List<Target> target, List<double[]> prevJoints = null, bool displayMeshes = false, Plane? basePlane = null);
         internal abstract double Payload(int group);
         internal abstract Joint[] GetJoints(int group);
+        public abstract List<KinematicSolution> Kinematics(List<Target> target, List<double[]> prevJoints = null, bool displayMeshes = false);
+        public abstract double DegreeToRadian(double degree, int i, int group = 0);
 
         public static List<string> ListRobotSystems()
         {

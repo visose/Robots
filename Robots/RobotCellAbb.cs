@@ -38,7 +38,6 @@ namespace Robots
         internal override void SaveCode(Program program, string folder)
         {
             if (!Directory.Exists(folder)) throw new DirectoryNotFoundException($" Folder \"{folder}\" not found");
-            if (program.Code == null) throw new NullReferenceException(" Program code not generated");
             Directory.CreateDirectory($@"{folder}\{program.Name}");
 
             for (int i = 0; i < program.Code.Count; i++)
@@ -92,7 +91,7 @@ namespace Robots
                 string groupName = cell.MechanicalGroups[group].Name;
 
                 code.Add($"MODULE {program.Name}_{groupName}");
-                code.Add("VAR extjoint extj := [9E9,9E9,9E9,9E9,9E9,9E9];");
+                if (cell.MechanicalGroups[group].Externals.Count == 0) code.Add("VAR extjoint extj := [9E9,9E9,9E9,9E9,9E9,9E9];");
                 code.Add("VAR confdata conf := [0,0,0,0];");
 
                 // Attribute declarations
@@ -104,7 +103,6 @@ namespace Robots
                     code.Add(@"TASK PERS tasks all_tasks{2} := [[""T_ROB1""], [""T_ROB2""]];");
                 }
 
-              //  if (group == 0)
                 {
                     foreach (var tool in program.Tools) code.Add(Tool(tool));
                     foreach (var frame in program.Frames) code.Add(Frame(frame));
@@ -124,8 +122,8 @@ namespace Robots
 
                 if (group == 0)
                 {
-                    if (program.InitCommands != null)
-                        code.Add(program.InitCommands.Code(cell, Target.Default));
+                    foreach (var command in program.InitCommands)
+                        code.Add(command.Code(cell, Target.Default));
                 }
 
                 if (cell.MechanicalGroups.Count > 1)
@@ -168,17 +166,29 @@ namespace Robots
                     string moveText = null;
                     string zone = target.Zone.IsFlyBy ? target.Zone.Name : "fine";
                     string id = (cell.MechanicalGroups.Count > 1) ? id = $@"\ID:={target.Index}" : "";
+                    string external = "extj";
+
+                    if (cell.MechanicalGroups[group].Externals.Count > 0)
+                    {
+                        var externals = new string[6];
+                        for (int i = 0; i < 6; i++)
+                        {
+                            externals[i] = (i < target.External.Length) ? $"{target.External[i].ToDegrees():0.00}" : "9E9";
+                        }
+
+                        external = $"[{externals[0]},{externals[1]},{externals[2]},{externals[3]},{externals[4]},{externals[5]}]";
+                    }
+
 
                     if (target.IsJointTarget)
                     {
                         double[] joints = target.Joints;
                         joints = joints.Select((x, i) => cell.MechanicalGroups[group].RadianToDegree(x, i)).ToArray();
-                        moveText = $"MoveAbsJ [[{joints[0]:0.000},{joints[1]:0.000},{joints[2]:0.000},{joints[3]:0.000},{joints[4]:0.000},{joints[5]:0.000}],extj]{id},{target.Speed.Name},{zone},{target.Tool.Name};";
+                        moveText = $"MoveAbsJ [[{joints[0]:0.000},{joints[1]:0.000},{joints[2]:0.000},{joints[3]:0.000},{joints[4]:0.000},{joints[5]:0.000}],{external}]{id},{target.Speed.Name},{zone},{target.Tool.Name};";
                     }
                     else
                     {
                         var plane = target.Plane;
-                      //  plane.Transform(Transform.PlaneToPlane(cell.BasePlane, Plane.WorldXY));
                         var quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
 
                         switch (target.Motion)
@@ -208,7 +218,7 @@ namespace Robots
                                     if (shoulder) cfx += 4;
 
                                     string conf = $"[{cf1},{cf4},{cf6},{cfx}]";
-                                    string robtarget = $"[{pos},{orient},{conf},extj]";
+                                    string robtarget = $"[{pos},{orient},{conf},{external}]";
 
                                     moveText = $@"MoveJ {robtarget}{id},{target.Speed.Name},{zone},{target.Tool.Name} \WObj:={target.Frame.Name};";
                                     break;
@@ -218,7 +228,7 @@ namespace Robots
                                 {
                                     string pos = $"[{plane.OriginX:0.00},{plane.OriginY:0.00},{plane.OriginZ:0.00}]";
                                     string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
-                                    string robtarget = $"[{pos},{orient},conf,extj]";
+                                    string robtarget = $"[{pos},{orient},conf,{external}]";
                                     moveText = $@"MoveL {robtarget}{id},{target.Speed.Name},{zone},{target.Tool.Name} \WObj:={target.Frame.Name};";
                                     break;
                                 }
@@ -226,8 +236,10 @@ namespace Robots
                     }
 
                     code.Add(moveText);
-                    if (target.Command != null)
-                        code.Add(target.Command.Code(cell, target));
+                    foreach (var command in target.Command as Commands.Group)
+                    {
+                        code.Add(command.Code(cell, target));
+                    }
                 }
 
                 code.Add("ENDPROC");
@@ -261,14 +273,18 @@ namespace Robots
                 string coupledBool = frame.IsCoupled ? "FALSE" : "TRUE";
                 if (frame.IsCoupled)
                 {
-                    if (frame.CoupledMechanism == -1) coupledMech = $"ROB_{frame.CoupledMechanicalGroup + 1}";
+                    if (frame.CoupledMechanism == -1)
+                        coupledMech = $"ROB_{frame.CoupledMechanicalGroup + 1}";
+                    else
+                        coupledMech = $"STN_{frame.CoupledMechanism + 1}";
                 }
-                return $@"TASK PERS wobjdata {frame.Name}:=[FALSE,{coupledBool},""{coupledMech}"",[[0,0,0],[1,0,0,0]],[{pos},{orient}]];";
+                return $@"TASK PERS wobjdata {frame.Name}:=[FALSE,{coupledBool},""{coupledMech}"",[{pos},{orient}],[[0,0,0],[1,0,0,0]]];";
             }
             string Speed(Speed speed)
             {
                 double rotation = speed.RotationSpeed.ToDegrees();
-                return $"TASK PERS speeddata {speed.Name}:=[{speed.TranslationSpeed:0.00},{rotation:0.00},200,15];";
+                double rotationExternal = speed.RotationExternal.ToDegrees();
+                return $"TASK PERS speeddata {speed.Name}:=[{speed.TranslationSpeed:0.00},{rotation:0.00},{speed.TranslationExternal:0.00},{rotationExternal:0.00}];";
             }
 
             string Zone(Zone zone)

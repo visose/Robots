@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using GH_IO.Serialization;
+using static System.Math;
 
 namespace Robots.Grasshopper
 {
@@ -443,29 +444,6 @@ namespace Robots.Grasshopper
             Menu_AppendItem(menu, "External output", AddExternal, true, Params.Output.Any(x => x.Name == "External"));
         }
 
-        // Varible methods
-        /*
-                private void SwitchCartesian()
-                {
-                    if (isCartesian)
-                    {
-                        Params.UnregisterOutputParameter(Params.Output.FirstOrDefault(x => x.Name == "Plane"), true);
-                        Params.UnregisterOutputParameter(Params.Output.FirstOrDefault(x => x.Name == "RobConf"), true);
-                        Params.UnregisterOutputParameter(Params.Output.FirstOrDefault(x => x.Name == "Motion"), true);
-                        isCartesian = false;
-                    }
-                    else
-                    {
-                        Params.UnregisterOutputParameter(Params.Output.FirstOrDefault(x => x.Name == "Joints"), true);
-                        isCartesian = true;
-                    }
-
-                    Params.OnParametersChanged();
-                    ExpireSolution(true);
-                }
-                private void SwitchCartesianEvent(object sender, EventArgs e) => SwitchCartesian();
-
-                */
         private void AddParam(int index)
         {
             IGH_Param parameter = parameters[index];
@@ -533,13 +511,12 @@ namespace Robots.Grasshopper
         }
     }
 
-
     public class CreateFrame : GH_Component
     {
         public CreateFrame() : base("Create frame", "Frame", "Creates a frame or work plane.", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{467237C8-08F5-4104-A553-8814AACAFE51}");
-        protected override Bitmap Icon => Properties.Resources.iconFrameParam;
+        protected override Bitmap Icon => Properties.Resources.iconFrame;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
@@ -566,6 +543,40 @@ namespace Robots.Grasshopper
 
             var frame = new Frame(plane.Value, coupledMechanism, coupledGroup);
             DA.SetData(0, new GH_Frame(frame));
+        }
+    }
+
+    public class CreateSpeed : GH_Component
+    {
+        public CreateSpeed() : base("Create speed", "Speed", "Creates a target speed.", "Robots", "Components") { }
+        public override GH_Exposure Exposure => GH_Exposure.secondary;
+        public override Guid ComponentGuid => new Guid("{BD11418C-74E1-4B13-BE1A-AF105906E1BC}");
+        protected override Bitmap Icon => Properties.Resources.iconSpeed;
+
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
+        {
+            pManager.AddNumberParameter("Translation", "T", "TCP translation speed", GH_ParamAccess.item, 100.0);
+            pManager.AddNumberParameter("Rotation", "R", "TCP rotation and swivel speed", GH_ParamAccess.item, PI);
+            pManager.AddNumberParameter("External translation", "Et", "External axes translation speed", GH_ParamAccess.item, 5000.0);
+            pManager.AddNumberParameter("External rotation", "Er", "External axes rotation speed", GH_ParamAccess.item, PI * 6);
+        }
+
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
+        {
+            pManager.AddParameter(new SpeedParameter(), "Speed", "S", "Speed instance", GH_ParamAccess.item);
+        }
+
+        protected override void SolveInstance(IGH_DataAccess DA)
+        {
+            double translationSpeed = 0, rotationSpeed = 0, translationExternal = 0, rotationExternal = 0;
+
+            if (!DA.GetData(0, ref translationSpeed)) { return; }
+            if (!DA.GetData(1, ref rotationSpeed)) { return; }
+            if (!DA.GetData(2, ref translationExternal)) { return; }
+            if (!DA.GetData(3, ref rotationExternal)) { return; }
+
+            var speed = new Speed(translationSpeed, rotationSpeed, translationExternal, rotationExternal);
+            DA.SetData(0, new GH_Speed(speed));
         }
     }
 }

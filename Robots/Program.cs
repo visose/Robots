@@ -47,7 +47,10 @@ namespace Robots
 
             this.Name = name;
             this.RobotSystem = robotSystem;
-            if (initCommands != null) this.InitCommands = new Commands.Group(initCommands.Flatten());
+
+            this.InitCommands = new Commands.Group();
+            if (initCommands != null) this.InitCommands.AddRange(initCommands.Flatten());
+
             if (multiFileIndices != null && multiFileIndices.Count() > 0)
             {
                 multiFileIndices = multiFileIndices.Where(x => x < targets.ToList()[0].Count()).ToList();
@@ -190,12 +193,11 @@ namespace Robots
                 program.Zones = targets.SelectMany(x => x.Select(y => y.Zone)).Distinct().ToList();
 
                 var commands = new List<Command>();
-                if (program.InitCommands != null) commands.AddRange(program.InitCommands);
+                commands.AddRange(program.InitCommands);
 
                 foreach (var subTargets in targets)
                     foreach (var target in subTargets)
-                        if (target.Command != null)
-                            commands.AddRange(target.Command as Commands.Group);
+                        commands.AddRange(target.Command as Commands.Group);
 
                 program.Commands = commands.Distinct().ToList();
 
@@ -264,12 +266,12 @@ namespace Robots
                             var cell = robotSystem as RobotCell;
                             if (frame.CoupledMechanicalGroup > cell.MechanicalGroups.Count - 1)
                             {
-                                throw new Exception(" Frame {frame.Name} is set to couple an inexistant mechanical group.");
+                                throw new Exception($" Frame {frame.Name} is set to couple an inexistant mechanical group.");
                             }
 
                             if (frame.CoupledMechanism > cell.MechanicalGroups[frame.CoupledMechanicalGroup].Externals.Count - 1)
                             {
-                                throw new Exception(" Frame {frame.Name} is set to couple an inexistant mechanism.");
+                                throw new Exception($" Frame {frame.Name} is set to couple an inexistant mechanism.");
                             }
 
                             frame.CoupledPlaneIndex = (robotSystem as RobotCell).GetPlaneIndex(frame);
@@ -337,17 +339,17 @@ namespace Robots
 
                         // Set speed
 
-                        double slowest = interTargets.Select(x => x.Time).Max();
+                        double slowest = interTargets.Select(x => x.DeltaTime).Max();
                         time += slowest;
                         targetTime += slowest;
 
                         foreach (var target in interTargets)
                         {
-                            target.Time = slowest;
+                            target.DeltaTime = slowest;
                             target.TotalTime = time;
                         }
 
-                        if ((j > 1) && (Abs(slowest - prevInterTargets[0].Time) > 1E-09 || interTargets.Select(x => x.ChangesConfiguration).Contains(true)))
+                        if ((j > 1) && (Abs(slowest - prevInterTargets[0].DeltaTime) > 1E-09 || interTargets.Select(x => x.ChangesConfiguration).Contains(true)))
                         {
                             foreach (var target in interTargets)
                             {
@@ -368,14 +370,21 @@ namespace Robots
                     foreach (var target in targets[i])
                     {
                         int group = target.Group;
-                        target.Plane = prevInterTargets[group].Plane;
+
+                        if (target.IsJointTarget)
+                        {
+                            target.Plane = prevInterTargets[group].Plane;
+                        }
+
                         target.Planes = prevInterTargets[group].Planes;
                         target.Joints = prevInterTargets[group].Joints;
                         target.TotalTime = prevInterTargets[group].TotalTime;
                         target.MinTime = prevInterTargets[group].MinTime;
-                        if (i > 0) target.Time = target.TotalTime - targets[i - 1][target.Group].TotalTime;
+                        target.LeadingJoint = prevInterTargets[group].LeadingJoint;
+                        if (i > 0) target.DeltaTime = target.TotalTime - targets[i - 1][target.Group].TotalTime;
                         target.Configuration = prevInterTargets[group].Configuration;
                         target.ChangesConfiguration = prevInterTargets[group].ChangesConfiguration;
+
                         keyframes[group].Add(prevInterTargets[group].ShallowClone() as ProgramTarget);
                     }
 
@@ -390,17 +399,17 @@ namespace Robots
                     double longestWaitTime = 0;
                     foreach (var target in targets[i])
                     {
-                        if (target.Command != null)
-                        {
-                            double waitTime = (target.Command as Commands.Group).OfType<Commands.Wait>().Select(x => x.Seconds).Sum();
-                            if (waitTime > longestWaitTime) longestWaitTime = waitTime;
+                        double waitTime = (target.Command as Commands.Group).OfType<Commands.Wait>().Select(x => x.Seconds).Sum();
+                        if (waitTime > longestWaitTime) longestWaitTime = waitTime;
+                    }
 
-                            if (waitTime > TimeTol)
-                            {
-                                target.TotalTime += waitTime;
-                                var dupTarget = target.ShallowClone() as ProgramTarget;
-                                keyframes[target.Group].Add(dupTarget);
-                            }
+                    foreach (var target in targets[i])
+                    {
+                        if (longestWaitTime > TimeTol)
+                        {
+                            target.TotalTime += longestWaitTime;
+                            var dupTarget = target.ShallowClone() as ProgramTarget;
+                            keyframes[target.Group].Add(dupTarget);
                         }
                     }
 
@@ -444,18 +453,15 @@ namespace Robots
                     int index = program.Commands.FindIndex(x => x == attribute as Command);
                     program.Commands[index] = namedAttribute as Command;
 
-                    if (program.InitCommands != null)
-                        for (int i = 0; i < program.InitCommands.Count; i++)
-                            if (program.InitCommands[i] == attribute as Command) program.InitCommands[i] = namedAttribute as Command;
+                    for (int i = 0; i < program.InitCommands.Count; i++)
+                        if (program.InitCommands[i] == attribute as Command) program.InitCommands[i] = namedAttribute as Command;
 
                     foreach (var target in targets)
                     {
-                        if (target.Command != null)
-                        {
-                            var group = target.Command as Commands.Group;
-                            for (int i = 0; i < group.Count; i++)
-                                if (group[i] == attribute as Command) group[i] = namedAttribute as Command;
-                        }
+                        var group = target.Command as Commands.Group;
+                        for (int i = 0; i < group.Count; i++)
+                            if (group[i] == attribute as Command) group[i] = namedAttribute as Command;
+
                     }
                 }
             }
@@ -485,22 +491,43 @@ namespace Robots
                 if (prevTarget == null) return;
 
                 Plane prevPlane = target.GetPrevPlane(prevTarget);
+                var joints = robotSystem.GetJoints(target.Group).ToArray();
                 double deltaTime = 0;
 
                 // Axis
                 double deltaAxisTime = 0;
                 int leadingJoint = -1;
-                var joints = robotSystem.GetJoints(target.Group).ToArray();
 
-                for (int i = 0; i < joints.Length; i++)
+                for (int i = 0; i < target.Joints.Length; i++)
                 {
-                    double jointSpeed = joints[i].MaxSpeed * target.Speed.AxisSpeed;
-                    double deltaCurrentAxisTime = Abs(target.Joints[i] - prevTarget.Joints[i]) / jointSpeed;
+                    double deltaCurrentAxisTime = Abs(target.Joints[i] - prevTarget.Joints[i]) / joints[i].MaxSpeed;
 
                     if (deltaCurrentAxisTime > deltaAxisTime)
                     {
                         deltaAxisTime = deltaCurrentAxisTime;
                         leadingJoint = i;
+                    }
+                }
+
+                // External
+                double deltaExternalTime = 0;
+                int externalLeadingJoint = -1;
+                if (target.External != null)
+                {
+                    for (int i = 0; i < target.External.Length; i++)
+                    {
+                        var joint = joints[i + 6];
+                        double jointSpeed = joint.MaxSpeed;
+                        if (joint is PrismaticJoint) jointSpeed = Min(jointSpeed, target.Speed.TranslationExternal);
+                        else if (joint is RevoluteJoint) jointSpeed = Min(jointSpeed, target.Speed.RotationExternal);
+
+                        double deltaCurrentExternalTime = Abs(target.Joints[i + 6] - prevTarget.Joints[i + 6]) / jointSpeed;
+
+                        if (deltaCurrentExternalTime > deltaExternalTime)
+                        {
+                            deltaExternalTime = deltaCurrentExternalTime;
+                            externalLeadingJoint = i + 6;
+                        }
                     }
                 }
 
@@ -517,7 +544,7 @@ namespace Robots
                     double deltaRotationTime = angle / target.Speed.RotationSpeed;
 
                     // Get slowest
-                    double[] deltaTimes = new double[] { deltaLinearTime, deltaRotationTime, deltaAxisTime };
+                    double[] deltaTimes = new double[] { deltaLinearTime, deltaRotationTime, deltaAxisTime, deltaExternalTime };
                     int deltaIndex = -1;
 
                     for (int i = 0; i < deltaTimes.Length; i++)
@@ -544,13 +571,19 @@ namespace Robots
                             if (target.Index != lastIndex) program.Warnings.Add($"Axis {leadingJoint + 1} speed limit reached in target {target.Index}");
                             lastIndex = target.Index;
                         }
+                        else if (deltaIndex == 3)
+                        {
+                            if (target.Index != lastIndex) program.Warnings.Add($"External axis {externalLeadingJoint + 1} speed limit reached in target {target.Index}");
+                            leadingJoint = externalLeadingJoint;
+                            lastIndex = target.Index;
+                        }
                     }
                 }
                 else
                 {
                     // Get slowest by time
                     double deltaTimeTime = target.Speed.Time;
-                    double[] deltaTimes = new double[] { deltaTimeTime, deltaAxisTime };
+                    double[] deltaTimes = new double[] { deltaTimeTime, deltaAxisTime, deltaExternalTime };
                     int deltaIndex = -1;
 
                     for (int i = 0; i < deltaTimes.Length; i++)
@@ -563,7 +596,7 @@ namespace Robots
                     }
                 }
 
-                target.Time = deltaTime;
+                target.DeltaTime = deltaTime;
                 target.MinTime = deltaAxisTime;
                 target.LeadingJoint = leadingJoint;
             }
@@ -716,11 +749,11 @@ namespace Robots
                         if (tempDivisions > divisions) divisions = tempDivisions;
                     }
 
-                  //  double step = 1.0 / divisions;
+                    //  double step = 1.0 / divisions;
 
                     int j = (targets[0].Index == 1) ? 0 : 1;
 
-                    for(int i=j;i<divisions;i++)
+                    for (int i = j; i < divisions; i++)
                     {
                         double t = (double)i / (double)divisions;
                         var kineTargets = new List<Target>();

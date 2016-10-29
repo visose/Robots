@@ -9,8 +9,42 @@ namespace Robots
 {
     public abstract class Command : TargetAttribute
     {
-        internal abstract string Declaration(RobotSystem robotSystem);
-        internal abstract string Code(RobotSystem robotSystem, Target target);
+        private Dictionary<Manufacturers, Func<RobotSystem, string>> declaration;
+        private Dictionary<Manufacturers, Func<RobotSystem, Target, string>> code;
+
+        internal Command()
+        {
+            declaration = new Dictionary<Manufacturers, Func<RobotSystem, string>>
+            {
+                { Manufacturers.ABB, DeclarationAbb }, { Manufacturers.KUKA, DeclarationKuka }, { Manufacturers.UR, DeclarationUR }
+            };
+
+            code = new Dictionary<Manufacturers, Func<RobotSystem, Target, string>>
+            {
+                { Manufacturers.ABB, CodeAbb }, { Manufacturers.KUKA, CodeKuka }, { Manufacturers.UR, CodeUR }
+            };
+        }
+
+        protected virtual void ErrorChecking(RobotSystem robotSystem) { }
+
+        protected virtual string DeclarationAbb(RobotSystem robotSystem) => null;
+        protected virtual string DeclarationKuka(RobotSystem robotSystem) => null;
+        protected virtual string DeclarationUR(RobotSystem robotSystem) => null;
+
+        protected virtual string CodeAbb(RobotSystem robotSystem, Target target) { throw new Exception($"Command {this.GetType().Name} for ABB not implemented."); }
+        protected virtual string CodeKuka(RobotSystem robotSystem, Target target) { throw new Exception($"Command {this.GetType().Name} for KUKA not implemented."); }
+        protected virtual string CodeUR(RobotSystem robotSystem, Target target) { throw new Exception($"Command {this.GetType().Name} for UR not implemented."); }
+
+        internal string Declaration(RobotSystem robotSystem)
+        {
+            ErrorChecking(robotSystem);
+            return declaration[robotSystem.Manufacturer](robotSystem);
+        }
+
+        internal string Code(RobotSystem robotSystem, Target target)
+        {
+            return code[robotSystem.Manufacturer](robotSystem, target);
+        }
     }
 }
 
@@ -34,35 +68,13 @@ namespace Robots.Commands
             this.urCode = urCode;
         }
 
-        internal override string Declaration(RobotSystem robotSystem)
-        {
-            switch (robotSystem.Manufacturer)
-            {
-                case (Manufacturers.ABB):
-                    return abbDeclaration;
-                case (Manufacturers.KUKA):
-                    return kukaDeclaration;
-                case (Manufacturers.UR):
-                    return urDeclaration;
-                default:
-                    return null;
-            }
-        }
+        protected override string DeclarationAbb(RobotSystem robotSystem) => abbDeclaration;
+        protected override string DeclarationKuka(RobotSystem robotSystem) => kukaDeclaration;
+        protected override string DeclarationUR(RobotSystem robotSystem) => urDeclaration;
 
-        internal override string Code(RobotSystem robotSystem, Target target)
-        {
-            switch (robotSystem.Manufacturer)
-            {
-                case (Manufacturers.ABB):
-                    return abbCode;
-                case (Manufacturers.KUKA):
-                    return kukaCode;
-                case (Manufacturers.UR):
-                    return urCode;
-                default:
-                    return null;
-            }
-        }
+        protected override string CodeAbb(RobotSystem robotSystem, Target target) => abbCode;
+        protected override string CodeKuka(RobotSystem robotSystem, Target target) => kukaCode;
+        protected override string CodeUR(RobotSystem robotSystem, Target target) => urCode;
 
         public override string ToString() => $"Command ({name})";
     }
@@ -111,24 +123,6 @@ namespace Robots.Commands
             return commands;
         }
 
-        public IEnumerable<Group> NestedGroups()
-        {
-            var groups = new List<Group>();
-
-            foreach (var command in this.commands)
-            {
-                if (command is Group)
-                {
-                    groups.Add(command as Group);
-                    groups.AddRange((command as Group).NestedGroups());
-                }
-            }
-
-            return groups;
-        }
-
-        internal override string Declaration(RobotSystem robotSystem) => null;
-        internal override string Code(RobotSystem robotSystem, Target target) => string.Join("\r\n", commands.Select(command => command.Code(robotSystem, target)));
         public override string ToString() => $"Command (Group with {Count} commands)";
     }
 
@@ -144,46 +138,38 @@ namespace Robots.Commands
             this.Value = value;
         }
 
-        internal override string Declaration(RobotSystem robotSystem) => null;
-
-        internal override string Code(RobotSystem robotSystem, Target target)
+        protected override void ErrorChecking(RobotSystem robotSystem)
         {
-            switch (robotSystem.Manufacturer)
-            {
-                case (Manufacturers.ABB):
-                    {
-                        string textValue = Value ? "1" : "0";
-
-                        if (target.Zone.IsFlyBy)
-                            return $"SetDO {robotSystem.IO.DO[DO]},{textValue};";
-                        else
-                            return $@"SetDO \Sync ,{robotSystem.IO.DO[DO]},{textValue};";
-                    }
-
-                case (Manufacturers.KUKA):
-                    {
-                        string textValue = Value ? "TRUE" : "FALSE";
-
-                        if (target.Zone.IsFlyBy)
-                            return $"CONTINUE\r\n$OUT[{robotSystem.IO.DO[DO]}] = {textValue}";
-                        else
-                            return $"$OUT[{robotSystem.IO.DO[DO]}] = {textValue}";
-                    }
-
-                case (Manufacturers.UR):
-                    {
-                        string textValue = Value ? "True" : "False";
-
-                        if (target.Zone.IsFlyBy)
-                            return $"set_digital_out({robotSystem.IO.DO[DO]},{textValue})";
-                        else
-                            return $"set_digital_out({robotSystem.IO.DO[DO]},{textValue})";
-                    }
-
-                default:
-                    return null;
-            }
+            if (robotSystem.IO.DO == null) throw new Exception(" Robot contains no digital outputs.");
+            if (DO > robotSystem.IO.DO.Length - 1) throw new Exception(" Index of digital output is too high.");
         }
+
+        protected override string CodeAbb(RobotSystem robotSystem, Target target)
+        {
+            string textValue = Value ? "1" : "0";
+
+            if (target.Zone.IsFlyBy)
+                return $"SetDO {robotSystem.IO.DO[DO]},{textValue};";
+            else
+                return $@"SetDO \Sync ,{robotSystem.IO.DO[DO]},{textValue};";
+        }
+
+        protected override string CodeKuka(RobotSystem robotSystem, Target target)
+        {
+            string textValue = Value ? "TRUE" : "FALSE";
+
+            if (target.Zone.IsFlyBy)
+                return $"CONTINUE\r\n$OUT[{robotSystem.IO.DO[DO]}] = {textValue}";
+            else
+                return $"$OUT[{robotSystem.IO.DO[DO]}] = {textValue}";
+        }
+
+        protected override string CodeUR(RobotSystem robotSystem, Target target)
+        {
+            string textValue = Value ? "True" : "False";
+            return $"set_digital_out({robotSystem.IO.DO[DO]},{textValue})";
+        }
+
 
         public override string ToString() => $"Command (DO {DO} set to {Value})";
     }
@@ -199,67 +185,40 @@ namespace Robots.Commands
             this.Value = value;
         }
 
-        internal override string Declaration(RobotSystem robotSystem)
-        { 
-            if(robotSystem.IO.AO == null || robotSystem.IO.AO.Length <= this.AO)
-            {
-                throw new Exception(" Annie is pretty.");
-            }
-
-            switch (robotSystem.Manufacturer)
-            {
-                case (Manufacturers.ABB):
-                    {
-                        return $"PERS num {this.Name};\r\n{this.Name} := {this.Value:0.000};";
-                    }
-
-                case (Manufacturers.KUKA):
-                    {
-                        return $"DECL GLOBAL REAL {this.Name} = {this.Value:0.000}";
-                    }
-
-                case (Manufacturers.UR):
-                    {
-                        return $"{this.Name} = {this.Value:0.000}";
-                    }
-
-                default:
-                    return null;
-            }
+        protected override void ErrorChecking(RobotSystem robotSystem)
+        {
+            if (robotSystem.IO.AO == null) throw new Exception(" Robot contains no analog outputs.");
+            if (AO > robotSystem.IO.AO.Length - 1) throw new Exception(" Index of analog output is too high.");
         }
 
-        internal override string Code(RobotSystem robotSystem, Target target)
+        protected override string DeclarationAbb(RobotSystem robotSystem)
         {
-            switch (robotSystem.Manufacturer)
-            {
-                case (Manufacturers.ABB):
-                    {
-                        if (target.Zone.IsFlyBy)
-                            return $"SetAO {robotSystem.IO.AO[AO]},{this.Name};";
-                        else
-                            return $"SetAO {robotSystem.IO.AO[AO]},{this.Name};";
-                    }
+            return $"PERS num {this.Name};\r\n{this.Name} := {this.Value:0.000};";
+        }
 
-                case (Manufacturers.KUKA):
-                    {
-                        //   if (target.Zone.IsFlyBy)
-                        //     return $"CONTINUE\r\n$ANOUT[{robot.IO.AO[AO]}] = {Value:0.00}";
-                        //   else
-                        return $@"$ANOUT[{robotSystem.IO.AO[AO]}] = {this.Name}";
+        protected override string DeclarationKuka(RobotSystem robotSystem)
+        {
+            return $"DECL GLOBAL REAL {this.Name} = {this.Value:0.000}";
+        }
 
-                    }
+        protected override string DeclarationUR(RobotSystem robotSystem)
+        {
+            return $"{this.Name} = {this.Value:0.000}";
+        }
 
-                case (Manufacturers.UR):
-                    {
-                        if (target.Zone.IsFlyBy)
-                            return $"set_analog_out({robotSystem.IO.AO[AO]},{this.Name})";
-                        else
-                            return $"set_analog_out({robotSystem.IO.AO[AO]},{this.Name})";
-                    }
+        protected override string CodeAbb(RobotSystem robotSystem, Target target)
+        {
+            return $"SetAO {robotSystem.IO.AO[AO]},{this.Name};";
+        }
 
-                default:
-                    return null;
-            }
+        protected override string CodeKuka(RobotSystem robotSystem, Target target)
+        {
+            return $@"$ANOUT[{robotSystem.IO.AO[AO]}] = {this.Name}";
+        }
+
+        protected override string CodeUR(RobotSystem robotSystem, Target target)
+        {
+            return $"set_analog_out({robotSystem.IO.AO[AO]},{this.Name})";
         }
 
         public override string ToString() => $"Command (AO {AO} set to \"{Value}\")";
@@ -276,39 +235,28 @@ namespace Robots.Commands
             this.length = length;
         }
 
-        internal override string Declaration(RobotSystem robotSystem) => null;
-
-        internal override string Code(RobotSystem robotSystem, Target target)
+        protected override void ErrorChecking(RobotSystem robotSystem)
         {
-            switch (robotSystem.Manufacturer)
-            {
-                case (Manufacturers.ABB):
-                    {
-                        if (target.Zone.IsFlyBy)
-                            return $@"PulseDO \PLength:={length:0.00}, {robotSystem.IO.DO[DO]};";
-                        else
-                            return $@"PulseDO \PLength:={length:0.00}, {robotSystem.IO.DO[DO]};";
-                    }
+            if (robotSystem.IO.DO == null) throw new Exception(" Robot contains no digital outputs.");
+            if (DO > robotSystem.IO.DO.Length - 1) throw new Exception(" Index of digital output is too high.");
+        }
 
-                case (Manufacturers.KUKA):
-                    {
-                        if (target.Zone.IsFlyBy)
-                            return $"CONTINUE\r\nPULSE($OUT[{robotSystem.IO.DO[DO]}],TRUE,{length:0.00})";
-                        else
-                            return $"PULSE($OUT[{robotSystem.IO.DO[DO]}],TRUE,{length:0.00})";
-                    }
+        protected override string CodeAbb(RobotSystem robotSystem, Target target)
+        {
+            return $@"PulseDO \PLength:={length:0.00}, {robotSystem.IO.DO[DO]};";
+        }
 
-                case (Manufacturers.UR):
-                    {
-                        if (target.Zone.IsFlyBy)
-                            return $"set_digital_out({robotSystem.IO.DO[DO]},True\n  set_digital_out({robotSystem.IO.DO[DO]},False)";
-                        else
-                            return $"set_digital_out({robotSystem.IO.DO[DO]},True\n  set_digital_out({robotSystem.IO.DO[DO]},False)";
-                    }
+        protected override string CodeKuka(RobotSystem robotSystem, Target target)
+        {
+            if (target.Zone.IsFlyBy)
+                return $"CONTINUE\r\nPULSE($OUT[{robotSystem.IO.DO[DO]}],TRUE,{length:0.00})";
+            else
+                return $"PULSE($OUT[{robotSystem.IO.DO[DO]}],TRUE,{length:0.00})";
+        }
 
-                default:
-                    return null;
-            }
+        protected override string CodeUR(RobotSystem robotSystem, Target target)
+        {
+            return $"set_digital_out({robotSystem.IO.DO[DO]},True\n  set_digital_out({robotSystem.IO.DO[DO]},False)";
         }
 
         public override string ToString() => $"Command (Pulse {DO} for {length:0.00} secs)";
@@ -324,61 +272,40 @@ namespace Robots.Commands
         }
 
 
-        internal override string Declaration(RobotSystem robotSystem)
+        protected override string DeclarationAbb(RobotSystem robotSystem)
         {
-            switch (robotSystem.Manufacturer)
-            {
-                case (Manufacturers.ABB):
-                    {
-                        return $"PERS num {this.Name} := {this.Seconds:0.00};";
-                    }
-
-                case (Manufacturers.KUKA):
-                    {
-                        return $"DECL GLOBAL REAL {this.Name} = {this.Seconds:0.00}";
-                    }
-
-                case (Manufacturers.UR):
-                    {
-                        return $"{this.Name} = {this.Seconds:0.00}";
-                    }
-
-                default:
-                    return null;
-            }
+            return $"PERS num {this.Name} := {this.Seconds:0.00};";
         }
 
-        internal override string Code(RobotSystem robotSystem, Target target)
+        protected override string DeclarationKuka(RobotSystem robotSystem)
         {
-            switch (robotSystem.Manufacturer)
-            {
-                case (Manufacturers.ABB):
-                    {
-                        if (target.Zone.IsFlyBy)
-                            return $@"WaitTime {this.Name};";
-                        else
-                            return $@"WaitTime \InPos,{this.Name};";
-                    }
+            return $"DECL GLOBAL REAL {this.Name} = {this.Seconds:0.00}";
+        }
 
-                case (Manufacturers.KUKA):
-                    {
-                        if (target.Zone.IsFlyBy)
-                            return $"CONTINUE\r\nWAIT SEC {this.Name}";
-                        else
-                            return $"WAIT SEC {this.Name}";
-                    }
+        protected override string DeclarationUR(RobotSystem robotSystem)
+        {
+            return $"{this.Name} = {this.Seconds:0.00}";
+        }
 
-                case (Manufacturers.UR):
-                    {
-                        if (target.Zone.IsFlyBy)
-                            return $"sleep({this.Name})";
-                        else
-                            return $"sleep({this.Name})";
-                    }
+        protected override string CodeAbb(RobotSystem robotSystem, Target target)
+        {
+            if (target.Zone.IsFlyBy)
+                return $@"WaitTime {this.Name};";
+            else
+                return $@"WaitTime \InPos,{this.Name};";
+        }
 
-                default:
-                    return null;
-            }
+        protected override string CodeKuka(RobotSystem robotSystem, Target target)
+        {
+            if (target.Zone.IsFlyBy)
+                return $"CONTINUE\r\nWAIT SEC {this.Name}";
+            else
+                return $"WAIT SEC {this.Name}";
+        }
+
+        protected override string CodeUR(RobotSystem robotSystem, Target target)
+        {
+            return $"sleep({this.Name})";
         }
 
         public override string ToString() => $"Command (Wait {Seconds} secs)";
@@ -395,33 +322,28 @@ namespace Robots.Commands
             this.Value = value;
         }
 
-        internal override string Declaration(RobotSystem robotSystem) => null;
-
-        internal override string Code(RobotSystem robotSystem, Target target)
+        protected override void ErrorChecking(RobotSystem robotSystem)
         {
-            switch (robotSystem.Manufacturer)
-            {
-                case (Manufacturers.ABB):
-                    {
-                        string textValue = Value ? "1" : "0";
-                        return $"WaitDI {robotSystem.IO.DI[DI]},{textValue};";
-                    }
+            if (robotSystem.IO.DI == null) throw new Exception(" Robot contains no digital inputs.");
+            if (DI > robotSystem.IO.DI.Length - 1) throw new Exception(" Index of digital inputs is too high.");
+        }
 
-                case (Manufacturers.KUKA):
-                    {
-                        string textValue = Value ? "TRUE" : "FALSE";
-                        return $"WAIT FOR $IN[{robotSystem.IO.DI[DI]}]=={textValue}";
-                    }
+        protected override string CodeAbb(RobotSystem robotSystem, Target target)
+        {
+            string textValue = Value ? "1" : "0";
+            return $"WaitDI {robotSystem.IO.DI[DI]},{textValue};";
+        }
 
-                case (Manufacturers.UR):
-                    {
-                        string textValue = Value ? "True" : "False";
-                        return $"while get_digital_in({robotSystem.IO.DI[DI]}) = {textValue}: end";
-                    }
+        protected override string CodeKuka(RobotSystem robotSystem, Target target)
+        {
+            string textValue = Value ? "TRUE" : "FALSE";
+            return $"WAIT FOR $IN[{robotSystem.IO.DI[DI]}]=={textValue}";
+        }
 
-                default:
-                    return null;
-            }
+        protected override string CodeUR(RobotSystem robotSystem, Target target)
+        {
+            string textValue = Value ? "True" : "False";
+            return $"while get_digital_in({robotSystem.IO.DI[DI]}) = {textValue}: end";
         }
 
         public override string ToString() => $"Command (WaitDI until {DI} is {Value})";
@@ -431,30 +353,19 @@ namespace Robots.Commands
     {
         public Stop() { }
 
-        internal override string Declaration(RobotSystem robotSystem) => null;
-
-        internal override string Code(RobotSystem robotSystem, Target target)
+        protected override string CodeAbb(RobotSystem robotSystem, Target target)
         {
-            switch (robotSystem.Manufacturer)
-            {
-                case (Manufacturers.ABB):
-                    {
-                        return $"Stop;";
-                    }
+            return $"Stop;";
+        }
 
-                case (Manufacturers.KUKA):
-                    {
-                        return $"HALT";
-                    }
+        protected override string CodeKuka(RobotSystem robotSystem, Target target)
+        {
+            return $"HALT";
+        }
 
-                case (Manufacturers.UR):
-                    {
-                        return $"pause program";
-                    }
-
-                default:
-                    return null;
-            }
+        protected override string CodeUR(RobotSystem robotSystem, Target target)
+        {
+            return $"pause program";
         }
 
         public override string ToString() => $"Command (Stop)";
@@ -464,35 +375,24 @@ namespace Robots.Commands
     {
         string message;
 
-        internal override string Declaration(RobotSystem robotSystem) => null;
-
         public Message(string message)
         {
             this.message = message;
         }
 
-        internal override string Code(RobotSystem robotSystem, Target target)
+        protected override string CodeAbb(RobotSystem robotSystem, Target target)
         {
-            switch (robotSystem.Manufacturer)
-            {
-                case (Manufacturers.ABB):
-                    {
-                        return $"TPWrite \"{message}\";";
-                    }
+            return $"TPWrite \"{message}\";";
+        }
 
-                case (Manufacturers.KUKA):
-                    {
-                        return $"; \"{message}\"";
-                    }
+        protected override string CodeKuka(RobotSystem robotSystem, Target target)
+        {
+            return $"; \"{message}\"";
+        }
 
-                case (Manufacturers.UR):
-                    {
-                        return $"textmsg(\"{message})\"";
-                    }
-
-                default:
-                    return null;
-            }
+        protected override string CodeUR(RobotSystem robotSystem, Target target)
+        {
+            return $"textmsg(\"{message})\"";
         }
 
         public override string ToString() => $"Command (Message \"{message}\")";

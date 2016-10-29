@@ -1,5 +1,6 @@
 ﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Data;
 using Grasshopper.GUI;
 using Grasshopper;
 using Rhino.Geometry;
@@ -11,6 +12,58 @@ using System.Drawing;
 
 namespace Robots.Grasshopper
 {
+    public class DeconstructProgramTargets : GH_Component
+    {
+        public DeconstructProgramTargets() : base("Deconstruct program targets", "DecProgTarg", "Exposes the calculated simulation data for all targets.", "Robots", "Util") { }
+        public override GH_Exposure Exposure => GH_Exposure.secondary;
+        public override Guid ComponentGuid => new Guid("{B78BF8E5-D5F2-4DE6-8589-26E069BA3D5B}");
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconDeconstructProgramTarget;
+
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
+        {
+            pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
+        }
+
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
+        {
+            pManager.AddPlaneParameter("Planes", "P", "Program target planes", GH_ParamAccess.tree);
+            pManager.AddNumberParameter("Joints", "J", "Program target joints", GH_ParamAccess.tree);
+            pManager.AddTextParameter("Configuration", "C", "Program target configuration", GH_ParamAccess.tree);
+            pManager.AddNumberParameter("Delta time", "T", "Program target time it takes to perform the motion", GH_ParamAccess.tree);
+        }
+
+        protected override void SolveInstance(IGH_DataAccess DA)
+        {
+            GH_Program program = null;
+            DA.GetData(0, ref program);
+
+            var path = DA.ParameterTargetPath(0);
+            var targets = program.Value.Targets;
+
+            var planes = new GH_Structure<GH_Plane>();
+            var joints = new GH_Structure<GH_Number>();
+            var configuration = new GH_Structure<GH_String>();
+            var deltaTime = new GH_Structure<GH_Number>();
+
+            for (int i = 0; i < targets.Count; i++)
+            {
+                var tempPath = path.AppendElement(i);
+                for (int j = 0; j < targets[i].Count; j++)
+                {
+                    planes.AppendRange(targets[i][j].Planes.Select(x => new GH_Plane(x)), tempPath.AppendElement(j));
+                    joints.AppendRange(targets[i][j].Joints.Select(x => new GH_Number(x)), tempPath.AppendElement(j));
+                    configuration.Append(new GH_String(targets[i][j].Configuration.ToString()), tempPath);
+                    deltaTime.Append(new GH_Number(targets[i][j].DeltaTime), tempPath);
+                }
+            }
+
+            DA.SetDataTree(0, planes);
+            DA.SetDataTree(1, joints);
+            DA.SetDataTree(2, configuration);
+            DA.SetDataTree(3, deltaTime);
+        }
+    }
+
     public class DegreesToRadians : GH_Component
     {
         public DegreesToRadians() : base("Degrees to radians", "DegToRad", "Manufacturer dependent degrees to radians conversion.", "Robots", "Util") { }
@@ -22,7 +75,7 @@ namespace Robots.Grasshopper
         {
             pManager.AddNumberParameter("Degrees", "D", "Degrees", GH_ParamAccess.list);
             pManager.AddParameter(new RobotSystemParameter(), "Robot system", "R", "Robot system", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("Mechanical group", "G", "Mechanical group index", 0);
+            pManager.AddIntegerParameter("Mechanical group", "G", "Mechanical group index", GH_ParamAccess.item, 0);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -32,7 +85,7 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            List<double> degrees = new List<double>();
+            var degrees = new List<double>();
             GH_RobotSystem robotSystem = null;
             int group = 0;
 
@@ -40,7 +93,7 @@ namespace Robots.Grasshopper
             if (!DA.GetData(1, ref robotSystem)) { return; }
             if (!DA.GetData(2, ref group)) { return; }
 
-            var radians = degrees.Select((x, i) => (robotSystem.Value as RobotCell).MechanicalGroups[group].DegreeToRadian(x, i));
+            var radians = degrees.Select((x, i) => (robotSystem.Value).DegreeToRadian(x, i, group));
             string radiansText = string.Join(",", radians.Select(x => $"{x:0.00}"));
 
             DA.SetData(0, radiansText);
@@ -92,7 +145,7 @@ namespace Robots.Grasshopper
         public FromPlane() : base("From plane", "FromPlane", "Returns a list of numbers from a plane. The first 3 numbers are the x, y and z coordinates of the origin. The last 3 or 4 values correspond to euler angles in degrees or quaternion values respectively.", "Robots", "Util") { }
         public override GH_Exposure Exposure => GH_Exposure.primary;
         public override Guid ComponentGuid => new Guid("{03353E74-E816-4E0A-AF9A-8AFB4C111D0B}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconGetPlane;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconToPlane;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {

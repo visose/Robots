@@ -147,13 +147,6 @@ namespace Robots.Grasshopper
                     Value = new Speed(values[0], values[1]);
                     return true;
                 }
-                else if (texts.Length == 3)
-                {
-                    var speed = new Speed(values[0], values[1]);
-                    speed.AxisSpeed = values[2];
-                    Value = speed;
-                    return true;
-                }
             }
             return false;
         }

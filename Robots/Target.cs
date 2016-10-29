@@ -161,23 +161,24 @@ namespace Robots
 
     public class ProgramTarget : Target
     {
+        public int Index { get; internal set; }
+        public int Group { get; internal set; }
+
         public Plane Plane { get; internal set; } = Plane.Unset;
         public Plane[] Planes { get; internal set; }
-        public Plane WorldPlane { get { return Planes[Planes.Length - 1]; } }
         public double[] Joints { get; internal set; }
         public bool IsJointTarget { get; internal set; }
         public Motions Motion { get; internal set; }
         public RobotConfigurations? Configuration { get; internal set; }
 
-        public int Index { get; internal set; }
-        public int Group { get; internal set; }
         public bool ForcedConfiguration { get; internal set; }
         public bool ChangesConfiguration { get; internal set; } = false;
-        public List<string> Warnings { get; internal set; }
-        public double Time { get; internal set; }
+        public double DeltaTime { get; internal set; }
         public double MinTime { get; internal set; }
         public double TotalTime { get; internal set; }
         public int LeadingJoint { get; internal set; }
+
+        public Plane WorldPlane { get { return Planes[Planes.Length - 1]; } }
 
         RobotSystem robotSystem;
 
@@ -187,13 +188,17 @@ namespace Robots
         {
             this.robotSystem = robotSystem;
 
+            var commands = new Commands.Group();
+            
             if (target.Command != null)
             {
                 if (target.Command is Commands.Group)
-                    this.Command = new Commands.Group((target.Command as Commands.Group).Flatten());
+                    commands.AddRange((target.Command as Commands.Group).Flatten());
                 else
-                    this.Command = new Commands.Group(new Command[] { target.Command });
+                    commands.Add(target.Command);
             }
+
+            this.Command = commands;
 
             if (target is CartesianTarget)
             {
@@ -562,18 +567,27 @@ namespace Robots
     public class Speed : TargetAttribute
     {
         /// <summary>
-        /// Translation speed in mm/s
+        /// TCP translation speed in mm/s
         /// </summary>
         public double TranslationSpeed { get; set; }
         /// <summary>
-        /// Rotation speed in rad/s
+        /// TCP rotation speed in rad/s
         /// </summary>
         public double RotationSpeed { get; set; }
         /// <summary>
+        /// Translation speed in mm/s
+        /// </summary>
+        public double TranslationExternal { get; set; }
+        /// <summary>
+        /// Rotation speed in rad/s
+        /// </summary>
+        public double RotationExternal { get; set; }
+
+        /// <summary>
         /// Axis/joint speed override for joint motions as a factor (0 to 1) of the maximum speed (used in KUKA and UR)
         /// </summary>
-        public double AxisSpeed { get { return axisSpeed; } set { axisSpeed = Clamp(value, 0, 1); } }
-        private double axisSpeed = 1;
+        // public double AxisSpeed { get { return axisSpeed; } set { axisSpeed = Clamp(value, 0, 1); } }
+        // private double axisSpeed = 1;
         /// <summary>
         /// Translation acceleration in mm/s² (used in UR)
         /// </summary>
@@ -592,14 +606,16 @@ namespace Robots
 
         static Speed()
         {
-            Default = new Speed(100, PI, "DefaultSpeed");
+            Default = new Speed(name: "DefaultSpeed");
         }
 
-        public Speed(double translation = 100, double rotationSpeed = PI / 2, string name = null)
+        public Speed(double translation = 100, double rotationSpeed = PI, double translationExternal = 5000, double rotationExternal = PI * 6, string name = null)
         {
             this.Name = name;
             this.TranslationSpeed = translation;
             this.RotationSpeed = rotationSpeed;
+            this.TranslationExternal = translationExternal;
+            this.RotationExternal = rotationExternal;
         }
 
         public override string ToString() => (Name != null) ? $"Speed ({Name})" : $"Speed ({TranslationSpeed:0.0} mm/s)";

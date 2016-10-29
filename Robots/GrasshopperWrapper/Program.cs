@@ -40,7 +40,7 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            string name = null;
+            string name = null; 
             GH_RobotSystem robotSystem = null;
             var initCommandsGH = new List<GH_Command>();
             var targetsA = new List<GH_Target>();

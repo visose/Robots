@@ -14,7 +14,7 @@ namespace Robots.Grasshopper
 {
     public class LoadRobotSystem : GH_Component
     {
-        GH_ValueList valueList = null;
+        GH_ValueList valueList = null; 
         IGH_Param parameter = null;
 
         public LoadRobotSystem() : base("Load robot system", "Load robot", "Loads a robot system either from the library or from a custom file", "Robots", "Components") { }

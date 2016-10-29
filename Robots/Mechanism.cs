@@ -70,34 +70,34 @@ namespace Robots
             }
             */
 
-                string folder = $@"{AssemblyDirectory}\robots";
+            string folder = $@"{AssemblyDirectory}\robots";
 
-                if (Directory.Exists(folder))
+            if (Directory.Exists(folder))
+            {
+                var files = Directory.GetFiles(folder, "*.3dm");
+                Rhino.DocObjects.Layer layer = null;
+
+                foreach (var file in files)
                 {
-                    var files = Directory.GetFiles(folder, "*.3dm");
-                    Rhino.DocObjects.Layer layer = null;
+                    Rhino.FileIO.File3dm geometry = Rhino.FileIO.File3dm.Read($@"{file}");
+                    layer = geometry.Layers.FirstOrDefault(x => x.Name == $"{model}");
 
-                    foreach (var file in files)
+                    if (layer != null)
                     {
-                        Rhino.FileIO.File3dm geometry = Rhino.FileIO.File3dm.Read($@"{file}");
-                        layer = geometry.Layers.FirstOrDefault(x => x.Name == $"{model}");
-
-                        if (layer != null)
+                        int i = 0;
+                        while (true)
                         {
-                            int i = 0;
-                            while (true)
-                            {
-                                string name = $"{i++}";
-                                var jointLayer = geometry.Layers.FirstOrDefault(x => (x.Name == name) && (x.ParentLayerId == layer.Id));
-                                if (jointLayer == null) break;
-                                meshes.Add(geometry.Objects.First(x => x.Attributes.LayerIndex == jointLayer.LayerIndex).Geometry as Mesh);
-                            }
-                            break;
+                            string name = $"{i++}";
+                            var jointLayer = geometry.Layers.FirstOrDefault(x => (x.Name == name) && (x.ParentLayerId == layer.Id));
+                            if (jointLayer == null) break;
+                            meshes.Add(geometry.Objects.First(x => x.Attributes.LayerIndex == jointLayer.LayerIndex).Geometry as Mesh);
                         }
+                        break;
                     }
-                    if (layer == null)
-                        throw new InvalidOperationException($" Robot \"{model}\" is not in the geometry file.");
                 }
+                if (layer == null)
+                    throw new InvalidOperationException($" Robot \"{model}\" is not in the geometry file.");
+            }
 
             return meshes;
         }
@@ -231,7 +231,13 @@ namespace Robots
                     Meshes = new Mesh[jointCount + 1];
 
                 // Base plane
-                Planes[0] = (basePlane == null) ? mechanism.BasePlane : (Plane)basePlane;
+                Planes[0] = mechanism.BasePlane;
+
+                if (basePlane != null)
+                {
+
+                    Planes[0].Transform(Transform.PlaneToPlane(Plane.WorldXY,(Plane)basePlane));
+                }
 
                 SetJoints(target, prevJoints);
                 JointsOutOfRange();
@@ -272,13 +278,6 @@ namespace Robots
                     jointMesh.Transform(Transform.PlaneToPlane(mechanism.Joints[i].Plane, Planes[i + 1]));
                     Meshes[i + 1] = jointMesh;
                 }
-
-                /*  if (tool?.Mesh != null)
-                  {
-                      Mesh toolMesh = tool.Mesh.DuplicateMesh();
-                      toolMesh.Transform(Transform.PlaneToPlane(tool.Tcp, Planes[Planes.Length - 1]));
-                      Meshes[Planes.Length - 1] = toolMesh;
-                  } */
             }
         }
     }
