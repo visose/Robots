@@ -9,22 +9,6 @@ namespace Robots
 {
     public abstract class Command : TargetAttribute
     {
-        private Dictionary<Manufacturers, Func<RobotSystem, string>> declaration;
-        private Dictionary<Manufacturers, Func<RobotSystem, Target, string>> code;
-
-        internal Command()
-        {
-            declaration = new Dictionary<Manufacturers, Func<RobotSystem, string>>
-            {
-                { Manufacturers.ABB, DeclarationAbb }, { Manufacturers.KUKA, DeclarationKuka }, { Manufacturers.UR, DeclarationUR }
-            };
-
-            code = new Dictionary<Manufacturers, Func<RobotSystem, Target, string>>
-            {
-                { Manufacturers.ABB, CodeAbb }, { Manufacturers.KUKA, CodeKuka }, { Manufacturers.UR, CodeUR }
-            };
-        }
-
         protected virtual void ErrorChecking(RobotSystem robotSystem) { }
 
         protected virtual string DeclarationAbb(RobotSystem robotSystem) => null;
@@ -38,12 +22,25 @@ namespace Robots
         internal string Declaration(RobotSystem robotSystem)
         {
             ErrorChecking(robotSystem);
-            return declaration[robotSystem.Manufacturer](robotSystem);
+
+            switch(robotSystem.Manufacturer)
+            {
+                case (Manufacturers.ABB): return DeclarationAbb(robotSystem);
+                case (Manufacturers.KUKA): return DeclarationKuka(robotSystem);
+                case (Manufacturers.UR): return DeclarationUR(robotSystem);
+                default: return null;
+            }
         }
 
         internal string Code(RobotSystem robotSystem, Target target)
         {
-            return code[robotSystem.Manufacturer](robotSystem, target);
+            switch (robotSystem.Manufacturer)
+            {
+                case (Manufacturers.ABB): return CodeAbb(robotSystem, target);
+                case (Manufacturers.KUKA): return CodeKuka(robotSystem, target);
+                case (Manufacturers.UR): return CodeUR(robotSystem, target);
+                default: return null;
+            }
         }
     }
 }

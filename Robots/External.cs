@@ -41,7 +41,7 @@ namespace Robots
                 for (int i = 0; i < mechanism.Joints.Length; i++)
                 {
                     int externalNum = mechanism.Joints[i].Number - 6;
-                    if (target.External == null || target.External.Length - 1 < externalNum)
+                    if (target.External.Length - 1 < externalNum)
                         Errors.Add($"Positioner external axis not configured on this target.");
                     else
                         Joints[i] = target.External[externalNum];
@@ -86,7 +86,7 @@ namespace Robots
             protected override void SetJoints(Target target, double[] prevJoints)
             {
                 int externalNum = mechanism.Joints[0].Number - 6;
-                if (target.External == null || target.External.Length < externalNum)
+                if (target.External.Length < externalNum)
                     Errors.Add($"Track external axis not configured on this target.");
                 else
                     Joints[0] = target.External[externalNum];

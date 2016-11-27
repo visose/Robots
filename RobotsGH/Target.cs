@@ -14,7 +14,7 @@ using static System.Math;
 
 namespace Robots.Grasshopper
 {
-    public class CreateTarget : GH_Component, IGH_VariableParameterComponent
+    public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
     {
         public CreateTarget() : base("Create target", "Target", "Creates or modifies a target. Right click for additional inputs", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
@@ -168,14 +168,18 @@ namespace Robots.Grasshopper
             if (hasExternal)
             {
                 GH_String externalGH = null;
-                if (!DA.GetData("External", ref externalGH)) return;
-
-                string[] externalText = externalGH.Value.Split(',');
-
-                external = new double[externalText.Length];
-
-                for (int i = 0; i < externalText.Length; i++)
-                    if (!GH_Convert.ToDouble_Secondary(externalText[i], ref external[i])) return;
+                if (!DA.GetData("External", ref externalGH))
+                {
+                    external = new double[0];
+                }
+                else
+                {
+                    string[] externalText = externalGH.Value.Split(',');
+                    int length = externalText.Length;
+                    external = new double[length];
+                    for (int i = 0; i < length; i++)
+                        if (!GH_Convert.ToDouble_Secondary(externalText[i], ref external[i])) return;
+                }
             }
             else if (sourceTarget != null)
             {
@@ -360,7 +364,7 @@ namespace Robots.Grasshopper
     }
 
 
-    public class DeconstructTarget : GH_Component, IGH_VariableParameterComponent
+    public sealed class DeconstructTarget : GH_Component, IGH_VariableParameterComponent
     {
         public DeconstructTarget() : base("Deconstruct target", "DeTarget", "Deconstructs a target. Right click for additional outputs", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;

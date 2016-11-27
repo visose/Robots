@@ -15,12 +15,12 @@ namespace Robots
 
     public abstract class RobotSystem
     {
-        internal string Name { get; }
-        internal Manufacturers Manufacturer { get; }
-        internal IO IO { get; }
-        internal Plane BasePlane { get; }
-        internal Mesh Environment { get; }
-        internal Mesh DisplayMesh { get; set; }
+        public string Name { get; }
+        public Manufacturers Manufacturer { get; }
+        public IO IO { get; }
+        public Plane BasePlane { get; }
+        public Mesh Environment { get; }
+        public Mesh DisplayMesh { get; set; }
 
         public RobotSystem(string name, Manufacturers manufacturer, IO io, Plane basePlane, Mesh environment)
         {
@@ -31,18 +31,45 @@ namespace Robots
             this.Environment = environment;
         }
 
+        /// <summary>
+        /// Quaternion interpolation based on: http://www.grasshopper3d.com/group/lobster/forum/topics/lobster-reloaded
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="t"></param>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <returns></returns>
+        public virtual Plane CartesianLerp(Plane a, Plane b, double t, double min, double max)
+        {
+            t = (t - min) / (max - min);
+            if (double.IsNaN(t)) t = 0;
+            var newOrigin = a.Origin * (1 - t) + b.Origin * t;
+
+            Quaternion q = Quaternion.Rotation(a, b);
+            q.GetRotation(out var angle, out var axis);
+            angle = (angle > PI) ? angle - 2 * PI : angle;
+            a.Rotate(t * angle, axis, a.Origin);
+
+            a.Origin = newOrigin;
+            return a;
+        }
+
         internal abstract void SaveCode(Program program, string folder);
         internal abstract List<List<List<string>>> Code(Program program);
         internal abstract double Payload(int group);
         internal abstract Joint[] GetJoints(int group);
-        public abstract List<KinematicSolution> Kinematics(List<Target> target, List<double[]> prevJoints = null, bool displayMeshes = false);
+        public abstract List<KinematicSolution> Kinematics(IEnumerable<Target> target, IEnumerable<double[]> prevJoints = null, bool displayMeshes = false);
         public abstract double DegreeToRadian(double degree, int i, int group = 0);
+        public abstract double[] PlaneToNumbers(Plane plane);
+        public abstract Plane NumbersToPlane(double[] numbers);
 
         public static List<string> ListRobotSystems()
         {
             var names = new List<string>();
             var elements = new List<XElement>();
-            string folder = $@"{AssemblyDirectory}\robots";
+            //string folder = $@"{AssemblyDirectory}\robots";
+            string folder = LibraryPath;
 
             if (Directory.Exists(folder))
             {
@@ -54,8 +81,12 @@ namespace Robots
                         elements.AddRange(element.Elements());
                 }
             }
+            else
+            {
+                throw new DirectoryNotFoundException($" Folder '{folder}' not found");
+            }
 
-          //  elements.AddRange(XElement.Parse(Properties.Resources.robotsData).Elements());
+            //  elements.AddRange(XElement.Parse(Properties.Resources.robotsData).Elements());
 
             foreach (var element in elements)
                 names.Add($"{element.Attribute(XName.Get("name")).Value}");
@@ -66,7 +97,8 @@ namespace Robots
         public static RobotSystem Load(string name, Plane basePlane)
         {
             XElement element = null;
-            string folder = $@"{AssemblyDirectory}\robots";
+            //string folder = $@"{AssemblyDirectory}\robots";
+            string folder = LibraryPath;
 
             if (Directory.Exists(folder))
             {
@@ -80,7 +112,11 @@ namespace Robots
                     if (element != null) break;
                 }
             }
-       
+            else
+            {
+                throw new DirectoryNotFoundException($" Folder '{folder}' not found");
+            }
+
             if (element == null) throw new InvalidOperationException($" RobotSystem \"{name}\" not found");
 
             /*
@@ -109,7 +145,7 @@ namespace Robots
             var mechanisms = new List<Mechanism>();
 
             var mechanicalGroups = new List<MechanicalGroup>();
-            foreach(var mechanicalGroup in element.Elements(XName.Get("Mechanisms")))
+            foreach (var mechanicalGroup in element.Elements(XName.Get("Mechanisms")))
             {
                 mechanicalGroups.Add(MechanicalGroup.Create(mechanicalGroup));
             }

@@ -35,6 +35,9 @@ namespace Robots
             return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, q.A, q.B, q.C, q.D };
         }
 
+        public override double[] PlaneToNumbers(Plane plane) => PlaneToQuaternion(plane);
+        public override Plane NumbersToPlane(double[] numbers) => QuaternionToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5], numbers[6]);
+
         internal override void SaveCode(Program program, string folder)
         {
             if (!Directory.Exists(folder)) throw new DirectoryNotFoundException($" Folder \"{folder}\" not found");
@@ -153,7 +156,7 @@ namespace Robots
                 string groupName = cell.MechanicalGroups[group].Name;
 
                 int start = program.MultiFileIndices[file];
-                int end = (file == program.MultiFileIndices.Count - 1) ? program.Targets[0].Count : program.MultiFileIndices[file + 1];
+                int end = (file == program.MultiFileIndices.Count - 1) ? program.Targets.Count : program.MultiFileIndices[file + 1];
                 var code = new List<string>();
 
                 code.Add($"MODULE {program.Name}_{groupName}_{file:000}");
@@ -162,10 +165,11 @@ namespace Robots
 
                 for (int j = start; j < end; j++)
                 {
-                    var target = program.Targets[group][j];
+                    var programTarget = program.Targets[j].ProgramTargets[group];
+                    var target = programTarget.Target;
                     string moveText = null;
                     string zone = target.Zone.IsFlyBy ? target.Zone.Name : "fine";
-                    string id = (cell.MechanicalGroups.Count > 1) ? id = $@"\ID:={target.Index}" : "";
+                    string id = (cell.MechanicalGroups.Count > 1) ? id = $@"\ID:={programTarget.Index}" : "";
                     string external = "extj";
 
                     if (cell.MechanicalGroups[group].Externals.Count > 0)
@@ -180,33 +184,35 @@ namespace Robots
                     }
 
 
-                    if (target.IsJointTarget)
+                    if (programTarget.IsJointTarget)
                     {
-                        double[] joints = target.Joints;
+                        var jointTarget = programTarget.Target as JointTarget;
+                        double[] joints = jointTarget.Joints;
                         joints = joints.Select((x, i) => cell.MechanicalGroups[group].RadianToDegree(x, i)).ToArray();
                         moveText = $"MoveAbsJ [[{joints[0]:0.000},{joints[1]:0.000},{joints[2]:0.000},{joints[3]:0.000},{joints[4]:0.000},{joints[5]:0.000}],{external}]{id},{target.Speed.Name},{zone},{target.Tool.Name};";
                     }
                     else
                     {
-                        var plane = target.Plane;
+                        var cartesian = programTarget.Target as CartesianTarget;
+                        var plane = cartesian.Plane;
                         var quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
 
-                        switch (target.Motion)
+                        switch (cartesian.Motion)
                         {
                             case Target.Motions.Joint:
                                 {
                                     string pos = $"[{plane.OriginX:0.00},{plane.OriginY:0.00},{plane.OriginZ:0.00}]";
                                     string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
 
-                                    int cf1 = (int)Floor(target.Joints[0] / (PI / 2));
-                                    int cf4 = (int)Floor(target.Joints[3] / (PI / 2));
-                                    int cf6 = (int)Floor(target.Joints[5] / (PI / 2));
+                                    int cf1 = (int)Floor(programTarget.Kinematics.Joints[0] / (PI / 2));
+                                    int cf4 = (int)Floor(programTarget.Kinematics.Joints[3] / (PI / 2));
+                                    int cf6 = (int)Floor(programTarget.Kinematics.Joints[5] / (PI / 2));
 
                                     if (cf1 < 0) cf1--;
                                     if (cf4 < 0) cf4--;
                                     if (cf6 < 0) cf6--;
 
-                                    Target.RobotConfigurations configuration = (Target.RobotConfigurations)target.Configuration;
+                                    Target.RobotConfigurations configuration = (Target.RobotConfigurations)programTarget.Kinematics.Configuration;
                                     bool shoulder = configuration.HasFlag(Target.RobotConfigurations.Shoulder);
                                     bool elbow = configuration.HasFlag(Target.RobotConfigurations.Elbow);
                                     if (shoulder) elbow = !elbow;
@@ -236,7 +242,7 @@ namespace Robots
                     }
 
                     code.Add(moveText);
-                    foreach (var command in target.Command as Commands.Group)
+                    foreach (var command in programTarget.Commands)
                     {
                         code.Add(command.Code(cell, target));
                     }

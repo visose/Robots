@@ -70,7 +70,8 @@ namespace Robots
             }
             */
 
-            string folder = $@"{AssemblyDirectory}\robots";
+            // string folder = $@"{AssemblyDirectory}\robots";
+            string folder = LibraryPath;
 
             if (Directory.Exists(folder))
             {
@@ -229,6 +230,8 @@ namespace Robots
                 Planes = new Plane[jointCount + 1];
                 if (displayMeshes)
                     Meshes = new Mesh[jointCount + 1];
+                else
+                    Meshes = new Mesh[0];
 
                 // Base plane
                 Planes[0] = mechanism.BasePlane;

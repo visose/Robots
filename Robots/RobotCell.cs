@@ -68,7 +68,7 @@ namespace Robots
             }
         }
 
-        public override List<KinematicSolution> Kinematics(List<Target> targets, List<double[]> prevJoints = null, bool displayMeshes = false) => new RobotCellKinematics(this, targets, prevJoints, displayMeshes).Solutions;
+        public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]> prevJoints = null, bool displayMeshes = false) => new RobotCellKinematics(this, targets, prevJoints, displayMeshes).Solutions;
 
         public override double DegreeToRadian(double degree, int i, int group = 0) => this.MechanicalGroups[group].DegreeToRadian(degree, i);
 
@@ -76,12 +76,12 @@ namespace Robots
         {
             internal List<KinematicSolution> Solutions;
 
-            internal RobotCellKinematics(RobotCell cell, List<Target> targets, List<double[]> prevJoints, bool displayMeshes)
+            internal RobotCellKinematics(RobotCell cell, IEnumerable<Target> targets, IEnumerable<double[]> prevJoints, bool displayMeshes)
             {
                 this.Solutions = new List<KinematicSolution>(new KinematicSolution[cell.MechanicalGroups.Count]);
 
-                if (targets.Count != cell.MechanicalGroups.Count) throw new Exception(" Incorrect number of targets.");
-                if (prevJoints != null && prevJoints.Count != cell.MechanicalGroups.Count) throw new Exception(" Incorrect number of previous joint values.");
+                if (targets.Count() != cell.MechanicalGroups.Count) throw new Exception(" Incorrect number of targets.");
+                if (prevJoints != null && prevJoints.Count() != cell.MechanicalGroups.Count) throw new Exception(" Incorrect number of previous joint values.");
 
                 var groups = cell.MechanicalGroups.ToList();
 
@@ -89,18 +89,24 @@ namespace Robots
                 {
                     var index = target.Frame.CoupledMechanicalGroup;
                     if (index == -1) continue;
+                    var group = cell.MechanicalGroups[index];
                     groups.RemoveAt(index);
-                    groups.Insert(0, cell.MechanicalGroups[index]);
+                    groups.Insert(0, group);
                 }
+
+                var targetsArray = targets.ToArray();
+                var prevJointsArray = prevJoints?.ToArray();
 
                 foreach (var group in groups)
                 {
                     int i = group.Index;
+                    var target = targetsArray[i];
+                    var prevJoint = prevJointsArray?[i];
                     Plane? coupledPlane = null;
 
-                    int coupledGroup = targets[i].Frame.CoupledMechanicalGroup;
+                    int coupledGroup = target.Frame.CoupledMechanicalGroup;
 
-                    if (coupledGroup != -1 && targets[i].Frame.CoupledMechanism == -1)
+                    if (coupledGroup != -1 && target.Frame.CoupledMechanism == -1)
                     {
                         if (coupledGroup == i) throw new Exception(" Can't couple a robot with itself.");
                         coupledPlane = Solutions[coupledGroup].Planes[Solutions[coupledGroup].Planes.Length - 2] as Plane?;
@@ -110,8 +116,7 @@ namespace Robots
                         coupledPlane = null;
                     }
 
-
-                    var kinematics = group.Kinematics(targets[i], prevJoints == null ? null : prevJoints[i], coupledPlane, displayMeshes, cell.BasePlane);
+                    var kinematics = group.Kinematics(target, prevJoint, coupledPlane, displayMeshes, cell.BasePlane);
                     Solutions[i] = kinematics;
                 }
             }

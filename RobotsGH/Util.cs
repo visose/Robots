@@ -38,22 +38,23 @@ namespace Robots.Grasshopper
             DA.GetData(0, ref program);
 
             var path = DA.ParameterTargetPath(0);
-            var targets = program.Value.Targets;
+            var cellTargets = program.Value.Targets;
+            var groupCount = cellTargets[0].ProgramTargets.Count;
 
             var planes = new GH_Structure<GH_Plane>();
             var joints = new GH_Structure<GH_Number>();
             var configuration = new GH_Structure<GH_String>();
             var deltaTime = new GH_Structure<GH_Number>();
 
-            for (int i = 0; i < targets.Count; i++)
+            for (int i = 0; i < groupCount; i++)
             {
                 var tempPath = path.AppendElement(i);
-                for (int j = 0; j < targets[i].Count; j++)
+                for (int j = 0; j < cellTargets.Count; j++)
                 {
-                    planes.AppendRange(targets[i][j].Planes.Select(x => new GH_Plane(x)), tempPath.AppendElement(j));
-                    joints.AppendRange(targets[i][j].Joints.Select(x => new GH_Number(x)), tempPath.AppendElement(j));
-                    configuration.Append(new GH_String(targets[i][j].Configuration.ToString()), tempPath);
-                    deltaTime.Append(new GH_Number(targets[i][j].DeltaTime), tempPath);
+                    planes.AppendRange(cellTargets[j].ProgramTargets[i].Kinematics.Planes.Select(x => new GH_Plane(x)), tempPath.AppendElement(j));
+                    joints.AppendRange(cellTargets[j].ProgramTargets[i].Kinematics.Joints.Select(x => new GH_Number(x)), tempPath.AppendElement(j));
+                    configuration.Append(new GH_String(cellTargets[j].ProgramTargets[i].Kinematics.Configuration.ToString()), tempPath);
+                    deltaTime.Append(new GH_Number(cellTargets[j].DeltaTime), tempPath);
                 }
             }
 
@@ -102,14 +103,16 @@ namespace Robots.Grasshopper
 
     public class GetPlane : GH_Component
     {
-        public GetPlane() : base("Get plane", "GetPlane", "Get a plane from a point in space and a 3D rotation. If the input is 6 numbers, the rotation is assumed to be expressed in euler angles (used by KUKA). If it's 7 numbers, the rotations are assumed to be quaternions (used by ABB and internally by the plugin).", "Robots", "Util") { }
+        public GetPlane() : base("Get plane", "GetPlane", "Get a plane from a point in space and a 3D rotation. The input has to be a list of 6 or 7 numbers. The last 3 or 4 numbers will", "Robots", "Util") { }
         public override GH_Exposure Exposure => GH_Exposure.primary;
         public override Guid ComponentGuid => new Guid("{F271BD0B-7249-4647-B273-577D8EA6328F}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconGetPlane;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddNumberParameter("Numbers", "N", "Input 6 or 7 numbers. The first 3 should correspond to the x, y and z coordinates of the origin. In case of 6 numbers, the last 3 should be a 3D rotation expressed in euler angles in degrees. In case of 4 numbers, the next 4 should be quaternion values.", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Numbers", "N", "Input 6 or 7 numbers. The first 3 should correspond to the x, y and z coordinates of the origin. The last 3 or 4 should be a 3D rotation expressed in euler angles in degrees, axis angles in radians or quaternions.", GH_ParamAccess.list);
+            pManager.AddParameter(new RobotSystemParameter(), "Robot system", "R", "The robot system will select the orientation type (ABB = quaternions, KUKA = euler angles in degrees, UR = axis angles in radians). If this input is left unconnected, it will assume the 3D rotation is expressed in quaternions.", GH_ParamAccess.item);
+            pManager[1].Optional = true;
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -121,19 +124,28 @@ namespace Robots.Grasshopper
         {
             var numbers = new List<double>();
             Plane plane = Plane.Unset;
-            if (!DA.GetDataList(0, numbers)) { return; }
+            GH_RobotSystem robotSystem = null;
 
-            if (numbers.Count == 6)
+            if (!DA.GetDataList(0, numbers)) { return; }
+            DA.GetData(1, ref robotSystem);
+
+            if (robotSystem == null)
             {
-                plane = RobotCellKuka.EulerToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5]);
-            }
-            else if (numbers.Count == 7)
-            {
+                if (numbers.Count != 7) { this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The list should be made out of 7 numbers."); return; }
                 plane = RobotCellAbb.QuaternionToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5], numbers[6]);
             }
             else
             {
-                throw new IndexOutOfRangeException(" The list should contain either 6 or 7 numbers.");
+                if(robotSystem.Value.Manufacturer == Manufacturers.ABB)
+                {
+                    if (numbers.Count != 7) { this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The list should be made out of 7 numbers."); return; }
+                }
+                else
+                {
+                    if (numbers.Count != 6) { this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " The list should be made out of 6 numbers."); return; }
+                }
+
+                plane = robotSystem.Value.NumbersToPlane(numbers.ToArray());
             }
 
             DA.SetData(0, plane);
@@ -149,25 +161,35 @@ namespace Robots.Grasshopper
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddPlaneParameter("Plane", "P", "Plane to convert to euler or quaternion values.", GH_ParamAccess.item);
+            pManager.AddPlaneParameter("Plane", "P", "Plane to convert to euler, quaternion or axis angle values.", GH_ParamAccess.item);
+            pManager.AddParameter(new RobotSystemParameter(), "Robot system", "R", "The robot system will select the orientation type (ABB = quaternions, KUKA = euler angles in degrees, UR = axis angles in radians). If this input is left unconnected, the 3D rotation will be expressed in quaternions.", GH_ParamAccess.item);
+            pManager[1].Optional = true;
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddNumberParameter("Quaternions", "Q", "The first 3 numbers are the x, y and z coordinates of the origin. The last 4 numbers are the quaternion values.", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Quaternions", "E", "The first 3 numbers are the x, y and z coordinates of the origin. The last 3 numbers are the euler angles in degrees.", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Numbers", "N", "The first 3 numbers are the x, y and z coordinates of the origin. The last 3 or 4 numbers represent a 3D rotation.", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            Plane plane = Plane.Unset;
+            double[] numbers = null;
+            GH_Plane plane = null;
+            GH_RobotSystem robotSystem = null;
+
             if (!DA.GetData(0, ref plane)) { return; }
+            DA.GetData(1, ref robotSystem);
 
-            var quaternions = RobotCellAbb.PlaneToQuaternion(plane);
-            var euler = RobotCellKuka.PlaneToEuler(plane);
+            if (robotSystem == null)
+            {
+                numbers = RobotCellAbb.PlaneToQuaternion(plane.Value);
+            }
+            else
+            {
+                numbers = robotSystem.Value.PlaneToNumbers(plane.Value);
+            }
 
-            DA.SetDataList(0, quaternions);
-            DA.SetDataList(1, euler);
+            DA.SetDataList(0, numbers);
         }
     }
 }

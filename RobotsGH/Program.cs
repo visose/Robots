@@ -211,7 +211,7 @@ namespace Robots.Grasshopper
             var collision = program.Value.CheckCollisions(first.Select(x => x.Value), second.Select(x => x.Value), environment?.Value, environmentPlane, linearStep, angularStep);
 
             DA.SetData(0, collision.HasCollision);
-            if (collision.HasCollision) DA.SetData(1, collision.Targets[0].Index);
+            if (collision.HasCollision) DA.SetData(1, collision.CollisionTarget.Index);
             if (collision.HasCollision) DA.SetDataList(2, collision.Meshes);
         }
     }

@@ -17,7 +17,7 @@ namespace Robots
         public const double UnitTol = 0.000001;
         internal const double SingularityTol = 0.0001;
 
-        internal const string ResourcesFolder = @"C:\Users\vicen\Documents\Work\Bartlett\RobotsApp\Robots\Robots\Resources";
+       // internal const string ResourcesFolder = @"C:\Users\vicen\Documents\Work\Bartlett\RobotsApp\Robots\Robots\Resources";
 
         internal static Transform ToTransform(this double[,] matrix)
         {
@@ -52,6 +52,14 @@ namespace Robots
             }
         }
 
+        internal static string LibraryPath
+        {
+            get
+            {
+                return $@"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}\Robots";
+            }
+        }
+
         internal static double ToRadians(this double value)
         {
             return value * (PI / 180);
@@ -64,8 +72,6 @@ namespace Robots
 
         public static T[] Subset<T>(this T[] array, int[] indices)
         {
-            if (array == null) return null;
-
             T[] subset = new T[indices.Length];
             for (int i = 0; i < indices.Length; i++)
             {
@@ -76,8 +82,6 @@ namespace Robots
 
         public static T[] RangeSubset<T>(this T[] array, int startIndex, int length)
         {
-            if (array == null) return null;
-
             T[] subset = new T[length];
             Array.Copy(array, startIndex, subset, 0, length);
             return subset;
