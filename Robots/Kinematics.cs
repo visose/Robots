@@ -30,6 +30,7 @@ namespace Robots
                 }
                 else if (target is CartesianTarget)
                 {
+                    double[] joints = null;
                     var cartesianTarget = target as CartesianTarget;
                     Plane tcp = target.Tool.Tcp;
                     tcp.Rotate(PI, Vector3d.ZAxis, Point3d.Origin);
@@ -44,16 +45,19 @@ namespace Robots
                     if (cartesianTarget.Configuration != null || prevJoints == null)
                     {
                         Configuration = cartesianTarget.Configuration ?? Target.RobotConfigurations.None;
-                        Joints = InverseKinematics(transform, Configuration, out errors);
+                        joints = InverseKinematics(transform, Configuration, out errors);
                     }
                     else
                     {
-                        Target.RobotConfigurations configuration;
-                        Joints = GetClosestSolution(transform, prevJoints, out configuration, out errors);
+                        joints = GetClosestSolution(transform, prevJoints, out var configuration, out errors, out var difference);
                         Configuration = configuration;
                     }
 
-                    if (prevJoints != null) Joints = JointTarget.GetAbsoluteJoints(Joints, prevJoints);
+                    if (prevJoints != null)
+                        Joints = JointTarget.GetAbsoluteJoints(joints, prevJoints);
+                    else
+                        Joints = joints;
+
                     Errors.AddRange(errors);
                 }
             }
@@ -64,10 +68,8 @@ namespace Robots
 
                 if (target is JointTarget)
                 {
-                    Target.RobotConfigurations configuration;
-                    List<string> errors;
-                    var closest = GetClosestSolution(jointTransforms[jointTransforms.Length - 1], Joints, out configuration, out errors);
-                    this.Configuration = configuration;
+                    var closest = GetClosestSolution(jointTransforms[jointTransforms.Length - 1], Joints, out var configuration, out var errors, out var difference);
+                    this.Configuration = difference < AngleTol ? configuration : Target.RobotConfigurations.Undefined;
                 }
 
                 for (int i = 0; i < 6; i++)
@@ -96,15 +98,14 @@ namespace Robots
                 return difference * difference;
             }
 
-            double[] GetClosestSolution(Transform transform, double[] prevJoints, out Target.RobotConfigurations configuration, out List<string> errors)
+            double[] GetClosestSolution(Transform transform, double[] prevJoints, out Target.RobotConfigurations configuration, out List<string> errors, out double difference)
             {
                 var solutions = new double[8][];
                 var solutionsErrors = new List<List<string>>(8);
 
                 for (int i = 0; i < 8; i++)
                 {
-                    List<string> solutionErrors;
-                    solutions[i] = InverseKinematics(transform, (Target.RobotConfigurations)i, out solutionErrors);
+                    solutions[i] = InverseKinematics(transform, (Target.RobotConfigurations)i, out var solutionErrors);
                     solutions[i] = JointTarget.GetAbsoluteJoints(solutions[i], prevJoints);
                     solutionsErrors.Add(solutionErrors);
                 }
@@ -114,15 +115,16 @@ namespace Robots
 
                 for (int i = 0; i < 8; i++)
                 {
-                    double difference = prevJoints.Zip(solutions[i], (x, y) => SquaredDifference(x, y)).Sum();
+                    double currentDifference = prevJoints.Zip(solutions[i], (x, y) => SquaredDifference(x, y)).Sum();
 
-                    if (difference < closestDifference)
+                    if (currentDifference < closestDifference)
                     {
                         closestSolutionIndex = i;
-                        closestDifference = difference;
+                        closestDifference = currentDifference;
                     }
                 }
 
+                difference = closestDifference;
                 configuration = (Target.RobotConfigurations)closestSolutionIndex;
                 errors = solutionsErrors[closestSolutionIndex];
                 return solutions[closestSolutionIndex];
@@ -219,8 +221,7 @@ namespace Robots
                 arr[2, 0] = s[1] * c[2] + c[1] * s[2]; arr[2, 1] = 0; arr[2, 2] = s[1] * s[2] - c[1] * c[2]; arr[2, 3] = a[2] * (s[1] * c[2] + c[1] * s[2]) + a[1] * s[1] + d[0];
                 arr[3, 0] = 0; arr[3, 1] = 0; arr[3, 2] = 0; arr[3, 3] = 1;
 
-                Transform in123;
-                arr.TryGetInverse(out in123);
+                arr.TryGetInverse(out var in123);
 
                 var mr = Transform.Multiply(in123, transform);
                 joints[3] = Atan2(mr[1, 2], mr[0, 2]);

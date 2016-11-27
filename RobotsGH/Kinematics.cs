@@ -13,7 +13,7 @@ namespace Robots.Grasshopper
 {
     public class Kinematics : GH_Component
     {
-        public Kinematics() : base("Kinematics", "K", "Inverse and forward kinematics for a single target", "Robots", "Components") { }
+        public Kinematics() : base("Kinematics", "K", "Inverse and forward kinematics for a single target (or group of targets in a robot cell with coord", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.quarternary;
         public override Guid ComponentGuid => new Guid("{EFDA05EB-B281-4703-9C9E-B5F98A9B2E1D}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconKinematics;
@@ -22,17 +22,17 @@ namespace Robots.Grasshopper
         {
             pManager.AddParameter(new RobotSystemParameter(), "Robot system", "R", "Robot system", GH_ParamAccess.item);
             pManager.AddParameter(new TargetParameter(), "Target", "T", "One target per robot", GH_ParamAccess.list);
-            pManager.AddTextParameter("PrevJoints", "J", "Optional previous joint values. If the pose is ambigous is will select one based on this previous position.", GH_ParamAccess.list);
-            pManager.AddBooleanParameter("Geometry", "M", "Generate mesh geometry of the robot", GH_ParamAccess.item, false);
+            pManager.AddTextParameter("Previous joints", "J", "Optional previous joint values. If the pose is ambigous is will select one based on this previous position.", GH_ParamAccess.list);
+            pManager.AddBooleanParameter("Display geometry", "M", "Display mesh geometry of the robot", GH_ParamAccess.item, false);
             pManager[2].Optional = true;
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mechanism meshes", "M", "Mechanism meshes", GH_ParamAccess.list);
-            pManager.AddTextParameter("Joint rotations", "J", "Joint rotations", GH_ParamAccess.item);
-            pManager.AddPlaneParameter("Plane", "P", "Plane", GH_ParamAccess.item);
-            pManager.AddTextParameter("Errors", "E", "Errors", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Meshes", "M", "Robot system's meshes", GH_ParamAccess.list);
+            pManager.AddTextParameter("Joints", "J", "Robot system's joint rotations as a string of numbers separated by commas.", GH_ParamAccess.item);
+            pManager.AddPlaneParameter("Planes", "P", "Robot system's joint lanes", GH_ParamAccess.list);
+            pManager.AddTextParameter("Errors", "E", "Errors in kinematic solution", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -60,15 +60,15 @@ namespace Robots.Grasshopper
                         string[] jointsText = text.Value.Split(',');
                         var prevJoint = new double[jointsText.Length];
 
-                        for (int i = 0; i < 6; i++)
-                            if (!GH_Convert.ToDouble_Secondary(jointsText[i], ref prevJoint[i])) return;
+                        for (int i = 0; i < jointsText.Length; i++)
+                            if (!GH_Convert.ToDouble_Secondary(jointsText[i], ref prevJoint[i])) throw new Exception(" Previous joints not formatted correctly.");
 
                         prevJoints.Add(prevJoint);
                     }
                 }
             }
 
-            var kinematics = robotSystem.Value.Kinematics(targets.Select(x => x.Value).ToList(), prevJoints, drawMeshes);
+            var kinematics = robotSystem.Value.Kinematics(targets.Select(x => x.Value), prevJoints, drawMeshes);
 
             var errors = kinematics.SelectMany(x => x.Errors);
             if (errors.Count() > 0)
@@ -92,7 +92,7 @@ namespace Robots.Grasshopper
         }
     }
 
-    public class Simulation : GH_Component, IDisposable
+    public sealed class Simulation : GH_Component, IDisposable
     {
         public Simulation() : base("Program simulation", "Sim", "Rough simulation of the robot program, right click for playback controls", "Robots", "Components")
         {
@@ -138,20 +138,20 @@ namespace Robots.Grasshopper
             if (!form.Visible) time = sliderTime;
 
             program.Value.Animate(time, false);
-            var kinematics = program.Value.CurrentSimulationKinematics;
+            var currentTarget = program.Value.CurrentSimulationTarget;
 
-            var errors = kinematics.SelectMany(x => x.Errors);
-            var meshes = kinematics.SelectMany(x => x.Meshes);
-            var joints = kinematics.SelectMany(x => x.Joints);
-            var planes = kinematics.SelectMany(x => x.Planes);
+            var errors = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Errors);
+            var meshes = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Meshes);
+            var joints = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Joints);
+            var planes = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Planes);
 
             if (errors.Count() > 0)
                 this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in solution");
 
-            DA.SetDataList(0, meshes.Select(x => new GH_Mesh(x)));
+            DA.SetDataList(0, meshes?.Select(x => new GH_Mesh(x)));
             DA.SetDataList(1, joints);
             DA.SetDataList(2, planes.Select(x => new GH_Plane(x)));
-            DA.SetData(3, program.Value.CurrentSimulationTargets[0].Index);
+            DA.SetData(3, currentTarget.Index);
             DA.SetData(4, program.Value.CurrentSimulationTime);
             DA.SetData(5, new GH_Program(program.Value));
             DA.SetDataList(6, errors);
@@ -300,11 +300,13 @@ namespace Robots.Grasshopper
 
 
                 // Slider group
-                var group = new GroupBox();
-                group.Location = new System.Drawing.Point(6, 66);
-                group.Size = new Size(120, 220);
-                group.Text = "Speed";
-                group.Font = labelFont;
+                var group = new GroupBox()
+                {
+                    Location = new System.Drawing.Point(6, 66),
+                    Size = new Size(120, 220),
+                    Text = "Speed",
+                    Font = labelFont
+                };
                 this.Controls.Add(group);
 
                 // Slider
@@ -328,13 +330,15 @@ namespace Robots.Grasshopper
 
                 for (int i = 0; i <= count; i++)
                 {
-                    var label = new Label();
+                    var label = new Label()
+                    {
+                        Location = new System.Drawing.Point(51, 16 + i * 29),
+                        Size = new Size(60, 20),
+                        Text = (slider.Maximum - i * 100).ToString() + "%",
+                        Font = labelFont,
+                        TextAlign = ContentAlignment.MiddleLeft
+                    };
 
-                    label.Location = new System.Drawing.Point(51, 16 + i * 29);
-                    label.Size = new Size(60, 20);
-                    label.Text = (slider.Maximum - i * 100).ToString() + "%";
-                    label.Font = labelFont;
-                    label.TextAlign = ContentAlignment.MiddleLeft;
                     group.Controls.Add(label);
                 }
             }

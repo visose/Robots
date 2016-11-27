@@ -13,7 +13,7 @@ namespace Robots
     public abstract class Target
     {
         [Flags]
-        public enum RobotConfigurations { None = 0, Shoulder = 1, Elbow = 2, Wrist = 4 }
+        public enum RobotConfigurations { None = 0, Shoulder = 1, Elbow = 2, Wrist = 4, Undefined = 8 }
         public enum Motions { Joint, Linear, Circular, Spline }
 
         public Tool Tool { get; set; }
@@ -30,14 +30,14 @@ namespace Robots
             Default = new JointTarget(new double[] { 0, PI / 2, 0, 0, 0, 0 }, Tool.Default, Speed.Default, Zone.Default, null, Frame.Default, null);
         }
 
-        public Target(Tool tool, Speed speed, Zone zone, Command command, Frame frame = null, double[] external = null)
+        public Target(Tool tool, Speed speed, Zone zone, Command command, Frame frame = null, IEnumerable<double> external = null)
         {
             this.Tool = tool ?? Tool.Default;
             this.Speed = speed ?? Speed.Default;
             this.Zone = zone ?? Zone.Default;
             this.Frame = frame ?? Frame.Default;
             this.Command = command;
-            this.External = external;
+            this.External = (external != null) ? external.ToArray() : new double[0];
         }
 
         public Target ShallowClone() => MemberwiseClone() as Target;
@@ -49,40 +49,14 @@ namespace Robots
         public RobotConfigurations? Configuration { get; set; }
         public Motions Motion { get; set; }
 
-        public CartesianTarget(Plane plane, RobotConfigurations? configuration = null, Motions motion = Motions.Joint, Tool tool = null, Speed speed = null, Zone zone = null, Command command = null, Frame frame = null, double[] external = null) : base(tool, speed, zone, command, frame, external)
+        public CartesianTarget(Plane plane, RobotConfigurations? configuration = null, Motions motion = Motions.Joint, Tool tool = null, Speed speed = null, Zone zone = null, Command command = null, Frame frame = null, IEnumerable<double> external = null) : base(tool, speed, zone, command, frame, external)
         {
             this.Plane = plane;
             this.Motion = motion;
             this.Configuration = configuration;
         }
 
-        public CartesianTarget(Plane plane, Target target, RobotConfigurations? configuration = null, Motions motion = Motions.Joint, double[] external = null) : this(plane, configuration, motion, target.Tool, target.Speed, target.Zone, target.Command, target.Frame, external ?? target.External) { }
-
-        /// <summary>
-        /// Quaternion interpolation based on: http://www.grasshopper3d.com/group/lobster/forum/topics/lobster-reloaded
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <param name="t"></param>
-        /// <param name="min"></param>
-        /// <param name="max"></param>
-        /// <returns></returns>
-        public static Plane Lerp(Plane a, Plane b, double t, double min, double max)
-        {
-            t = (t - min) / (max - min);
-            if (double.IsNaN(t)) t = 0;
-            var newOrigin = a.Origin * (1 - t) + b.Origin * t;
-
-            Quaternion q = Quaternion.Rotation(a, b);
-            double angle;
-            Vector3d axis;
-            q.GetRotation(out angle, out axis);
-            angle = (angle > PI) ? angle - 2 * PI : angle;
-            a.Rotate(t * angle, axis, a.Origin);
-
-            a.Origin = newOrigin;
-            return a;
-        }
+        public CartesianTarget(Plane plane, Target target, RobotConfigurations? configuration = null, Motions motion = Motions.Joint, IEnumerable<double> external = null) : this(plane, configuration, motion, target.Tool, target.Speed, target.Zone, target.Command, target.Frame, external ?? target.External) { }
 
         public override string ToString()
         {
@@ -94,7 +68,7 @@ namespace Robots
             string speed = $", {Speed}";
             string zone = $", {Zone}";
             string commands = Command != null ? ", Contains commands" : "";
-            string external = External != null ? ", External axis" : "";
+            string external = External.Length > 0 ? $"{External.Length.ToString():0} external axes" : "";
             return $"Target ({type}{motion}{configuration}{frame}{tool}{speed}{zone}{commands}{external})";
         }
 
@@ -104,18 +78,25 @@ namespace Robots
     {
         public double[] Joints { get; set; }
 
-        public JointTarget(double[] joints, Tool tool = null, Speed speed = null, Zone zone = null, Command command = null, Frame frame = null, double[] external = null) : base(tool, speed, zone, command, frame, external)
+        public JointTarget(double[] joints, Tool tool = null, Speed speed = null, Zone zone = null, Command command = null, Frame frame = null, IEnumerable<double> external = null) : base(tool, speed, zone, command, frame, external)
         {
             this.Joints = joints;
         }
 
-        public JointTarget(double[] joints, Target target, double[] external = null) : this(joints, target.Tool, target.Speed, target.Zone, target.Command, target.Frame, external ?? target.External) { }
+        public JointTarget(double[] joints, Target target, IEnumerable<double> external = null) : this(joints, target.Tool, target.Speed, target.Zone, target.Command, target.Frame, external ?? target.External) { }
 
         public static double[] Lerp(double[] a, double[] b, double t, double min, double max)
         {
             t = (t - min) / (max - min);
             if (double.IsNaN(t)) t = 0;
-            return a.Zip(b, (x, y) => (x * (1 - t) + y * t)).ToArray();
+            var result = new double[a.Length];
+
+            for (int i = 0; i < a.Length; i++)
+            {
+                result[i] = (a[i] * (1.0 - t) + b[i] * t);
+            }
+
+            return result;
         }
 
         public static double GetAbsoluteJoint(double joint)
@@ -153,103 +134,154 @@ namespace Robots
             string speed = $", {Speed}";
             string zone = $", {Zone}";
             string commands = Command != null ? ", Contains commands" : "";
-            string external = External != null ? ", External axis" : "";
+            string external = External.Length > 0 ? $"{External.Length.ToString():0} external axes" : "";
             return $"Target ({type}{tool}{speed}{zone}{commands}{external})";
         }
 
     }
 
-    public class ProgramTarget : Target
+    public class CellTarget
     {
+        public List<ProgramTarget> ProgramTargets { get; internal set; }
         public int Index { get; internal set; }
-        public int Group { get; internal set; }
 
-        public Plane Plane { get; internal set; } = Plane.Unset;
-        public Plane[] Planes { get; internal set; }
-        public double[] Joints { get; internal set; }
-        public bool IsJointTarget { get; internal set; }
-        public Motions Motion { get; internal set; }
-        public RobotConfigurations? Configuration { get; internal set; }
-
-        public bool ForcedConfiguration { get; internal set; }
-        public bool ChangesConfiguration { get; internal set; } = false;
-        public double DeltaTime { get; internal set; }
-        public double MinTime { get; internal set; }
         public double TotalTime { get; internal set; }
-        public int LeadingJoint { get; internal set; }
+        public double DeltaTime { get; internal set; }
+        internal double MinTime { get; set; }
 
-        public Plane WorldPlane { get { return Planes[Planes.Length - 1]; } }
+        public Plane[] Planes => ProgramTargets.SelectMany(x => x.Kinematics.Planes).ToArray();
+        public double[] Joints => ProgramTargets.SelectMany(x => x.Kinematics.Joints).ToArray();
 
-        RobotSystem robotSystem;
-
-        public bool IsJointMotion => IsJointTarget || Motion == Motions.Joint;
-
-        internal ProgramTarget(Target target, RobotSystem robotSystem) : base(target.Tool, target.Speed, target.Zone, null, target.Frame, target.External)
+        internal CellTarget(IEnumerable<ProgramTarget> programTargets, int index)
         {
-            this.robotSystem = robotSystem;
+            this.ProgramTargets = programTargets.ToList();
+            foreach (var programTarget in this.ProgramTargets) programTarget.cellTarget = this;
+            this.Index = index;
+        }
 
-            var commands = new Commands.Group();
-            
+        internal CellTarget ShallowClone(int index = -1)
+        {
+            var cellTarget = MemberwiseClone() as CellTarget;
+            if (index != -1) cellTarget.Index = index;
+            cellTarget.ProgramTargets = cellTarget.ProgramTargets.Select(x => x.ShallowClone(cellTarget)).ToList();
+            return cellTarget;
+        }
+
+        internal IEnumerable<Target> KineTargets()
+        {
+            return ProgramTargets.Select(x => x.ToKineTarget());
+        }
+
+        internal IEnumerable<Target> Lerp(CellTarget prevTarget, RobotSystem robot, double t, double start, double end)
+        {
+            return ProgramTargets.Select((x, i) => x.Lerp(prevTarget.ProgramTargets[i], robot, t, start, end));
+        }
+
+        internal void SetTargetKinematics(List<KinematicSolution> kinematics, List<string> errors, List<string> warnings, CellTarget prevTarget = null)
+        {
+            foreach (var target in this.ProgramTargets) target.SetTargetKinematics(kinematics[target.Group], errors, warnings, prevTarget?.ProgramTargets[target.Group]);
+        }
+    }
+
+    public class ProgramTarget
+    {
+        internal Target Target { get; set; }
+        public int Group { get; internal set; }
+        public Commands.Group Commands { get; private set; }
+
+        public KinematicSolution Kinematics { get; internal set; }
+        internal bool ChangesConfiguration { get; set; } = false;
+        internal int LeadingJoint { get; set; }
+
+        internal bool IsJointTarget => Target is JointTarget;
+        public bool IsJointMotion => IsJointTarget || (Target as CartesianTarget).Motion == Target.Motions.Joint;
+        public Plane WorldPlane => Kinematics.Planes[Kinematics.Planes.Length - 1];
+        public int Index => cellTarget.Index;
+
+        internal CellTarget cellTarget;
+
+        /*
+        internal bool ChangesConfiguration
+        {
+            get
+            {
+                if (Index == 0) return false;
+                return Configuration != allTargets[Group][Index - 1].Configuration;
+            }
+        }
+        */
+
+        public Plane Plane
+        {
+            get
+            {
+             //   var cartesian = this.Target as CartesianTarget;
+             //   if (cartesian != null) return cartesian.Plane;
+
+                Plane plane = WorldPlane;
+                Plane framePlane = Target.Frame.Plane;
+
+                if (Target.Frame.IsCoupled)
+                {
+                    var planes = cellTarget.Planes;
+                    Plane coupledPlane = planes[Target.Frame.CoupledPlaneIndex];
+                    framePlane.Transform(Transform.PlaneToPlane(Plane.WorldXY, coupledPlane));
+                }
+
+                plane.Transform(Transform.PlaneToPlane(framePlane, Plane.WorldXY));
+                return plane;
+            }
+        }
+        public bool ForcedConfiguration
+        {
+            get
+            {
+                if (IsJointTarget) return false;
+                return (Target as CartesianTarget).Configuration != null;
+            }
+        }
+
+        internal ProgramTarget(Target target, int group)
+        {
+            this.Target = target;
+            this.Group = group;
+
+            this.Commands = new Commands.Group();
+
             if (target.Command != null)
             {
                 if (target.Command is Commands.Group)
-                    commands.AddRange((target.Command as Commands.Group).Flatten());
+                    Commands.AddRange((target.Command as Commands.Group).Flatten());
                 else
-                    commands.Add(target.Command);
+                    Commands.Add(target.Command);
             }
-
-            this.Command = commands;
-
-            if (target is CartesianTarget)
-            {
-                var cartesianTarget = target as CartesianTarget;
-                this.Plane = cartesianTarget.Plane;
-                this.IsJointTarget = false;
-                this.Motion = cartesianTarget.Motion;
-                this.Configuration = cartesianTarget.Configuration;
-                this.ForcedConfiguration = (this.Configuration != null);
-            }
-            else if (target is JointTarget)
-            {
-                this.Joints = (target as JointTarget).Joints;
-                this.IsJointTarget = true;
-            }
-            else if (target is ProgramTarget)
-                throw new InvalidCastException("Use the ShallowClone() method for duplicating a ProgramTarget");
         }
 
-        public double[] GetAbsoluteExternal()
+        public ProgramTarget ShallowClone(CellTarget cellTarget)
         {
-            double[] external = null;
-            if (Joints != null && Joints.Length > 6)
-            {
-                int externalCount = Joints.Length - 6;
-                external = new double[externalCount];
-                for (int i = 0; i < externalCount; i++)
-                    external[i] = Joints[i + 6];
-            }
-            else
-                external = External;
-
-            return external;
+            var target = MemberwiseClone() as ProgramTarget;
+            target.cellTarget = cellTarget;
+            target.Commands = null;
+            return target;
         }
 
         public Plane GetPrevPlane(ProgramTarget prevTarget)
         {
             Plane prevPlane = prevTarget.WorldPlane;
 
-            if (prevTarget.Tool != this.Tool)
+            if (prevTarget.Target.Tool != Target.Tool)
             {
-                var toolPlane = this.Tool.Tcp;
-                toolPlane.Transform(Transform.PlaneToPlane(prevTarget.Tool.Tcp, prevPlane));
+                var toolPlane = Target.Tool.Tcp;
+                toolPlane.Transform(Transform.PlaneToPlane(prevTarget.Target.Tool.Tcp, prevPlane));
                 prevPlane = toolPlane;
             }
 
-            Plane framePlane = this.Frame.Plane;
+            Plane framePlane = Target.Frame.Plane;
 
-            if (this.Frame.IsCoupled)
+            if (Target.Frame.IsCoupled)
             {
-                Plane prevCoupledPlane = prevTarget.Planes[this.Frame.CoupledPlaneIndex];
+                var planes = prevTarget.cellTarget.Planes;
+                Plane prevCoupledPlane = planes[Target.Frame.CoupledPlaneIndex];
                 framePlane.Transform(Transform.PlaneToPlane(Plane.WorldXY, prevCoupledPlane));
             }
 
@@ -257,88 +289,64 @@ namespace Robots
             return prevPlane;
         }
 
-        public Target ToTarget()
+        public Target ToKineTarget()
         {
+            var external = Kinematics.Joints.RangeSubset(6, Target.External.Length);
+
             if (this.IsJointTarget)
             {
-                return new JointTarget(this.Joints, this, this.External);
+                var joints = Kinematics.Joints.RangeSubset(0, 6);
+                return new JointTarget(joints, Target, external);
             }
             else
             {
-                return new CartesianTarget(this.Plane, this, this.Configuration, this.Motion, this.External);
+                var target = Target as CartesianTarget;
+                return new CartesianTarget(this.Plane, Target, Kinematics.Configuration, target.Motion, external);
             }
         }
 
-        public Target Lerp(ProgramTarget prevTarget, double t, double start, double end)
+        public Target Lerp(ProgramTarget prevTarget, RobotSystem robot, double t, double start, double end)
         {
-            double[] joints = (prevTarget != null) ? JointTarget.Lerp(prevTarget.Joints, this.Joints, t, start, end) : this.Joints;
-
-            double[] external = External;
-            if (External != null && prevTarget != null)
-            {
-                int externalCount = this.Joints.Length - 6;
-                external = new double[externalCount];
-                for (int i = 0; i < externalCount; i++)
-                    external[i] = joints[i + 6];
-            }
+            double[] allJoints = JointTarget.Lerp(prevTarget.Kinematics.Joints, Kinematics.Joints, t, start, end);
+            var external = allJoints.RangeSubset(6, Target.External.Length);
 
             if (IsJointMotion)
             {
-                return new JointTarget(joints, this, external);
-            }
-            else if (Motion == Target.Motions.Linear)
-            {
-                Plane prevPlane = GetPrevPlane(prevTarget);
-                Plane plane = CartesianTarget.Lerp(prevPlane, Plane, t, start, end);
-                //  Target.RobotConfigurations? configuration = (Abs(prevTarget.TotalTime - t) < TimeTol) ? prevTarget.Configuration : Configuration;
-                Target.RobotConfigurations? configuration = prevTarget.Configuration;
-                return new CartesianTarget(plane, this, configuration, Target.Motions.Linear, external);
+                var joints = allJoints.RangeSubset(0, 6);
+                return new JointTarget(joints, Target, external);
             }
             else
-                return null;
+            {
+                Plane prevPlane = GetPrevPlane(prevTarget);
+                Plane plane = robot.CartesianLerp(prevPlane, Plane, t, start, end);
+                //   Plane plane = CartesianTarget.Lerp(prevTarget.WorldPlane, this.WorldPlane, t, start, end);
+                //  Target.RobotConfigurations? configuration = (Abs(prevTarget.cellTarget.TotalTime - t) < TimeTol) ? prevTarget.Kinematics.Configuration : this.Kinematics.Configuration;
+
+                 var target = new CartesianTarget(plane, Target, prevTarget.Kinematics.Configuration, Target.Motions.Linear, external);
+                // target.Frame = Frame.Default;
+                return target;
+            }
         }
 
-        public double[] GetAllJoints()
+        internal void SetTargetKinematics(KinematicSolution kinematics, List<string> errors, List<string> warnings, ProgramTarget prevTarget)
         {
-            if (External == null) return Joints;
+            this.Kinematics = kinematics;
 
-            double[] allJoints = new double[External.Length + 6];
-
-            if (Joints != null)
+            if (kinematics.Errors.Count > 0)
             {
-                for (int i = 0; i < 6; i++)
-                    allJoints[i] = Joints[i];
+                errors.Add($"Errors in target {this.Index} of robot {this.Group}:");
+                errors.AddRange(kinematics.Errors);
             }
 
-            if (External != null)
+            if (prevTarget != null && prevTarget.Kinematics.Configuration != kinematics.Configuration)
             {
-                for (int i = 0; i < External.Length; i++)
-                    allJoints[6 + i] = External[i];
+                this.ChangesConfiguration = true;
+                warnings.Add($"Configuration changed to \"{kinematics.Configuration.ToString()}\" on target {this.Index} of robot {this.Group}");
             }
-
-            return allJoints;
+            else
+                this.ChangesConfiguration = false;
         }
 
-        internal void SetTargetKinematics(KinematicSolution kinematics)
-        {
-            this.Planes = kinematics.Planes;
-            this.Joints = kinematics.Joints;
-            this.Configuration = kinematics.Configuration;
-
-            if (this.IsJointTarget)
-            {
-                var plane = this.WorldPlane;
-
-                var framePlane = this.Frame.Plane;
-                if (this.Frame.IsCoupled)
-                {
-                    framePlane.Transform(Transform.PlaneToPlane(Plane.WorldXY, this.Planes[this.Frame.CoupledPlaneIndex]));
-                }
-
-                plane.Transform(Transform.PlaneToPlane(framePlane, Plane.WorldXY));
-                this.Plane = plane;
-            }
-        }
     }
 
     public abstract class TargetAttribute
@@ -582,12 +590,6 @@ namespace Robots
         /// Rotation speed in rad/s
         /// </summary>
         public double RotationExternal { get; set; }
-
-        /// <summary>
-        /// Axis/joint speed override for joint motions as a factor (0 to 1) of the maximum speed (used in KUKA and UR)
-        /// </summary>
-        // public double AxisSpeed { get { return axisSpeed; } set { axisSpeed = Clamp(value, 0, 1); } }
-        // private double axisSpeed = 1;
         /// <summary>
         /// Translation acceleration in mm/s² (used in UR)
         /// </summary>
@@ -655,9 +657,9 @@ namespace Robots
         /// <summary>
         /// Reference frame of plane for a target
         /// </summary>
-        public Plane Plane { get; set; }
-        public int CoupledMechanism { get; set; }
-        public int CoupledMechanicalGroup { get; set; }
+        public Plane Plane { get; internal set; }
+        public int CoupledMechanism { get; }
+        public int CoupledMechanicalGroup { get; }
         public bool IsCoupled { get { return (CoupledMechanicalGroup != -1); } }
         public static Frame Default { get; }
 

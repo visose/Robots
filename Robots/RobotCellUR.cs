@@ -16,7 +16,6 @@ namespace Robots
         internal RobotCellUR(string name, RobotArm robot, IO io, Plane basePlane, Mesh environment) : base(name, Manufacturers.UR, io, basePlane, environment)
         {
             this.Robot = robot as RobotUR;
-            // this.Robot.BasePlane = basePlane;
             this.DisplayMesh = new Mesh();
             DisplayMesh.Append(robot.DisplayMesh);
             this.DisplayMesh.Transform(this.BasePlane.ToTransform());
@@ -28,7 +27,7 @@ namespace Robots
         /// <param name="plane"></param>
         /// <param name="originPlane"></param>
         /// <returns></returns>
-        public static double[] AxisAngle(Plane plane, Plane originPlane)
+        public static double[] PlaneToAxisAngle(Plane plane, Plane originPlane)
         {
             Vector3d vector;
             Transform matrix = Transform.PlaneToPlane(originPlane, plane);
@@ -57,7 +56,7 @@ namespace Robots
                 && (Abs(m[0][0] + m[1][1] + m[2][2] - 3) < epsilon2))
                 {
                     // this singularity is identity matrix so angle = 0
-                    return new double[] { 0, 0, 0 }; // zero angle, arbitrary axis
+                    return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, 0, 0, 0 }; // zero angle, arbitrary axis
                 }
                 // otherwise this singularity is angle = 180
                 angle = PI;
@@ -115,7 +114,7 @@ namespace Robots
                 vector = new Vector3d(x, y, z);
                 vector.Unitize();
                 vector *= angle;
-                return new double[] { vector.X, vector.Y, vector.Z }; // return 180 deg rotation
+                return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, vector.X, vector.Y, vector.Z }; // return 180 deg rotation
             }
             // as we have reached here there are no singularities so we can handle normally
             double s = Sqrt((m[2][1] - m[1][2]) * (m[2][1] - m[1][2])
@@ -131,20 +130,66 @@ namespace Robots
             vector = new Vector3d(x, y, z);
             vector.Unitize();
             vector *= angle;
-            return new double[] { vector.X, vector.Y, vector.Z }; // return 180 deg rotation
+            return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, vector.X, vector.Y, vector.Z }; // return 180 deg rotation
         }
+
+        public static Plane AxisAngleToPlane(double x, double y, double z, double vx, double vy, double vz)
+        {
+            var matrix = Transform.Identity;
+            var vector = new Vector3d(vx, vy, vz);
+            double angle = vector.Length;
+            vector.Unitize();
+
+            double c = Cos(angle);
+            double s = Cos(angle);
+            double t = 1.0 - c;
+
+            matrix.M00 = c + vector.X * vector.X * t;
+            matrix.M11 = c + vector.Y * vector.Y * t;
+            matrix.M22 = c + vector.Z * vector.Z * t;
+
+            double tmp1 = vector.X * vector.Y * t;
+            double tmp2 = vector.Z * s;
+            matrix.M10 = tmp1 + tmp2;
+            matrix.M01 = tmp1 - tmp2;
+            tmp1 = vector.X * vector.Z * t;
+            tmp2 = vector.Y * s;
+            matrix.M20 = tmp1 - tmp2;
+            matrix.M02 = tmp1 + tmp2; tmp1 = vector.Y * vector.Z * t;
+            tmp2 = vector.X * s;
+            matrix.M21 = tmp1 + tmp2;
+            matrix.M12 = tmp1 - tmp2;
+
+            Plane plane = Plane.WorldXY;
+            plane.Transform(matrix);
+            plane.Origin = new Point3d(x, y, z);
+            return plane;
+        }
+
+        public override double[] PlaneToNumbers(Plane plane)
+        {
+            // Plane originPlane = new Plane(Point3d.Origin, Vector3d.YAxis, -Vector3d.XAxis);
+            Plane originPlane = Plane.WorldXY;
+            plane.Transform(Transform.PlaneToPlane(Plane.WorldXY, originPlane));
+            Point3d point = plane.Origin / 1000;
+            plane.Origin = point;
+            double[] axisAngle = PlaneToAxisAngle(plane, Plane.WorldXY);
+            return axisAngle;
+        }
+
+        public override Plane NumbersToPlane(double[] numbers) => AxisAngleToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5]);
 
         public override double DegreeToRadian(double degree, int i, int group = 0)
         {
             return degree.ToRadians();
         }
 
-        public override List<KinematicSolution> Kinematics(List<Target> targets, List<double[]> prevJoints = null, bool displayMeshes = false)
+        public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]> prevJoints = null, bool displayMeshes = false)
         {
+            var target = targets.First();
+            var prevJoint = prevJoints?.First();
             var kinematics = new List<KinematicSolution>();
-            var kinematic = Robot.Kinematics(targets[0], prevJoints == null ? null : prevJoints[0], displayMeshes, this.BasePlane);
-
-            var target = targets[0];
+            var kinematic = Robot.Kinematics(target, prevJoint, displayMeshes, this.BasePlane);
             var planes = kinematic.Planes.ToList();
             var meshes = (displayMeshes) ? kinematic.Meshes.ToList() : null;
 
@@ -198,7 +243,7 @@ namespace Robots
             File.WriteAllText(file, joinedCode);
         }
 
-        public class RemoteConnection : IDisposable
+        public class RemoteConnection
         {
             TcpClient client = new TcpClient();
             public string IP { get; set; }
@@ -254,11 +299,6 @@ namespace Robots
 
             public void Pause() => Send("pause program");
             public void Play() => Send("resume program");
-
-            public void Dispose()
-            {
-                client.Dispose();
-            }
         }
 
         class URScriptPostProcessor
@@ -293,27 +333,28 @@ namespace Robots
                     Plane originPlane = new Plane(Point3d.Origin, Vector3d.YAxis, -Vector3d.XAxis);
                     tcp.Transform(Transform.PlaneToPlane(Plane.WorldXY, originPlane));
                     Point3d tcpPoint = tcp.Origin / 1000;
-                    double[] axisAngle = AxisAngle(tcp, Plane.WorldXY);
+                    tcp.Origin = tcpPoint;
+                    double[] axisAngle = PlaneToAxisAngle(tcp, Plane.WorldXY);
 
                     Point3d cog = tool.Centroid;
                     cog.Transform(Transform.PlaneToPlane(Plane.WorldXY, originPlane));
                     cog /= 1000;
 
-                    //   code.Add(indent + $"{tool.Name}Tcp = p[{tcpPoint.X:0.00000}, {tcpPoint.Y:0.00000}, {tcpPoint.Z:0.00000}, {axisAngle[0]:0.0000}, {axisAngle[1]:0.0000}, {axisAngle[2]:0.0000}]");
-                    //   code.Add(indent + $"{tool.Name}Weight = {tool.Weight:0.000}");
-                    //   code.Add(indent + $"{tool.Name}Cog = [{cog.X:0.00000}, {cog.Y:0.00000}, {cog.Z:0.00000}]");
+                    code.Add(indent + $"{tool.Name}Tcp = p[{axisAngle[0]:0.00000}, {axisAngle[1]:0.00000}, {axisAngle[2]:0.00000}, {axisAngle[3]:0.0000}, {axisAngle[4]:0.0000}, {axisAngle[5]:0.0000}]");
+                    code.Add(indent + $"{tool.Name}Weight = {tool.Weight:0.000}");
+                    code.Add(indent + $"{tool.Name}Cog = [{cog.X:0.00000}, {cog.Y:0.00000}, {cog.Z:0.00000}]");
                 }
 
                 foreach (var speed in program.Speeds)
                 {
                     double linearSpeed = speed.TranslationSpeed / 1000;
-                    //   code.Add(indent + $"{speed.Name} = {linearSpeed:0.00000}");
+                    code.Add(indent + $"{speed.Name} = {linearSpeed:0.00000}");
                 }
 
                 foreach (var zone in program.Zones)
                 {
                     double zoneDistance = zone.Distance / 1000;
-                    //   code.Add(indent + $"{zone.Name} = {zoneDistance:0.00000}");
+                    code.Add(indent + $"{zone.Name} = {zoneDistance:0.00000}");
                 }
 
                 foreach (var command in program.Commands)
@@ -321,8 +362,9 @@ namespace Robots
                     string declaration = command.Declaration(cell);
                     if (declaration != null && declaration.Length > 0)
                     {
-                        declaration = indent + declaration.Replace("\n", "\n" + indent);
-                        //    code.Add(declaration);
+                       declaration = indent + declaration;
+                      //  declaration = indent + declaration.Replace("\n", "\n" + indent);
+                        code.Add(declaration);
                     }
                 }
 
@@ -335,8 +377,11 @@ namespace Robots
 
                 // Targets
 
-                foreach (ProgramTarget target in program.Targets[0])
+                foreach (var cellTarget in program.Targets)
                 {
+                    var programTarget = cellTarget.ProgramTargets[0];
+                    var target = programTarget.Target;
+
                     if (currentTool == null || target.Tool != currentTool)
                     {
                         code.Add(Tool(target.Tool));
@@ -344,13 +389,15 @@ namespace Robots
                     }
 
                     string moveText = null;
-                    double zoneDistance = target.Zone.Distance / 1000;
+                    string zoneDistance = $"{target.Zone.Name:0.00000}";
+                    // double zoneDistance = target.Zone.Distance / 1000;
 
-                    if (target.IsJointTarget || (target.Motion == Target.Motions.Joint && target.ForcedConfiguration))
+
+                    if (programTarget.IsJointTarget || (programTarget.IsJointMotion && programTarget.ForcedConfiguration))
                     {
-                        double[] joints = target.Joints;
+                        double[] joints = programTarget.IsJointTarget ? (programTarget.Target as JointTarget).Joints : programTarget.Kinematics.Joints;
                         double maxAxisSpeed = robot.Joints.Max(x => x.MaxSpeed);
-                        double percentage = (target.DeltaTime > 0) ? target.MinTime / target.DeltaTime : 0.01;
+                        double percentage = (cellTarget.DeltaTime > 0) ? cellTarget.MinTime / cellTarget.DeltaTime : 0.1;
                         double axisSpeed = percentage * maxAxisSpeed;
                         double axisAccel = target.Speed.AxisAccel;
 
@@ -360,23 +407,22 @@ namespace Robots
                         else
                             speed = $"t={target.Speed.Time: 0.000}";
 
-                        moveText = $"  movej([{joints[0]:0.0000}, {joints[1]:0.0000}, {joints[2]:0.0000}, {joints[3]:0.0000}, {joints[4]:0.0000}, {joints[5]:0.0000}], a={axisAccel:0.0000}, {speed}, r={zoneDistance:0.00000})";
+                        moveText = $"  movej([{joints[0]:0.0000}, {joints[1]:0.0000}, {joints[2]:0.0000}, {joints[3]:0.0000}, {joints[4]:0.0000}, {joints[5]:0.0000}], a={axisAccel:0.0000}, {speed}, r={zoneDistance})";
                     }
                     else
                     {
-                        var plane = target.Plane;
+                        var cartesian = target as CartesianTarget;
+                        var plane = cartesian.Plane;
                         plane.Transform(Transform.PlaneToPlane(Plane.WorldXY, target.Frame.Plane));
                         plane.Transform(Transform.PlaneToPlane(cell.BasePlane, Plane.WorldXY));
-                        var origin = plane.Origin / 1000;
-                        var axisAngle = AxisAngle(plane, Plane.WorldXY);
+                        var axisAngle = cell.PlaneToNumbers(plane);
 
-                        switch (target.Motion)
+                        switch (cartesian.Motion)
                         {
-
                             case Target.Motions.Joint:
                                 {
                                     double maxAxisSpeed = robot.Joints.Min(x => x.MaxSpeed);
-                                    double percentage = (target.DeltaTime > 0) ? target.MinTime / target.DeltaTime : 0.1;
+                                    double percentage = (cellTarget.DeltaTime > 0) ? cellTarget.MinTime / cellTarget.DeltaTime : 0.1;
                                     double axisSpeed = percentage * maxAxisSpeed;
                                     double axisAccel = target.Speed.AxisAccel;
 
@@ -386,7 +432,7 @@ namespace Robots
                                     else
                                         speed = $"t={target.Speed.Time: 0.000}";
 
-                                    moveText = $"  movej(p[{origin.X:0.00000}, {origin.Y:0.00000}, {origin.Z:0.00000}, {axisAngle[0]:0.0000}, {axisAngle[1]:0.0000}, {axisAngle[2]:0.0000}],a={axisAccel:0.00000},{speed},r={zoneDistance:0.00000})";
+                                    moveText = $"  movej(p[{axisAngle[0]:0.00000}, {axisAngle[1]:0.00000}, {axisAngle[2]:0.00000}, {axisAngle[3]:0.0000}, {axisAngle[4]:0.0000}, {axisAngle[5]:0.0000}],a={axisAccel:0.00000},{speed},r={zoneDistance})";
                                     break;
                                 }
 
@@ -394,15 +440,15 @@ namespace Robots
                                 {
                                     double linearSpeed = target.Speed.TranslationSpeed / 1000;
                                     double linearAccel = target.Speed.TranslationAccel / 1000;
-                                    double zone = target.Zone.Distance / 1000;
 
                                     string speed = null;
                                     if (target.Speed.Time == 0)
-                                        speed = $"v={linearSpeed: 0.000}";
+                                        // speed = $"v={linearSpeed: 0.000}";
+                                        speed = $"v={target.Speed.Name}";
                                     else
                                         speed = $"t={target.Speed.Time: 0.000}";
 
-                                    moveText = $"  movel(p[{origin.X:0.00000}, {origin.Y:0.00000}, {origin.Z:0.00000}, {axisAngle[0]:0.0000}, {axisAngle[1]:0.0000}, {axisAngle[2]:0.0000}],a={linearAccel:0.00000},{speed},r={zoneDistance:0.00000})";
+                                    moveText = $"  movel(p[{axisAngle[0]:0.00000}, {axisAngle[1]:0.00000}, {axisAngle[2]:0.00000}, {axisAngle[3]:0.0000}, {axisAngle[4]:0.0000}, {axisAngle[5]:0.0000}],a={linearAccel:0.00000},{speed},r={zoneDistance})";
                                     break;
                                 }
                         }
@@ -410,10 +456,11 @@ namespace Robots
 
                     code.Add(moveText);
 
-                    foreach(var command in target.Command as Commands.Group)
+                    foreach (var command in programTarget.Commands)
                     {
                         string commands = command.Code(cell, target);
-                        commands = indent + commands.Replace("\n", "\n" + indent);
+                        commands = indent + commands;
+                       // commands = indent + commands.Replace("\n", "\n" + indent);
                         code.Add(commands);
                     }
                 }
@@ -424,9 +471,10 @@ namespace Robots
 
             string Tool(Tool tool)
             {
-                // string pos = $"  set_tcp({tool.Name}Tcp)";
-                //  string mass = $"  set_payload({tool.Name}Weight, {tool.Name}Cog)";
+                string pos = $"  set_tcp({tool.Name}Tcp)";
+                string mass = $"  set_payload({tool.Name}Weight, {tool.Name}Cog)";
 
+                /*
                 Plane tcp = tool.Tcp;
                 Plane originPlane = new Plane(Point3d.Origin, Vector3d.YAxis, -Vector3d.XAxis);
                 tcp.Transform(Transform.PlaneToPlane(Plane.WorldXY, originPlane));
@@ -441,7 +489,7 @@ namespace Robots
                 string cogString = $"[{cog.X:0.00000}, {cog.Y:0.00000}, {cog.Z:0.00000}]";
                 string pos = $"  set_tcp({tcpString})";
                 string mass = $"  set_payload({tool.Weight:0.000}, {cogString})";
-
+                */
                 return $"{pos}\n{mass}";
             }
         }

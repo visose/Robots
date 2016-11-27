@@ -10,7 +10,7 @@ using static Rhino.RhinoMath;
 
 namespace Robots
 {
-    class SimpleTrail
+    public class SimpleTrail
     {
         Program program;
         double time;
@@ -34,7 +34,7 @@ namespace Robots
                 Polyline.Clear();
 
             time = program.CurrentSimulationTime;
-            Polyline.Add(program.CurrentSimulationTargets[mechanicalGroup].WorldPlane.Origin);
+            Polyline.Add(program.CurrentSimulationTarget.ProgramTargets[mechanicalGroup].WorldPlane.Origin);
 
             while (Polyline.Length > Length)
                 Polyline.RemoveAt(0);

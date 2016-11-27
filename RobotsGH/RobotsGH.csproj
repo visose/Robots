@@ -1,0 +1,163 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug64</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{F6829DC0-C74C-4C3A-975A-684FC6DDED73}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Robots.Grasshopper</RootNamespace>
+    <AssemblyName>RobotsGH</AssemblyName>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\..\..\..\..\AppData\Roaming\Grasshopper\Libraries\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\..\..\..\..\AppData\Roaming\Grasshopper\Libraries\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="RhinoCommon">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files\Rhinoceros 5 (64-bit)\System\rhinocommon.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Grasshopper">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files\Common Files\McNeel\Rhinoceros\5.0\Plug-ins\Grasshopper (b45a29b1-4343-4035-989e-044e8580d9cf)\0.9.76.0\Grasshopper.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="GH_IO">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files\Common Files\McNeel\Rhinoceros\5.0\Plug-ins\Grasshopper (b45a29b1-4343-4035-989e-044e8580d9cf)\0.9.76.0\GH_IO.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.XML" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Commands.cs" />
+    <Compile Include="GooTypes.cs" />
+    <Compile Include="Kinematics.cs" />
+    <Compile Include="Machine.cs" />
+    <Compile Include="Parameters.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Remote.cs" />
+    <Compile Include="RobotsInfo.cs" />
+    <Compile Include="Target.cs" />
+    <Compile Include="Util.cs" />
+    <Compile Include="Visualization.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\icons\iconCustomCommand.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\icons\iconAngles.png" />
+    <Resource Include="Resources\icons\iconCheckCollisions.png" />
+    <Resource Include="Resources\icons\iconCommandParam.png" />
+    <Resource Include="Resources\icons\iconCreateProgram.png" />
+    <Resource Include="Resources\icons\iconCreateTarget.png" />
+    <Resource Include="Resources\icons\iconCustomCode.png" />
+    <Resource Include="Resources\icons\iconDeconstructTarget.png" />
+    <Resource Include="Resources\icons\iconFrameParam.png" />
+    <Resource Include="Resources\icons\iconGetPlane.png" />
+    <Resource Include="Resources\icons\iconGroupCommand.png" />
+    <Resource Include="Resources\icons\iconKinematics.png" />
+    <Resource Include="Resources\icons\iconMessage.png" />
+    <Resource Include="Resources\icons\iconProgramParam.png" />
+    <Resource Include="Resources\icons\iconPulseDO.png" />
+    <Resource Include="Resources\icons\iconRobot.png" />
+    <Resource Include="Resources\icons\iconRobotParam.png" />
+    <Resource Include="Resources\icons\iconSave.png" />
+    <Resource Include="Resources\icons\iconSetAO.png" />
+    <Resource Include="Resources\icons\iconSetDO.png" />
+    <Resource Include="Resources\icons\iconSimpleTrail.png" />
+    <Resource Include="Resources\icons\iconSimulation.png" />
+    <Resource Include="Resources\icons\iconSpeedParam.png" />
+    <Resource Include="Resources\icons\iconStopCommand.png" />
+    <Resource Include="Resources\icons\iconTargetParam.png" />
+    <Resource Include="Resources\icons\iconTool.png" />
+    <Resource Include="Resources\icons\iconToolParam.png" />
+    <Resource Include="Resources\icons\iconURRemote.png" />
+    <Resource Include="Resources\icons\iconWait.png" />
+    <Resource Include="Resources\icons\iconWaitDI.png" />
+    <Resource Include="Resources\icons\iconZoneParam.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\icons\iconDeconstructProgramTarget.png" />
+    <Content Include="Resources\icons\iconFrame.png" />
+    <Content Include="Resources\icons\iconSpeed.png" />
+    <Content Include="Resources\icons\iconToPlane.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Robots\Robots.csproj">
+      <Project>{4b82f187-ed41-4203-a22b-97112db59b82}</Project>
+      <Name>Robots</Name>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <PropertyGroup>
+    <PostBuildEvent>Copy "$(TargetPath)" "$(TargetDir)RobotsGH.gha"
+Erase "$(TargetPath)"</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <FallbackCulture>en-US</FallbackCulture>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <StartProgram>C:\Program Files\Rhinoceros 5 (64-bit)\System\Rhino.exe</StartProgram>
+    <StartArguments>
+    </StartArguments>
+    <StartAction>Program</StartAction>
+    <Prefer32Bit>false</Prefer32Bit>
+    <DocumentationFile>
+    </DocumentationFile>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+</Project>
