@@ -84,6 +84,15 @@ namespace Robots
                 {
                     double angleA = anglesA[i].ToRadians();
                     double angleB = anglesB[i].ToRadians();
+                    double delta = angleB - angleA;
+                    double absDelta = Abs(delta);
+                    if(absDelta > PI)
+                    {
+                        delta = Sign(delta) *(absDelta - PI * 2);
+                    }
+
+                    angleB = angleA + delta;
+
                     double angle = angleA * (1.0 - t) + angleB * t;
                     // if (i == 4) angle = Abs(angle);
                     var results = JointTarget.GetAbsoluteJoints(new double[] { angle }, new double[] { angleB });

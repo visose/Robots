@@ -17,7 +17,7 @@ namespace Robots
         public const double UnitTol = 0.000001;
         internal const double SingularityTol = 0.0001;
 
-       // internal const string ResourcesFolder = @"C:\Users\vicen\Documents\Work\Bartlett\RobotsApp\Robots\Robots\Resources";
+        // internal const string ResourcesFolder = @"C:\Users\vicen\Documents\Work\Bartlett\RobotsApp\Robots\Robots\Resources";
 
         internal static Transform ToTransform(this double[,] matrix)
         {

@@ -335,9 +335,19 @@ namespace Robots
 
                         // no interpolation
                         {
-                            var kineTargets = cellTargets[i].ProgramTargets.Select(x => x.Target);
+                            var kineTargets = cellTargets[i].ProgramTargets.Select(x => x.Target.ShallowClone()).ToList();
+
+                            for (int j = 0; j < kineTargets.Count(); j++)
+                            {
+                                var target = kineTargets[j] as CartesianTarget;
+                                if (target != null || target.Motion == Target.Motions.Linear)
+                                {
+                                    target.Configuration = prevTarget.ProgramTargets[j].Kinematics.Configuration;
+                                }
+                            }
+
                             var kinematics = robotSystem.Kinematics(kineTargets, prevTarget.ProgramTargets.Select(x => x.Kinematics.Joints));
-                            cellTarget.SetTargetKinematics(kinematics, program.Errors, program.Warnings, prevTarget);
+                            cellTarget.SetTargetKinematics(kinematics, null, program.Warnings, prevTarget);
                             CheckUndefined(cellTarget, cellTargets);
                         }
 

@@ -142,7 +142,7 @@
   </Target>
   -->
   <PropertyGroup>
-    <PostBuildEvent>Copy "$(TargetPath)" "$(TargetDir)RobotsGH.gha"
+    <PostBuildEvent>Copy "$(TargetPath)" "$(TargetDir)Robots.gha"
 Erase "$(TargetPath)"</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>

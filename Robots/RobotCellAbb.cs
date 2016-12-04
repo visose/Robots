@@ -42,26 +42,44 @@ namespace Robots
         {
             if (!Directory.Exists(folder)) throw new DirectoryNotFoundException($" Folder \"{folder}\" not found");
             Directory.CreateDirectory($@"{folder}\{program.Name}");
+            bool multiProgram = program.MultiFileIndices.Count > 1;
 
             for (int i = 0; i < program.Code.Count; i++)
             {
                 string group = MechanicalGroups[i].Name;
+                {
+                    // program
+                    string file = $@"{folder}\{program.Name}\{program.Name}_{group}.pgf";
+                    string mainModule = $@"{program.Name}_{group}.mod";
+                    string code = $@"<?xml version=""1.0"" encoding=""ISO-8859-1"" ?>
+    <Program>
+        <Module>{mainModule}</Module>
+    </Program>
+    ";
+                    File.WriteAllText(file, code);
+                }
 
                 {
-                    string file = $@"{folder}\{program.Name}\{program.Name}_{group}.MOD";
-                    var joinedCode = string.Join("\r\n", program.Code[i][0]);
+                    string file = $@"{folder}\{program.Name}\{program.Name}_{group}.mod";
+                    var code = program.Code[i][0].ToList();
+                    if (!multiProgram) code.AddRange(program.Code[i][1]);
+                    var joinedCode = string.Join("\r\n", code);
                     File.WriteAllText(file, joinedCode);
                 }
 
-                for (int j = 1; j < program.Code[i].Count; j++)
+                if (multiProgram)
                 {
-                    int index = j - 1;
-                    string file = $@"{folder}\{program.Name}\{program.Name}_{group}_{index:000}.MOD";
-                    var joinedCode = string.Join("\r\n", program.Code[i][j]);
-                    File.WriteAllText(file, joinedCode);
+                    for (int j = 1; j < program.Code[i].Count; j++)
+                    {
+                        int index = j - 1;
+                        string file = $@"{folder}\{program.Name}\{program.Name}_{group}_{index:000}.mod";
+                        var joinedCode = string.Join("\r\n", program.Code[i][j]);
+                        File.WriteAllText(file, joinedCode);
+                    }
                 }
             }
         }
+
         internal override List<List<List<string>>> Code(Program program) => new RapidPostProcessor(this, program).Code;
 
         class RapidPostProcessor
@@ -91,6 +109,7 @@ namespace Robots
             List<string> MainModule(int group)
             {
                 var code = new List<string>();
+                bool multiProgram = program.MultiFileIndices.Count > 1;
                 string groupName = cell.MechanicalGroups[group].Name;
 
                 code.Add($"MODULE {program.Name}_{groupName}");
@@ -120,6 +139,7 @@ namespace Robots
                 }
 
                 code.Add("PROC Main()");
+                if (!multiProgram) code.Add("ConfL \\Off;");
 
                 // Init commands
 
@@ -134,11 +154,14 @@ namespace Robots
                     code.Add($"SyncMoveOn sync1, all_tasks;");
                 }
 
-                for (int i = 0; i < program.MultiFileIndices.Count; i++)
+                if (multiProgram)
                 {
-                    code.Add($"Load\\Dynamic, \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\";");
-                    code.Add($"%\"{program.Name}_{groupName}_{i:000}:Main\"%;");
-                    code.Add($"UnLoad \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\";");
+                    for (int i = 0; i < program.MultiFileIndices.Count; i++)
+                    {
+                        code.Add($"Load\\Dynamic, \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\";");
+                        code.Add($"%\"{program.Name}_{groupName}_{i:000}:Main\"%;");
+                        code.Add($"UnLoad \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\";");
+                    }
                 }
 
                 if (cell.MechanicalGroups.Count > 1)
@@ -146,22 +169,30 @@ namespace Robots
                     code.Add($"SyncMoveOff sync2;");
                 }
 
-                code.Add("ENDPROC");
-                code.Add("ENDMODULE");
+                if (multiProgram)
+                {
+                    code.Add("ENDPROC");
+                    code.Add("ENDMODULE");
+                }
+
                 return code;
             }
 
             List<string> SubModule(int file, int group)
             {
+                bool multiProgram = program.MultiFileIndices.Count > 1;
                 string groupName = cell.MechanicalGroups[group].Name;
 
                 int start = program.MultiFileIndices[file];
                 int end = (file == program.MultiFileIndices.Count - 1) ? program.Targets.Count : program.MultiFileIndices[file + 1];
                 var code = new List<string>();
 
-                code.Add($"MODULE {program.Name}_{groupName}_{file:000}");
-                code.Add($"PROC Main()");
-                code.Add("ConfL \\Off;");
+                if (multiProgram)
+                {
+                    code.Add($"MODULE {program.Name}_{groupName}_{file:000}");
+                    code.Add($"PROC Main()");
+                    code.Add("ConfL \\Off;");
+                }
 
                 for (int j = start; j < end; j++)
                 {
