@@ -332,7 +332,7 @@ namespace Robots
         {
             this.Kinematics = kinematics;
 
-            if (kinematics.Errors.Count > 0)
+            if (errors != null && kinematics.Errors.Count > 0)
             {
                 errors.Add($"Errors in target {this.Index} of robot {this.Group}:");
                 errors.AddRange(kinematics.Errors);
@@ -393,8 +393,7 @@ namespace Robots
             Point3d tcpOrigin = Point3d.Origin;
             foreach (Plane plane in new Plane[] { a, b, c, d })
             {
-                Point3d remappedPoint;
-                plane.RemapToPlaneSpace(calibrate.Center, out remappedPoint);
+                plane.RemapToPlaneSpace(calibrate.Center, out Point3d remappedPoint);
                 tcpOrigin += remappedPoint;
             }
             tcpOrigin /= 4;

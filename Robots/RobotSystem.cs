@@ -6,6 +6,8 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml.Linq;
 using System.Xml;
+using System.Threading;
+using System.Globalization;
 using static Robots.Util;
 using static System.Math;
 
@@ -21,6 +23,12 @@ namespace Robots
         public Plane BasePlane { get; }
         public Mesh Environment { get; }
         public Mesh DisplayMesh { get; set; }
+
+        static RobotSystem()
+        {
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+        }
 
         public RobotSystem(string name, Manufacturers manufacturer, IO io, Plane basePlane, Mesh environment)
         {
