@@ -185,7 +185,7 @@ namespace Robots
 
     public class ProgramTarget
     {
-        internal Target Target { get; set; }
+        public Target Target { get; internal set; }
         public int Group { get; internal set; }
         public Commands.Group Commands { get; private set; }
 

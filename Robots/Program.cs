@@ -340,7 +340,7 @@ namespace Robots
                             for (int j = 0; j < kineTargets.Count(); j++)
                             {
                                 var target = kineTargets[j] as CartesianTarget;
-                                if (target != null || target.Motion == Target.Motions.Linear)
+                                if (target != null && target.Motion == Target.Motions.Linear)
                                 {
                                     target.Configuration = prevTarget.ProgramTargets[j].Kinematics.Configuration;
                                 }
