@@ -378,8 +378,8 @@ namespace Robots
                             double t = j / divisions;
                             var interTarget = cellTarget.ShallowClone();
                             var kineTargets = cellTarget.Lerp(prevTarget, robotSystem, t, 0.0, 1.0);
-                            var kinematics = program.RobotSystem.Kinematics(kineTargets, prevInterTarget.ProgramTargets.Select(x => x.Kinematics.Joints));
-                            interTarget.SetTargetKinematics(kinematics, program.Errors, program.Warnings, prevInterTarget);
+                            var kinematics = program.RobotSystem.Kinematics(kineTargets, null);
+                            interTarget.SetTargetKinematics(kinematics, program.Errors, null, prevInterTarget);
 
 
                             // Set speed
@@ -394,7 +394,7 @@ namespace Robots
                                 target.LeadingJoint = speeds.Item3;
                             }
 
-                            if ((j > 1) && (Abs(slowestDelta - lastDeltaTime) > 1E-09 || prevInterTarget.ProgramTargets.Select(x => x.ChangesConfiguration).Contains(true)))
+                            if ((j > 1) && (Abs(slowestDelta - lastDeltaTime) > 1E-09))
                             {
                                 keyframes.Add(prevInterTarget.ShallowClone());
                                 deltaTimeSinceLast = 0;

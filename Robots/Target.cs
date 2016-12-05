@@ -338,7 +338,7 @@ namespace Robots
                 errors.AddRange(kinematics.Errors);
             }
 
-            if (prevTarget != null && prevTarget.Kinematics.Configuration != kinematics.Configuration)
+            if (warnings != null && prevTarget != null && prevTarget.Kinematics.Configuration != kinematics.Configuration)
             {
                 this.ChangesConfiguration = true;
                 warnings.Add($"Configuration changed to \"{kinematics.Configuration.ToString()}\" on target {this.Index} of robot {this.Group}");
