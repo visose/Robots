@@ -215,8 +215,8 @@ namespace Robots
         {
             get
             {
-             //   var cartesian = this.Target as CartesianTarget;
-             //   if (cartesian != null) return cartesian.Plane;
+                //   var cartesian = this.Target as CartesianTarget;
+                //   if (cartesian != null) return cartesian.Plane;
 
                 Plane plane = WorldPlane;
                 Plane framePlane = Target.Frame.Plane;
@@ -322,7 +322,7 @@ namespace Robots
                 //   Plane plane = CartesianTarget.Lerp(prevTarget.WorldPlane, this.WorldPlane, t, start, end);
                 //  Target.RobotConfigurations? configuration = (Abs(prevTarget.cellTarget.TotalTime - t) < TimeTol) ? prevTarget.Kinematics.Configuration : this.Kinematics.Configuration;
 
-                 var target = new CartesianTarget(plane, Target, prevTarget.Kinematics.Configuration, Target.Motions.Linear, external);
+                var target = new CartesianTarget(plane, Target, prevTarget.Kinematics.Configuration, Target.Motions.Linear, external);
                 // target.Frame = Frame.Default;
                 return target;
             }
@@ -332,7 +332,7 @@ namespace Robots
         {
             this.Kinematics = kinematics;
 
-            if (errors != null && kinematics.Errors.Count > 0)
+            if (errors.Count == 0 && kinematics.Errors.Count > 0)
             {
                 errors.Add($"Errors in target {this.Index} of robot {this.Group}:");
                 errors.AddRange(kinematics.Errors);
