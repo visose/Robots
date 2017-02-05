@@ -25,7 +25,6 @@ namespace Robots.Grasshopper
             values = new List<GH_Program>();
             return GH_GetterResult.success;
         }
-
     }
 
     public class TargetParameter : GH_PersistentParam<GH_Target>

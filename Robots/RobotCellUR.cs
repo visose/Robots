@@ -12,6 +12,7 @@ namespace Robots
     {
         public RobotUR Robot { get; }
         public RemoteConnection Remote { get; } = new RemoteConnection();
+        public URRealTime URRealTime { get; set; }
 
         internal RobotCellUR(string name, RobotArm robot, IO io, Plane basePlane, Mesh environment) : base(name, Manufacturers.UR, io, basePlane, environment)
         {
@@ -141,7 +142,7 @@ namespace Robots
             vector.Unitize();
 
             double c = Cos(angle);
-            double s = Cos(angle);
+            double s = Sin(angle);
             double t = 1.0 - c;
 
             matrix.M00 = c + vector.X * vector.X * t;
@@ -245,56 +246,50 @@ namespace Robots
 
         public class RemoteConnection
         {
-            TcpClient client = new TcpClient();
             public string IP { get; set; }
             public int Port { get; set; } = 30002;
-            public List<string> Log { get; } = new List<string>();
-            public bool IsConnected => client.Connected;
+            public string Log { get; set; }
 
-            public void Connect()
+            public void Send(string message)
             {
                 if (IP == null) throw new NullReferenceException(" IP for UR robot has not been set");
-                if (IsConnected) Disconnect();
+                var client = new TcpClient();
                 client.Connect(IP, Port);
-                Log.Add((IsConnected) ? "Connected" : "Not able to connect");
-            }
 
-            public void Disconnect()
-            {
-                if (IsConnected)
+                if (!client.Connected)
                 {
-                    client.Close();
-                    client = new TcpClient();
-                    Log.Add("Disconnected");
-                }
-            }
-
-            public void Send(string message, bool verbose = false)
-            {
-                if (!IsConnected)
-                {
-                    Log.Add("Can't send message, not connected");
+                    Log = "Not able to connect";
                     return;
                 }
 
                 message += '\n';
                 var asen = new System.Text.ASCIIEncoding();
                 byte[] byteArray = asen.GetBytes(message);
-                NetworkStream stream = client.GetStream();
-                stream.Write(byteArray, 0, byteArray.Length);
 
-                if (verbose)
+                using (var stream = client.GetStream())
+                {
+                    stream.Write(byteArray, 0, byteArray.Length);
+                }
+
+                client.Close();
+
                 {
                     string firstLine = message.Substring(0, message.IndexOf('\n'));
-                    if (firstLine.Length + 1 < message.Length) firstLine += " ...";
-                    Log.Add($"Sending: {firstLine}");
+                    if (firstLine.Length + 1 < message.Length)
+                        Log = $"Sending: Robot program\nPress play to start.";
+                    else
+                        Log = $"Sending: {message}";
                 }
             }
 
             public void UploadProgram(Program program)
             {
                 var joinedCode = string.Join("\n", program.Code[0][0]);
+                //joinedCode += "\nsleep(0.1)";
+                //joinedCode += "\npause program";
                 Send(joinedCode);
+                //Send("pause program");
+                //Pause();
             }
 
             public void Pause() => Send("pause program");
@@ -313,21 +308,21 @@ namespace Robots
                 this.cell = robotCell;
                 this.robot = cell.Robot as RobotUR;
                 this.program = program;
-                this.Code = new List<List<List<string>>>();
-                var groupCode = new List<List<string>>();
-                groupCode.Add(Program());
-                Code.Add(groupCode);
+                var groupCode = new List<List<string>> { Program() };
+                this.Code = new List<List<List<string>>> { groupCode };
             }
 
             List<string> Program()
             {
                 string indent = "  ";
-                var code = new List<string>();
-                code.Add("def Program():");
+                var code = new List<string>
+                {
+                    "def Program():"
+                };
 
                 // Attribute declarations
 
-                foreach (var tool in program.Tools)
+                foreach (var tool in program.Attributes.OfType<Tool>())
                 {
                     Plane tcp = tool.Tcp;
                     Plane originPlane = new Plane(Point3d.Origin, Vector3d.YAxis, -Vector3d.XAxis);
@@ -345,25 +340,25 @@ namespace Robots
                     code.Add(indent + $"{tool.Name}Cog = [{cog.X:0.00000}, {cog.Y:0.00000}, {cog.Z:0.00000}]");
                 }
 
-                foreach (var speed in program.Speeds)
+                foreach (var speed in program.Attributes.OfType<Speed>())
                 {
                     double linearSpeed = speed.TranslationSpeed / 1000;
                     code.Add(indent + $"{speed.Name} = {linearSpeed:0.00000}");
                 }
 
-                foreach (var zone in program.Zones)
+                foreach (var zone in program.Attributes.OfType<Zone>())
                 {
                     double zoneDistance = zone.Distance / 1000;
                     code.Add(indent + $"{zone.Name} = {zoneDistance:0.00000}");
                 }
 
-                foreach (var command in program.Commands)
+                foreach (var command in program.Attributes.OfType<Command>())
                 {
                     string declaration = command.Declaration(cell);
                     if (declaration != null && declaration.Length > 0)
                     {
-                       declaration = indent + declaration;
-                      //  declaration = indent + declaration.Replace("\n", "\n" + indent);
+                        declaration = indent + declaration;
+                        //  declaration = indent + declaration.Replace("\n", "\n" + indent);
                         code.Add(declaration);
                     }
                 }
@@ -460,7 +455,7 @@ namespace Robots
                     {
                         string commands = command.Code(cell, target);
                         commands = indent + commands;
-                       // commands = indent + commands.Replace("\n", "\n" + indent);
+                        // commands = indent + commands.Replace("\n", "\n" + indent);
                         code.Add(commands);
                     }
                 }

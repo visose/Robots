@@ -16,8 +16,7 @@ namespace Robots
 
         public static Plane QuaternionToPlane(Point3d point, Quaternion quaternion)
         {
-            Plane plane;
-            quaternion.GetRotation(out plane);
+            quaternion.GetRotation(out Plane plane);
             plane.Origin = point;
             return plane;
         }
@@ -96,8 +95,10 @@ namespace Robots
 
                 for (int i = 0; i < cell.MechanicalGroups.Count; i++)
                 {
-                    var groupCode = new List<List<string>>();
-                    groupCode.Add(MainModule(i));
+                    var groupCode = new List<List<string>>
+                    {
+                        MainModule(i)
+                    };
 
                     for (int j = 0; j < program.MultiFileIndices.Count; j++)
                         groupCode.Add(SubModule(j, i));
@@ -126,11 +127,11 @@ namespace Robots
                 }
 
                 {
-                    foreach (var tool in program.Tools) code.Add(Tool(tool));
-                    foreach (var frame in program.Frames) code.Add(Frame(frame));
-                    foreach (var speed in program.Speeds) code.Add(Speed(speed));
-                    foreach (var zone in program.Zones) if (zone.IsFlyBy) code.Add(Zone(zone));
-                    foreach (var command in program.Commands)
+                    foreach (var tool in program.Attributes.OfType<Tool>()) code.Add(Tool(tool));
+                    foreach (var frame in program.Attributes.OfType<Frame>()) code.Add(Frame(frame));
+                    foreach (var speed in program.Attributes.OfType<Speed>()) code.Add(Speed(speed));
+                    foreach (var zone in program.Attributes.OfType<Zone>()) if (zone.IsFlyBy) code.Add(Zone(zone));
+                    foreach (var command in program.Attributes.OfType<Command>())
                     {
                         string declaration = command.Declaration(cell);
                         if (declaration != null)

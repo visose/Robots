@@ -65,43 +65,28 @@ namespace Robots
         public override double[] PlaneToNumbers(Plane plane) => PlaneToEuler(plane);
         public override Plane NumbersToPlane(double[] numbers) => EulerToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5]);
 
+
         public override Plane CartesianLerp(Plane a, Plane b, double t, double min, double max)
         {
+            //  return base.CartesianLerp(a, b, t, min, max);
+
             t = (t - min) / (max - min);
             if (double.IsNaN(t)) t = 0;
 
-            var anglesA = RobotCellKuka.PlaneToEuler(a);
-            var anglesB = RobotCellKuka.PlaneToEuler(b);
-            var result = new double[anglesA.Length];
+            var matrixA = a.ToTransform();
+            var matrixB = b.ToTransform();
 
-            for (int i = 0; i < anglesA.Length; i++)
+            var result = Transform.Identity;
+
+            for (int i = 0; i < 4; i++)
             {
-                if (i < 3)
+                for (int j = 0; j < 4; j++)
                 {
-                    result[i] = anglesA[i] * (1.0 - t) + anglesB[i] * t;
-                }
-                else
-                {
-                    double angleA = anglesA[i].ToRadians();
-                    double angleB = anglesB[i].ToRadians();
-                    double delta = angleB - angleA;
-                    double absDelta = Abs(delta);
-                    if(absDelta > PI)
-                    {
-                        delta = Sign(delta) *(absDelta - PI * 2);
-                    }
-
-                    angleB = angleA + delta;
-
-                    double angle = angleA * (1.0 - t) + angleB * t;
-                    // if (i == 4) angle = Abs(angle);
-                    var results = JointTarget.GetAbsoluteJoints(new double[] { angle }, new double[] { angleB });
-                    result[i] = results[0].ToDegrees();
+                    result[i, j] = matrixA[i, j] * (1.0 - t) + matrixB[i, j] * t;
                 }
             }
 
-            return RobotCellKuka.EulerToPlane(result[0], result[1], result[2], result[3], result[4], result[5]);
-            // return base.CartesianLerp(a, b, t, min, max);
+            return result.ToPlane();
         }
 
         internal override List<List<List<string>>> Code(Program program) => new KRLPostProcessor(this, program).Code;
@@ -149,10 +134,11 @@ namespace Robots
 
                 for (int i = 0; i < cell.MechanicalGroups.Count; i++)
                 {
-                    var groupCode = new List<List<string>>();
-
-                    groupCode.Add(MainFile(i));
-                    groupCode.Add(DatFile(i));
+                    var groupCode = new List<List<string>>
+                    {
+                        MainFile(i),
+                        DatFile(i)
+                    };
 
                     for (int j = 0; j < program.MultiFileIndices.Count; j++)
                         groupCode.Add(SrcFile(j, i));
@@ -164,27 +150,26 @@ namespace Robots
             List<string> DatFile(int group)
             {
                 string groupName = cell.MechanicalGroups[group].Name;
-                var code = new List<string>();
-
-                code.Add($@"&ACCESS RVP
+                var code = new List<string>
+                {
+                    $@"&ACCESS RVP
 &REL 1
 DEFDAT {program.Name}_{groupName} PUBLIC
-");
+"
+                };
+
                 // Attribute declarations
 
-                foreach (var tool in program.Tools)
-                    code.Add(Tool(tool));
+                foreach (var tool in program.Attributes.OfType<Tool>()) code.Add(Tool(tool));
+                foreach (var frame in program.Attributes.OfType<Frame>()) code.Add(Frame(frame));
 
-                foreach (var frame in program.Frames)
-                    code.Add(Frame(frame));
-
-                foreach (var speed in program.Speeds)
+                foreach (var speed in program.Attributes.OfType<Speed>())
                     code.Add($"DECL GLOBAL REAL {speed.Name} = {speed.TranslationSpeed / 1000:0.00000}");
 
-                foreach (var zone in program.Zones)
+                foreach (var zone in program.Attributes.OfType<Zone>())
                     code.Add($"DECL GLOBAL REAL {zone.Name} = {zone.Distance:0.000}");
 
-                foreach (var command in program.Commands)
+                foreach (var command in program.Attributes.OfType<Command>())
                 {
                     string declaration = command.Declaration(cell);
                     if (declaration != null) code.Add(declaration);
@@ -198,14 +183,16 @@ DEFDAT {program.Name}_{groupName} PUBLIC
             {
                 string groupName = cell.MechanicalGroups[group].Name;
 
-                var code = new List<string>();
-                code.Add($@"&ACCESS RVP
+                var code = new List<string>
+                {
+                    $@"&ACCESS RVP
 &REL 1
 DEF {program.Name}_{groupName}()
 BAS (#INITMOV,0)
 $ADVANCE=5
 $APO.CPTP=100
-");
+"
+                };
 
                 // Init commands
                 foreach (var command in program.InitCommands)
@@ -226,12 +213,14 @@ $APO.CPTP=100
                 string groupName = cell.MechanicalGroups[group].Name;
                 int start = program.MultiFileIndices[file];
                 int end = (file == program.MultiFileIndices.Count - 1) ? program.Targets.Count : program.MultiFileIndices[file + 1];
-                var code = new List<string>();
 
-                code.Add($@"&ACCESS RVP
+                var code = new List<string>
+                {
+                    $@"&ACCESS RVP
 &REL 1
 DEF {program.Name}_{groupName}_{file:000}()
-");
+"
+                };
 
                 Tool currentTool = null;
                 Frame currentFrame = null;
