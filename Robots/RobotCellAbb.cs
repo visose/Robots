@@ -165,13 +165,13 @@ namespace Robots
                     }
                 }
 
-                if (cell.MechanicalGroups.Count > 1)
-                {
-                    code.Add($"SyncMoveOff sync2;");
-                }
-
                 if (multiProgram)
                 {
+                    if (cell.MechanicalGroups.Count > 1)
+                    {
+                        code.Add($"SyncMoveOff sync2;");
+                    }
+
                     code.Add("ENDPROC");
                     code.Add("ENDMODULE");
                 }
@@ -277,6 +277,14 @@ namespace Robots
                     foreach (var command in programTarget.Commands)
                     {
                         code.Add(command.Code(cell, target));
+                    }
+                }
+
+                if (!multiProgram)
+                {
+                    if (cell.MechanicalGroups.Count > 1)
+                    {
+                        code.Add($"SyncMoveOff sync2;");
                     }
                 }
 

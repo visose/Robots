@@ -232,6 +232,7 @@ namespace Robots
                 return plane;
             }
         }
+
         public bool ForcedConfiguration
         {
             get
@@ -248,13 +249,17 @@ namespace Robots
 
             this.Commands = new Commands.Group();
 
+            var commands = new List<Command>();
+
             if (target.Command != null)
             {
                 if (target.Command is Commands.Group)
-                    Commands.AddRange((target.Command as Commands.Group).Flatten());
+                    commands.AddRange((target.Command as Commands.Group).Flatten());
                 else
-                    Commands.Add(target.Command);
+                    commands.Add(target.Command);
             }
+
+            this.Commands = new Commands.Group(commands.Where(c => c != null && c != Command.Default));
         }
 
         public ProgramTarget ShallowClone(CellTarget cellTarget)

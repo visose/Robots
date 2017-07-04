@@ -424,10 +424,10 @@ namespace Robots.Grasshopper
          new Param_String() { Name = "Motion", NickName = "M", Description = "Type of motion", Optional = true },
          new ToolParameter() { Name = "Tool", NickName = "T", Description = "Tool or end effector", Optional = true },
          new SpeedParameter() { Name = "Speed", NickName = "S", Description = "Speed of robot in mm/s", Optional = true },
-         new ZoneParameter() { Name = "Zone", NickName = "Z", Description = "Aproximation zone in mm", Optional = true },
+         new ZoneParameter() { Name = "Zone", NickName = "Z", Description = "Approximation zone in mm", Optional = true },
          new CommandParameter() { Name = "Command", NickName = "C", Description = "Robot command", Optional = true },
          new FrameParameter() { Name = "Frame", NickName = "F", Description = "Base frame", Optional = true },
-         new Param_String() { Name = "External", NickName = "E", Description = "External axis", Optional = true }
+         new Param_String() { Name = "External", NickName = "E", Description = "External axes", Optional = true }
 };
 
         // Menu items

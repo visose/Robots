@@ -238,7 +238,6 @@ namespace Robots
 
                 if (basePlane != null)
                 {
-
                     Planes[0].Transform(Transform.PlaneToPlane(Plane.WorldXY,(Plane)basePlane));
                 }
 

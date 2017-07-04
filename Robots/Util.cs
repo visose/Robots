@@ -56,7 +56,7 @@ namespace Robots
         {
             get
             {
-                return $@"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}\Robots";
+                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Robots");
             }
         }
 

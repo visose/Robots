@@ -185,6 +185,12 @@ namespace Robots
             return degree.ToRadians();
         }
 
+        public KinematicSolution Kinematics(Target target, double[] prevJoints = null, bool displayMeshes = false)
+        {
+            var kinematics = Kinematics(new Target[] { target }, new double[][] { prevJoints }, displayMeshes);
+            return kinematics[0];
+        }
+
         public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]> prevJoints = null, bool displayMeshes = false)
         {
             var target = targets.First();
