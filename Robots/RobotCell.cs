@@ -21,7 +21,16 @@ namespace Robots
             this.DisplayMesh = new Mesh();
             foreach (var group in mechanicalGroups)
             {
-                DisplayMesh.Append(group.Robot.DisplayMesh);
+                var movesRobot = group.Externals.FirstOrDefault(m => m.MovesRobot);
+                var robotDisplay = group.Robot.DisplayMesh;
+                if (movesRobot != null)
+                {
+                    var movableBase = movesRobot.Joints.Last().Plane;
+                    movableBase.Transform(movesRobot.BasePlane.ToTransform());
+                    robotDisplay.Transform(movableBase.ToTransform());
+                }
+
+                DisplayMesh.Append(robotDisplay);
                 foreach (var external in group.Externals) DisplayMesh.Append(external.DisplayMesh);
             }
             this.DisplayMesh.Transform(this.BasePlane.ToTransform());
@@ -212,7 +221,7 @@ namespace Robots
                 // Externals
                 foreach (var external in group.Externals)
                 {
-                    var externalPrevJoints = prevJoints == null ? null : prevJoints.Subset(external.Joints.Select(x => x.Number).ToArray());
+                    var externalPrevJoints = prevJoints?.Subset(external.Joints.Select(x => x.Number).ToArray());
                     var externalKinematics = external.Kinematics(target, externalPrevJoints, displayMeshes, basePlane);
 
                     for (int i = 0; i < external.Joints.Length; i++)
@@ -226,7 +235,13 @@ namespace Robots
                         coupledPlane = externalKinematics.Planes[externalKinematics.Planes.Length - 1];
 
                     if (external.MovesRobot)
-                        robotBase = externalKinematics.Planes[externalKinematics.Planes.Length - 1];
+                    {
+                        Plane plane = (robotBase != null) ? robotBase.Value : Plane.WorldXY;
+                        Plane externalPlane = externalKinematics.Planes[externalKinematics.Planes.Length - 1];
+                        
+                        plane.Transform(externalPlane.ToTransform());
+                        robotBase = plane;
+                    }
                 }
 
                 // Coupling
@@ -244,7 +259,7 @@ namespace Robots
 
                 if (robot != null)
                 {
-                    var robotPrevJoints = prevJoints == null ? null : prevJoints.Subset(robot.Joints.Select(x => x.Number).ToArray());
+                    var robotPrevJoints = prevJoints?.Subset(robot.Joints.Select(x => x.Number).ToArray());
                     var robotKinematics = robot.Kinematics(target, robotPrevJoints, displayMeshes, robotBase);
 
                     for (int j = 0; j < robot.Joints.Length; j++)
@@ -260,9 +275,9 @@ namespace Robots
                 }
 
                 // Tool
-                    Plane toolPlane = target.Tool.Tcp;
-                    toolPlane.Transform(planes[planes.Count - 1].ToTransform());
-                    planes.Add(toolPlane);
+                Plane toolPlane = target.Tool.Tcp;
+                toolPlane.Transform(planes[planes.Count - 1].ToTransform());
+                planes.Add(toolPlane);
 
 
                 if (displayMeshes)

@@ -117,7 +117,8 @@ namespace Robots
                     XElement data = XElement.Load(file);
                     if (data.Name.LocalName != "RobotSystems") continue;
                     element = data.Elements().FirstOrDefault(x => name == $"{x.Attribute(XName.Get("name")).Value}");
-                    if (element != null) break;
+                    if (element != null)
+                        break;
                 }
             }
             else

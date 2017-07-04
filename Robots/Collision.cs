@@ -2,9 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using static Rhino.RhinoMath;
 using static Robots.Util;
 using static System.Math;
+
 
 namespace Robots
 {
@@ -40,7 +42,7 @@ namespace Robots
         void Collide()
         {
 
-            System.Threading.Tasks.Parallel.ForEach(program.Targets, (cellTarget, state) =>
+            Parallel.ForEach(program.Targets, (cellTarget, state) =>
             {
                 if (cellTarget.Index == 0) return;
                 var prevcellTarget = program.Targets[cellTarget.Index - 1];
