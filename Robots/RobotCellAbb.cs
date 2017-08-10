@@ -157,11 +157,27 @@ namespace Robots
 
                 if (multiProgram)
                 {
+                    int _k = 0;
                     for (int i = 0; i < program.MultiFileIndices.Count; i++)
                     {
-                        code.Add($"Load\\Dynamic, \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\";");
+                        _k = i + 1;
+                        // RP - Change to use startload - will have to put start load in a different position..
+                        // will also need to add waitload
+                        //code.Add($"Load\\Dynamic, \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\";");
+                        //code.Add($"Load\\Dynamic, \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\";");
+                        //code.Add($"%\"{program.Name}_{groupName}_{i:000}:Main\"%;");
+                        //code.Add($"UnLoad \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\";");
+
+                        if (i == 1)
+                        {
+                            code.Add($"StartLoad\\Dyanmic, \"HOME:/{program.Name}/{program.Name}_{groupName}_{_k:000}.MOD\", load{i:000};");
+                        }
+
+
+                        // RP - waitload - need to adjust i in this.
+                        code.Add($"WaitLoad\\UnloadPath:= \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\", load{i:000};");
                         code.Add($"%\"{program.Name}_{groupName}_{i:000}:Main\"%;");
-                        code.Add($"UnLoad \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\";");
+                        code.Add($"StartLoad\\Dyanmic, \"HOME:/{program.Name}/{program.Name}_{groupName}_{_k:000}.MOD\", load{_k:000};");
                     }
                 }
 
