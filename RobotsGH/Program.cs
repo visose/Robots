@@ -40,7 +40,7 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            string name = null; 
+            string name = null;
             GH_RobotSystem robotSystem = null;
             var initCommandsGH = new List<GH_Command>();
             var targetsA = new List<GH_Target>();
@@ -156,10 +156,26 @@ namespace Robots.Grasshopper
 
             if (!DA.GetData(0, ref program)) { return; }
             if (!DA.GetDataList(1, code)) { return; }
+
             var programCode = program.Value.Code;
-            if (programCode != null && programCode.Count > 0) programCode[0][0] = code;
-            var newProgram = program.Value.CustomCode(programCode);
-            DA.SetData(0, new GH_Program(newProgram));
+            if (programCode != null && programCode.Count > 0)
+            {
+                var copyCode = programCode.ToList();
+
+                for (int i = 0; i < copyCode.Count; i++)
+                {
+                    copyCode[i] = copyCode[i].ToList();
+
+                    for (int j = 0; j < copyCode[i].Count; j++)
+                        copyCode[i][j] = copyCode[i][j].ToList();
+                }
+
+                copyCode[0][0] = code;
+
+                var newProgram = program.Value.CustomCode(copyCode);
+                DA.SetData(0, new GH_Program(newProgram));
+            }
+
         }
     }
 

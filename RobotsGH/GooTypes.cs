@@ -17,7 +17,7 @@ namespace Robots.Grasshopper
         public override bool IsValid => true;
         public override string TypeName => "Program";
         public override string TypeDescription => "Program";
-        public override string ToString() => this.Value.ToString();
+        public override string ToString() => this.Value?.ToString();
         public override object ScriptVariable() => Value;
 
         public override bool CastFrom(object source)
@@ -33,14 +33,14 @@ namespace Robots.Grasshopper
 
     public class GH_Target : GH_Goo<Target>
     {
-        public GH_Target() { this.Value = null; }
+        public GH_Target() { this.Value = Target.Default; }
         public GH_Target(GH_Target goo) { this.Value = goo.Value; }
         public GH_Target(Target native) { this.Value = native; }
         public override IGH_Goo Duplicate() => new GH_Target(this);
         public override bool IsValid => true;
         public override string TypeName => "Target";
         public override string TypeDescription => "Target";
-        public override string ToString() => this.Value.ToString();
+        public override string ToString() => this.Value?.ToString();
         public override object ScriptVariable() => Value;
 
         public override bool CastFrom(object source)
@@ -82,14 +82,14 @@ namespace Robots.Grasshopper
 
     public class GH_Tool : GH_Goo<Tool>
     {
-        public GH_Tool() { this.Value = null; }
+        public GH_Tool() { this.Value = Tool.Default; }
         public GH_Tool(GH_Tool goo) { this.Value = goo.Value; }
         public GH_Tool(Tool native) { this.Value = native; }
         public override IGH_Goo Duplicate() => new GH_Tool(this);
         public override bool IsValid => true;
         public override string TypeName => "Tool";
         public override string TypeDescription => "Tool";
-        public override string ToString() => this.Value.ToString();
+        public override string ToString() => this.Value?.ToString();
         public override object ScriptVariable() => Value;
 
         public override bool CastFrom(object source)
@@ -105,14 +105,14 @@ namespace Robots.Grasshopper
 
     public class GH_Speed : GH_Goo<Speed>
     {
-        public GH_Speed() { this.Value = null; }
+        public GH_Speed() { this.Value = Speed.Default; }
         public GH_Speed(GH_Speed goo) { this.Value = goo.Value; }
         public GH_Speed(Speed native) { this.Value = native; }
         public override IGH_Goo Duplicate() => new GH_Speed(this);
         public override bool IsValid => true;
         public override string TypeName => "Speed";
         public override string TypeDescription => "Speed";
-        public override string ToString() => this.Value.ToString();
+        public override string ToString() => this.Value?.ToString();
         public override object ScriptVariable() => Value;
 
         public override bool CastFrom(object source)
@@ -154,14 +154,14 @@ namespace Robots.Grasshopper
 
     public class GH_Zone : GH_Goo<Zone>
     {
-        public GH_Zone() { this.Value = null; }
+        public GH_Zone() { this.Value = Zone.Default; }
         public GH_Zone(GH_Zone goo) { this.Value = goo.Value; }
         public GH_Zone(Zone native) { this.Value = native; }
         public override IGH_Goo Duplicate() => new GH_Zone(this);
         public override bool IsValid => true;
         public override string TypeName => "Zone";
         public override string TypeDescription => "Zone";
-        public override string ToString() => this.Value.ToString();
+        public override string ToString() => this.Value?.ToString();
         public override object ScriptVariable() => Value;
 
         public override bool CastFrom(object source)
@@ -191,14 +191,14 @@ namespace Robots.Grasshopper
 
     public class GH_Frame : GH_Goo<Frame>
     {
-        public GH_Frame() { this.Value = null; }
+        public GH_Frame() { this.Value = Frame.Default; }
         public GH_Frame(GH_Frame goo) { this.Value = goo.Value; }
         public GH_Frame(Frame native) { this.Value = native; }
         public override IGH_Goo Duplicate() => new GH_Frame(this);
         public override bool IsValid => true;
         public override string TypeName => "Frame";
         public override string TypeDescription => "Frame";
-        public override string ToString() => this.Value.ToString();
+        public override string ToString() => this.Value?.ToString();
         public override object ScriptVariable() => Value;
 
         public override bool CastFrom(object source)
@@ -225,14 +225,14 @@ namespace Robots.Grasshopper
 
     public class GH_Command : GH_Goo<Command>
     {
-        public GH_Command() { this.Value = null; }
+        public GH_Command() { this.Value = Command.Default; }
         public GH_Command(GH_Command goo) { this.Value = goo.Value; }
         public GH_Command(Command native) { this.Value = native; }
         public override IGH_Goo Duplicate() => new GH_Command(this);
         public override bool IsValid => true;
         public override string TypeName => "Command";
         public override string TypeDescription => "Command";
-        public override string ToString() => this.Value.ToString();
+        public override string ToString() => this.Value?.ToString();
         public override object ScriptVariable() => Value;
 
         public override bool CastFrom(object source)
@@ -255,7 +255,7 @@ namespace Robots.Grasshopper
         public override bool IsValid => true;
         public override string TypeName => "RobotSystem";
         public override string TypeDescription => "RobotSystem";
-        public override string ToString() => this.Value.ToString();
+        public override string ToString() => this.Value?.ToString();
         public override object ScriptVariable() => Value;
 
         public override bool CastFrom(object source)

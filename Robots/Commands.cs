@@ -19,6 +19,13 @@ namespace Robots
         protected virtual string CodeKuka(RobotSystem robotSystem, Target target) { throw new Exception($"Command {this.GetType().Name} for KUKA not implemented."); }
         protected virtual string CodeUR(RobotSystem robotSystem, Target target) { throw new Exception($"Command {this.GetType().Name} for UR not implemented."); }
 
+        public static Command Default { get; }
+
+        static Command()
+        {
+            Default = new Commands.Custom("DefaultCommand");
+        }
+
         internal string Declaration(RobotSystem robotSystem)
         {
             ErrorChecking(robotSystem);

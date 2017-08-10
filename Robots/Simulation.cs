@@ -26,7 +26,7 @@ namespace Robots
             this.program = program;
             this.groupCount = targets.Count;
             duration = program.Duration;
-            currentSimulationTarget = targets[0].ShallowClone(0);
+            currentSimulationTarget = program.Targets[0].ShallowClone(0);
             this.keyframes = targets;
         }
 
@@ -34,7 +34,7 @@ namespace Robots
         {
             if (keyframes.Count == 1)
             {
-                this.currentSimulationTarget = keyframes[0].ShallowClone();
+                this.currentSimulationTarget = program.Targets[0].ShallowClone();
                 var firstKinematics = program.RobotSystem.Kinematics(keyframes[0].ProgramTargets.Select(x => x.Target), null, displayMeshes: true);
                 foreach (var programTarget in this.currentSimulationTarget.ProgramTargets) programTarget.Kinematics = firstKinematics[programTarget.Group];
                 return;
@@ -71,11 +71,12 @@ namespace Robots
             var cellTarget = keyframes[currentTarget + 1];
             var prevCellTarget = keyframes[currentTarget + 0];
             var prevJoints = prevCellTarget.ProgramTargets.Select(x => x.Kinematics.Joints);
-            var newSimulationTarget = cellTarget.ShallowClone(cellTarget.Index);
 
             var kineTargets = cellTarget.Lerp(prevCellTarget, program.RobotSystem, currentTime, prevCellTarget.TotalTime, cellTarget.TotalTime);
             var kinematics = program.RobotSystem.Kinematics(kineTargets, prevJoints, displayMeshes: true);
 
+            //  var newSimulationTarget = cellTarget.ShallowClone(cellTarget.Index);
+            var newSimulationTarget = program.Targets[cellTarget.Index].ShallowClone();
             foreach (var programTarget in newSimulationTarget.ProgramTargets) programTarget.Kinematics = kinematics[programTarget.Group];
             this.currentSimulationTarget = newSimulationTarget;
         }

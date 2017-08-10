@@ -35,7 +35,8 @@ namespace Robots
             int targetCount = targets.First().Count();
             foreach (var subTargets in targets)
             {
-                if (subTargets.Count() != targetCount) throw new Exception(" All sub programs have to contain the same number of targets");
+                if (subTargets.Count() != targetCount)
+                    throw new Exception(" All sub programs have to contain the same number of targets");
             }
 
             this.Name = name;
@@ -60,7 +61,12 @@ namespace Robots
 
             foreach (var subTargets in targets.Transpose())
             {
-                var programTargets = subTargets.Select((x, i) => new ProgramTarget(subTargets[i], i));
+                var programTargets = subTargets.Select((x, i) =>
+                {
+                    if (x == null) throw new NullReferenceException($" Target {targetIndex} in robot {i} is null or invalid.");
+                    return new ProgramTarget(x, i);
+                });
+
                 var cellTarget = new CellTarget(programTargets, targetIndex);
                 cellTargets.Add(cellTarget);
                 targetIndex++;
@@ -77,15 +83,17 @@ namespace Robots
                 Code = RobotSystem.Code(this);
         }
 
-        Program(string name, RobotSystem robotSystem, List<List<List<string>>> code)
+        Program(string name, RobotSystem robotSystem, List<int> multiFileIndices, List<List<List<string>>> code)
         {
             this.Name = name;
             this.RobotSystem = robotSystem;
             this.Code = code;
             this.HasCustomCode = true;
+            this.MultiFileIndices = multiFileIndices;
         }
 
-        public Program CustomCode(List<List<List<string>>> code) => new Program(this.Name, this.RobotSystem, code);
+        public Program CustomCode(List<List<List<string>>> code) => new Program(this.Name, this.RobotSystem, this.MultiFileIndices, code);
+
 
         public void Animate(double time, bool isNormalized = true)
         {

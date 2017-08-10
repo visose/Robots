@@ -118,6 +118,7 @@ namespace Robots
             var commands = new List<Command>();
             commands.AddRange(program.InitCommands);
             commands.AddRange(cellTargets.SelectMany(x => x.ProgramTargets.SelectMany(y => y.Commands)));
+            
             program.Attributes.AddRange(commands.Distinct());
 
             // Name attributes with no name
@@ -159,12 +160,12 @@ namespace Robots
                     {
                         throw new Exception($" Frame {frame.Name} has a coupled mechanism set but no mechanical group.");
                     }
-
+                   
                     if (frame.CoupledMechanicalGroup == 0 && frame.CoupledMechanism == -1)
                     {
                         throw new Exception($" Frame {frame.Name} is set to couple the robot rather than a mechanism.");
                     }
-
+                    
                     if (frame.IsCoupled)
                     {
                         var cell = robotSystem as RobotCell;

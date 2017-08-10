@@ -68,7 +68,7 @@ namespace Robots
 
         public override Plane CartesianLerp(Plane a, Plane b, double t, double min, double max)
         {
-            //  return base.CartesianLerp(a, b, t, min, max);
+           // return base.CartesianLerp(a, b, t, min, max);
 
             t = (t - min) / (max - min);
             if (double.IsNaN(t)) t = 0;
