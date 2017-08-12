@@ -142,7 +142,7 @@ namespace Robots
                 // RP - Add loadsession variables
                 for (int j = 0; j < program.MultiFileIndices.Count; j++)
                 {
-                    code.Add($"VAR loadsession load{j}");
+                    code.Add($"VAR loadsession load{j:000};");
                 }
 
                 code.Add("PROC Main()");
