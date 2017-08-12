@@ -139,6 +139,12 @@ namespace Robots
                     }
                 }
 
+                // RP - Add loadsession variables
+                for (int j = 0; j < program.MultiFileIndices.Count; j++)
+                {
+                    code.Add($"VAR loadsession load{j:000};");
+                }
+
                 code.Add("PROC Main()");
                 if (!multiProgram) code.Add("ConfL \\Off;");
 
@@ -155,13 +161,47 @@ namespace Robots
                     code.Add($"SyncMoveOn sync1, all_tasks;");
                 }
 
+                // RP - should probably make this selectable? - normal load vs background load
+
                 if (multiProgram)
                 {
+
+                    int _k = 0;
                     for (int i = 0; i < program.MultiFileIndices.Count; i++)
                     {
-                        code.Add($"Load\\Dynamic, \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\";");
-                        code.Add($"%\"{program.Name}_{groupName}_{i:000}:Main\"%;");
-                        code.Add($"UnLoad \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\";");
+                        _k = i + 1;
+                        //code.Add($"Load\\Dynamic, \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\";");
+                        //code.Add($"%\"{program.Name}_{groupName}_{i:000}:Main\"%;");
+                        //code.Add($"UnLoad \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\";");
+
+                        // Remember to load the first module - with simple waitload - i think this is wrong still
+                        if (i == 0)
+                        {
+                            code.Add($"StartLoad\\Dyanmic, \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\", load{i:000};");
+                            code.Add($"WaitLoad, load{i:000};");
+
+                            code.Add($"StartLoad\\Dyanmic, \"HOME:/{program.Name}/{program.Name}_{groupName}_{_k:000}.MOD\", load{_k:000};");
+                            code.Add($"%\"{program.Name}_{groupName}_{i:000}:Main\"%;");
+                            code.Add($"WaitLoad\\UnloadPath:= \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\", load{_k:000};");
+                        } else
+                        {
+
+                            if (i < program.MultiFileIndices.Count - 1)
+                            {
+                                code.Add($"StartLoad\\Dyanmic, \"HOME:/{program.Name}/{program.Name}_{groupName}_{_k:000}.MOD\", load{_k:000};");
+                                code.Add($"%\"{program.Name}_{groupName}_{i:000}:Main\"%;");
+                                code.Add($"WaitLoad\\UnloadPath:= \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\", load{_k:000};");
+                            }
+                            else
+                            {
+                                code.Add($"%\"{program.Name}_{groupName}_{i:000}:Main\"%;");
+                                code.Add($"UnLoad \"HOME:/ PrintingVase170810_02 / PrintingVase170810_02_T_ROB1_005.MOD");
+                            }
+
+                        }
+
+
+                        
                     }
                 }
 

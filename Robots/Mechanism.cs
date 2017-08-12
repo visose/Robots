@@ -76,6 +76,8 @@ namespace Robots
             if (Directory.Exists(folder))
             {
                 var files = Directory.GetFiles(folder, "*.3dm");
+                // RP - Here would be a good stop to get rid of _xxx.3dm and *.3dmbak files
+                // But probably also unnecessary
                 Rhino.DocObjects.Layer layer = null;
 
                 foreach (var file in files)
