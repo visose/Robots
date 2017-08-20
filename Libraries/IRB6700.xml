@@ -1,0 +1,23 @@
+﻿<RobotSystems>
+
+  <RobotCell name="EXArchitects-IRB6700" manufacturer="ABB">
+    <Mechanisms>
+      <RobotArm model="IRB6700-155" manufacturer="ABB" payload="155">
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Joints>
+          <Revolute number="1" a ="320" d ="780" minrange = "-170" maxrange ="170" maxspeed ="110"/>
+          <Revolute number="2" a ="1125" d ="0" minrange = "-65" maxrange ="85" maxspeed ="110"/>
+          <Revolute number="3" a ="200" d ="0" minrange = "-180" maxrange ="70" maxspeed ="110"/>
+          <Revolute number="4" a ="0" d ="1393" minrange = "-300" maxrange ="300" maxspeed ="190"/>
+          <Revolute number="5" a ="0" d ="0" minrange = "-130" maxrange ="130" maxspeed ="150"/>
+          <Revolute number="6" a ="0" d ="200" minrange = "-360" maxrange ="360" maxspeed ="210"/>
+        </Joints>
+      </RobotArm>
+    </Mechanisms>
+    <IO>
+      <DO names="DO10_1,DO10_2,DO10_3,DO10_4,DO10_5,DO10_6,DO10_7,DO10_8,DO10_9,DO10_10,DO10_11,DO10_12,DO10_13,DO10_14,DO10_15,DO10_16"/>
+      <DI names="DI10_1,DI10_2,DI10_3,DI10_4,DI10_5,DI10_6,DI10_7,DI10_8,DI10_9,DI10_10,DI10_11,DI10_12,DI10_13,DI10_14,DI10_15,DO10_16"/>
+    </IO>
+  </RobotCell>
+
+</RobotSystems>
