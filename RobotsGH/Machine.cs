@@ -2,13 +2,11 @@
 using System.Linq;
 using System.Collections.Generic;
 using System.Drawing;
-
 using Rhino.Geometry;
 using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Special;
-
 
 namespace Robots.Grasshopper
 {

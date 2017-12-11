@@ -26,7 +26,6 @@ namespace Robots
         }
 
         protected abstract JointTarget GetStartPose();
-
     }
 
     public class RobotAbb : RobotArm
