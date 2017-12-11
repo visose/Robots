@@ -11,11 +11,12 @@ namespace Robots
     public class RobotCellUR : RobotSystem
     {
         public RobotUR Robot { get; }
-        public RemoteConnection Remote { get; } = new RemoteConnection();
-        public URRealTime URRealTime { get; set; }
+      //  public RemoteConnection Remote { get; } = new RemoteConnection();
+       // public URRealTime URRealTime { get; set; }
 
         internal RobotCellUR(string name, RobotArm robot, IO io, Plane basePlane, Mesh environment) : base(name, Manufacturers.UR, io, basePlane, environment)
         {
+            Remote = new RemoteUR();
             this.Robot = robot as RobotUR;
             this.DisplayMesh = new Mesh();
             DisplayMesh.Append(robot.DisplayMesh);
@@ -250,57 +251,7 @@ namespace Robots
             File.WriteAllText(file, joinedCode);
         }
 
-        public class RemoteConnection
-        {
-            public string IP { get; set; }
-            public int Port { get; set; } = 30002;
-            public string Log { get; set; }
 
-            public void Send(string message)
-            {
-                if (IP == null) throw new NullReferenceException(" IP for UR robot has not been set");
-                var client = new TcpClient();
-                client.Connect(IP, Port);
-
-                if (!client.Connected)
-                {
-                    Log = "Not able to connect";
-                    return;
-                }
-
-                message += '\n';
-                var asen = new System.Text.ASCIIEncoding();
-                byte[] byteArray = asen.GetBytes(message);
-
-                using (var stream = client.GetStream())
-                {
-                    stream.Write(byteArray, 0, byteArray.Length);
-                }
-
-                client.Close();
-
-                {
-                    string firstLine = message.Substring(0, message.IndexOf('\n'));
-                    if (firstLine.Length + 1 < message.Length)
-                        Log = $"Sending: Robot program\nPress play to start.";
-                    else
-                        Log = $"Sending: {message}";
-                }
-            }
-
-            public void UploadProgram(Program program)
-            {
-                var joinedCode = string.Join("\n", program.Code[0][0]);
-                //joinedCode += "\nsleep(0.1)";
-                //joinedCode += "\npause program";
-                Send(joinedCode);
-                //Send("pause program");
-                //Pause();
-            }
-
-            public void Pause() => Send("pause program");
-            public void Play() => Send("resume program");
-        }
 
         class URScriptPostProcessor
         {

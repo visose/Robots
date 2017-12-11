@@ -23,6 +23,7 @@ namespace Robots
         public Plane BasePlane { get; }
         public Mesh Environment { get; }
         public Mesh DisplayMesh { get; set; }
+        public IRemote Remote { get; protected set; }
 
         static RobotSystem()
         {

@@ -12,7 +12,10 @@ namespace Robots
 {
     public class RobotCellAbb : RobotCell
     {
-        internal RobotCellAbb(string name, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh environment) : base(name, Manufacturers.ABB, mechanicalGroups, io, basePlane, environment) { }
+        internal RobotCellAbb(string name, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh environment) : base(name, Manufacturers.ABB, mechanicalGroups, io, basePlane, environment)
+        {
+            Remote = new RemoteAbb(this);
+        }
 
         public static Plane QuaternionToPlane(Point3d point, Quaternion quaternion)
         {
