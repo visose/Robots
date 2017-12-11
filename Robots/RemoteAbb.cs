@@ -31,6 +31,10 @@ namespace Robots
             _cell = cell;
         }
 
+        public void Play() => Command(StartCommand);
+        public void Pause() => Command(StopCommand);
+        public void Upload(Program p) => Command(() => UploadCommand(p));
+
         void AddLog(string text)
         {
             Log.Insert(0, $"{DateTime.Now.ToLongTimeString()} - {text}");
@@ -88,11 +92,9 @@ namespace Robots
         void Command(Func<string> command)
         {
             Connect();
-            if (Connected)
-                AddLog(command());
+            if (Connected) AddLog(command());
             Disconnect();
         }
-
 
         string StartCommand()
         {
