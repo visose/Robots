@@ -99,11 +99,18 @@ namespace Robots
         class FanucPostProcessor
         {
             RobotCellFanuc cell;
+            Program program;
             internal List<List<List<string>>> Code { get; }
 
-            /*
-             * TODO: Implement...
-             */
+            internal FanucPostProcessor(RobotCellFanuc robotCell, Program program)
+            {
+                this.cell = robotCell;
+                this.program = program;
+                this.Code = new List<List<List<string>>>();
+                /*
+                 * TODO: Implement...
+                 */
+            }
 
         }
 

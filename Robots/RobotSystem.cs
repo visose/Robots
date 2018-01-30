@@ -192,7 +192,7 @@ namespace Robots
                     case (Manufacturers.UR):
                         return new RobotCellUR(name, mechanicalGroups[0].Robot, io, basePlane, environment);
                     case (Manufacturers.FANUC):
-                        return new RobotCellFanuc(name, mechanicalGroups[0].Robot, io, basePlane, environment);
+                        return new RobotCellFanuc(name, mechanicalGroups, io, basePlane, environment);
                 }
             }
 

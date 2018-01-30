@@ -7,6 +7,8 @@ using System.Collections;
 using static Robots.Util;
 using static System.Math;
 using static Rhino.RhinoMath;
+using System.Xml.Linq;
+using System.Xml;
 
 namespace Robots
 {
@@ -391,6 +393,123 @@ namespace Robots
             this.Centroid = (centroid == null) ? tcp.Origin : (Point3d)centroid;
             this.Mesh = mesh;
         }
+
+
+        #region Tool loading
+
+        public static List<string> ListTools()
+        {
+            var names = new List<string>();
+            var elements = new List<XElement>();
+            string folder = $@"{Robots.Util.AssemblyDirectory}\robots\tools";
+
+            if (System.IO.Directory.Exists(folder))
+            {
+                var files = System.IO.Directory.GetFiles(folder, "*.xml");
+                foreach (var file in files)
+                {
+                    var element = XElement.Load(file);
+                    if (element.Name.LocalName == "RobotTools")
+                        elements.AddRange(element.Elements());
+                }
+            }
+
+            foreach (var element in elements)
+                names.Add($"{element.Attribute(XName.Get("name")).Value}");
+
+            return names;
+        }
+
+        public static Tool Load(string name)
+        {
+            XElement element = null;
+            string folder = $@"{Robots.Util.AssemblyDirectory}\robots\tools";
+
+            if (System.IO.Directory.Exists(folder))
+            {
+                var files = System.IO.Directory.GetFiles(folder, "*.xml");
+
+                foreach (var file in files)
+                {
+                    XElement data = XElement.Load(file);
+                    if (data.Name.LocalName != "RobotTools") continue;
+                    element = data.Elements().FirstOrDefault(x => name == $"{x.Attribute(XName.Get("name")).Value}");
+                    if (element != null) break;
+                }
+            }
+
+            if (element == null) throw new InvalidOperationException($" RobotTool \"{name}\" not found");
+
+
+            return Create(element);
+        }
+
+        private static Tool Create(XElement element)
+        {
+            var type = element.Name.LocalName;
+            var name = element.Attribute(XName.Get("name")).Value;
+            var manufacturer = element.Attribute(XName.Get("manufacturer")).Value;
+
+            XElement baseElement = element.Element(XName.Get("TCP"));
+            double x = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("x")).Value);
+            double y = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("y")).Value);
+            double z = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("z")).Value);
+            double q1 = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("q1")).Value);
+            double q2 = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("q2")).Value);
+            double q3 = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("q3")).Value);
+            double q4 = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("q4")).Value);
+
+            Plane plane;
+            Quaternion q = new Quaternion(q1, q2, q3, q4);
+            Point3d p = new Point3d(x, y, z);
+            q.GetRotation(out plane);
+            plane.Origin = p;
+
+            baseElement = element.Element(XName.Get("Weight"));
+
+            double weight = XmlConvert.ToDouble(baseElement.Value);
+
+            Mesh mesh = GetMeshes(name);
+
+            Tool tool = new Tool(plane, name, weight, null, mesh);
+
+            return tool;
+        }
+
+        private static Mesh GetMeshes(string model)
+        {
+            var meshes = new List<Mesh>();
+            Mesh mesh = new Mesh();
+
+            string folder = $@"{Util.AssemblyDirectory}\robots\tools";
+
+            if (System.IO.Directory.Exists(folder))
+            {
+                var files = System.IO.Directory.GetFiles(folder, "*.3dm");
+                Rhino.DocObjects.Layer layer = null;
+
+                foreach (var file in files)
+                {
+                    Rhino.FileIO.File3dm geometry = Rhino.FileIO.File3dm.Read($@"{file}");
+                    layer = geometry.Layers.FirstOrDefault(x => x.Name == $"{model}");
+
+                    if (layer != null)
+                    {
+                        meshes = geometry.Objects.Where(x => x.Attributes.LayerIndex == layer.LayerIndex).Select(x => x.Geometry as Mesh).ToList();
+                        for (int i = 0; i < meshes.Count; ++i)
+                        {
+                            mesh.Append(meshes[i]);
+                        }
+                    }
+                }
+                if (layer == null)
+                    throw new InvalidOperationException($" Tool \"{model}\" is not in the geometry file.");
+            }
+
+            return mesh;
+        }
+
+        #endregion
 
         public void FourPointCalibration(Plane a, Plane b, Plane c, Plane d)
         {
