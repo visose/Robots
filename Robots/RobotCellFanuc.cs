@@ -43,9 +43,15 @@ namespace Robots
 
         public override double[] PlaneToNumbers(Plane plane) => PlaneToQuaternion(plane);
         public override Plane NumbersToPlane(double[] numbers) => QuaternionToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5], numbers[6]);
-        /*
+        
         internal override void SaveCode(Program program, string folder)
         {
+            /*
+             * TODO: Implement...
+             * 
+             */
+
+            /*
             if (!Directory.Exists(folder)) throw new DirectoryNotFoundException($" Folder \"{folder}\" not found");
             Directory.CreateDirectory($@"{folder}\{program.Name}");
             bool multiProgram = program.MultiFileIndices.Count > 1;
@@ -84,11 +90,23 @@ namespace Robots
                     }
                 }
             }
+            */
         }
-        */
-        /*
-        internal override List<List<List<string>>> Code(Program program) => new RapidPostProcessor(this, program).Code;
-        */
+                
+        internal override List<List<List<string>>> Code(Program program) => new FanucPostProcessor(this, program).Code;
+        
+
+        class FanucPostProcessor
+        {
+            RobotCellFanuc cell;
+            internal List<List<List<string>>> Code { get; }
+
+            /*
+             * TODO: Implement...
+             */
+
+        }
+
         /*
         class RapidPostProcessor
         {
