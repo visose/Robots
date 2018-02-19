@@ -143,7 +143,7 @@ namespace Robots
                 if (!_controller.IsVirtual)
                 {
                     _controller.AuthenticationSystem.DemandGrant(Grant.WriteFtp);
-                    _controller.FileSystem.PutDirectory(tempPath, program.Name, true);
+                    _controller.FileSystem.PutDirectory(localFolder, program.Name, true);
                     filePath = $@"{robotFolder}\{program.Name}_T_ROB1.pgf";
                 }
                 else
@@ -155,8 +155,22 @@ namespace Robots
                 {
                     var task = _controller.Rapid.GetTasks().First();
                     task.DeleteProgram();
-                    _controller.AuthenticationSystem.DemandGrant(Grant.LoadRapidProgram);
-                    task.LoadProgramFromFile(filePath, RapidLoadMode.Replace);
+                    int count = 0;
+                    while (count++ < 100)
+                    {
+                        System.Threading.Thread.Sleep(100);
+                        try
+                        {
+                            _controller.AuthenticationSystem.DemandGrant(Grant.LoadRapidProgram);
+                            if (task.LoadProgramFromFile(filePath, RapidLoadMode.Replace))
+                                return $"Program {program.Name} uploaded to {_controller.Name}.";
+                        }
+                        catch (Exception)
+                        {
+                           
+                        }
+                    }
+
                     //    task.ResetProgramPointer();
                 }
             }
@@ -165,7 +179,7 @@ namespace Robots
                 return $"Error uploading: {e}";
             }
 
-            return $"Program {program.Name} uploaded to {_controller.Name}.";
+            return "Unknown error";
         }
 
         //void GetPosition(Program program)

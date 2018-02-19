@@ -70,18 +70,16 @@ namespace Robots
             }
             */
 
-            // string folder = $@"{AssemblyDirectory}\robots";
             string folder = LibraryPath;
 
             if (Directory.Exists(folder))
             {
                 var files = Directory.GetFiles(folder, "*.3dm");
-                Rhino.DocObjects.Layer layer = null;
 
                 foreach (var file in files)
                 {
                     Rhino.FileIO.File3dm geometry = Rhino.FileIO.File3dm.Read($@"{file}");
-                    layer = geometry.Layers.FirstOrDefault(x => x.Name == $"{model}");
+                    var layer = geometry.Layers.FirstOrDefault(x => x.Name == $"{model}");
 
                     if (layer != null)
                     {
@@ -93,14 +91,17 @@ namespace Robots
                             if (jointLayer == null) break;
                             meshes.Add(geometry.Objects.First(x => x.Attributes.LayerIndex == jointLayer.LayerIndex).Geometry as Mesh);
                         }
-                        break;
+
+                        return meshes;
                     }
                 }
-                if (layer == null)
-                    throw new InvalidOperationException($" Robot \"{model}\" is not in the geometry file.");
-            }
 
-            return meshes;
+                throw new InvalidOperationException($" Robot \"{model}\" is not in the geometry file.");
+            }
+            else
+            {
+                throw new DirectoryNotFoundException($" Robots folder not found in the Documents folder.");
+            }
         }
 
         internal static Mechanism Create(XElement element)
@@ -238,7 +239,7 @@ namespace Robots
 
                 if (basePlane != null)
                 {
-                    Planes[0].Transform(Transform.PlaneToPlane(Plane.WorldXY,(Plane)basePlane));
+                    Planes[0].Transform(Transform.PlaneToPlane(Plane.WorldXY, (Plane)basePlane));
                 }
 
                 SetJoints(target, prevJoints);
