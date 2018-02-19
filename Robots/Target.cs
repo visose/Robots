@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -401,11 +402,12 @@ namespace Robots
         {
             var names = new List<string>();
             var elements = new List<XElement>();
-            string folder = $@"{Robots.Util.AssemblyDirectory}\robots\tools";
+            // string folder = $@"{Robots.Util.AssemblyDirectory}\robots\tools";
+            string folder = System.IO.Path.Combine(LibraryPath, "robots");
 
-            if (System.IO.Directory.Exists(folder))
+            if (Directory.Exists(folder))
             {
-                var files = System.IO.Directory.GetFiles(folder, "*.xml");
+                var files = Directory.GetFiles(folder, "*.xml");
                 foreach (var file in files)
                 {
                     var element = XElement.Load(file);
@@ -423,11 +425,12 @@ namespace Robots
         public static Tool Load(string name)
         {
             XElement element = null;
-            string folder = $@"{Robots.Util.AssemblyDirectory}\robots\tools";
+            // string folder = $@"{Robots.Util.AssemblyDirectory}\robots\tools";
+            string folder = Path.Combine(LibraryPath, "robots");
 
-            if (System.IO.Directory.Exists(folder))
+            if (Directory.Exists(folder))
             {
-                var files = System.IO.Directory.GetFiles(folder, "*.xml");
+                var files = Directory.GetFiles(folder, "*.xml");
 
                 foreach (var file in files)
                 {
@@ -439,7 +442,6 @@ namespace Robots
             }
 
             if (element == null) throw new InvalidOperationException($" RobotTool \"{name}\" not found");
-
 
             return Create(element);
         }
@@ -481,11 +483,12 @@ namespace Robots
             var meshes = new List<Mesh>();
             Mesh mesh = new Mesh();
 
-            string folder = $@"{Util.AssemblyDirectory}\robots\tools";
+           // string folder = $@"{Util.AssemblyDirectory}\robots\tools";
+            string folder = Path.Combine(LibraryPath, "robots");
 
-            if (System.IO.Directory.Exists(folder))
+            if (Directory.Exists(folder))
             {
-                var files = System.IO.Directory.GetFiles(folder, "*.3dm");
+                var files = Directory.GetFiles(folder, "*.3dm");
                 Rhino.DocObjects.Layer layer = null;
 
                 foreach (var file in files)

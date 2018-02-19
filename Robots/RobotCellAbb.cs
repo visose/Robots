@@ -209,10 +209,12 @@ namespace Robots
 
                     if (cell.MechanicalGroups[group].Externals.Count > 0)
                     {
+                        double[] values = cell.MechanicalGroups[group].RadiansToDegreesExternal(target);
                         var externals = new string[6];
+
                         for (int i = 0; i < 6; i++)
                         {
-                            externals[i] = (i < target.External.Length) ? $"{target.External[i].ToDegrees():0.00}" : "9E9";
+                            externals[i] = (i < target.External.Length) ? $"{values[i]:0.00}" : "9E9";
                         }
 
                         external = $"[{externals[0]},{externals[1]},{externals[2]},{externals[3]},{externals[4]},{externals[5]}]";
