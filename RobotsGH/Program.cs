@@ -141,7 +141,7 @@ namespace Robots.Grasshopper
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
-            pManager.AddTextParameter("Code", "C", "Custom code", GH_ParamAccess.list);
+            pManager.AddTextParameter("Code", "C", "Custom code", GH_ParamAccess.tree);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -152,30 +152,37 @@ namespace Robots.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             GH_Program program = null;
-            var code = new List<string>();
+            GH_Structure<GH_String> codeTree;
 
             if (!DA.GetData(0, ref program)) { return; }
-            if (!DA.GetDataList(1, code)) { return; }
+            if (!DA.GetDataTree(1, out codeTree)) { return; }
+
+            var code = new List<List<List<string>>>();
+            code.Add(new List<List<string>>());
+
+            foreach (var branch in codeTree.Branches)
+            {
+                code[0].Add(branch.Select(s => s.Value).ToList());
+            }
 
             var programCode = program.Value.Code;
             if (programCode != null && programCode.Count > 0)
             {
-                var copyCode = programCode.ToList();
+                //var copyCode = programCode.ToList();
 
-                for (int i = 0; i < copyCode.Count; i++)
-                {
-                    copyCode[i] = copyCode[i].ToList();
+                //for (int i = 0; i < copyCode.Count; i++)
+                //{
+                //    copyCode[i] = copyCode[i].ToList();
 
-                    for (int j = 0; j < copyCode[i].Count; j++)
-                        copyCode[i][j] = copyCode[i][j].ToList();
-                }
+                //    for (int j = 0; j < copyCode[i].Count; j++)
+                //        copyCode[i][j] = copyCode[i][j].ToList();
+                //}
 
-                copyCode[0][0] = code;
+                //copyCode[0][0] = code;
 
-                var newProgram = program.Value.CustomCode(copyCode);
+                var newProgram = program.Value.CustomCode(code);
                 DA.SetData(0, new GH_Program(newProgram));
             }
-
         }
     }
 

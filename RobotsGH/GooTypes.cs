@@ -178,6 +178,26 @@ namespace Robots.Grasshopper
                 return true;
             }
 
+            if (source is GH_String)
+            {
+                string[] texts = (source as GH_String).Value.Split(',');
+                double[] values = new double[texts.Length];
+
+                for (int i = 0; i < texts.Length; i++)
+                    if (!GH_Convert.ToDouble_Secondary(texts[i], ref values[i])) return false;
+
+                if (texts.Length == 1)
+                {
+                    Value = new Zone(values[0]);
+                    return true;
+                }
+                else if (texts.Length == 2)
+                {
+                    Value = new Zone(values[0], values[1]);
+                    return true;
+                }
+            }
+
             double value = 0;
             if (GH_Convert.ToDouble_Secondary(source, ref value))
             {

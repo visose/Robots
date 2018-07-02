@@ -156,7 +156,7 @@ namespace Robots
                     var task = _controller.Rapid.GetTasks().First();
                     task.DeleteProgram();
                     int count = 0;
-                    while (count++ < 100)
+                    while (count++ < 10)
                     {
                         System.Threading.Thread.Sleep(100);
                         try
@@ -165,9 +165,9 @@ namespace Robots
                             if (task.LoadProgramFromFile(filePath, RapidLoadMode.Replace))
                                 return $"Program {program.Name} uploaded to {_controller.Name}.";
                         }
-                        catch (Exception)
+                        catch (Exception e)
                         {
-                           
+                            Log.Add($"Retrying {count}: {e}");
                         }
                     }
 

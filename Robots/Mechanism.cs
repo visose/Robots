@@ -79,7 +79,7 @@ namespace Robots
                 foreach (var file in files)
                 {
                     Rhino.FileIO.File3dm geometry = Rhino.FileIO.File3dm.Read($@"{file}");
-                    var layer = geometry.Layers.FirstOrDefault(x => x.Name == $"{model}");
+                    var layer = geometry.AllLayers.FirstOrDefault(x => x.Name == $"{model}");
 
                     if (layer != null)
                     {
@@ -87,9 +87,9 @@ namespace Robots
                         while (true)
                         {
                             string name = $"{i++}";
-                            var jointLayer = geometry.Layers.FirstOrDefault(x => (x.Name == name) && (x.ParentLayerId == layer.Id));
+                            var jointLayer = geometry.AllLayers.FirstOrDefault(x => (x.Name == name) && (x.ParentLayerId == layer.Id));
                             if (jointLayer == null) break;
-                            meshes.Add(geometry.Objects.First(x => x.Attributes.LayerIndex == jointLayer.LayerIndex).Geometry as Mesh);
+                            meshes.Add(geometry.Objects.First(x => x.Attributes.LayerIndex == jointLayer.Index).Geometry as Mesh);
                         }
 
                         return meshes;
@@ -171,6 +171,8 @@ namespace Robots
                     return new Positioner(modelName, manufacturer, payload, basePlane, baseMesh, joints, movesRobot);
                 case ("Track"):
                     return new Track(modelName, manufacturer, payload, basePlane, baseMesh, joints, movesRobot);
+                case ("Custom"):
+                    return new Custom(modelName, manufacturer, payload, basePlane, baseMesh, joints, movesRobot);
                 default:
                     return null;
             }

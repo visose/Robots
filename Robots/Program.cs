@@ -30,13 +30,13 @@ namespace Robots
         public Program(string name, RobotSystem robotSystem, IEnumerable<IEnumerable<Target>> targets, Commands.Group initCommands = null, IEnumerable<int> multiFileIndices = null, double stepSize = 1.0)
         {
             if (targets.SelectMany(x => x).Count() == 0)
-                throw new Exception(" The program has to contain at least 1 target");
+                throw new Exception(" The program has to contain at least 1 target.");
 
             int targetCount = targets.First().Count();
             foreach (var subTargets in targets)
             {
                 if (subTargets.Count() != targetCount)
-                    throw new Exception(" All sub programs have to contain the same number of targets");
+                    throw new Exception(" All sub programs have to contain the same number of targets.");
             }
 
             this.Name = name;

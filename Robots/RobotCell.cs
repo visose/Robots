@@ -236,11 +236,12 @@ namespace Robots
 
                     if (external.MovesRobot)
                     {
-                        Plane plane = (robotBase != null) ? robotBase.Value : Plane.WorldXY;
+                        //Plane plane = (robotBase != null) ? robotBase.Value : Plane.WorldXY;
                         Plane externalPlane = externalKinematics.Planes[externalKinematics.Planes.Length - 1];
-                        
-                        plane.Transform(externalPlane.ToTransform());
-                        robotBase = plane;
+
+                        //plane.Transform(externalPlane.ToTransform());
+                        //robotBase = plane;
+                        robotBase = externalPlane;
                     }
                 }
 
