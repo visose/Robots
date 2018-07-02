@@ -494,11 +494,11 @@ namespace Robots
                 foreach (var file in files)
                 {
                     Rhino.FileIO.File3dm geometry = Rhino.FileIO.File3dm.Read($@"{file}");
-                    layer = geometry.Layers.FirstOrDefault(x => x.Name == $"{model}");
+                    layer = geometry.AllLayers.FirstOrDefault(x => x.Name == $"{model}");
 
                     if (layer != null)
                     {
-                        meshes = geometry.Objects.Where(x => x.Attributes.LayerIndex == layer.LayerIndex).Select(x => x.Geometry as Mesh).ToList();
+                        meshes = geometry.Objects.Where(x => x.Attributes.LayerIndex == layer.Index).Select(x => x.Geometry as Mesh).ToList();
                         for (int i = 0; i < meshes.Count; ++i)
                         {
                             mesh.Append(meshes[i]);
@@ -759,6 +759,7 @@ namespace Robots
         /// The zone size for the tool reorientation in radians.
         /// </summary>
         public double Rotation { get; set; }
+
         public bool IsFlyBy => Distance > DistanceTol;
 
         public static Zone Default { get; }
@@ -773,6 +774,13 @@ namespace Robots
             this.Name = name;
             this.Distance = distance;
             this.Rotation = (distance / 10).ToRadians();
+        }
+
+        public Zone(double distance, double rotation, string name = null)
+        {
+            this.Name = name;
+            this.Distance = distance;
+            this.Rotation = rotation;
         }
 
         public override string ToString() => (Name != null) ? $"Zone ({Name})" : IsFlyBy ? $"Zone ({Distance:0.00} mm)" : $"Zone (Stop point)";
