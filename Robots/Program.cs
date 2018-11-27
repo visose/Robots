@@ -6,7 +6,6 @@ using static Rhino.RhinoMath;
 using static Robots.Util;
 using static System.Math;
 
-
 namespace Robots
 {
     public class Program
@@ -27,8 +26,11 @@ namespace Robots
 
         Simulation simulation;
 
-        public Program(string name, RobotSystem robotSystem, IEnumerable<IEnumerable<Target>> targets, Commands.Group initCommands = null, IEnumerable<int> multiFileIndices = null, double stepSize = 1.0)
+        public Program(string name, RobotSystem robotSystem, IEnumerable<IToolpath> toolpaths, Commands.Group initCommands = null, IEnumerable<int> multiFileIndices = null, double stepSize = 1.0)
         {
+            // IEnumerable<IEnumerable<Target>> targets
+            var targets = toolpaths.Select(t => t.Targets);
+
             if (targets.SelectMany(x => x).Count() == 0)
                 throw new Exception(" The program has to contain at least 1 target.");
 

@@ -8,7 +8,7 @@ namespace Robots.Grasshopper.Commands
 {
     public class Custom : GH_Component
     {
-        public Custom() : base("Custom command", "CustomCmd", "Custom command written in the manufacturer specific language", "Robots", "Commands") { }
+        public Custom() : base(" command", "CustomCmd", "Custom command written in the manufacturer specific language", "Robots", "Commands") { }
         public override GH_Exposure Exposure => GH_Exposure.primary;
         public override Guid ComponentGuid => new Guid("{D15B1F9D-B3B9-4105-A365-234C1329B092}");
         protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCustomCommand;

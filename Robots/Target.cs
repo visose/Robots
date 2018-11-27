@@ -13,11 +13,13 @@ using System.Xml;
 
 namespace Robots
 {
-    public abstract class Target
+    public abstract class Target : IToolpath
     {
         [Flags]
         public enum RobotConfigurations { None = 0, Shoulder = 1, Elbow = 2, Wrist = 4, Undefined = 8 }
         public enum Motions { Joint, Linear, Circular, Spline }
+
+        public static Target Default { get; }
 
         public Tool Tool { get; set; }
         public Frame Frame { get; set; }
@@ -25,12 +27,13 @@ namespace Robots
         public Zone Zone { get; set; }
         public Command Command { get; set; }
         public double[] External { get; set; }
+        public string[] ExternalCustom { get; set; }
 
-        public static Target Default { get; }
+        public IEnumerable<Target> Targets => Enumerable.Repeat(this, 1);
 
         static Target()
         {
-            Default = new JointTarget(new double[] { 0, PI / 2, 0, 0, 0, 0 }, Tool.Default, Speed.Default, Zone.Default, null, Frame.Default, null);
+            Default = new JointTarget(new double[] { 0, PI / 2, 0, 0, 0, 0 }, Tool.Default, Speed.Default, Zone.Default, Command.Default, Frame.Default, null);
         }
 
         public Target(Tool tool, Speed speed, Zone zone, Command command, Frame frame = null, IEnumerable<double> external = null)
@@ -362,11 +365,11 @@ namespace Robots
         /// <summary>
         /// Name of the attribute
         /// </summary>
-        public string Name { get; internal set; }
+        public virtual string Name { get; internal set; }
 
-        internal TargetAttribute SetName(string name)
+        public T CloneWithName<T>(string name) where T : TargetAttribute
         {
-            var attribute = MemberwiseClone() as TargetAttribute;
+            var attribute = MemberwiseClone() as T;
             attribute.Name = name;
             return attribute;
         }
@@ -483,7 +486,7 @@ namespace Robots
             var meshes = new List<Mesh>();
             Mesh mesh = new Mesh();
 
-           // string folder = $@"{Util.AssemblyDirectory}\robots\tools";
+            // string folder = $@"{Util.AssemblyDirectory}\robots\tools";
             string folder = Path.Combine(LibraryPath, "robots");
 
             if (Directory.Exists(folder))

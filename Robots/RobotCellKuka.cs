@@ -58,8 +58,7 @@ namespace Robots
                 c = 0;
             }
 
-            var euler = new double[] { a, b, c }.Select(x => -x.ToDegrees()).ToArray();
-            return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, euler[0], euler[1], euler[2] };
+            return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, -a.ToDegrees(), -b.ToDegrees(), -c.ToDegrees() };
         }
 
         public override double[] PlaneToNumbers(Plane plane) => PlaneToEuler(plane);

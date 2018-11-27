@@ -21,6 +21,10 @@ namespace Robots
         Mesh environment;
         int environmentPlane;
 
+        bool _onlyOne;
+        int _oneFirst;
+        int _oneSecond;
+
         public bool HasCollision { get; private set; } = false;
         public Mesh[] Meshes { get; private set; }
         public CellTarget CollisionTarget { get; private set; }
@@ -36,12 +40,18 @@ namespace Robots
             this.environment = environment;
             this.environmentPlane = environmentPlane;
 
+            if(first.Count() == 1 && second.Count() == 1)
+            {
+                _onlyOne = true;
+                _oneFirst = first.First();
+                _oneSecond = second.First();
+            }
+
             Collide();
         }
 
         void Collide()
         {
-
             Parallel.ForEach(program.Targets, (cellTarget, state) =>
             {
                 if (cellTarget.Index == 0) return;
@@ -68,6 +78,8 @@ namespace Robots
 
                 //  double step = 1.0 / divisions;
 
+                var meshes = new List<Mesh>();
+
                 int j = (cellTarget.Index == 1) ? 0 : 1;
 
                 for (int i = j; i < divisions; i++)
@@ -75,27 +87,53 @@ namespace Robots
                     double t = (double)i / (double)divisions;
                     var kineTargets = cellTarget.Lerp(prevcellTarget, robotSystem, t, 0.0, 1.0);
                     var kinematics = program.RobotSystem.Kinematics(kineTargets, displayMeshes: true);
-                    var meshes = kinematics.SelectMany(x => x.Meshes).ToList();
+                    
+                    meshes.Clear();
+                    meshes.AddRange(kinematics.SelectMany(x => x.Meshes));
 
                     if (this.environment != null)
                     {
-                        Mesh currentEnvironment = this.environment.DuplicateMesh();
                         if (this.environmentPlane != -1)
+                        {
+                            Mesh currentEnvironment = this.environment.DuplicateMesh();
                             currentEnvironment.Transform(Transform.PlaneToPlane(Plane.WorldXY, kinematics.SelectMany(x => x.Planes).ToList()[environmentPlane]));
-                        meshes.Add(currentEnvironment);
+                            meshes.Add(currentEnvironment);
+                        }
+                        else
+                        {
+                            meshes.Add(this.environment);
+                        }
                     }
 
-                    var setA = first.Select(x => meshes[x]);
-                    var setB = second.Select(x => meshes[x]);
-
-                    var meshClash = Rhino.Geometry.Intersect.MeshClash.Search(setA, setB, 1, 1);
-
-                    if (meshClash.Length > 0 && (!HasCollision || CollisionTarget.Index > cellTarget.Index))
+                    if (_onlyOne)
                     {
-                        HasCollision = true;
-                        Meshes = new Mesh[] { meshClash[0].MeshA, meshClash[0].MeshB };
-                        this.CollisionTarget = cellTarget;
-                        state.Break();
+                        var meshA = meshes[_oneFirst];
+                        var meshB = meshes[_oneSecond];
+
+                        var meshClash = Rhino.Geometry.Intersect.Intersection.MeshMeshFast(meshA, meshB);
+
+                        if (meshClash.Length > 0 && (!HasCollision || CollisionTarget.Index > cellTarget.Index))
+                        {
+                            HasCollision = true;
+                            Meshes = new Mesh[] { meshA, meshB };
+                            this.CollisionTarget = cellTarget;
+                            state.Break();
+                        }
+                    }
+                    else
+                    {
+                        var setA = first.Select(x => meshes[x]);
+                        var setB = second.Select(x => meshes[x]);
+
+                        var meshClash = Rhino.Geometry.Intersect.MeshClash.Search(setA, setB, 1, 1);
+
+                        if (meshClash.Length > 0 && (!HasCollision || CollisionTarget.Index > cellTarget.Index))
+                        {
+                            HasCollision = true;
+                            Meshes = new Mesh[] { meshClash[0].MeshA, meshClash[0].MeshB };
+                            this.CollisionTarget = cellTarget;
+                            state.Break();
+                        }
                     }
                 }
             });

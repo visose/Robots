@@ -12,7 +12,7 @@ namespace Robots.Grasshopper
 {
     public class LoadRobotSystem : GH_Component
     {
-        GH_ValueList valueList = null; 
+        GH_ValueList valueList = null;
         IGH_Param parameter = null;
 
         public LoadRobotSystem() : base("Load robot system", "Load robot", "Loads a robot system either from the library or from a custom file", "Robots", "Components") { }
@@ -56,9 +56,9 @@ namespace Robots.Grasshopper
                 var robotSystems = RobotSystem.ListRobotSystems();
 
                 foreach (string robotSystemName in robotSystems)
-                { 
-               valueList.ListItems.Add(new GH_ValueListItem(robotSystemName, $"\"{robotSystemName}\""));
-           }
+                {
+                    valueList.ListItems.Add(new GH_ValueListItem(robotSystemName, $"\"{robotSystemName}\""));
+                }
 
                 Instances.ActiveCanvas.Document.AddObject(valueList, false);
                 parameter.AddSource(valueList);
@@ -87,7 +87,7 @@ namespace Robots.Grasshopper
         public LoadTool() : base("Load robot tool", "Load tool", "Loads a tool either from the library or from a custom file", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.primary;
         public override Guid ComponentGuid => new Guid("{542aa5fd-4f02-4ee5-a2a0-02b0fac8777f}");
-        protected override Bitmap Icon => Properties.Resources.iconRobot;
+        protected override Bitmap Icon => Properties.Resources.iconTool;
 
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
