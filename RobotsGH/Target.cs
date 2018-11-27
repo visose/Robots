@@ -198,6 +198,9 @@ namespace Robots.Grasshopper
             else
                 target = new JointTarget(joints, tool, speed, zone, command, frame, external);
 
+            if (sourceTarget != null)
+                target.ExternalCustom = sourceTarget.Value.ExternalCustom;
+
             DA.SetData(0, new GH_Target(target));
         }
 

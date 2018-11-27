@@ -13,7 +13,7 @@ using static System.Math;
 
 namespace Robots
 {
-    public enum Manufacturers { ABB, KUKA, UR, FANUC, Other };
+    public enum Manufacturers { ABB, KUKA, UR, FANUC, Staubli, Other };
 
     public abstract class RobotSystem
     {
@@ -193,6 +193,8 @@ namespace Robots
                         return new RobotCellUR(name, mechanicalGroups[0].Robot, io, basePlane, environment);
                     case (Manufacturers.FANUC):
                         return new RobotCellFanuc(name, mechanicalGroups, io, basePlane, environment);
+                    case (Manufacturers.Staubli):
+                        return new RobotCellStaubli(name, mechanicalGroups, io, basePlane, environment);
                 }
             }
 

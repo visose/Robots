@@ -19,6 +19,10 @@ namespace Robots
         protected virtual string CodeKuka(RobotSystem robotSystem, Target target) { throw new Exception($"Command {this.GetType().Name} for KUKA not implemented."); }
         protected virtual string CodeUR(RobotSystem robotSystem, Target target) { throw new Exception($"Command {this.GetType().Name} for UR not implemented."); }
 
+        // public override string Name => GetType().Name;
+
+        public bool RunBefore { get; set; } = false;
+
         public static Command Default { get; }
 
         static Command()
@@ -56,14 +60,13 @@ namespace Robots.Commands
 {
     public class Custom : Command
     {
-        string name;
         string abbDeclaration, abbCode;
         string kukaDeclaration, kukaCode;
         string urDeclaration, urCode;
 
         public Custom(string name = "Custom command", string abbDeclaration = null, string kukaDeclaration = null, string urDeclaration = null, string abbCode = null, string kukaCode = null, string urCode = null)
         {
-            this.name = name;
+            Name = name;
             this.abbDeclaration = abbDeclaration;
             this.kukaDeclaration = kukaDeclaration;
             this.urDeclaration = urDeclaration;
@@ -80,7 +83,7 @@ namespace Robots.Commands
         protected override string CodeKuka(RobotSystem robotSystem, Target target) => kukaCode;
         protected override string CodeUR(RobotSystem robotSystem, Target target) => urCode;
 
-        public override string ToString() => $"Command ({name})";
+        public override string ToString() => $"Command ({Name})";
     }
 
     public class Group : Command, IList<Command>
@@ -90,6 +93,7 @@ namespace Robots.Commands
         public Group() { }
         public Group(IEnumerable<Command> commands)
         {
+            Name = "Group command";
             this.commands.AddRange(commands);
         }
 
@@ -278,7 +282,7 @@ namespace Robots.Commands
 
         protected override string DeclarationAbb(RobotSystem robotSystem)
         {
-            return $"PERS num {this.Name} := {this.Seconds:0.00};";
+            return $"PERS num {this.Name}:={this.Seconds:0.00};";
         }
 
         protected override string DeclarationKuka(RobotSystem robotSystem)

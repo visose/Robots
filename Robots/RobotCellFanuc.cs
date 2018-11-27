@@ -46,6 +46,8 @@ namespace Robots
         
         internal override void SaveCode(Program program, string folder)
         {
+            throw new NotImplementedException("Fanuc postprocessor not yet implemented.");
+
             /*
              * TODO: Implement...
              * 

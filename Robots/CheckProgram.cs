@@ -356,7 +356,7 @@ namespace Robots
 
         void SetAttributeName(TargetAttribute attribute, IEnumerable<ProgramTarget> targets, string name)
         {
-            var namedAttribute = attribute.SetName(name);
+            var namedAttribute = attribute.CloneWithName<TargetAttribute>(name);
 
             int index = program.Attributes.FindIndex(x => x == attribute);
             program.Attributes[index] = namedAttribute;

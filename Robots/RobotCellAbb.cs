@@ -213,13 +213,27 @@ namespace Robots
                         var externals = new string[6];
 
                         for (int i = 0; i < 6; i++)
+                            externals[i] = "9E9";
+
+                        if (target.ExternalCustom == null)
                         {
-                            externals[i] = (i < target.External.Length) ? $"{values[i]:0.00}" : "9E9";
+                            for (int i = 0; i < target.External.Length; i++)
+                            {
+                                externals[i] = $"{values[i]:0.00}";
+                            }
+                        }
+                        else
+                        {
+                            for (int i = 0; i < target.External.Length; i++)
+                            {
+                                string e = target.ExternalCustom[i];
+                                if (!string.IsNullOrEmpty(e))
+                                    externals[i] = e;
+                            }
                         }
 
-                        external = $"[{externals[0]},{externals[1]},{externals[2]},{externals[3]},{externals[4]},{externals[5]}]";
+                        external = $"[{string.Join(",", externals)}]";
                     }
-
 
                     if (programTarget.IsJointTarget)
                     {
@@ -249,7 +263,7 @@ namespace Robots
                                     if (cf4 < 0) cf4--;
                                     if (cf6 < 0) cf6--;
 
-                                    Target.RobotConfigurations configuration = (Target.RobotConfigurations)programTarget.Kinematics.Configuration;
+                                    Target.RobotConfigurations configuration = programTarget.Kinematics.Configuration;
                                     bool shoulder = configuration.HasFlag(Target.RobotConfigurations.Shoulder);
                                     bool elbow = configuration.HasFlag(Target.RobotConfigurations.Elbow);
                                     if (shoulder) elbow = !elbow;
@@ -278,11 +292,13 @@ namespace Robots
                         }
                     }
 
-                    code.Add(moveText);
-                    foreach (var command in programTarget.Commands)
-                    {
+                    foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
                         code.Add(command.Code(cell, target));
-                    }
+
+                    code.Add(moveText);
+
+                    foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
+                        code.Add(command.Code(cell, target));
                 }
 
                 if (!multiProgram)

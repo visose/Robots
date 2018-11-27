@@ -247,7 +247,7 @@ namespace Robots
             if (program.Code == null) throw new NullReferenceException(" Program code not generated");
 
             string file = $@"{folder}\{program.Name}.URS";
-            var joinedCode = string.Join("\r\n", program.Code[0]);
+            var joinedCode = string.Join("\r\n", program.Code[0].SelectMany(c=>c));
             File.WriteAllText(file, joinedCode);
         }
 

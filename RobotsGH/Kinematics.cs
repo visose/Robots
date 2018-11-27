@@ -6,8 +6,11 @@ using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Forms;
-using System.Drawing;
+//using System.Windows.Forms;
+//using System.Drawing;
+using Eto.Drawing;
+using Eto.Forms;
+using System.ComponentModel;
 
 namespace Robots.Grasshopper
 {
@@ -16,7 +19,7 @@ namespace Robots.Grasshopper
         public Kinematics() : base("Kinematics", "K", "Inverse and forward kinematics for a single target (or group of targets in a robot cell with coord", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.quarternary;
         public override Guid ComponentGuid => new Guid("{EFDA05EB-B281-4703-9C9E-B5F98A9B2E1D}");
-        protected override Bitmap Icon => Properties.Resources.iconKinematics;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconKinematics;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
@@ -96,7 +99,10 @@ namespace Robots.Grasshopper
     {
         public Simulation() : base("Program simulation", "Sim", "Rough simulation of the robot program, right click for playback controls", "Robots", "Components")
         {
-            form = new AnimForm(this);
+            form = new AnimForm(this)
+            {
+                Owner = Rhino.UI.RhinoEtoApp.MainWindow
+            };
         }
 
         double time = 0;
@@ -104,7 +110,7 @@ namespace Robots.Grasshopper
 
         public override GH_Exposure Exposure => GH_Exposure.quarternary;
         public override Guid ComponentGuid => new Guid("{6CE35140-A625-4686-B8B3-B734D9A36CFC}");
-        protected override Bitmap Icon => Properties.Resources.iconSimulation;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconSimulation;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
@@ -156,7 +162,7 @@ namespace Robots.Grasshopper
             DA.SetData(5, new GH_Program(program.Value));
             DA.SetDataList(6, errors);
 
-            if (form.Visible && form.play.Checked)
+            if (form.Visible && form.play.Checked.Value)
             {
                 var currentTime = DateTime.Now;
                 TimeSpan delta = currentTime - lastTime;
@@ -172,7 +178,7 @@ namespace Robots.Grasshopper
         double speed = 1;
         DateTime lastTime;
 
-        protected override void AppendAdditionalComponentMenuItems(ToolStripDropDown menu)
+        protected override void AppendAdditionalComponentMenuItems(System.Windows.Forms.ToolStripDropDown menu)
         {
             Menu_AppendItem(menu, "Open controls", OpenForm, true, form.Visible);
         }
@@ -180,11 +186,18 @@ namespace Robots.Grasshopper
         void OpenForm(object sender, EventArgs e)
         {
             if (form.Visible)
-                form.Hide();
+            {
+                form.play.Checked = false;
+                form.Visible = false;
+            }
             else
             {
-                form.Show(Instances.DocumentEditor);
-                GH_WindowsFormUtil.CenterFormOnCursor(form, true);
+                var mousePos = Mouse.Position;
+                int x = (int)mousePos.X + 20;
+                int y = (int)mousePos.Y - 160;
+
+                form.Location = new Eto.Drawing.Point(x, y);
+                form.Show();
             }
         }
 
@@ -203,13 +216,6 @@ namespace Robots.Grasshopper
 
         void ClickScroll(object sender, EventArgs e)
         {
-            double trackValue = form.slider.Value;
-
-            if (form.slider.Value % form.slider.SmallChange != 0)
-            {
-                form.slider.Value = (form.slider.Value / form.slider.SmallChange) * form.slider.SmallChange;
-            }
-
             speed = (double)form.slider.Value / 100.0;
         }
 
@@ -218,129 +224,84 @@ namespace Robots.Grasshopper
             form.Dispose();
         }
 
-        partial class AnimForm : Form
+        class AnimForm : Form
         {
-            Simulation component;
+            Simulation _component;
 
-            internal CheckBox play = new CheckBox();
-            private Button stop = new Button();
-            internal TrackBar slider = new TrackBar();
+            internal CheckBox play;
+            internal Slider slider;
 
             public AnimForm(Simulation component)
             {
-                this.component = component;
-                InitializeComponent();
-            }
+                _component = component;
 
-            protected override void OnFormClosing(FormClosingEventArgs e)
-            {
-                base.OnFormClosing(e);
-                if (e.CloseReason == CloseReason.UserClosing)
+                Maximizable = false;
+                Minimizable = false;
+                Padding = new Padding(5);
+                Resizable = false;
+                ShowInTaskbar = true;
+                Topmost = true;
+                Title = "Playback";
+                WindowStyle = WindowStyle.Default;
+
+                var font = new Font(FontFamilies.Sans, 12, FontStyle.None, FontDecoration.None);
+                var size = new Size(35, 35);
+
+                play = new CheckBox()
                 {
-                    e.Cancel = true;
-                    this.Hide();
-                }
-            }
-
-            private System.ComponentModel.IContainer components = null;
-
-            protected override void Dispose(bool disposing)
-            {
-                if (disposing && (components != null)) components.Dispose();
-                base.Dispose(disposing);
-            }
-
-            private void InitializeComponent()
-            {
-                this.SuspendLayout();
-
-                var controlFont = new Font(FontFamily.GenericSansSerif, 20f, FontStyle.Regular, GraphicsUnit.Pixel);
-                var labelFont = new Font(FontFamily.GenericSansSerif, 10f, FontStyle.Regular, GraphicsUnit.Pixel);
-
-                // Form
-                Controls.Add(play);
-                Controls.Add(stop);
-
-                // AutoScaleDimensions = new SizeF(6F, 13F);
-                AutoScaleMode = AutoScaleMode.None;
-                AutoSize = false;
-                MinimumSize = new Size(0, 0);
-                Size = new Size(138, 320);
-                Name = "Simulation controls";
-                Text = "Simulation";
-                ResumeLayout(false);
-                FormBorderStyle = FormBorderStyle.FixedSingle;
-                MinimizeBox = false;
-                MaximizeBox = false;
-                ShowIcon = false;
-                TransparencyKey = Color.White;
-
-                // Play
-                play.Location = new System.Drawing.Point(6, 6);
-                play.Size = new Size(60, 60);
-                play.Name = "Play";
-                play.Text = "\u25B6";
-                play.Font = controlFont;
-                play.TextAlign = ContentAlignment.MiddleCenter;
-                play.TabIndex = 0;
-                play.UseVisualStyleBackColor = true;
-                play.Click += new EventHandler(component.ClickPlay);
-                play.Appearance = Appearance.Button;
-
-                // Stop
-                stop.Location = new System.Drawing.Point(66, 6);
-                stop.Size = new Size(60, 60);
-                stop.Name = "Pause";
-                stop.Text = "\u25FC";
-                play.Font = controlFont;
-                play.TextAlign = ContentAlignment.MiddleCenter;
-                stop.TabIndex = 1;
-                stop.UseVisualStyleBackColor = true;
-                stop.Click += new EventHandler(component.ClickStop);
-
-
-                // Slider group
-                var group = new GroupBox()
-                {
-                    Location = new System.Drawing.Point(6, 66),
-                    Size = new Size(120, 220),
-                    Text = "Speed",
-                    Font = labelFont
+                    Text = "\u25B6",
+                    Size = size,
+                    Font = font,
+                    Checked = false,
+                    TabIndex = 0
                 };
-                this.Controls.Add(group);
+                play.CheckedChanged += component.ClickPlay;
 
-                // Slider
-                slider.Location = new System.Drawing.Point(6, 14);
-                slider.Size = new Size(45, 200);
-                slider.Orientation = Orientation.Vertical;
-                slider.Name = "Speed";
-                slider.TabIndex = 2;
-                slider.Maximum = 400;
-                slider.Minimum = -200;
-                slider.TickFrequency = 100;
-                slider.LargeChange = 100;
-                slider.SmallChange = 50;
-                slider.TickStyle = TickStyle.BottomRight;
-                slider.Value = 100;
-                slider.ValueChanged += new EventHandler(component.ClickScroll);
-                group.Controls.Add(slider);
-
-                // Slider labels
-                int count = (slider.Maximum - slider.Minimum) / slider.TickFrequency;
-
-                for (int i = 0; i <= count; i++)
+                var stop = new Button()
                 {
-                    var label = new Label()
-                    {
-                        Location = new System.Drawing.Point(51, 16 + i * 29),
-                        Size = new Size(60, 20),
-                        Text = (slider.Maximum - i * 100).ToString() + "%",
-                        Font = labelFont,
-                        TextAlign = ContentAlignment.MiddleLeft
-                    };
+                    Text = "\u25FC",
+                    Size = size,
+                    Font = font,
+                    TabIndex = 1
+                };
+                stop.Click += component.ClickStop;
 
-                    group.Controls.Add(label);
-                }
+                slider = new Slider()
+                {
+                    Orientation = Orientation.Vertical,
+                    Size = new Size(45, 200),
+                    TabIndex = 2,
+                    MaxValue = 400,
+                    MinValue = -200,
+                    TickFrequency = 100,
+                    SnapToTick = true,
+                    Value = 100,
+                };
+                slider.ValueChanged += _component.ClickScroll;
+
+                var speedLabel = new Label()
+                {
+                    Text = "100%",
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+
+                var layout = new DynamicLayout();
+                layout.BeginVertical(new Padding(2), Size.Empty);
+                layout.AddSeparateRow(padding: new Padding(10), spacing: new Size(10, 0), controls: new Control[] { play, stop });
+                layout.BeginGroup("Speeds");
+                layout.AddSeparateRow(slider, speedLabel);
+                layout.EndGroup();
+                layout.EndVertical();
+
+                Content = layout;
+            }
+
+            protected override void OnClosing(CancelEventArgs e)
+            {
+                //base.OnClosing(e);
+                e.Cancel = true;
+                play.Checked = false;
+                Visible = false;
             }
         }
     }

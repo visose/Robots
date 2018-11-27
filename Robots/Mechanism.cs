@@ -163,6 +163,10 @@ namespace Robots
                                 return new RobotKuka(modelName, payload, basePlane, baseMesh, joints);
                             case (Manufacturers.UR):
                                 return new RobotUR(modelName, payload, basePlane, baseMesh, joints);
+                            //case (Manufacturers.FANUC):
+                            //    return new RobotFanuc(modelName, payload, basePlane, baseMesh, joints);
+                            case (Manufacturers.Staubli):
+                                return new RobotStaubli(modelName, payload, basePlane, baseMesh, joints);
                             default:
                                 return null;
                         }
