@@ -1,0 +1,35 @@
+﻿<RobotSystems>
+
+  <RobotCell name="MIT-ABB-IRB6640_sim" manufacturer="ABB">
+    <Mechanisms group="0">
+    <!-- https://new.abb.com/products/robotics/industrial-robots/irb-6640 -->
+    <!-- For DH params: https://library.e.abb.com/public/d07080cf609b40be8949400ad2cb0d4e/3HAC028284-en.pdf page 14 -->
+      <RobotArm model="IRB6640-280" manufacturer="ABB" payload="185">
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Joints>
+          <Revolute number="1" a ="320" d ="780" minrange = "-170" maxrange ="170" maxspeed ="105"/>
+          <Revolute number="2" a ="1075" d ="0" minrange = "-65" maxrange ="85" maxspeed ="90"/>
+          <Revolute number="3" a ="200" d ="0" minrange = "-180" maxrange ="70" maxspeed ="90"/>
+          <Revolute number="4" a ="0" d ="1392.5" minrange = "-300" maxrange ="300" maxspeed ="170"/>
+          <Revolute number="5" a ="0" d ="0" minrange = "-120" maxrange ="120" maxspeed ="120"/>
+          <Revolute number="6" a ="0" d ="200" minrange = "-360" maxrange ="360" maxspeed ="190"/>
+        </Joints>
+      </RobotArm>
+      <Track model="KUKA-UCLA" manufacturer="KUKA" payload="1000" movesRobot="true">
+      	<!-- the track's base needs to be rotate 90 degrees around the world's z axis. - You can use the 'FromPlane' component to get the list of values to input below. -->
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="1.000"/>
+        <Joints>
+        	<!-- is the primsatic joint's limit in millimeter unit? YES -->
+          <Prismatic number="7" a ="525" d ="940.25" minrange = "0" maxrange ="6500" maxspeed ="1890"/>
+        </Joints>
+      </Track>
+    </Mechanisms>
+    <IO>
+      <DO names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
+      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
+      <AO names="1,2,3,4"/>
+      <AI names="1,2,3,4"/>
+    </IO>
+  </RobotCell>
+
+</RobotSystems>

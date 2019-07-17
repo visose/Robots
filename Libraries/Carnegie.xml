@@ -1,0 +1,48 @@
+<RobotSystems>
+
+  <RobotCell name="CMU dFab IRB4400-60" manufacturer="ABB">
+    <Mechanisms>
+      <RobotArm model="IRB4400-60" manufacturer="ABB" payload="60">
+       <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+       <Joints>
+        <Revolute number="1" a ="200" d ="680" minrange = "-165" maxrange ="165" maxspeed ="150"/>
+        <Revolute number="2" a ="890" d ="0" minrange = "-70" maxrange ="95" maxspeed ="120"/>
+        <Revolute number="3" a ="150" d ="0" minrange = "-60" maxrange ="65" maxspeed ="120"/>
+        <Revolute number="4" a ="0" d ="880" minrange = "-200" maxrange ="200" maxspeed ="225"/>
+        <Revolute number="5" a ="0" d ="0" minrange = "-120" maxrange ="120" maxspeed ="250"/>
+        <Revolute number="6" a ="0" d ="140" minrange = "-400" maxrange ="400" maxspeed ="330"/>
+       </Joints>
+      </RobotArm>
+    </Mechanisms>
+    <IO>
+      <DO names="DO10_1,DO10_2,DO10_3,DO10_4,DO10_5,DO10_6,DO10_7,DO10_8,DO10_9,DO10_10,DO10_11,DO10_12,DO10_13,DO10_14,DO10_15,DO10_16"/>
+      <DI names="DI10_1,DI10_2,DI10_3,DI10_4,DI10_5,DI10_6,DI10_7,DI10_8,DI10_9,DI10_10,DI10_11,DI10_12,DI10_13,DI10_14,DI10_15,DO10_16"/>
+      <AO names="AO10_1,AO10_2"/>
+      <AI names="AI10_1,AI10_2"/>
+    </IO>
+  </RobotCell>
+
+  <RobotCell name="CMU dFab IRB6640-235" manufacturer="ABB">
+    <Mechanisms>
+      <RobotArm model="IRB6640-235" manufacturer="ABB" payload="235">
+       <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+       <Joints>
+        <Revolute number="1" a ="320" d ="780" minrange = "-170" maxrange ="170" maxspeed ="100"/>
+        <Revolute number="2" a ="1075" d ="0" minrange = "-65" maxrange ="85" maxspeed ="90"/>
+        <Revolute number="3" a ="200" d ="0" minrange = "-180" maxrange ="70" maxspeed ="90"/>
+        <Revolute number="4" a ="0" d ="1142.5" minrange = "-300" maxrange ="300" maxspeed ="170"/>
+        <Revolute number="5" a ="0" d ="0" minrange = "-120" maxrange ="120" maxspeed ="120"/>
+        <Revolute number="6" a ="0" d ="200" minrange = "-360" maxrange ="360" maxspeed ="190"/>
+       </Joints>
+      </RobotArm>
+    </Mechanisms>
+    <IO>
+      <DO names="DO10_1,DO10_2,DO10_3,DO10_4,DO10_5,DO10_6,DO10_7,DO10_8,DO10_9,DO10_10,DO10_11,DO10_12,DO10_13,DO10_14,DO10_15,DO10_16"/>
+      <DI names="DI10_1,DI10_2,DI10_3,DI10_4,DI10_5,DI10_6,DI10_7,DI10_8,DI10_9,DI10_10,DI10_11,DI10_12,DI10_13,DI10_14,DI10_15,DO10_16"/>
+      <AO names="AO10_1,AO10_2"/>
+      <AI names="AI10_1,AI10_2"/>
+    </IO>
+  </RobotCell>
+  
+
+</RobotSystems>
