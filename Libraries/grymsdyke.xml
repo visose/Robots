@@ -37,8 +37,8 @@
     <IO>
       <DO names="1,2,3,4"/>
       <DI names="1,2,3,4"/>
-      <AO names="0,1"/>
-      <AI names="0,1"/>
+      <AO names="1,2"/>
+      <AI names="1,2"/>
     </IO>
   </RobotCell>
 
