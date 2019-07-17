@@ -2,11 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
-using static Rhino.RhinoMath;
-using static Robots.Util;
 using static System.Math;
-
 
 namespace Robots
 {
@@ -31,6 +29,8 @@ namespace Robots
 
         internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh environment, int environmentPlane, double linearStep, double angularStep)
         {
+            throw new NotImplementedException(" Collisions have to be reimplemented.");
+
             this.program = program;
             this.robotSystem = program.RobotSystem;
             this.linearStep = linearStep;
@@ -40,7 +40,7 @@ namespace Robots
             this.environment = environment;
             this.environmentPlane = environmentPlane;
 
-            if(first.Count() == 1 && second.Count() == 1)
+            if (first.Count() == 1 && second.Count() == 1)
             {
                 _onlyOne = true;
                 _oneFirst = first.First();
@@ -76,8 +76,6 @@ namespace Robots
                     if (tempDivisions > divisions) divisions = tempDivisions;
                 }
 
-                //  double step = 1.0 / divisions;
-
                 var meshes = new List<Mesh>();
 
                 int j = (cellTarget.Index == 1) ? 0 : 1;
@@ -86,10 +84,12 @@ namespace Robots
                 {
                     double t = (double)i / (double)divisions;
                     var kineTargets = cellTarget.Lerp(prevcellTarget, robotSystem, t, 0.0, 1.0);
-                    var kinematics = program.RobotSystem.Kinematics(kineTargets, displayMeshes: true);
-                    
+                    var kinematics = program.RobotSystem.Kinematics(kineTargets);
+
                     meshes.Clear();
-                    meshes.AddRange(kinematics.SelectMany(x => x.Meshes));
+
+                    // TODO: Meshes not a property of KinematicSolution anymore
+                    // meshes.AddRange(kinematics.SelectMany(x => x.Meshes)); 
 
                     if (this.environment != null)
                     {

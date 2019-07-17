@@ -37,7 +37,8 @@ namespace Robots
 
         public static double[] PlaneToQuaternion(Plane plane)
         {
-            var q = Quaternion.Rotation(Plane.WorldXY, plane);
+            var q = GetRotation(plane);
+         //   var q = Quaternion.Rotation(Plane.WorldXY, plane);
             return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, q.A, q.B, q.C, q.D };
         }
 

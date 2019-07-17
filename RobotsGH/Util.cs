@@ -95,7 +95,7 @@ namespace Robots.Grasshopper
             if (!DA.GetData(2, ref group)) { return; }
 
             var radians = degrees.Select((x, i) => (robotSystem.Value).DegreeToRadian(x, i, group));
-            string radiansText = string.Join(",", radians.Select(x => $"{x:0.00}"));
+            string radiansText = string.Join(",", radians.Select(x => $"{x:0.00000}"));
 
             DA.SetData(0, radiansText);
         }
@@ -103,10 +103,10 @@ namespace Robots.Grasshopper
 
     public class GetPlane : GH_Component
     {
-        public GetPlane() : base("Get plane", "GetPlane", "Get a plane from a point in space and a 3D rotation. The input has to be a list of 6 or 7 numbers. The last 3 or 4 numbers will", "Robots", "Util") { }
+        public GetPlane() : base("Get plane", "GetPlane", "Get a plane from a point in space and a 3D rotation. The input has to be a list of 6 or 7 numbers. ", "Robots", "Util") { }
         public override GH_Exposure Exposure => GH_Exposure.primary;
         public override Guid ComponentGuid => new Guid("{F271BD0B-7249-4647-B273-577D8EA6328F}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconGetPlane;
+        protected override Bitmap Icon => Properties.Resources.iconGetPlane;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {

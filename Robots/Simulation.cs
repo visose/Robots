@@ -35,7 +35,7 @@ namespace Robots
             if (keyframes.Count == 1)
             {
                 this.currentSimulationTarget = program.Targets[0].ShallowClone();
-                var firstKinematics = program.RobotSystem.Kinematics(keyframes[0].ProgramTargets.Select(x => x.Target), null, displayMeshes: true);
+                var firstKinematics = program.RobotSystem.Kinematics(keyframes[0].ProgramTargets.Select(x => x.Target), null);
                 foreach (var programTarget in this.currentSimulationTarget.ProgramTargets) programTarget.Kinematics = firstKinematics[programTarget.Group];
                 return;
             }
@@ -73,7 +73,7 @@ namespace Robots
             var prevJoints = prevCellTarget.ProgramTargets.Select(x => x.Kinematics.Joints);
 
             var kineTargets = cellTarget.Lerp(prevCellTarget, program.RobotSystem, currentTime, prevCellTarget.TotalTime, cellTarget.TotalTime);
-            var kinematics = program.RobotSystem.Kinematics(kineTargets, prevJoints, displayMeshes: true);
+            var kinematics = program.RobotSystem.Kinematics(kineTargets, prevJoints);
 
             //  var newSimulationTarget = cellTarget.ShallowClone(cellTarget.Index);
             var newSimulationTarget = program.Targets[cellTarget.Index].ShallowClone();

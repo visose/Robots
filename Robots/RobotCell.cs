@@ -1,13 +1,9 @@
 ﻿using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Xml.Linq;
 using System.Xml;
-using static Robots.Util;
-using static System.Math;
+using System.Xml.Linq;
 
 namespace Robots
 {
@@ -77,7 +73,7 @@ namespace Robots
             }
         }
 
-        public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]> prevJoints = null, bool displayMeshes = false) => new RobotCellKinematics(this, targets, prevJoints, displayMeshes).Solutions;
+        public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]> prevJoints = null) => new RobotCellKinematics(this, targets, prevJoints).Solutions;
 
         public override double DegreeToRadian(double degree, int i, int group = 0) => this.MechanicalGroups[group].DegreeToRadian(degree, i);
 
@@ -85,7 +81,7 @@ namespace Robots
         {
             internal List<KinematicSolution> Solutions;
 
-            internal RobotCellKinematics(RobotCell cell, IEnumerable<Target> targets, IEnumerable<double[]> prevJoints, bool displayMeshes)
+            internal RobotCellKinematics(RobotCell cell, IEnumerable<Target> targets, IEnumerable<double[]> prevJoints)
             {
                 this.Solutions = new List<KinematicSolution>(new KinematicSolution[cell.MechanicalGroups.Count]);
 
@@ -125,7 +121,7 @@ namespace Robots
                         coupledPlane = null;
                     }
 
-                    var kinematics = group.Kinematics(target, prevJoint, coupledPlane, displayMeshes, cell.BasePlane);
+                    var kinematics = group.Kinematics(target, prevJoint, coupledPlane, cell.BasePlane);
                     Solutions[i] = kinematics;
                 }
             }
@@ -138,16 +134,28 @@ namespace Robots
         internal string Name { get; }
         public RobotArm Robot { get; }
         public List<Mechanism> Externals { get; }
-        internal List<Joint> Joints { get; }
+        public List<Joint> Joints { get; }
+        public List<Plane> DefaultPlanes { get; }
+        public List<Mesh> DefaultMeshes { get; }
 
         internal MechanicalGroup(int index, List<Mechanism> mechanisms)
         {
-            this.Index = index;
-            this.Name = $"T_ROB{index + 1}";
-            this.Joints = mechanisms.SelectMany(x => x.Joints.OrderBy(y => y.Number)).ToList();
-            this.Robot = mechanisms.OfType<RobotArm>().FirstOrDefault();
+            Index = index;
+            Name = $"T_ROB{index + 1}";
+            Joints = mechanisms.SelectMany(x => x.Joints.OrderBy(y => y.Number)).ToList();
+            Robot = mechanisms.OfType<RobotArm>().FirstOrDefault();
             mechanisms.Remove(Robot);
-            this.Externals = mechanisms;
+            Externals = mechanisms;
+
+            DefaultPlanes = mechanisms
+                .Select(m => m.Joints.Select(j => j.Plane).Prepend(m.BasePlane)).SelectMany(p => p)
+                .Append(Robot.BasePlane).Concat(Robot.Joints.Select(j => j.Plane).Append(Plane.WorldXY))
+                .ToList();
+
+            DefaultMeshes = mechanisms
+                 .Select(m => m.Joints.Select(j => j.Mesh).Prepend(m.BaseMesh)).SelectMany(p => p)
+                 .Append(Robot.BaseMesh).Concat(Robot.Joints.Select(j => j.Mesh))
+                 .ToList();
         }
 
         internal static MechanicalGroup Create(XElement element)
@@ -163,7 +171,7 @@ namespace Robots
             return new MechanicalGroup(index, mechanisms);
         }
 
-        public KinematicSolution Kinematics(Target target, double[] prevJoints = null, Plane? coupledPlane = null, bool displayMeshes = false, Plane? basePlane = null) => new MechanicalGroupKinematics(this, target, prevJoints, coupledPlane, displayMeshes, basePlane);
+        public KinematicSolution Kinematics(Target target, double[] prevJoints = null, Plane? coupledPlane = null, Plane? basePlane = null) => new MechanicalGroupKinematics(this, target, prevJoints, coupledPlane, basePlane);
 
 
         public double DegreeToRadian(double degree, int i)
@@ -186,7 +194,7 @@ namespace Robots
         {
             double[] values = new double[target.External.Length];
 
-            foreach (var mechanism in this.Externals)
+            foreach (var mechanism in Externals)
             {
                 foreach (var joint in mechanism.Joints)
                 {
@@ -199,12 +207,11 @@ namespace Robots
 
         class MechanicalGroupKinematics : KinematicSolution
         {
-            internal MechanicalGroupKinematics(MechanicalGroup group, Target target, double[] prevJoints, Plane? coupledPlane, bool displayMeshes, Plane? basePlane)
+            internal MechanicalGroupKinematics(MechanicalGroup group, Target target, double[] prevJoints, Plane? coupledPlane, Plane? basePlane)
             {
                 var jointCount = group.Joints.Count;
                 Joints = new double[jointCount];
                 var planes = new List<Plane>();
-                List<Mesh> meshes = (displayMeshes) ? new List<Mesh>() : null;
                 var errors = new List<string>();
 
                 Plane? robotBase = basePlane;
@@ -222,13 +229,12 @@ namespace Robots
                 foreach (var external in group.Externals)
                 {
                     var externalPrevJoints = prevJoints?.Subset(external.Joints.Select(x => x.Number).ToArray());
-                    var externalKinematics = external.Kinematics(target, externalPrevJoints, displayMeshes, basePlane);
+                    var externalKinematics = external.Kinematics(target, externalPrevJoints, basePlane);
 
                     for (int i = 0; i < external.Joints.Length; i++)
                         Joints[external.Joints[i].Number] = externalKinematics.Joints[i];
 
                     planes.AddRange(externalKinematics.Planes);
-                    if (displayMeshes) meshes.AddRange(externalKinematics.Meshes);
                     errors.AddRange(externalKinematics.Errors);
 
                     if (external == coupledMech)
@@ -261,14 +267,14 @@ namespace Robots
                 if (robot != null)
                 {
                     var robotPrevJoints = prevJoints?.Subset(robot.Joints.Select(x => x.Number).ToArray());
-                    var robotKinematics = robot.Kinematics(target, robotPrevJoints, displayMeshes, robotBase);
+                    var robotKinematics = robot.Kinematics(target, robotPrevJoints, robotBase);
 
                     for (int j = 0; j < robot.Joints.Length; j++)
                         Joints[robot.Joints[j].Number] = robotKinematics.Joints[j];
 
                     planes.AddRange(robotKinematics.Planes);
-                    if (displayMeshes) meshes.AddRange(robotKinematics.Meshes);
                     Configuration = robotKinematics.Configuration;
+
                     if (robotKinematics.Errors.Count > 0)
                     {
                         errors.AddRange(robotKinematics.Errors);
@@ -280,21 +286,7 @@ namespace Robots
                 toolPlane.Transform(planes[planes.Count - 1].ToTransform());
                 planes.Add(toolPlane);
 
-
-                if (displayMeshes)
-                {
-                    if (target.Tool.Mesh != null)
-                    {
-                        Mesh toolMesh = target.Tool.Mesh.DuplicateMesh();
-                        toolMesh.Transform(Transform.PlaneToPlane(target.Tool.Tcp, planes[planes.Count - 1]));
-                        meshes.Add(toolMesh);
-                    }
-                    else
-                        meshes.Add(null);
-                }
-
                 Planes = planes.ToArray();
-                if (displayMeshes) Meshes = meshes.ToArray();
 
                 if (errors.Count > 0)
                 {

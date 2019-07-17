@@ -3,7 +3,6 @@ using System.Text;
 using System.Linq;
 using System.IO;
 using System.Collections.Generic;
-
 using Rhino.Geometry;
 using static System.Math;
 using static Robots.Util;
@@ -33,7 +32,8 @@ namespace Robots
 
         public static double[] PlaneToQuaternion(Plane plane)
         {
-            var q = Quaternion.Rotation(Plane.WorldXY, plane);
+            //  var q = Quaternion.Rotation(Plane.WorldXY, plane);
+            var q = GetRotation(plane);
             return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, q.A, q.B, q.C, q.D };
         }
 
@@ -219,7 +219,7 @@ namespace Robots
                         {
                             for (int i = 0; i < target.External.Length; i++)
                             {
-                                externals[i] = $"{values[i]:0.00}";
+                                externals[i] = $"{values[i]:0.000}";
                             }
                         }
                         else
@@ -246,14 +246,15 @@ namespace Robots
                     {
                         var cartesian = programTarget.Target as CartesianTarget;
                         var plane = cartesian.Plane;
-                        var quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
+                       // var quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
+                        Quaternion quaternion = GetRotation(plane);
 
                         switch (cartesian.Motion)
                         {
-                            case Target.Motions.Joint:
+                            case Motions.Joint:
                                 {
-                                    string pos = $"[{plane.OriginX:0.00},{plane.OriginY:0.00},{plane.OriginZ:0.00}]";
-                                    string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
+                                    string pos = $"[{plane.OriginX:0.000},{plane.OriginY:0.000},{plane.OriginZ:0.000}]";
+                                    string orient = $"[{quaternion.A:0.00000},{quaternion.B:0.00000},{quaternion.C:0.00000},{quaternion.D:0.00000}]";
 
                                     int cf1 = (int)Floor(programTarget.Kinematics.Joints[0] / (PI / 2));
                                     int cf4 = (int)Floor(programTarget.Kinematics.Joints[3] / (PI / 2));
@@ -263,11 +264,11 @@ namespace Robots
                                     if (cf4 < 0) cf4--;
                                     if (cf6 < 0) cf6--;
 
-                                    Target.RobotConfigurations configuration = programTarget.Kinematics.Configuration;
-                                    bool shoulder = configuration.HasFlag(Target.RobotConfigurations.Shoulder);
-                                    bool elbow = configuration.HasFlag(Target.RobotConfigurations.Elbow);
+                                    RobotConfigurations configuration = programTarget.Kinematics.Configuration;
+                                    bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
+                                    bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
                                     if (shoulder) elbow = !elbow;
-                                    bool wrist = configuration.HasFlag(Target.RobotConfigurations.Wrist);
+                                    bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
 
                                     int cfx = 0;
                                     if (wrist) cfx += 1;
@@ -281,10 +282,10 @@ namespace Robots
                                     break;
                                 }
 
-                            case Target.Motions.Linear:
+                            case Motions.Linear:
                                 {
-                                    string pos = $"[{plane.OriginX:0.00},{plane.OriginY:0.00},{plane.OriginZ:0.00}]";
-                                    string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
+                                    string pos = $"[{plane.OriginX:0.000},{plane.OriginY:0.000},{plane.OriginZ:0.000}]";
+                                    string orient = $"[{quaternion.A:0.00000},{quaternion.B:0.00000},{quaternion.C:0.00000},{quaternion.D:0.00000}]";
                                     string robtarget = $"[{pos},{orient},conf,{external}]";
                                     moveText = $@"MoveL {robtarget}{id},{target.Speed.Name},{zone},{target.Tool.Name} \WObj:={target.Frame.Name};";
                                     break;
@@ -316,7 +317,8 @@ namespace Robots
 
             string Tool(Tool tool)
             {
-                Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, tool.Tcp);
+               // Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, tool.Tcp);
+                Quaternion quaternion = GetRotation(tool.Tcp);
                 double weight = (tool.Weight > 0.001) ? tool.Weight : 0.001;
 
                 Point3d centroid = tool.Centroid;
@@ -324,7 +326,7 @@ namespace Robots
                     centroid = new Point3d(0, 0, 0.001);
 
                 string pos = $"[{tool.Tcp.OriginX:0.000},{tool.Tcp.OriginY:0.000},{tool.Tcp.OriginZ:0.000}]";
-                string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
+                string orient = $"[{quaternion.A:0.00000},{quaternion.B:0.00000},{quaternion.C:0.00000},{quaternion.D:0.00000}]";
                 string loaddata = $"[{weight:0.000},[{centroid.X:0.000},{centroid.Y:0.000},{centroid.Z:0.000}],[1,0,0,0],0,0,0]";
                 return $"PERS tooldata {tool.Name}:=[TRUE,[{pos},{orient}],{loaddata}];";
             }
@@ -333,9 +335,10 @@ namespace Robots
             {
                 Plane plane = frame.Plane;
                 plane.Transform(Transform.PlaneToPlane(cell.BasePlane, Plane.WorldXY));
-                Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
+                //Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
+                Quaternion quaternion = GetRotation(plane);
                 string pos = $"[{plane.OriginX:0.000},{plane.OriginY:0.000},{plane.OriginZ:0.000}]";
-                string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
+                string orient = $"[{quaternion.A:0.00000},{quaternion.B:0.00000},{quaternion.C:0.00000},{quaternion.D:0.00000}]";
                 string coupledMech = "";
                 string coupledBool = frame.IsCoupled ? "FALSE" : "TRUE";
                 if (frame.IsCoupled)
@@ -351,13 +354,14 @@ namespace Robots
             {
                 double rotation = speed.RotationSpeed.ToDegrees();
                 double rotationExternal = speed.RotationExternal.ToDegrees();
-                return $"TASK PERS speeddata {speed.Name}:=[{speed.TranslationSpeed:0.00},{rotation:0.00},{speed.TranslationExternal:0.00},{rotationExternal:0.00}];";
+                return $"TASK PERS speeddata {speed.Name}:=[{speed.TranslationSpeed:0.000},{rotation:0.000},{speed.TranslationExternal:0.000},{rotationExternal:0.000}];";
             }
 
             string Zone(Zone zone)
             {
                 double angle = zone.Rotation.ToDegrees();
-                return $"TASK PERS zonedata {zone.Name}:=[FALSE,{zone.Distance:0.00},{zone.Distance:0.00},{zone.Distance:0.00},{angle:0.00},{zone.Distance:0.00},{angle:0.00}];";
+                double angleExternal = zone.RotationExternal.ToDegrees();
+                return $"TASK PERS zonedata {zone.Name}:=[FALSE,{zone.Distance:0.000},{zone.Distance:0.000},{zone.Distance:0.000},{angle:0.000},{zone.Distance:0.000},{angleExternal:0.000}];";
             }
         }
     }
