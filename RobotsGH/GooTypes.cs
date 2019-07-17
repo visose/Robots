@@ -16,7 +16,19 @@ namespace Robots.Grasshopper
         public override bool IsValid => true;
         public override string TypeName => "Toolpath";
         public override string TypeDescription => "Toolpath";
-        public override string ToString() => Value?.ToString();
+        public override string ToString()
+        {
+            switch (Value.Targets)
+            {
+                case IList<Target> list:
+                    var targets = Value.Targets as IList<Target>;
+                    return $"Toolpath with ({targets.Count} targets)";
+                case Target target:
+                    return target.ToString();
+                default:
+                    return "Toolpath";
+            }
+        }
         public override object ScriptVariable() => Value;
 
         public override bool CastFrom(object source)
@@ -317,18 +329,18 @@ namespace Robots.Grasshopper
                 return false;
         }
 
-        public BoundingBox ClippingBox => Value.DisplayMesh.GetBoundingBox(true); 
- 
- 
-         public void DrawViewportMeshes(GH_PreviewMeshArgs args)
-         { 
-             args.Pipeline.DrawMeshShaded(Value.DisplayMesh, args.Material); 
-         } 
- 
- 
-         public void DrawViewportWires(GH_PreviewWireArgs args)
-         { 
-         } 
+        public BoundingBox ClippingBox => Value.DisplayMesh.GetBoundingBox(true);
+
+
+        public void DrawViewportMeshes(GH_PreviewMeshArgs args)
+        {
+            args.Pipeline.DrawMeshShaded(Value.DisplayMesh, args.Material);
+        }
+
+
+        public void DrawViewportWires(GH_PreviewWireArgs args)
+        {
+        }
 
     }
 }

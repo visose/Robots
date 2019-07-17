@@ -71,7 +71,7 @@ namespace Robots.Grasshopper
                 }
             }
 
-            var kinematics = robotSystem.Value.Kinematics(targets.Select(x => x.Value), prevJoints, drawMeshes);
+            var kinematics = robotSystem.Value.Kinematics(targets.Select(x => x.Value), prevJoints);
 
             var errors = kinematics.SelectMany(x => x.Errors);
             if (errors.Count() > 0)
@@ -83,9 +83,10 @@ namespace Robots.Grasshopper
             var joints = string.Join(",", strings);
 
             var planes = kinematics.SelectMany(x => x.Planes);
+
             if (drawMeshes)
             {
-                var meshes = kinematics.SelectMany(x => x.Meshes);
+                var meshes = GeometryUtil.PoseMeshes(robotSystem.Value, kinematics, targets.Select(t => t.Value.Tool.Mesh).ToList());
                 DA.SetDataList(0, meshes.Select(x => new GH_Mesh(x)));
             }
 
@@ -139,7 +140,6 @@ namespace Robots.Grasshopper
             if (!DA.GetData(1, ref sliderTimeGH)) { return; }
             if (!DA.GetData(2, ref isNormalized)) { return; }
 
-
             sliderTime = (isNormalized.Value) ? sliderTimeGH.Value * program.Value.Duration : sliderTimeGH.Value;
             if (!form.Visible) time = sliderTime;
 
@@ -147,14 +147,14 @@ namespace Robots.Grasshopper
             var currentTarget = program.Value.CurrentSimulationTarget;
 
             var errors = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Errors);
-            var meshes = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Meshes);
             var joints = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Joints);
-            var planes = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Planes);
+            var planes = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Planes).ToList();
+            var meshes = GeometryUtil.PoseMeshes(program.Value.RobotSystem, currentTarget.ProgramTargets.Select(p => p.Kinematics).ToList(), currentTarget.ProgramTargets.Select(p => p.Target.Tool.Mesh).ToList());
 
             if (errors.Count() > 0)
-                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in solution");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in solution");
 
-            DA.SetDataList(0, meshes?.Select(x => new GH_Mesh(x)));
+            DA.SetDataList(0, meshes);
             DA.SetDataList(1, joints);
             DA.SetDataList(2, planes.Select(x => new GH_Plane(x)));
             DA.SetData(3, currentTarget.Index);
@@ -168,10 +168,9 @@ namespace Robots.Grasshopper
                 TimeSpan delta = currentTime - lastTime;
                 time += delta.TotalSeconds * speed;
                 lastTime = currentTime;
-                this.ExpireSolution(true);
+                ExpireSolution(true);
             }
         }
-
 
         // Form
         AnimForm form;

@@ -30,11 +30,11 @@ namespace Robots
         public override double DegreeToRadian(double degree, int i) => degree * (PI / 180);
         public override double RadianToDegree(double radian, int i) => radian * (180 / PI);
 
-        public override KinematicSolution Kinematics(Target target, double[] prevJoints = null, bool displayMeshes = false, Plane? basePlane = null) => new PositionerKinematics(this, target, prevJoints, displayMeshes, basePlane);
+        public override KinematicSolution Kinematics(Target target, double[] prevJoints = null, Plane? basePlane = null) => new PositionerKinematics(this, target, prevJoints, basePlane);
 
         class PositionerKinematics : MechanismKinematics
         {
-            internal PositionerKinematics(Positioner positioner, Target target, double[] prevJoints, bool displayMeshes, Plane? basePlane) : base(positioner, target, prevJoints, displayMeshes, basePlane) { }
+            internal PositionerKinematics(Positioner positioner, Target target, double[] prevJoints, Plane? basePlane) : base(positioner, target, prevJoints, basePlane) { }
 
             protected override void SetJoints(Target target, double[] prevJoints)
             {
@@ -82,13 +82,13 @@ namespace Robots
         public override double DegreeToRadian(double degree, int i) => degree;
         public override double RadianToDegree(double radian, int i) => radian;
 
-        public override KinematicSolution Kinematics(Target target, double[] prevJoints = null, bool displayMeshes = false, Plane? basePlane = null)
-            => new CustomKinematics(this, target, prevJoints, displayMeshes, basePlane);
+        public override KinematicSolution Kinematics(Target target, double[] prevJoints = null, Plane? basePlane = null)
+            => new CustomKinematics(this, target, prevJoints, basePlane);
 
         class CustomKinematics : MechanismKinematics
         {
-            internal CustomKinematics(Custom custom, Target target, double[] prevJoints, bool displayMeshes, Plane? basePlane)
-                : base(custom, target, prevJoints, displayMeshes, basePlane) { }
+            internal CustomKinematics(Custom custom, Target target, double[] prevJoints, Plane? basePlane)
+                : base(custom, target, prevJoints, basePlane) { }
 
             protected override void SetJoints(Target target, double[] prevJoints)
             {
@@ -142,11 +142,11 @@ namespace Robots
         public override double DegreeToRadian(double degree, int i) => degree;
         public override double RadianToDegree(double radian, int i) => radian;
 
-        public override KinematicSolution Kinematics(Target target, double[] prevJoints = null, bool displayMeshes = false, Plane? basePlane = null) => new TrackKinematics(this, target, displayMeshes, basePlane);
+        public override KinematicSolution Kinematics(Target target, double[] prevJoints = null, Plane? basePlane = null) => new TrackKinematics(this, target, basePlane);
 
         class TrackKinematics : MechanismKinematics
         {
-            internal TrackKinematics(Track track, Target target, bool displayMeshes, Plane? basePlane) : base(track, target, null, displayMeshes, basePlane) { }
+            internal TrackKinematics(Track track, Target target, Plane? basePlane) : base(track, target, null, basePlane) { }
 
             protected override void SetJoints(Target target, double[] prevJoints)
             {

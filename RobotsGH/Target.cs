@@ -50,8 +50,8 @@ namespace Robots.Grasshopper
 
             double[] joints = null;
             var plane = new Plane();
-            Target.RobotConfigurations? configuration = null;
-            Target.Motions motion = Target.Motions.Joint;
+            RobotConfigurations? configuration = null;
+            Motions motion = Motions.Joint;
             Tool tool = null;
             Speed speed = null;
             Zone zone = null;
@@ -92,7 +92,7 @@ namespace Robots.Grasshopper
             {
                 GH_Integer configGH = null;
                 if (hasConfig) DA.GetData("RobConf", ref configGH);
-                configuration = (configGH == null) ? null : (Target.RobotConfigurations?)configGH.Value;
+                configuration = (configGH == null) ? null : (RobotConfigurations?)configGH.Value;
             }
             else if (sourceTarget != null)
             {
@@ -103,7 +103,7 @@ namespace Robots.Grasshopper
             {
                 GH_String motionGH = null;
                 DA.GetData("Motion", ref motionGH);
-                motion = (motionGH == null) ? Target.Motions.Joint : (Target.Motions)Enum.Parse(typeof(Target.Motions), motionGH.Value);
+                motion = (motionGH == null) ? Motions.Joint : (Motions)Enum.Parse(typeof(Motions), motionGH.Value);
             }
             else if (sourceTarget != null)
             {
@@ -530,6 +530,8 @@ namespace Robots.Grasshopper
             pManager.AddPlaneParameter("Plane", "P", "Frame plane", GH_ParamAccess.item, Plane.WorldXY);
             pManager.AddIntegerParameter("Coupled mechanical group", "G", "Index of the mechanical group where the coupled mechanism or robot belongs, or -1 for no coupling.", GH_ParamAccess.item, -1);
             pManager.AddIntegerParameter("Coupled mechanism", "M", "Index of kinematically coupled mechanism or -1 for coupling of a robot in a multi robot cell. If input G is -1 this has no effect.", GH_ParamAccess.item, -1);
+            pManager.AddTextParameter("Name", "N", "Optional name for the frame.", GH_ParamAccess.item);
+            pManager[3].Optional = true;
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -542,13 +544,14 @@ namespace Robots.Grasshopper
             GH_Plane plane = null;
             int coupledGroup = -1;
             int coupledMechanism = -1;
+            string name = null;
 
             if (!DA.GetData(0, ref plane)) { return; }
             if (!DA.GetData(1, ref coupledGroup)) { return; }
             if (!DA.GetData(2, ref coupledMechanism)) { return; }
+            DA.GetData(3, ref name);
 
-
-            var frame = new Frame(plane.Value, coupledMechanism, coupledGroup);
+            var frame = new Frame(plane.Value, coupledMechanism, coupledGroup, name);
             DA.SetData(0, new GH_Frame(frame));
         }
     }

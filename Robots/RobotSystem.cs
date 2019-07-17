@@ -55,10 +55,16 @@ namespace Robots
             if (double.IsNaN(t)) t = 0;
             var newOrigin = a.Origin * (1 - t) + b.Origin * t;
 
-            Quaternion q = Quaternion.Rotation(a, b);
-            q.GetRotation(out var angle, out var axis);
-            angle = (angle > PI) ? angle - 2 * PI : angle;
-            a.Rotate(t * angle, axis, a.Origin);
+            //  Quaternion q = Quaternion.Rotation(a, b);
+            // var q = Quaternion.Identity.Rotate(a).Rotate(b);
+            
+            var q = Slerp(GetRotation(a), GetRotation(b), t);
+
+            //  q.GetRotation(out var angle, out var axis);
+            // angle = (angle > PI) ? angle - 2 * PI : angle;
+            //  a.Rotate(t * angle, axis, a.Origin);
+
+            a = TransformFromQuaternion(q).ToPlane();
 
             a.Origin = newOrigin;
             return a;
@@ -68,7 +74,7 @@ namespace Robots
         internal abstract List<List<List<string>>> Code(Program program);
         internal abstract double Payload(int group);
         internal abstract Joint[] GetJoints(int group);
-        public abstract List<KinematicSolution> Kinematics(IEnumerable<Target> target, IEnumerable<double[]> prevJoints = null, bool displayMeshes = false);
+        public abstract List<KinematicSolution> Kinematics(IEnumerable<Target> target, IEnumerable<double[]> prevJoints = null);
         public abstract double DegreeToRadian(double degree, int i, int group = 0);
         public abstract double[] PlaneToNumbers(Plane plane);
         public abstract Plane NumbersToPlane(double[] numbers);

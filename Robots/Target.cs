@@ -1,24 +1,21 @@
-﻿using System;
-using System.IO;
+﻿using Rhino.Geometry;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
-using Rhino.Geometry;
-using System.Collections;
+using System.Xml;
+using System.Xml.Linq;
 using static Robots.Util;
 using static System.Math;
-using static Rhino.RhinoMath;
-using System.Xml.Linq;
-using System.Xml;
 
 namespace Robots
 {
+    [Flags]
+    public enum RobotConfigurations { None = 0, Shoulder = 1, Elbow = 2, Wrist = 4, Undefined = 8 }
+    public enum Motions { Joint, Linear, Circular, Spline }
+
     public abstract class Target : IToolpath
     {
-        [Flags]
-        public enum RobotConfigurations { None = 0, Shoulder = 1, Elbow = 2, Wrist = 4, Undefined = 8 }
-        public enum Motions { Joint, Linear, Circular, Spline }
-
         public static Target Default { get; }
 
         public Tool Tool { get; set; }
@@ -33,20 +30,43 @@ namespace Robots
 
         static Target()
         {
-            Default = new JointTarget(new double[] { 0, PI / 2, 0, 0, 0, 0 }, Tool.Default, Speed.Default, Zone.Default, Command.Default, Frame.Default, null);
+            Default = new JointTarget(new double[] { 0, PI / 2, 0, 0, 0, 0 });
         }
 
-        public Target(Tool tool, Speed speed, Zone zone, Command command, Frame frame = null, IEnumerable<double> external = null)
+        protected Target(Tool tool, Speed speed, Zone zone, Command command, Frame frame = null, IEnumerable<double> external = null)
         {
-            this.Tool = tool ?? Tool.Default;
-            this.Speed = speed ?? Speed.Default;
-            this.Zone = zone ?? Zone.Default;
-            this.Frame = frame ?? Frame.Default;
-            this.Command = command;
-            this.External = (external != null) ? external.ToArray() : new double[0];
+            Tool = tool ?? Tool.Default;
+            Speed = speed ?? Speed.Default;
+            Zone = zone ?? Zone.Default;
+            Frame = frame ?? Frame.Default;
+            Command = command ?? Command.Default;
+            External = (external != null) ? external.ToArray() : new double[0];
+        }
+
+        public void AppendCommand(Command command)
+        {
+            var current = Command;
+
+            if (current == null || current == Command.Default)
+            {
+                Command = command;
+            }
+            else
+            {
+                var group = new Commands.Group();
+
+                if (current is Commands.Group currentGroup)
+                    group.AddRange(currentGroup);
+                else
+                    group.Add(current);
+
+                group.Add(command);
+                Command = group;
+            }
         }
 
         public Target ShallowClone() => MemberwiseClone() as Target;
+        IToolpath IToolpath.ShallowClone(List<Target> targets) => MemberwiseClone() as IToolpath;
     }
 
     public class CartesianTarget : Target
@@ -74,10 +94,9 @@ namespace Robots
             string speed = $", {Speed}";
             string zone = $", {Zone}";
             string commands = Command != null ? ", Contains commands" : "";
-            string external = External.Length > 0 ? $"{External.Length.ToString():0} external axes" : "";
+            string external = External.Length > 0 ? $", {External.Length.ToString():0} external axes" : "";
             return $"Target ({type}{motion}{configuration}{frame}{tool}{speed}{zone}{commands}{external})";
         }
-
     }
 
     public class JointTarget : Target
@@ -135,12 +154,12 @@ namespace Robots
 
         public override string ToString()
         {
-            string type = $"Joint ({string.Join(",", (this as JointTarget).Joints.Select(x => $"{x:0.00}"))})";
+            string type = $"Joint ({string.Join(",", Joints.Select(x => $"{x:0.00}"))})";
             string tool = $", {Tool}";
             string speed = $", {Speed}";
             string zone = $", {Zone}";
             string commands = Command != null ? ", Contains commands" : "";
-            string external = External.Length > 0 ? $"{External.Length.ToString():0} external axes" : "";
+            string external = External.Length > 0 ? $", {External.Length.ToString():0} external axes" : "";
             return $"Target ({type}{tool}{speed}{zone}{commands}{external})";
         }
 
@@ -200,7 +219,7 @@ namespace Robots
         internal int LeadingJoint { get; set; }
 
         internal bool IsJointTarget => Target is JointTarget;
-        public bool IsJointMotion => IsJointTarget || (Target as CartesianTarget).Motion == Target.Motions.Joint;
+        public bool IsJointMotion => IsJointTarget || (Target as CartesianTarget).Motion == Motions.Joint;
         public Plane WorldPlane => Kinematics.Planes[Kinematics.Planes.Length - 1];
         public int Index => cellTarget.Index;
 
@@ -333,7 +352,7 @@ namespace Robots
                 //   Plane plane = CartesianTarget.Lerp(prevTarget.WorldPlane, this.WorldPlane, t, start, end);
                 //  Target.RobotConfigurations? configuration = (Abs(prevTarget.cellTarget.TotalTime - t) < TimeTol) ? prevTarget.Kinematics.Configuration : this.Kinematics.Configuration;
 
-                var target = new CartesianTarget(plane, Target, prevTarget.Kinematics.Configuration, Target.Motions.Linear, external);
+                var target = new CartesianTarget(plane, Target, prevTarget.Kinematics.Configuration, Motions.Linear, external);
                 // target.Frame = Frame.Default;
                 return target;
             }
@@ -395,7 +414,7 @@ namespace Robots
             this.Tcp = tcp;
             this.Weight = weight;
             this.Centroid = (centroid == null) ? tcp.Origin : (Point3d)centroid;
-            this.Mesh = mesh;
+            this.Mesh = mesh ?? new Mesh();
         }
 
 
@@ -405,12 +424,11 @@ namespace Robots
         {
             var names = new List<string>();
             var elements = new List<XElement>();
-            // string folder = $@"{Robots.Util.AssemblyDirectory}\robots\tools";
-            string folder = System.IO.Path.Combine(LibraryPath, "robots");
 
-            if (Directory.Exists(folder))
+            if (Directory.Exists(LibraryPath))
             {
-                var files = Directory.GetFiles(folder, "*.xml");
+                var files = Directory.GetFiles(LibraryPath, "*.xml");
+
                 foreach (var file in files)
                 {
                     var element = XElement.Load(file);
@@ -428,12 +446,10 @@ namespace Robots
         public static Tool Load(string name)
         {
             XElement element = null;
-            // string folder = $@"{Robots.Util.AssemblyDirectory}\robots\tools";
-            string folder = Path.Combine(LibraryPath, "robots");
 
-            if (Directory.Exists(folder))
+            if (Directory.Exists(LibraryPath))
             {
-                var files = Directory.GetFiles(folder, "*.xml");
+                var files = Directory.GetFiles(LibraryPath, "*.xml");
 
                 foreach (var file in files)
                 {
@@ -483,29 +499,26 @@ namespace Robots
 
         private static Mesh GetMeshes(string model)
         {
-            var meshes = new List<Mesh>();
             Mesh mesh = new Mesh();
 
-            // string folder = $@"{Util.AssemblyDirectory}\robots\tools";
-            string folder = Path.Combine(LibraryPath, "robots");
-
-            if (Directory.Exists(folder))
+            if (Directory.Exists(LibraryPath))
             {
-                var files = Directory.GetFiles(folder, "*.3dm");
+                var files = Directory.GetFiles(LibraryPath, "*.3dm");
                 Rhino.DocObjects.Layer layer = null;
 
                 foreach (var file in files)
                 {
-                    Rhino.FileIO.File3dm geometry = Rhino.FileIO.File3dm.Read($@"{file}");
-                    layer = geometry.AllLayers.FirstOrDefault(x => x.Name == $"{model}");
+                    Rhino.FileIO.File3dm geometry = Rhino.FileIO.File3dm.Read(file);
+                    layer = geometry.AllLayers.FirstOrDefault(x => x.Name == model);
 
                     if (layer != null)
                     {
-                        meshes = geometry.Objects.Where(x => x.Attributes.LayerIndex == layer.Index).Select(x => x.Geometry as Mesh).ToList();
-                        for (int i = 0; i < meshes.Count; ++i)
-                        {
-                            mesh.Append(meshes[i]);
-                        }
+                        var meshes = geometry.Objects.Where(x => x.Attributes.LayerIndex == layer.Index).Select(x => x.Geometry as Mesh);
+
+                        foreach (var part in meshes)
+                            mesh.Append(part);
+
+                        break;
                     }
                 }
                 if (layer == null)
@@ -762,6 +775,10 @@ namespace Robots
         /// The zone size for the tool reorientation in radians.
         /// </summary>
         public double Rotation { get; set; }
+        /// <summary>
+        /// The zone size for revolute external axis in radians.
+        /// </summary>
+        public double RotationExternal { get; set; }
 
         public bool IsFlyBy => Distance > DistanceTol;
 
@@ -769,21 +786,31 @@ namespace Robots
 
         static Zone()
         {
-            Default = new Zone(0, "DefaultZone");
+            Default = new Zone(0, name:"DefaultZone");
         }
 
-        public Zone(double distance, string name = null)
-        {
-            this.Name = name;
-            this.Distance = distance;
-            this.Rotation = (distance / 10).ToRadians();
-        }
+        //public Zone(double distance, string name = null)
+        //{
+        //    Name = name;
+        //    Distance = distance;
+        //    Rotation = (distance / 10).ToRadians();
+        //    RotationExternal = Rotation;
+        //}
 
-        public Zone(double distance, double rotation, string name = null)
+        public Zone(double distance, double? rotation = null, double? rotationExternal = null, string name = null)
         {
-            this.Name = name;
-            this.Distance = distance;
-            this.Rotation = rotation;
+            Name = name;
+            Distance = distance;
+
+            if (rotation.HasValue)
+                Rotation = rotation.Value;
+            else
+                Rotation = (distance / 10).ToRadians();
+
+            if (rotationExternal.HasValue)
+                RotationExternal = rotationExternal.Value;
+            else
+                RotationExternal = Rotation;
         }
 
         public override string ToString() => (Name != null) ? $"Zone ({Name})" : IsFlyBy ? $"Zone ({Distance:0.00} mm)" : $"Zone (Stop point)";

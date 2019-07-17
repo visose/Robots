@@ -17,11 +17,11 @@ namespace Robots
         public Manufacturers Manufacturer { get; protected set; }
         public string Model => $"{Manufacturer.ToString()}.{model}";
         public double Payload { get; }
-        internal Plane BasePlane { get; set; }
-        internal Mesh BaseMesh { get; }
+        public Plane BasePlane { get; set; }
+        public Mesh BaseMesh { get; }
         public Joint[] Joints { get; }
         public bool MovesRobot { get; }
-        public Mesh DisplayMesh { get; private set; }
+        public Mesh DisplayMesh { get; }
 
         internal Mechanism(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh baseMesh, IEnumerable<Joint> joints, bool movesRobot)
         {
@@ -78,8 +78,8 @@ namespace Robots
 
                 foreach (var file in files)
                 {
-                    Rhino.FileIO.File3dm geometry = Rhino.FileIO.File3dm.Read($@"{file}");
-                    var layer = geometry.AllLayers.FirstOrDefault(x => x.Name == $"{model}");
+                    Rhino.FileIO.File3dm geometry = Rhino.FileIO.File3dm.Read(file);
+                    var layer = geometry.AllLayers.FirstOrDefault(x => x.Name == model);
 
                     if (layer != null)
                     {
@@ -89,7 +89,8 @@ namespace Robots
                             string name = $"{i++}";
                             var jointLayer = geometry.AllLayers.FirstOrDefault(x => (x.Name == name) && (x.ParentLayerId == layer.Id));
                             if (jointLayer == null) break;
-                            meshes.Add(geometry.Objects.First(x => x.Attributes.LayerIndex == jointLayer.Index).Geometry as Mesh);
+                            var mesh = geometry.Objects.FirstOrDefault(x => x.Attributes.LayerIndex == jointLayer.Index)?.Geometry as Mesh ?? new Mesh();
+                            meshes.Add(mesh);
                         }
 
                         return meshes;
@@ -216,7 +217,7 @@ namespace Robots
         }
         */
 
-        public abstract KinematicSolution Kinematics(Target target, double[] prevJoints = null, bool displayMeshes = false, Plane? basePlane = null);
+        public abstract KinematicSolution Kinematics(Target target, double[] prevJoints = null, Plane? basePlane = null);
 
         protected abstract void SetStartPlanes();
         public abstract double DegreeToRadian(double degree, int i);
@@ -227,7 +228,7 @@ namespace Robots
         {
             protected Mechanism mechanism;
 
-            internal MechanismKinematics(Mechanism mechanism, Target target, double[] prevJoints, bool displayMeshes, Plane? basePlane)
+            internal MechanismKinematics(Mechanism mechanism, Target target, double[] prevJoints, Plane? basePlane)
             {
                 this.mechanism = mechanism;
                 int jointCount = mechanism.Joints.Length;
@@ -235,10 +236,6 @@ namespace Robots
                 // Init properties
                 Joints = new double[jointCount];
                 Planes = new Plane[jointCount + 1];
-                if (displayMeshes)
-                    Meshes = new Mesh[jointCount + 1];
-                else
-                    Meshes = new Mesh[0];
 
                 // Base plane
                 Planes[0] = mechanism.BasePlane;
@@ -258,9 +255,6 @@ namespace Robots
                 for (int i = 1; i < jointCount + 1; i++)
                     Planes[i].Transform(transform);
 
-                // Meshes
-                if (displayMeshes)
-                    SetMeshes(target.Tool);
             }
 
             protected abstract void SetJoints(Target target, double[] prevJoints);
@@ -270,23 +264,8 @@ namespace Robots
             {
                 var outofRangeErrors = mechanism.Joints
                 .Where(x => !x.Range.IncludesParameter(Joints[x.Index]))
-                .Select(x => $"Axis {x.Number + 1} is outside the permited range.");
+                .Select(x => $"Axis {x.Number + 1} is outside the permitted range.");
                 Errors.AddRange(outofRangeErrors);
-            }
-
-            void SetMeshes(Tool tool)
-            {
-                {
-                    Meshes[0] = mechanism.BaseMesh.DuplicateMesh();
-                    Meshes[0].Transform(Planes[0].ToTransform());
-                }
-
-                for (int i = 0; i < mechanism.Joints.Length; i++)
-                {
-                    var jointMesh = mechanism.Joints[i].Mesh.DuplicateMesh();
-                    jointMesh.Transform(Transform.PlaneToPlane(mechanism.Joints[i].Plane, Planes[i + 1]));
-                    Meshes[i + 1] = jointMesh;
-                }
             }
         }
     }
@@ -299,8 +278,8 @@ namespace Robots
         internal double D { get; set; }
         public Interval Range { get; internal set; }
         public double MaxSpeed { get; internal set; }
-        internal Plane Plane { get; set; }
-        internal Mesh Mesh { get; set; }
+        public Plane Plane { get; set; }
+        public Mesh Mesh { get; set; }
     }
 
     public class BaseJoint

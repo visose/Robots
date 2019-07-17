@@ -27,9 +27,9 @@ namespace Robots
             double cc = Cos(c);
             double sc = Sin(c);
             var tt = new Transform(1);
-            tt[0, 0] = ca * cb; tt[0, 1] = sa * cc + ca * sb * sc; tt[0, 2] = sa * sc - ca * sb * cc;
+            tt[0, 0] = ca * cb;  tt[0, 1] = sa * cc + ca * sb * sc; tt[0, 2] = sa * sc - ca * sb * cc;
             tt[1, 0] = -sa * cb; tt[1, 1] = ca * cc - sa * sb * sc; tt[1, 2] = ca * sc + sa * sb * cc;
-            tt[2, 0] = sb; tt[2, 1] = -cb * sc; tt[2, 2] = cb * cc;
+            tt[2, 0] = sb;       tt[2, 1] = -cb * sc;               tt[2, 2] = cb * cc;
 
             var plane = tt.ToPlane();
             plane.Origin = new Point3d(x, y, z);
@@ -327,7 +327,7 @@ DEF {program.Name}_{groupName}_{file:000}()
 
                         switch (cartesian.Motion)
                         {
-                            case Target.Motions.Joint:
+                            case Motions.Joint:
                                 {
                                     string bits = string.Empty;
                                     //  if (target.ChangesConfiguration)
@@ -337,10 +337,10 @@ DEF {program.Name}_{groupName}_{file:000}()
                                         for (int i = 0; i < 6; i++) if (jointDegrees[i] < 0) turnNum += (int)Pow(2, i);
 
                                         var configuration = programTarget.Kinematics.Configuration;
-                                        bool shoulder = configuration.HasFlag(Target.RobotConfigurations.Shoulder);
-                                        bool elbow = configuration.HasFlag(Target.RobotConfigurations.Elbow);
+                                        bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
+                                        bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
                                         elbow = !elbow;
-                                        bool wrist = configuration.HasFlag(Target.RobotConfigurations.Wrist);
+                                        bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
 
                                         int configNum = 0;
                                         if (shoulder) configNum += 1;
@@ -357,7 +357,7 @@ DEF {program.Name}_{groupName}_{file:000}()
                                     break;
                                 }
 
-                            case Target.Motions.Linear:
+                            case Motions.Linear:
                                 {
                                     moveText = $"LIN {{X {euler[0]:0.00},Y {euler[1]:0.00},Z {euler[2]:0.00},A {euler[3]:0.000},B {euler[4]:0.000},C {euler[5]:0.000}{external}}}";
                                     if (target.Zone.IsFlyBy) moveText += " C_DIS";
@@ -365,6 +365,7 @@ DEF {program.Name}_{groupName}_{file:000}()
                                 }
                         }
                     }
+
                     code.Add(moveText);
 
                     foreach (var command in programTarget.Commands)

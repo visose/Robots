@@ -51,7 +51,7 @@ namespace Robots
             {
                 // singularity found
                 // first check for identity matrix which must have +1 for all terms
-                //  in leading diagonaland zero in other terms
+                //  in leading diagonal and zero in other terms
                 if ((Abs(m[0][1] + m[1][0]) < epsilon2)
                   && (Abs(m[0][2] + m[2][0]) < epsilon2)
                   && (Abs(m[1][2] + m[2][1]) < epsilon2)
@@ -186,20 +186,20 @@ namespace Robots
             return degree.ToRadians();
         }
 
-        public KinematicSolution Kinematics(Target target, double[] prevJoints = null, bool displayMeshes = false)
+        public KinematicSolution Kinematics(Target target, double[] prevJoints = null)
         {
-            var kinematics = Kinematics(new Target[] { target }, new double[][] { prevJoints }, displayMeshes);
+            var kinematics = Kinematics(new Target[] { target }, new double[][] { prevJoints });
             return kinematics[0];
         }
 
-        public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]> prevJoints = null, bool displayMeshes = false)
+        public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]> prevJoints = null)
         {
             var target = targets.First();
             var prevJoint = prevJoints?.First();
             var kinematics = new List<KinematicSolution>();
-            var kinematic = Robot.Kinematics(target, prevJoint, displayMeshes, this.BasePlane);
+            var kinematic = Robot.Kinematics(target, prevJoint, this.BasePlane);
             var planes = kinematic.Planes.ToList();
-            var meshes = (displayMeshes) ? kinematic.Meshes.ToList() : null;
+
 
             // Tool
             if (target.Tool != null)
@@ -211,19 +211,6 @@ namespace Robots
             else
                 planes.Add(planes[planes.Count - 1]);
 
-            if (displayMeshes)
-            {
-                if (target.Tool?.Mesh != null)
-                {
-                    Mesh toolMesh = target.Tool.Mesh.DuplicateMesh();
-                    toolMesh.Transform(Transform.PlaneToPlane(target.Tool.Tcp, planes[planes.Count - 1]));
-                    meshes.Add(toolMesh);
-                }
-                else
-                    meshes.Add(null);
-
-                kinematic.Meshes = meshes.ToArray();
-            }
             kinematic.Planes = planes.ToArray();
             kinematics.Add(kinematic);
             return kinematics;
@@ -371,7 +358,7 @@ namespace Robots
 
                         switch (cartesian.Motion)
                         {
-                            case Target.Motions.Joint:
+                            case Motions.Joint:
                                 {
                                     double maxAxisSpeed = robot.Joints.Min(x => x.MaxSpeed);
                                     double percentage = (cellTarget.DeltaTime > 0) ? cellTarget.MinTime / cellTarget.DeltaTime : 0.1;
@@ -388,7 +375,7 @@ namespace Robots
                                     break;
                                 }
 
-                            case Target.Motions.Linear:
+                            case Motions.Linear:
                                 {
                                     double linearSpeed = target.Speed.TranslationSpeed / 1000;
                                     double linearAccel = target.Speed.TranslationAccel / 1000;

@@ -194,14 +194,14 @@ namespace Robots.Grasshopper.Commands
             pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
         }
 
-        protected override void SolveInstance(IGH_DataAccess da)
+        protected override void SolveInstance(IGH_DataAccess DA)
         {
             double time = 0;
 
-            if (!da.GetData(0, ref time))  return; 
+            if (!DA.GetData(0, ref time))  return; 
 
             var command = new Robots.Commands.Wait(time);
-            da.SetData(0, new GH_Command(command));
+            DA.SetData(0, new GH_Command(command));
         }
     }
 

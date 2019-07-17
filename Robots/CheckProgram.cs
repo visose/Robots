@@ -90,7 +90,7 @@ namespace Robots
             var defaultSpeeds = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target.Speed == Speed.Default);
             if (defaultSpeeds.Count() > 0) program.Warnings.Add($" {defaultSpeeds.Count()} targets have their speed set to default, the first one being target {defaultSpeeds.First().Index} in robot {defaultSpeeds.First().Group}");
 
-            var linearForced = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target is CartesianTarget).Where(x => (x.Target as CartesianTarget).Motion == Target.Motions.Linear && (x.Target as CartesianTarget).Configuration != null);
+            var linearForced = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target is CartesianTarget).Where(x => (x.Target as CartesianTarget).Motion == Motions.Linear && (x.Target as CartesianTarget).Configuration != null);
             if (linearForced.Count() > 0) program.Warnings.Add($" {linearForced.Count()} targets are set to linear with a forced configuration, the first one being target {linearForced.First().Index} in robot {linearForced.First().Group}");
 
             foreach (var target in linearForced)
@@ -215,7 +215,7 @@ namespace Robots
 
                         for (int j = 0; j < kineTargets.Count(); j++)
                         {
-                            if (kineTargets[j] is CartesianTarget target && target.Motion == Target.Motions.Linear)
+                            if (kineTargets[j] is CartesianTarget target && target.Motion == Motions.Linear)
                             {
                                 target.Configuration = prevTarget.ProgramTargets[j].Kinematics.Configuration;
                             }
@@ -343,7 +343,7 @@ namespace Robots
             if (cellTarget.Index < cellTargets.Count - 1)
             {
                 int i = cellTarget.Index;
-                foreach (var target in cellTarget.ProgramTargets.Where(x => x.Kinematics.Configuration == Target.RobotConfigurations.Undefined))
+                foreach (var target in cellTarget.ProgramTargets.Where(x => x.Kinematics.Configuration == RobotConfigurations.Undefined))
                 {
                     if (!cellTargets[i + 1].ProgramTargets[target.Group].IsJointMotion)
                     {

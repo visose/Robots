@@ -1,12 +1,11 @@
-﻿using System;
-using System.Text;
-using System.Linq;
+﻿using System.Linq;
 using System.IO;
 using System.Collections.Generic;
 
 using Rhino.Geometry;
 using static System.Math;
 using static Robots.Util;
+using System;
 
 namespace Robots
 {
@@ -14,43 +13,101 @@ namespace Robots
     {
         internal RobotCellStaubli(string name, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh environment) : base(name, Manufacturers.Staubli, mechanicalGroups, io, basePlane, environment)
         {
-          //  Remote = new RemoteAbb(this);
         }
 
-        public static Plane QuaternionToPlane(Point3d point, Quaternion quaternion)
+        public static Plane EulerToPlane(double x, double y, double z, double aDeg, double bDeg, double cDeg)
         {
-            quaternion.GetRotation(out Plane plane);
-            plane.Origin = point;
+            double a = aDeg.ToRadians();
+            double b = bDeg.ToRadians();
+            double c = cDeg.ToRadians();
+            double ca = Cos(a);
+            double sa = Sin(a);
+            double cb = Cos(b);
+            double sb = Sin(b);
+            double cc = Cos(c);
+            double sc = Sin(c);
+            var tt = new Transform(1);
+            tt[0, 0] = cb * cc; tt[0, 1] = ca * sc + sa * sb * cc; tt[0, 2] = sa * sc - ca * sb * cc;
+            tt[1, 0] = -cb * sc; tt[1, 1] = ca * cc - sa * sb * sc; tt[1, 2] = sa * cc + ca * sb * sc;
+            tt[2, 0] = sb; tt[2, 1] = -sa * cb; tt[2, 2] = ca * cb;
+
+            var plane = tt.ToPlane();
+            plane.Origin = new Point3d(x, y, z);
             return plane;
         }
 
-        public static Plane QuaternionToPlane(double x, double y, double z, double q1, double q2, double q3, double q4)
+        public static double[] PlaneToEuler(Plane plane)
         {
-            var point = new Point3d(x, y, z);
-            var quaternion = new Quaternion(q1, q2, q3, q4);
-            return QuaternionToPlane(point, quaternion);
+            Transform matrix = Transform.PlaneToPlane(Plane.WorldXY, plane);
+            double a = Atan2(-matrix.M12, matrix.M22);
+            double mult = 1.0 - matrix.M02 * matrix.M02;
+            if (Abs(mult) < UnitTol) mult = 0.0;
+            double b = Atan2(matrix.M02, Sqrt(mult));
+            double c = Atan2(-matrix.M01, matrix.M00);
+
+            if (matrix.M02 < (-1.0 + UnitTol))
+            {
+                a = Atan2(matrix.M21, matrix.M11);
+                b = -PI / 2;
+                c = 0;
+            }
+            else if (matrix.M02 > (1.0 - UnitTol))
+            {
+                a = Atan2(matrix.M21, matrix.M11);
+                b = PI / 2;
+                c = 0;
+            }
+
+            return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, a.ToDegrees(), b.ToDegrees(), c.ToDegrees() };
         }
 
-        public static double[] PlaneToQuaternion(Plane plane)
-        {
-            var q = Quaternion.Rotation(Plane.WorldXY, plane);
-            return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, q.A, q.B, q.C, q.D };
-        }
-
-        public override double[] PlaneToNumbers(Plane plane) => PlaneToQuaternion(plane);
-        public override Plane NumbersToPlane(double[] numbers) => QuaternionToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5], numbers[6]);
+        public override double[] PlaneToNumbers(Plane plane) => PlaneToEuler(plane);
+        public override Plane NumbersToPlane(double[] numbers) => EulerToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5]);
 
         internal override void SaveCode(Program program, string folder)
         {
-            throw new NotImplementedException("Staubli postprocessor not yet implemented.");
+            if (program.Code == null) return;
+
+            if (!Directory.Exists(folder)) throw new DirectoryNotFoundException($" Folder \"{folder}\" not found");
+            var programDir = $@"{folder}\{program.Name}";
+            Directory.CreateDirectory(programDir);
+
+            for (int i = 0; i < program.Code.Count; i++)
+            {
+                string group = MechanicalGroups[i].Name;
+                string programName = $"{program.Name}_{group}";
+
+                for (int j = 0; j < program.Code[i].Count; j++)
+                {
+                    string name;
+
+                    switch (j)
+                    {
+                        case 0:
+                            name = $"{programName}.pjx"; break;
+                        case 1:
+                            name = $"{programName}.dtx"; break;
+                        case 2:
+                            name = "start.pgx"; break;
+                        case 3:
+                            name = "stop.pgx"; break;
+                        default:
+                            name = $"{programName}_{j - 4:000}.pgx"; break;
+                    }
+
+                    string file = $@"{programDir}\{name}";
+                    var joinedCode = string.Join("\r\n", program.Code[i][j]);
+                    File.WriteAllText(file, joinedCode);
+                }
+            }
         }
 
         internal override List<List<List<string>>> Code(Program program) => new VAL3PostProcessor(this, program).Code;
 
         class VAL3PostProcessor
         {
-            RobotCellStaubli _cell;
-            Program _program;
+            readonly RobotCellStaubli _cell;
+            readonly Program _program;
 
             public List<List<List<string>>> Code { get; }
 
@@ -58,272 +115,395 @@ namespace Robots
             {
                 _cell = robotCell;
                 _program = program;
+
+                if (!CheckNames()) return;
+
                 Code = new List<List<List<string>>>();
 
-                //for (int i = 0; i < cell.MechanicalGroups.Count; i++)
-                //{
-                //    var groupCode = new List<List<string>>
-                //    {
-                //        MainModule(i)
-                //    };
+                for (int i = 0; i < _cell.MechanicalGroups.Count; i++)
+                {
+                    var group = _cell.MechanicalGroups[i];
+                    var name = $"{_program.Name}_{group.Name}";
+                    var mdescs = CreateMdescs(i);
 
-                //    for (int j = 0; j < program.MultiFileIndices.Count; j++)
-                //        groupCode.Add(SubModule(j, i));
+                    var groupCode = new List<List<string>>
+                    {
+                        Program(name),
+                        DataList(mdescs),
+                        Start(name),
+                        Stop(name),
+                    };
 
-                //    Code.Add(groupCode);
-                //}
+                    for (int j = 0; j < program.MultiFileIndices.Count; j++)
+                        groupCode.Add(SubModule(j, i, mdescs));
+
+                    Code.Add(groupCode);
+                }
             }
 
-            //List<string> MainModule(int group)
-            //{
-            //    var code = new List<string>();
-            //    bool multiProgram = program.MultiFileIndices.Count > 1;
-            //    string groupName = cell.MechanicalGroups[group].Name;
+            bool CheckNames()
+            {
+                foreach (var group in _cell.MechanicalGroups)
+                {
+                    var name = $"{_program.Name}_{group.Name}";
 
-            //    code.Add($"MODULE {program.Name}_{groupName}");
-            //    if (cell.MechanicalGroups[group].Externals.Count == 0) code.Add("VAR extjoint extj := [9E9,9E9,9E9,9E9,9E9,9E9];");
-            //    code.Add("VAR confdata conf := [0,0,0,0];");
+                    if (name.Length >= 12)
+                    {
+                        _program.Errors.Add($"Program name combined with mechanical group name '{name}' is too long, should be shorter than 16 characters.");
+                        return false;
+                    }
+                }
 
-            //    // Attribute declarations
+                foreach (var attribute in _program.Attributes)
+                {
+                    int maxLength = 16;
 
-            //    if (cell.MechanicalGroups.Count > 1)
-            //    {
-            //        code.Add("VAR syncident sync1;");
-            //        code.Add("VAR syncident sync2;");
-            //        code.Add(@"TASK PERS tasks all_tasks{2} := [[""T_ROB1""], [""T_ROB2""]];");
-            //    }
+                    if (attribute is Tool)
+                        maxLength = 14;
 
-            //    {
-            //        foreach (var tool in program.Attributes.OfType<Tool>()) code.Add(Tool(tool));
-            //        foreach (var frame in program.Attributes.OfType<Frame>()) code.Add(Frame(frame));
-            //        foreach (var speed in program.Attributes.OfType<Speed>()) code.Add(Speed(speed));
-            //        foreach (var zone in program.Attributes.OfType<Zone>()) if (zone.IsFlyBy) code.Add(Zone(zone));
-            //        foreach (var command in program.Attributes.OfType<Command>())
-            //        {
-            //            string declaration = command.Declaration(cell);
-            //            if (declaration != null)
-            //                code.Add(declaration);
-            //        }
-            //    }
+                    if (attribute.Name.Length >= maxLength)
+                    {
+                        _program.Errors.Add($"Attribute name '{attribute.Name}' is too long, should be shorter than {maxLength} characters.");
+                        return false;
+                    }
+                }
 
-            //    code.Add("PROC Main()");
-            //    if (!multiProgram) code.Add("ConfL \\Off;");
+                return true;
+            }
 
-            //    // Init commands
+            Dictionary<(Speed speed, Zone zone), string> CreateMdescs(int group)
+            {
+                var mdescs = new Dictionary<(Speed speed, Zone zone), string>();
+                int count = 0;
 
-            //    if (group == 0)
-            //    {
-            //        foreach (var command in program.InitCommands)
-            //            code.Add(command.Code(cell, Target.Default));
-            //    }
+                foreach (var cellTarget in _program.Targets)
+                {
+                    var target = cellTarget.ProgramTargets[group].Target;
+                    var key = (target.Speed, target.Zone);
 
-            //    if (cell.MechanicalGroups.Count > 1)
-            //    {
-            //        code.Add($"SyncMoveOn sync1, all_tasks;");
-            //    }
+                    if (!mdescs.TryGetValue(key, out var value))
+                    {
+                        string name = $"mdesc{count:0000}";
+                        mdescs.Add(key, name);
+                        count++;
+                    }
+                }
 
-            //    if (multiProgram)
-            //    {
-            //        for (int i = 0; i < program.MultiFileIndices.Count; i++)
-            //        {
-            //            code.Add($"Load\\Dynamic, \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\";");
-            //            code.Add($"%\"{program.Name}_{groupName}_{i:000}:Main\"%;");
-            //            code.Add($"UnLoad \"HOME:/{program.Name}/{program.Name}_{groupName}_{i:000}.MOD\";");
-            //        }
-            //    }
+                return mdescs;
+            }
 
-            //    if (multiProgram)
-            //    {
-            //        if (cell.MechanicalGroups.Count > 1)
-            //        {
-            //            code.Add($"SyncMoveOff sync2;");
-            //        }
+            List<string> Program(string name)
+            {
+                var codes = new List<string>();
 
-            //        code.Add("ENDPROC");
-            //        code.Add("ENDMODULE");
-            //    }
+                string start = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+<Project xmlns=""http://www.staubli.com/robotics/VAL3/Project/3"">
+  <Parameters version=""s7.10.2"" stackSize=""5000"" millimeterUnit=""true"" />
+  <Programs>
+    <Program file=""start.pgx"" />
+    <Program file=""stop.pgx"" />";
 
-            //    return code;
-            //}
+                codes.Add(start);
 
-            //List<string> SubModule(int file, int group)
-            //{
-            //    bool multiProgram = program.MultiFileIndices.Count > 1;
-            //    string groupName = cell.MechanicalGroups[group].Name;
+                for (int j = 0; j < _program.MultiFileIndices.Count; j++)
+                {
+                    codes.Add($@"    <Program file=""{name}_{j:000}.pgx"" />");
+                }
 
-            //    int start = program.MultiFileIndices[file];
-            //    int end = (file == program.MultiFileIndices.Count - 1) ? program.Targets.Count : program.MultiFileIndices[file + 1];
-            //    var code = new List<string>();
+                string end = $@" </Programs>
+  <Database>
+    <Data file=""{name}.dtx"" />
+  </Database>
+  <Libraries />
+</Project>
+    ";
+                codes.Add(end);
+                return codes;
+            }
 
-            //    if (multiProgram)
-            //    {
-            //        code.Add($"MODULE {program.Name}_{groupName}_{file:000}");
-            //        code.Add($"PROC Main()");
-            //        code.Add("ConfL \\Off;");
-            //    }
+            List<string> Start(string name)
+            {
+                var codes = new List<string>();
 
-            //    for (int j = start; j < end; j++)
-            //    {
-            //        var programTarget = program.Targets[j].ProgramTargets[group];
-            //        var target = programTarget.Target;
-            //        string moveText = null;
-            //        string zone = target.Zone.IsFlyBy ? target.Zone.Name : "fine";
-            //        string id = (cell.MechanicalGroups.Count > 1) ? id = $@"\ID:={programTarget.Index}" : "";
-            //        string external = "extj";
+                string start = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Programs xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Program/2"" >
+  <Program name=""start"" >
+    <Locals>
+    </Locals>
+    <Code><![CDATA[begin
+cls()
+putln(""Program '{name}' started..."")";
 
-            //        if (cell.MechanicalGroups[group].Externals.Count > 0)
-            //        {
-            //            double[] values = cell.MechanicalGroups[group].RadiansToDegreesExternal(target);
-            //            var externals = new string[6];
+                codes.Add(start);
 
-            //            for (int i = 0; i < 6; i++)
-            //                externals[i] = "9E9";
+                for (int j = 0; j < _program.MultiFileIndices.Count; j++)
+                {
+                    codes.Add($"call {name}_{j:000}()");
+                }
 
-            //            if (target.ExternalCustom == null)
-            //            {
-            //                for (int i = 0; i < target.External.Length; i++)
-            //                {
-            //                    externals[i] = $"{values[i]:0.00}";
-            //                }
-            //            }
-            //            else
-            //            {
-            //                for (int i = 0; i < target.External.Length; i++)
-            //                {
-            //                    string e = target.ExternalCustom[i];
-            //                    if (!string.IsNullOrEmpty(e))
-            //                        externals[i] = e;
-            //                }
-            //            }
+                string end = $@"waitEndMove()
+end]]></Code>
+  </Program>
+</Programs>";
 
-            //            external = $"[{string.Join(",", externals)}]";
-            //        }
+                codes.Add(end);
+                return codes;
+            }
 
-            //        if (programTarget.IsJointTarget)
-            //        {
-            //            var jointTarget = programTarget.Target as JointTarget;
-            //            double[] joints = jointTarget.Joints;
-            //            joints = joints.Select((x, i) => cell.MechanicalGroups[group].RadianToDegree(x, i)).ToArray();
-            //            moveText = $"MoveAbsJ [[{joints[0]:0.000},{joints[1]:0.000},{joints[2]:0.000},{joints[3]:0.000},{joints[4]:0.000},{joints[5]:0.000}],{external}]{id},{target.Speed.Name},{zone},{target.Tool.Name};";
-            //        }
-            //        else
-            //        {
-            //            var cartesian = programTarget.Target as CartesianTarget;
-            //            var plane = cartesian.Plane;
-            //            var quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
+            List<string> Stop(string name)
+            {
+                var codes = new List<string>();
 
-            //            switch (cartesian.Motion)
-            //            {
-            //                case Target.Motions.Joint:
-            //                    {
-            //                        string pos = $"[{plane.OriginX:0.00},{plane.OriginY:0.00},{plane.OriginZ:0.00}]";
-            //                        string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
+                string start = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Programs xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Program/2"" >
+  <Program name=""stop"" >
+    <Locals>
+    </Locals>
+    <Code><![CDATA[begin
+putln(""Program '{name}' stopped."")";
 
-            //                        int cf1 = (int)Floor(programTarget.Kinematics.Joints[0] / (PI / 2));
-            //                        int cf4 = (int)Floor(programTarget.Kinematics.Joints[3] / (PI / 2));
-            //                        int cf6 = (int)Floor(programTarget.Kinematics.Joints[5] / (PI / 2));
+                codes.Add(start);
 
-            //                        if (cf1 < 0) cf1--;
-            //                        if (cf4 < 0) cf4--;
-            //                        if (cf6 < 0) cf6--;
+                string end = @"end]]></Code>
+  </Program>
+</Programs>";
 
-            //                        Target.RobotConfigurations configuration = programTarget.Kinematics.Configuration;
-            //                        bool shoulder = configuration.HasFlag(Target.RobotConfigurations.Shoulder);
-            //                        bool elbow = configuration.HasFlag(Target.RobotConfigurations.Elbow);
-            //                        if (shoulder) elbow = !elbow;
-            //                        bool wrist = configuration.HasFlag(Target.RobotConfigurations.Wrist);
+                codes.Add(end);
+                return codes;
+            }
 
-            //                        int cfx = 0;
-            //                        if (wrist) cfx += 1;
-            //                        if (elbow) cfx += 2;
-            //                        if (shoulder) cfx += 4;
+            List<string> DataList(Dictionary<(Speed speed, Zone zone), string> mdescs)
+            {
+                var codes = new List<string>();
 
-            //                        string conf = $"[{cf1},{cf4},{cf6},{cfx}]";
-            //                        string robtarget = $"[{pos},{orient},{conf},{external}]";
+                string start = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Database xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Data/2"">
+  <Datas>
+    <Data name=""Inertia"" access=""private"" xsi:type=""array"" type=""num"" size=""1"">
+      <Value key=""0"" value=""0"" />
+    </Data>";
 
-            //                        moveText = $@"MoveJ {robtarget}{id},{target.Speed.Name},{zone},{target.Tool.Name} \WObj:={target.Frame.Name};";
-            //                        break;
-            //                    }
+                codes.Add(start);
+                var attributes = _program.Attributes;
 
-            //                case Target.Motions.Linear:
-            //                    {
-            //                        string pos = $"[{plane.OriginX:0.00},{plane.OriginY:0.00},{plane.OriginZ:0.00}]";
-            //                        string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
-            //                        string robtarget = $"[{pos},{orient},conf,{external}]";
-            //                        moveText = $@"MoveL {robtarget}{id},{target.Speed.Name},{zone},{target.Tool.Name} \WObj:={target.Frame.Name};";
-            //                        break;
-            //                    }
-            //            }
-            //        }
+                foreach (var tool in attributes.OfType<Tool>()) codes.Add(Tool(tool));
+                foreach (var frame in attributes.OfType<Frame>()) codes.Add(Frame(frame));
 
-            //        foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
-            //            code.Add(command.Code(cell, target));
+                codes.AddRange(Speeds(mdescs));
 
-            //        code.Add(moveText);
+                foreach (var command in attributes.OfType<Command>())
+                {
+                    string declaration = command.Declaration(_cell);
+                    if (declaration != null)
+                        codes.Add(declaration);
+                }
 
-            //        foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
-            //            code.Add(command.Code(cell, target));
-            //    }
+                string end = $@"  </Datas>
+</Database>";
 
-            //    if (!multiProgram)
-            //    {
-            //        if (cell.MechanicalGroups.Count > 1)
-            //        {
-            //            code.Add($"SyncMoveOff sync2;");
-            //        }
-            //    }
+                codes.Add(end);
+                return codes;
+            }
 
-            //    code.Add("ENDPROC");
-            //    code.Add("ENDMODULE");
-            //    return code;
-            //}
+            string Tool(Tool tool)
+            {
+                var values = _cell.PlaneToNumbers(tool.Tcp);
+                double weight = (tool.Weight > 0.001) ? tool.Weight : 0.001;
 
-            //string Tool(Tool tool)
-            //{
-            //    Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, tool.Tcp);
-            //    double weight = (tool.Weight > 0.001) ? tool.Weight : 0.001;
+                Point3d centroid = tool.Centroid;
+                if (centroid.DistanceTo(Point3d.Origin) < 0.001)
+                    centroid = new Point3d(0, 0, 0.001);
 
-            //    Point3d centroid = tool.Centroid;
-            //    if (centroid.DistanceTo(Point3d.Origin) < 0.001)
-            //        centroid = new Point3d(0, 0, 0.001);
+                string toolText = $@"    <Data name=""{tool.Name}"" access=""private"" xsi:type=""array"" type=""tool"" size=""1"" >
+      <Value key=""0"" x =""{values[0]:0.###}"" y =""{values[1]:0.###}"" z =""{values[2]:0.###}"" rx =""{values[3]:0.####}"" ry =""{values[4]:0.####}"" rz =""{values[5]:0.####}"" fatherId =""flange[0]"" />
+    </Data>";
 
-            //    string pos = $"[{tool.Tcp.OriginX:0.000},{tool.Tcp.OriginY:0.000},{tool.Tcp.OriginZ:0.000}]";
-            //    string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
-            //    string loaddata = $"[{weight:0.000},[{centroid.X:0.000},{centroid.Y:0.000},{centroid.Z:0.000}],[1,0,0,0],0,0,0]";
-            //    return $"PERS tooldata {tool.Name}:=[TRUE,[{pos},{orient}],{loaddata}];";
-            //}
+                string centroidText = $@"    <Data name=""{tool.Name}_C"" access=""private"" xsi:type=""array"" type=""trsf"" size=""1"">
+      <Value key=""0"" x=""{centroid.X:0.###}"" y=""{centroid.Y:0.###}"" z=""{centroid.Z:0.###}"" />
+    </Data>";
 
-            //string Frame(Frame frame)
-            //{
-            //    Plane plane = frame.Plane;
-            //    plane.Transform(Transform.PlaneToPlane(cell.BasePlane, Plane.WorldXY));
-            //    Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
-            //    string pos = $"[{plane.OriginX:0.000},{plane.OriginY:0.000},{plane.OriginZ:0.000}]";
-            //    string orient = $"[{quaternion.A:0.0000},{quaternion.B:0.0000},{quaternion.C:0.0000},{quaternion.D:0.0000}]";
-            //    string coupledMech = "";
-            //    string coupledBool = frame.IsCoupled ? "FALSE" : "TRUE";
-            //    if (frame.IsCoupled)
-            //    {
-            //        if (frame.CoupledMechanism == -1)
-            //            coupledMech = $"ROB_{frame.CoupledMechanicalGroup + 1}";
-            //        else
-            //            coupledMech = $"STN_{frame.CoupledMechanism + 1}";
-            //    }
-            //    return $@"TASK PERS wobjdata {frame.Name}:=[FALSE,{coupledBool},""{coupledMech}"",[{pos},{orient}],[[0,0,0],[1,0,0,0]]];";
-            //}
+                string weightText = $@"    <Data name=""{tool.Name}_W"" access=""private"" xsi:type=""array"" type=""num"" size=""1"">
+      <Value key=""0"" value=""{weight:0.###}"" />
+    </Data>";
 
-            //string Speed(Speed speed)
-            //{
-            //    double rotation = speed.RotationSpeed.ToDegrees();
-            //    double rotationExternal = speed.RotationExternal.ToDegrees();
-            //    return $"TASK PERS speeddata {speed.Name}:=[{speed.TranslationSpeed:0.00},{rotation:0.00},{speed.TranslationExternal:0.00},{rotationExternal:0.00}];";
-            //}
+                return $"{toolText}\r\n{centroidText}\r\n{weightText}";
+            }
 
-            //string Zone(Zone zone)
-            //{
-            //    double angle = zone.Rotation.ToDegrees();
-            //    return $"TASK PERS zonedata {zone.Name}:=[FALSE,{zone.Distance:0.00},{zone.Distance:0.00},{zone.Distance:0.00},{angle:0.00},{zone.Distance:0.00},{angle:0.00}];";
-            //}
+            string Frame(Frame frame)
+            {
+                if (frame.IsCoupled)
+                {
+                    _program.Warnings.Add(" Frame coupling not supported with Staubli robots.");
+                }
+
+                Plane plane = frame.Plane;
+                plane.Transform(Transform.PlaneToPlane(_cell.BasePlane, Plane.WorldXY));
+                var values = _cell.PlaneToNumbers(plane);
+
+                string code = $@"    <Data name=""{frame.Name}"" access=""private"" xsi:type=""array"" type=""frame"" size=""1"">
+      <Value key=""0"" x =""{values[0]:0.###}"" y =""{values[1]:0.###}"" z =""{values[2]:0.###}"" rx =""{values[3]:0.####}"" ry =""{values[4]:0.####}"" rz =""{values[5]:0.####}"" fatherId =""world[0]"" />
+    </Data>";
+
+                return code;
+            }
+
+            List<string> Speeds(Dictionary<(Speed speed, Zone zone), string> mdescs)
+            {
+                var codes = new List<string>();
+
+                foreach (var pair in mdescs)
+                {
+                    var mdesc = pair.Key;
+                    var name = pair.Value;
+                    var speed = mdesc.speed.TranslationSpeed;
+                    double rotation = mdesc.speed.RotationSpeed.ToDegrees();
+                    var blend = mdesc.zone.IsFlyBy ? "Cartesian" : "off";
+                    var zone = mdesc.zone.Distance;
+
+                    string code = $@"    <Data name=""{name}"" access=""private"" xsi:type=""array"" type=""mdesc"" size=""1"" >
+      <Value key=""0"" accel=""100"" vel=""100"" decel=""100"" tmax=""{speed:0.###}"" rmax=""{rotation:0.###}"" blend=""{blend}"" leave=""{zone}"" reach=""{zone}"" />
+    </Data>";
+
+                    codes.Add(code);
+                }
+
+                return codes;
+            }
+
+            List<string> SubModule(int file, int group, Dictionary<(Speed speed, Zone zone), string> mdescs)
+            {
+                string groupName = _cell.MechanicalGroups[group].Name;
+
+                int start = _program.MultiFileIndices[file];
+                int end = (file == _program.MultiFileIndices.Count - 1) ? _program.Targets.Count : _program.MultiFileIndices[file + 1];
+
+                Tool lastTool = null;
+                int jointCount = 0;
+                int pointCount = 0;
+
+                var instructions = new List<string>();
+
+                for (int j = start; j < end; j++)
+                {
+                    var programTarget = _program.Targets[j].ProgramTargets[group];
+                    var target = programTarget.Target;
+
+                    var tool = target.Tool.Name;
+                    var key = (target.Speed, target.Zone);
+                    var speed = mdescs[key];
+                    string moveText = "";
+
+                    // payload
+                    if (lastTool == null || target.Tool != lastTool)
+                    {
+                        instructions.Add($"setPayload({tool}, {tool}_W, {tool}_C, Inertia)");
+                        lastTool = target.Tool;
+                    }
+
+                    // external
+                    if (_cell.MechanicalGroups[group].Externals.Count > 0)
+                    {
+                        _program.Warnings.Add("External axes not implemented in Staubli.");
+                    }
+
+                    if (programTarget.IsJointTarget)
+                    {
+                        string targetName = $"joints[{jointCount++}]";
+                        var jointTarget = programTarget.Target as JointTarget;
+
+                        double[] joints = jointTarget.Joints;
+                        joints = joints.Select((x, i) => _cell.MechanicalGroups[group].RadianToDegree(x, i)).ToArray();
+
+                        var assignment = $"{targetName} = {{{joints[0]:0.####},{joints[1]:0.####},{joints[2]:0.####},{joints[3]:0.####},{joints[4]:0.####},{joints[5]:0.####}}}";
+                        var command = $"movej({targetName}, {tool}, {speed})";
+                        moveText = $"{assignment}\r\n{command}";
+                    }
+                    else
+                    {
+                        string targetName = $"points[{pointCount++}]";
+                        var cartesian = programTarget.Target as CartesianTarget;
+
+                        string shoulderT = "ssame";
+                        string elbowT = "esame";
+                        string wristT = "wsame";
+
+                        string move = "";
+
+                        switch (cartesian.Motion)
+                        {
+                            case Motions.Joint:
+                                {
+                                    RobotConfigurations configuration = programTarget.Kinematics.Configuration;
+                                    bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
+                                    bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
+                                    if (shoulder) elbow = !elbow;
+                                    bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
+
+                                    wristT = !wrist ? "wpositive" : "wnegative";
+                                    elbowT = !elbow ? "epositive" : "enegative";
+                                    shoulderT = !shoulder ? "lefty" : "righty";
+
+                                    move = "movej";
+                                    break;
+                                }
+
+                            case Motions.Linear:
+                                {
+                                    move = "movel";
+                                    break;
+                                }
+
+                            default:
+                                {
+                                    _program.Warnings.Add($" Movement type '{cartesian.Motion} not supported.");
+                                    continue;
+                                }
+                        }
+
+                        var values = _cell.PlaneToNumbers(cartesian.Plane);
+                        string localtrsf = $"{{{values[0]:0.###},{values[1]:0.###},{values[2]:0.###},{values[3]:0.####},{values[4]:0.####},{values[5]:0.####}}}";
+
+                        string config = $"{{{shoulderT},{elbowT},{wristT}}}";
+
+                        string point = $"{targetName} = {{{localtrsf},{config}}}";
+                        string link = $"link({targetName},{target.Frame.Name})";
+
+                        moveText = $"{point}\r\n{link}\r\n{move}({targetName}, {tool}, {speed})";
+                    }
+
+                    foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
+                        instructions.Add(command.Code(_cell, target));
+
+                    instructions.Add(moveText);
+
+                    foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
+                        instructions.Add(command.Code(_cell, target));
+                }
+
+                var locals = new List<string>();
+                locals.Add($@"      <Local name=""joints"" type=""joint"" xsi:type=""array"" size=""{jointCount}"" />");
+                locals.Add($@"      <Local name=""points"" type=""point"" xsi:type=""array"" size=""{pointCount}"" />");
+
+                string startCode = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Programs xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Program/2"" >
+  <Program name=""{_program.Name}_{groupName}_{file:000}"" >
+    <Locals>";
+
+                string midCode = @"</Locals>
+    <Code><![CDATA[begin ";
+
+                string endCode = $@"end]]></Code>
+  </Program>
+</Programs>";
+
+                var code = new List<string>();
+                code.Add(startCode);
+                code.AddRange(locals);
+                code.Add(midCode);
+                code.AddRange(instructions);
+                code.Add(endCode);
+                return code;
+            }
         }
     }
 }

@@ -14,10 +14,12 @@ namespace Robots
         protected virtual string DeclarationAbb(RobotSystem robotSystem) => null;
         protected virtual string DeclarationKuka(RobotSystem robotSystem) => null;
         protected virtual string DeclarationUR(RobotSystem robotSystem) => null;
+        protected virtual string DeclarationStaubli(RobotSystem robotSystem) => null;
 
-        protected virtual string CodeAbb(RobotSystem robotSystem, Target target) { throw new Exception($"Command {this.GetType().Name} for ABB not implemented."); }
-        protected virtual string CodeKuka(RobotSystem robotSystem, Target target) { throw new Exception($"Command {this.GetType().Name} for KUKA not implemented."); }
-        protected virtual string CodeUR(RobotSystem robotSystem, Target target) { throw new Exception($"Command {this.GetType().Name} for UR not implemented."); }
+        protected virtual string CodeAbb(RobotSystem robotSystem, Target target) { throw new Exception($"Command {GetType().Name} for ABB not implemented."); }
+        protected virtual string CodeKuka(RobotSystem robotSystem, Target target) { throw new Exception($"Command {GetType().Name} for KUKA not implemented."); }
+        protected virtual string CodeUR(RobotSystem robotSystem, Target target) { throw new Exception($"Command {GetType().Name} for UR not implemented."); }
+        protected virtual string CodeStaubli(RobotSystem robotSystem, Target target) { throw new Exception($"Command {GetType().Name} for Staubli not implemented."); }
 
         // public override string Name => GetType().Name;
 
@@ -39,6 +41,7 @@ namespace Robots
                 case (Manufacturers.ABB): return DeclarationAbb(robotSystem);
                 case (Manufacturers.KUKA): return DeclarationKuka(robotSystem);
                 case (Manufacturers.UR): return DeclarationUR(robotSystem);
+                case (Manufacturers.Staubli): return DeclarationStaubli(robotSystem);
                 default: return null;
             }
         }
@@ -50,6 +53,7 @@ namespace Robots
                 case (Manufacturers.ABB): return CodeAbb(robotSystem, target);
                 case (Manufacturers.KUKA): return CodeKuka(robotSystem, target);
                 case (Manufacturers.UR): return CodeUR(robotSystem, target);
+                case (Manufacturers.Staubli): return CodeStaubli(robotSystem, target);
                 default: return null;
             }
         }
@@ -103,6 +107,7 @@ namespace Robots.Commands
             get { return commands[index]; }
             set { commands[index] = value; }
         }
+
         public int Count => commands.Count;
         public bool IsReadOnly => false;
         public void Add(Command item) => commands.Add(item);
@@ -133,7 +138,6 @@ namespace Robots.Commands
 
         public override string ToString() => $"Command (Group with {Count} commands)";
     }
-
 
     public class SetDO : Command
     {
