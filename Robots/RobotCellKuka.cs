@@ -163,14 +163,14 @@ DEFDAT {program.Name}_{groupName} PUBLIC
                 foreach (var frame in program.Attributes.OfType<Frame>()) code.Add(Frame(frame));
 
                 foreach (var speed in program.Attributes.OfType<Speed>())
-                    code.Add($"DECL GLOBAL REAL {speed.Name} = {speed.TranslationSpeed / 1000:0.00000}");
+                    code.Add($"DECL GLOBAL REAL {speed.Name} = {speed.TranslationSpeed / 1000:0.#####}");
 
                 foreach (var zone in program.Attributes.OfType<Zone>())
-                    code.Add($"DECL GLOBAL REAL {zone.Name} = {zone.Distance:0.000}");
+                    code.Add($"DECL GLOBAL REAL {zone.Name} = {zone.Distance:0.###}");
 
                 foreach (var command in program.Attributes.OfType<Command>())
                 {
-                    string declaration = command.Declaration(cell);
+                    string declaration = command.Declaration(program);
                     if (declaration != null) code.Add(declaration);
                 }
 
@@ -195,7 +195,7 @@ $APO.CPTP=100
 
                 // Init commands
                 foreach (var command in program.InitCommands)
-                    code.Add(command.Code(cell, Target.Default));
+                    code.Add(command.Code(program, Target.Default));
 
 
                 for (int i = 0; i < program.MultiFileIndices.Count; i++)
@@ -244,8 +244,8 @@ DEF {program.Name}_{groupName}_{file:000}()
                         if (target.Frame.IsCoupled)
                         {
                             int mech = target.Frame.CoupledMechanism + 2;
-                            code.Add($@"$BASE = EK(MACHINE_DEF[{mech}].ROOT, MACHINE_DEF[{mech}].MECH_TYPE, {target.Frame.Name})");
-                            code.Add($@"$ACT_EX_AX = 2");
+                            code.Add($"$BASE = EK(MACHINE_DEF[{mech}].ROOT, MACHINE_DEF[{mech}].MECH_TYPE, {target.Frame.Name})");
+                            code.Add($"$ACT_EX_AX = 2");
                         }
                         else
                         {
@@ -276,7 +276,7 @@ DEF {program.Name}_{groupName}_{file:000}()
                                 {
                                     double rotation = target.Speed.RotationSpeed.ToDegrees();
                                     //  code.Add($"$VEL={{CP {target.Speed.Name}, ORI1 {rotation:0.000}, ORI2 {rotation:0.000}}}");
-                                    code.Add($"$VEL.CP = {target.Speed.Name}\r\n$VEL.ORI1 = {rotation:0.000}\r\n$VEL.ORI2 = {rotation:0.000}");
+                                    code.Add($"$VEL.CP = {target.Speed.Name}\r\n$VEL.ORI1 = {rotation:0.###}\r\n$VEL.ORI2 = {rotation:0.####}");
                                     currentSpeed = target.Speed;
                                 }
                             }
@@ -287,7 +287,7 @@ DEF {program.Name}_{groupName}_{file:000}()
 
                                 if (Abs(currentPercentSpeed - percentSpeed) > UnitTol)
                                 {
-                                    code.Add($"BAS(#VEL_PTP, 100)");
+                                    code.Add("BAS(#VEL_PTP, 100)");
                                     if (cellTarget.DeltaTime > UnitTol) code.Add($"$VEL_AXIS[{programTarget.LeadingJoint + 1}] = {percentSpeed * 100:0.000}");
                                     currentPercentSpeed = percentSpeed;
                                 }
@@ -304,7 +304,7 @@ DEF {program.Name}_{groupName}_{file:000}()
                     for (int i = 0; i < target.External.Length; i++)
                     {
                         int num = i + 1;
-                        external += $", E{num} {values[i]:0.000}";
+                        external += $", E{num} {values[i]:0.####}";
                     }
 
                     // motion command
@@ -316,7 +316,7 @@ DEF {program.Name}_{groupName}_{file:000}()
                         var jointTarget = target as JointTarget;
                         double[] jointDegrees = jointTarget.Joints.Select((x, i) => cell.MechanicalGroups[group].Robot.RadianToDegree(x, i)).ToArray();
 
-                        moveText = $"PTP {{A1 {jointDegrees[0]:0.000},A2 {jointDegrees[1]:0.000},A3 {jointDegrees[2]:0.000},A4 {jointDegrees[3]:0.000},A5 {jointDegrees[4]:0.000},A6 {jointDegrees[5]:0.000}{external}}}";
+                        moveText = $"PTP {{A1 {jointDegrees[0]:0.####},A2 {jointDegrees[1]:0.####},A3 {jointDegrees[2]:0.####},A4 {jointDegrees[3]:0.####},A5 {jointDegrees[4]:0.####},A6 {jointDegrees[5]:0.####}{external}}}";
                         if (target.Zone.IsFlyBy) moveText += " C_PTP";
                     }
                     else
@@ -349,27 +349,30 @@ DEF {program.Name}_{groupName}_{file:000}()
 
                                         string status = Convert.ToString(configNum, 2);
                                         string turn = Convert.ToString(turnNum, 2);
-                                        bits = $@", S'B{status:000}',T'B{turn:000000}'";
+                                        bits = $", S'B{status:000}',T'B{turn:000000}'";
                                     }
 
-                                    moveText = $"PTP {{X {euler[0]:0.00},Y {euler[1]:0.00},Z {euler[2]:0.00},A {euler[3]:0.000},B {euler[4]:0.000},C {euler[5]:0.000}{external}{bits}}}";
+                                    moveText = $"PTP {{X {euler[0]:0.###},Y {euler[1]:0.###},Z {euler[2]:0.###},A {euler[3]:0.####},B {euler[4]:0.####},C {euler[5]:0.####}{external}{bits}}}";
                                     if (target.Zone.IsFlyBy) moveText += " C_PTP";
                                     break;
                                 }
 
                             case Motions.Linear:
                                 {
-                                    moveText = $"LIN {{X {euler[0]:0.00},Y {euler[1]:0.00},Z {euler[2]:0.00},A {euler[3]:0.000},B {euler[4]:0.000},C {euler[5]:0.000}{external}}}";
+                                    moveText = $"LIN {{X {euler[0]:0.###},Y {euler[1]:0.###},Z {euler[2]:0.###},A {euler[3]:0.####},B {euler[4]:0.####},C {euler[5]:0.####}{external}}}";
                                     if (target.Zone.IsFlyBy) moveText += " C_DIS";
                                     break;
                                 }
                         }
                     }
 
+                    foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
+                        code.Add(command.Code(program, target));
+
                     code.Add(moveText);
 
-                    foreach (var command in programTarget.Commands)
-                        code.Add(command.Code(cell, target));
+                    foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
+                        code.Add(command.Code(program, target));
                 }
 
                 code.Add("END");
@@ -390,7 +393,7 @@ DEF {program.Name}_{groupName}_{file:000}()
                     if (joint is RevoluteJoint) percentSpeed = target.Target.Speed.RotationExternal / joint.MaxSpeed;
                     percentSpeed = Clamp(percentSpeed, 0.0, 1.0);
                     externalSpeedCode += $"BAS(#VEL_PTP, 100)" + "\r\n";
-                    externalSpeedCode += $"$VEL_EXTAX[{target.LeadingJoint + 1 - 6}] = {percentSpeed * 100:0.000}";
+                    externalSpeedCode += $"$VEL_EXTAX[{target.LeadingJoint + 1 - 6}] = {percentSpeed * 100:0.###}";
                     //     if (i < externalJointsCount - 1) externalSpeedCode += "\r\n";
                 }
 
@@ -402,14 +405,14 @@ DEF {program.Name}_{groupName}_{file:000}()
                 string toolTxt = $"$TOOL={tool.Name}";
                 string load = $"$LOAD.M={tool.Weight}";
                 Point3d centroid = tool.Centroid;
-                string centroidTxt = $"$LOAD.CM={{X {centroid.X:0.000},Y {centroid.Y:0.000},Z {centroid.Z:0.000},A 0,B 0,C 0}}";
+                string centroidTxt = $"$LOAD.CM={{X {centroid.X:0.###},Y {centroid.Y:0.###},Z {centroid.Z:0.###},A 0,B 0,C 0}}";
                 return $"{toolTxt}\r\n{load}\r\n{centroidTxt}";
             }
 
             string Tool(Tool tool)
             {
                 double[] euler = PlaneToEuler(tool.Tcp);
-                return $"DECL GLOBAL FRAME {tool.Name}={{FRAME: X {euler[0]:0.000},Y {euler[1]:0.000},Z {euler[2]:0.000},A {euler[3]:0.000},B {euler[4]:0.000},C {euler[5]:0.000}}}";
+                return $"DECL GLOBAL FRAME {tool.Name}={{FRAME: X {euler[0]:0.###},Y {euler[1]:0.###},Z {euler[2]:0.###},A {euler[3]:0.####},B {euler[4]:0.####},C {euler[5]:0.####}}}";
             }
 
             string Frame(Frame frame)
@@ -418,7 +421,7 @@ DEF {program.Name}_{groupName}_{file:000}()
                 plane.Transform(Transform.PlaneToPlane(cell.BasePlane, Plane.WorldXY));
 
                 double[] euler = PlaneToEuler(plane);
-                return $"DECL GLOBAL FRAME {frame.Name}={{FRAME: X {euler[0]:0.000},Y {euler[1]:0.000},Z {euler[2]:0.000},A {euler[3]:0.000},B {euler[4]:0.000},C {euler[5]:0.000}}}";
+                return $"DECL GLOBAL FRAME {frame.Name}={{FRAME: X {euler[0]:0.###},Y {euler[1]:0.###},Z {euler[2]:0.###},A {euler[3]:0.####},B {euler[4]:0.####},C {euler[5]:0.####}}}";
             }
         }
     }

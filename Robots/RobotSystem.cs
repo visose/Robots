@@ -13,7 +13,7 @@ using static System.Math;
 
 namespace Robots
 {
-    public enum Manufacturers { ABB, KUKA, UR, FANUC, Staubli, Other };
+    public enum Manufacturers { ABB, KUKA, UR, FANUC, Staubli, Other, All };
 
     public abstract class RobotSystem
     {

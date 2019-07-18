@@ -136,7 +136,7 @@ namespace Robots
                     foreach (var zone in program.Attributes.OfType<Zone>()) if (zone.IsFlyBy) code.Add(Zone(zone));
                     foreach (var command in program.Attributes.OfType<Command>())
                     {
-                        string declaration = command.Declaration(cell);
+                        string declaration = command.Declaration(program);
                         if (declaration != null)
                             code.Add(declaration);
                     }
@@ -150,7 +150,7 @@ namespace Robots
                 if (group == 0)
                 {
                     foreach (var command in program.InitCommands)
-                        code.Add(command.Code(cell, Target.Default));
+                        code.Add(command.Code(program, Target.Default));
                 }
 
                 if (cell.MechanicalGroups.Count > 1)
@@ -218,9 +218,7 @@ namespace Robots
                         if (target.ExternalCustom == null)
                         {
                             for (int i = 0; i < target.External.Length; i++)
-                            {
-                                externals[i] = $"{values[i]:0.000}";
-                            }
+                                externals[i] = $"{values[i]:0.####}";
                         }
                         else
                         {
@@ -240,7 +238,7 @@ namespace Robots
                         var jointTarget = programTarget.Target as JointTarget;
                         double[] joints = jointTarget.Joints;
                         joints = joints.Select((x, i) => cell.MechanicalGroups[group].RadianToDegree(x, i)).ToArray();
-                        moveText = $"MoveAbsJ [[{joints[0]:0.000},{joints[1]:0.000},{joints[2]:0.000},{joints[3]:0.000},{joints[4]:0.000},{joints[5]:0.000}],{external}]{id},{target.Speed.Name},{zone},{target.Tool.Name};";
+                        moveText = $"MoveAbsJ [[{joints[0]:0.####},{joints[1]:0.####},{joints[2]:0.####},{joints[3]:0.####},{joints[4]:0.####},{joints[5]:0.####}],{external}]{id},{target.Speed.Name},{zone},{target.Tool.Name};";
                     }
                     else
                     {
@@ -253,8 +251,8 @@ namespace Robots
                         {
                             case Motions.Joint:
                                 {
-                                    string pos = $"[{plane.OriginX:0.000},{plane.OriginY:0.000},{plane.OriginZ:0.000}]";
-                                    string orient = $"[{quaternion.A:0.00000},{quaternion.B:0.00000},{quaternion.C:0.00000},{quaternion.D:0.00000}]";
+                                    string pos = $"[{plane.OriginX:0.###},{plane.OriginY:0.###},{plane.OriginZ:0.###}]";
+                                    string orient = $"[{quaternion.A:0.#####},{quaternion.B:0.#####},{quaternion.C:0.#####},{quaternion.D:0.#####}]";
 
                                     int cf1 = (int)Floor(programTarget.Kinematics.Joints[0] / (PI / 2));
                                     int cf4 = (int)Floor(programTarget.Kinematics.Joints[3] / (PI / 2));
@@ -284,8 +282,8 @@ namespace Robots
 
                             case Motions.Linear:
                                 {
-                                    string pos = $"[{plane.OriginX:0.000},{plane.OriginY:0.000},{plane.OriginZ:0.000}]";
-                                    string orient = $"[{quaternion.A:0.00000},{quaternion.B:0.00000},{quaternion.C:0.00000},{quaternion.D:0.00000}]";
+                                    string pos = $"[{plane.OriginX:0.###},{plane.OriginY:0.###},{plane.OriginZ:0.###}]";
+                                    string orient = $"[{quaternion.A:0.#####},{quaternion.B:0.#####},{quaternion.C:0.#####},{quaternion.D:0.#####}]";
                                     string robtarget = $"[{pos},{orient},conf,{external}]";
                                     moveText = $@"MoveL {robtarget}{id},{target.Speed.Name},{zone},{target.Tool.Name} \WObj:={target.Frame.Name};";
                                     break;
@@ -294,12 +292,12 @@ namespace Robots
                     }
 
                     foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
-                        code.Add(command.Code(cell, target));
+                        code.Add(command.Code(program, target));
 
                     code.Add(moveText);
 
                     foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
-                        code.Add(command.Code(cell, target));
+                        code.Add(command.Code(program, target));
                 }
 
                 if (!multiProgram)
