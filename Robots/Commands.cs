@@ -181,9 +181,8 @@ namespace Robots.Commands
         string CodeStaubli(RobotSystem robotSystem, Target target)
         {
             string textValue = Value ? "true" : "false";
-            return $"{robotSystem.IO.DO[DO]} = {textValue}";
+            return $"dos[{DO}] = {textValue}";
         }
-
 
         public override string ToString() => $"Command (DO {DO} set to {Value})";
     }
@@ -255,7 +254,7 @@ namespace Robots.Commands
 
         string CodeStaubli(RobotSystem robotSystem, Target target)
         {
-            return $"aioSet({robotSystem.IO.AO[AO]}, {Name})";
+            return $"aioSet(aos[{AO}], {Name})";
         }
 
         public override string ToString() => $"Command (AO {AO} set to \"{Value}\")";
@@ -417,7 +416,7 @@ namespace Robots.Commands
         string CodeStaubli(RobotSystem robotSystem, Target target)
         {
             string textValue = Value ? "true" : "false";
-            return $"wait({robotSystem.IO.DI[DI]} == {textValue})";
+            return $"wait(dis[{DI}] == {textValue})";
         }
 
         public override string ToString() => $"Command (WaitDI until {DI} is {Value})";
