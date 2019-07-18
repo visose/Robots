@@ -1,11 +1,9 @@
 ﻿using System.Linq;
 using System.IO;
 using System.Collections.Generic;
-
 using Rhino.Geometry;
 using static System.Math;
 using static Robots.Util;
-using System;
 
 namespace Robots
 {
@@ -103,6 +101,36 @@ namespace Robots
         }
 
         internal override List<List<List<string>>> Code(Program program) => new VAL3PostProcessor(this, program).Code;
+
+        internal static class VAL3Syntax
+        {
+            public static string Data(string name, string type, string value = null, int size = 1)
+            {
+                string attribute = $@"    <Data name=""{name}"" access=""private"" xsi:type=""array"" type=""{type}"" size=""{size}"">
+      <Value key=""0"" {value} />
+    </Data>";
+
+                return attribute;
+            }
+
+            public static string NumData(string name, double number)
+            {
+                string value = $@"value=""{number:0.###}""";
+                return Data(name, "num", value);
+            }
+
+            public static string TrsfData(string name, Plane plane)
+            {
+                var values = PlaneToEuler(plane);
+                string value = $@"x =""{values[0]:0.###}"" y =""{values[1]:0.###}"" z =""{values[2]:0.###}"" rx =""{values[3]:0.####}"" ry =""{values[4]:0.####}"" rz =""{values[5]:0.####}""";
+                return Data(name, "trsf", value);
+            }
+
+            public static string Local(string name, string type, int size = 1)
+            {
+                return $@"      <Local name=""{name}"" type=""{type}"" xsi:type=""array"" size=""{size}"" />";
+            }
+        }
 
         class VAL3PostProcessor
         {
@@ -221,13 +249,25 @@ namespace Robots
                 return codes;
             }
 
+            string ProgramHeader(string name)
+            {
+                return $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Programs xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Program/2"" >
+  <Program name=""{name}"">";
+            }
+
+            string ProgramFooter()
+            {
+                return @"end]]></Code>
+  </Program>
+</Programs>";
+            }
+
             List<string> Start(string name)
             {
                 var codes = new List<string>();
 
-                string start = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
-<Programs xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Program/2"" >
-  <Program name=""start"" >
+                string start = $@"{ProgramHeader("start")}
     <Locals>
     </Locals>
     <Code><![CDATA[begin
@@ -236,15 +276,14 @@ putln(""Program '{name}' started..."")";
 
                 codes.Add(start);
 
+                foreach (var command in _program.InitCommands)
+                    codes.Add(command.Code(_program, Target.Default));
+
                 for (int j = 0; j < _program.MultiFileIndices.Count; j++)
-                {
                     codes.Add($"call {name}_{j:000}()");
-                }
 
                 string end = $@"waitEndMove()
-end]]></Code>
-  </Program>
-</Programs>";
+{ProgramFooter()}";
 
                 codes.Add(end);
                 return codes;
@@ -254,21 +293,14 @@ end]]></Code>
             {
                 var codes = new List<string>();
 
-                string start = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
-<Programs xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Program/2"" >
-  <Program name=""stop"" >
+                string start = $@"{ProgramHeader("stop")}
     <Locals>
     </Locals>
     <Code><![CDATA[begin
 putln(""Program '{name}' stopped."")";
 
                 codes.Add(start);
-
-                string end = @"end]]></Code>
-  </Program>
-</Programs>";
-
-                codes.Add(end);
+                codes.Add(ProgramFooter());
                 return codes;
             }
 
@@ -278,14 +310,12 @@ putln(""Program '{name}' stopped."")";
 
                 string start = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
 <Database xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Data/2"">
-  <Datas>
-    <Data name=""Inertia"" access=""private"" xsi:type=""array"" type=""num"" size=""1"">
-      <Value key=""0"" value=""0"" />
-    </Data>";
+  <Datas>";
 
                 codes.Add(start);
                 var attributes = _program.Attributes;
 
+                VAL3Syntax.NumData("Inertia", 0);
                 foreach (var tool in attributes.OfType<Tool>()) codes.Add(Tool(tool));
                 foreach (var frame in attributes.OfType<Frame>()) codes.Add(Frame(frame));
 
@@ -293,7 +323,7 @@ putln(""Program '{name}' stopped."")";
 
                 foreach (var command in attributes.OfType<Command>())
                 {
-                    string declaration = command.Declaration(_cell);
+                    string declaration = command.Declaration(_program);
                     if (declaration != null)
                         codes.Add(declaration);
                 }
@@ -314,17 +344,9 @@ putln(""Program '{name}' stopped."")";
                 if (centroid.DistanceTo(Point3d.Origin) < 0.001)
                     centroid = new Point3d(0, 0, 0.001);
 
-                string toolText = $@"    <Data name=""{tool.Name}"" access=""private"" xsi:type=""array"" type=""tool"" size=""1"" >
-      <Value key=""0"" x =""{values[0]:0.###}"" y =""{values[1]:0.###}"" z =""{values[2]:0.###}"" rx =""{values[3]:0.####}"" ry =""{values[4]:0.####}"" rz =""{values[5]:0.####}"" fatherId =""flange[0]"" />
-    </Data>";
-
-                string centroidText = $@"    <Data name=""{tool.Name}_C"" access=""private"" xsi:type=""array"" type=""trsf"" size=""1"">
-      <Value key=""0"" x=""{centroid.X:0.###}"" y=""{centroid.Y:0.###}"" z=""{centroid.Z:0.###}"" />
-    </Data>";
-
-                string weightText = $@"    <Data name=""{tool.Name}_W"" access=""private"" xsi:type=""array"" type=""num"" size=""1"">
-      <Value key=""0"" value=""{weight:0.###}"" />
-    </Data>";
+                string toolText = VAL3Syntax.Data(tool.Name, "tool", $@"x= ""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}"" fatherId=""flange[0]""");
+                string centroidText = VAL3Syntax.Data($"{tool.Name}_C", "trsf", $@"x=""{centroid.X:0.###}"" y=""{centroid.Y:0.###}"" z=""{centroid.Z:0.###}""");
+                string weightText = VAL3Syntax.NumData($"{tool.Name}_W", weight);
 
                 return $"{toolText}\r\n{centroidText}\r\n{weightText}";
             }
@@ -340,10 +362,7 @@ putln(""Program '{name}' stopped."")";
                 plane.Transform(Transform.PlaneToPlane(_cell.BasePlane, Plane.WorldXY));
                 var values = _cell.PlaneToNumbers(plane);
 
-                string code = $@"    <Data name=""{frame.Name}"" access=""private"" xsi:type=""array"" type=""frame"" size=""1"">
-      <Value key=""0"" x =""{values[0]:0.###}"" y =""{values[1]:0.###}"" z =""{values[2]:0.###}"" rx =""{values[3]:0.####}"" ry =""{values[4]:0.####}"" rz =""{values[5]:0.####}"" fatherId =""world[0]"" />
-    </Data>";
-
+                string code = VAL3Syntax.Data(frame.Name, "frame", $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}"" fatherId=""world[0]""");
                 return code;
             }
 
@@ -360,10 +379,7 @@ putln(""Program '{name}' stopped."")";
                     var blend = mdesc.zone.IsFlyBy ? "Cartesian" : "off";
                     var zone = mdesc.zone.Distance;
 
-                    string code = $@"    <Data name=""{name}"" access=""private"" xsi:type=""array"" type=""mdesc"" size=""1"" >
-      <Value key=""0"" accel=""100"" vel=""100"" decel=""100"" tmax=""{speed:0.###}"" rmax=""{rotation:0.###}"" blend=""{blend}"" leave=""{zone}"" reach=""{zone}"" />
-    </Data>";
-
+                    string code = VAL3Syntax.Data(name, "mdesc", $@"accel=""100"" vel=""100"" decel=""100"" tmax=""{speed:0.###}"" rmax=""{rotation:0.###}"" blend=""{blend}"" leave=""{zone}"" reach=""{zone}""");
                     codes.Add(code);
                 }
 
@@ -414,7 +430,7 @@ putln(""Program '{name}' stopped."")";
                         double[] joints = jointTarget.Joints;
                         joints = joints.Select((x, i) => _cell.MechanicalGroups[group].RadianToDegree(x, i)).ToArray();
 
-                        var assignment = $"{targetName} = {{{joints[0]:0.####},{joints[1]:0.####},{joints[2]:0.####},{joints[3]:0.####},{joints[4]:0.####},{joints[5]:0.####}}}";
+                        var assignment = $"{targetName} = {{{joints[0]:0.####}, {joints[1]:0.####}, {joints[2]:0.####}, {joints[3]:0.####}, {joints[4]:0.####}, {joints[5]:0.####}}}";
                         var command = $"movej({targetName}, {tool}, {speed})";
                         moveText = $"{assignment}\r\n{command}";
                     }
@@ -461,47 +477,45 @@ putln(""Program '{name}' stopped."")";
                         }
 
                         var values = _cell.PlaneToNumbers(cartesian.Plane);
-                        string localtrsf = $"{{{values[0]:0.###},{values[1]:0.###},{values[2]:0.###},{values[3]:0.####},{values[4]:0.####},{values[5]:0.####}}}";
+                        string localtrsf = $"{{{values[0]:0.###}, {values[1]:0.###}, {values[2]:0.###}, {values[3]:0.####}, {values[4]:0.####}, {values[5]:0.####}}}";
 
-                        string config = $"{{{shoulderT},{elbowT},{wristT}}}";
+                        string config = $"{{{shoulderT}, {elbowT}, {wristT}}}";
 
-                        string point = $"{targetName} = {{{localtrsf},{config}}}";
-                        string link = $"link({targetName},{target.Frame.Name})";
+                        string point = $"{targetName} = {{{localtrsf}, {config}}}";
+                        string link = $"link({targetName}, {target.Frame.Name})";
 
                         moveText = $"{point}\r\n{link}\r\n{move}({targetName}, {tool}, {speed})";
                     }
 
                     foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
-                        instructions.Add(command.Code(_cell, target));
+                        instructions.Add(command.Code(_program, target));
 
                     instructions.Add(moveText);
 
                     foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
-                        instructions.Add(command.Code(_cell, target));
+                        instructions.Add(command.Code(_program, target));
                 }
 
                 var locals = new List<string>();
-                locals.Add($@"      <Local name=""joints"" type=""joint"" xsi:type=""array"" size=""{jointCount}"" />");
-                locals.Add($@"      <Local name=""points"" type=""point"" xsi:type=""array"" size=""{pointCount}"" />");
 
-                string startCode = $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
-<Programs xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Program/2"" >
-  <Program name=""{_program.Name}_{groupName}_{file:000}"" >
+                if (jointCount > 0)
+                    locals.Add(VAL3Syntax.Local("joints", "joint", jointCount));
+                if (pointCount > 0)
+                    locals.Add(VAL3Syntax.Local("points", "point", pointCount));
+
+                string programName = $"{_program.Name}_{groupName}_{file: 000}";
+                string startCode = $@"{ProgramHeader(programName)}
     <Locals>";
 
-                string midCode = @"</Locals>
+                string midCode = @"    </Locals>
     <Code><![CDATA[begin ";
-
-                string endCode = $@"end]]></Code>
-  </Program>
-</Programs>";
 
                 var code = new List<string>();
                 code.Add(startCode);
                 code.AddRange(locals);
                 code.Add(midCode);
                 code.AddRange(instructions);
-                code.Add(endCode);
+                code.Add(ProgramFooter());
                 return code;
             }
         }
