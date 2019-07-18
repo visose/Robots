@@ -548,9 +548,9 @@ namespace Robots
         /// </summary>
         class CircumcentreSolver
         {
-            private double x, y, z;
-            private double radius;
-            private double[,] p = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
+             double x, y, z;
+             double radius;
+             double[,] p = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
 
             internal Point3d Center => new Point3d(x, y, z);
             internal double Radius => radius;
@@ -594,7 +594,7 @@ namespace Robots
                 this.Sphere();
             }
 
-            private void Sphere()
+             void Sphere()
             {
                 double m11, m12, m13, m14, m15;
                 double[,] a = { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } };
@@ -672,7 +672,7 @@ namespace Robots
             double Determinant(double[,] a, double n)
             {
                 int i, j, j1, j2;
-                double d = 0;
+                double d;
                 double[,] m =
                         {
                     { 0, 0, 0, 0 },

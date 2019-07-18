@@ -164,13 +164,13 @@ namespace Robots
                     var groupCode = new List<List<string>>
                     {
                         Program(name),
-                        DataList(mdescs),
+                        DataList(i, mdescs, out var indices),
                         Start(name),
                         Stop(name),
                     };
 
                     for (int j = 0; j < program.MultiFileIndices.Count; j++)
-                        groupCode.Add(SubModule(j, i, mdescs));
+                        groupCode.Add(SubModule(j, i, mdescs, indices));
 
                     Code.Add(groupCode);
                 }
@@ -256,7 +256,7 @@ namespace Robots
                 return codes;
             }
 
-            List<string> DataList(Dictionary<(Speed speed, Zone zone), string> mdescs)
+            List<string> DataList(int group, Dictionary<(Speed speed, Zone zone), string> mdescs, out List<int> indices)
             {
                 var codes = new List<string>();
 
@@ -268,11 +268,9 @@ namespace Robots
                 var attributes = _program.Attributes;
 
                 codes.Add(VAL3Syntax.NumData("Inertia", 0));
-                codes.Add(VAL3Syntax.Data("csame", "configRx", @"shoulder=""ssame"" elbow=""esame"" wrist=""wsame"""));
                 foreach (var tool in attributes.OfType<Tool>()) codes.Add(Tool(tool));
                 foreach (var frame in attributes.OfType<Frame>()) codes.Add(Frame(frame));
                 codes.AddRange(IOData());
-
                 codes.AddRange(Speeds(mdescs));
 
                 foreach (var command in attributes.OfType<Command>())
@@ -281,6 +279,8 @@ namespace Robots
                     if (declaration != null)
                         codes.Add(declaration);
                 }
+
+                codes.Add(Targets(group, out indices));
 
                 string end = $@"  </Datas>
 </Database>";
@@ -310,6 +310,61 @@ namespace Robots
                 }
 
                 return datas;
+            }
+
+            string Targets(int group, out List<int> indices)
+            {
+                var joints = new List<string>();
+                var points = new List<string>();
+                indices = new List<int>(_program.Targets.Count);
+
+                for (int i = 0; i < _program.Targets.Count; i++)
+                {
+                    var programTarget = _program.Targets[i].ProgramTargets[group];
+                    var target = programTarget.Target;
+
+                    if (programTarget.IsJointTarget)
+                    {
+                        var jointTarget = programTarget.Target as JointTarget;
+                        var js = jointTarget.Joints.Select((x, j) => _cell.MechanicalGroups[group].RadianToDegree(x, j)).ToList();
+
+                        var value = $@"j1=""{js[0]:0.####}"" j2=""{js[1]:0.####}"" j3=""{js[2]:0.####}"" j4=""{js[3]:0.####}"" j5=""{js[4]:0.####}"" j6=""{js[5]:0.####}""";
+
+                        indices.Add(joints.Count);
+                        joints.Add(value);
+                    }
+                    else
+                    {
+                        var cartesian = programTarget.Target as CartesianTarget;
+
+                        string config = "";
+
+                        if (programTarget.IsJointMotion)
+                        {
+                            RobotConfigurations configuration = programTarget.Kinematics.Configuration;
+                            bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
+                            bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
+                            if (shoulder) elbow = !elbow;
+                            bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
+
+                            var wristT = !wrist ? "wpositive" : "wnegative";
+                            var elbowT = !elbow ? "epositive" : "enegative";
+                            var shoulderT = !shoulder ? "lefty" : "righty";
+                            config = $@"shoulder=""{shoulderT}"" elbow=""{elbowT}"" wrist=""{wristT}"" ";
+                        }
+
+                        var values = _cell.PlaneToNumbers(cartesian.Plane);
+                        string value = $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}"" {config}fatherId=""{target.Frame.Name}[0]""";
+
+                        indices.Add(points.Count);
+                        points.Add(value);
+                    }
+                }
+
+                var jointsData = VAL3Syntax.Data("joints", "jointRx", joints.ToArray());
+                var pointsData = VAL3Syntax.Data("points", "pointRx", points.ToArray());
+
+                return $"{jointsData}\r\n{pointsData}";
             }
 
             string Tool(Tool tool)
@@ -418,7 +473,7 @@ putln(""Program '{name}' stopped."")";
                 return codes;
             }
 
-            List<string> SubModule(int file, int group, Dictionary<(Speed speed, Zone zone), string> mdescs)
+            List<string> SubModule(int file, int group, Dictionary<(Speed speed, Zone zone), string> mdescs, List<int> indices)
             {
                 string groupName = _cell.MechanicalGroups[group].Name;
 
@@ -426,8 +481,6 @@ putln(""Program '{name}' stopped."")";
                 int end = (file == _program.MultiFileIndices.Count - 1) ? _program.Targets.Count : _program.MultiFileIndices[file + 1];
 
                 Tool lastTool = null;
-                int jointCount = 0;
-                int pointCount = 0;
 
                 var instructions = new List<string>();
 
@@ -456,39 +509,19 @@ putln(""Program '{name}' stopped."")";
 
                     if (programTarget.IsJointTarget)
                     {
-                        string targetName = $"joints[{jointCount++}]";
-                        var jointTarget = programTarget.Target as JointTarget;
-
-                        double[] joints = jointTarget.Joints;
-                        joints = joints.Select((x, i) => _cell.MechanicalGroups[group].RadianToDegree(x, i)).ToArray();
-
-                        var assignment = $"{targetName} = {{{joints[0]:0.####}, {joints[1]:0.####}, {joints[2]:0.####}, {joints[3]:0.####}, {joints[4]:0.####}, {joints[5]:0.####}}}";
-                        var command = $"movej({targetName}, {tool}, {speed})";
-                        moveText = $"{assignment}\r\n{command}";
+                        string targetName = $"joints[{indices[j]}]";
+                        moveText = $"movej({targetName}, {tool}, {speed})";
                     }
                     else
                     {
-                        string targetName = $"points[{pointCount++}]";
+                        string targetName = $"points[{indices[j]}]";
                         var cartesian = programTarget.Target as CartesianTarget;
-
-                        string config = "csame";
                         string move = "";
 
                         switch (cartesian.Motion)
                         {
                             case Motions.Joint:
                                 {
-                                    RobotConfigurations configuration = programTarget.Kinematics.Configuration;
-                                    bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
-                                    bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
-                                    if (shoulder) elbow = !elbow;
-                                    bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
-
-                                    var wristT = !wrist ? "wpositive" : "wnegative";
-                                    var elbowT = !elbow ? "epositive" : "enegative";
-                                    var shoulderT = !shoulder ? "lefty" : "righty";
-                                    config = $"{{{shoulderT}, {elbowT}, {wristT}}}";
-
                                     move = "movej";
                                     break;
                                 }
@@ -506,13 +539,7 @@ putln(""Program '{name}' stopped."")";
                                 }
                         }
 
-                        var values = _cell.PlaneToNumbers(cartesian.Plane);
-                        string localtrsf = $"{{{values[0]:0.###}, {values[1]:0.###}, {values[2]:0.###}, {values[3]:0.####}, {values[4]:0.####}, {values[5]:0.####}}}";
-
-                        string point = $"{targetName} = {{{localtrsf}, {config}}}";
-                        string link = $"link({targetName}, {target.Frame.Name})";
-
-                        moveText = $"{point}\r\n{link}\r\n{move}({targetName}, {tool}, {speed})";
+                        moveText = $"{move}({targetName}, {tool}, {speed})";
                     }
 
                     foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
@@ -524,12 +551,12 @@ putln(""Program '{name}' stopped."")";
                         instructions.Add(command.Code(_program, target));
                 }
 
-                var locals = new List<string>();
+                //var locals = new List<string>();
 
-                if (jointCount > 0)
-                    locals.Add(VAL3Syntax.Local("joints", "joint", jointCount));
-                if (pointCount > 0)
-                    locals.Add(VAL3Syntax.Local("points", "point", pointCount));
+                //if (jointCount > 0)
+                //    locals.Add(VAL3Syntax.Local("joints", "joint", jointCount));
+                //if (pointCount > 0)
+                //    locals.Add(VAL3Syntax.Local("points", "point", pointCount));
 
                 string programName = $"{_program.Name}_{groupName}_{file:000}";
                 string startCode = $@"{ProgramHeader(programName)}
@@ -540,7 +567,7 @@ putln(""Program '{name}' stopped."")";
 
                 var code = new List<string>();
                 code.Add(startCode);
-                code.AddRange(locals);
+               // code.AddRange(locals);
                 code.Add(midCode);
                 code.AddRange(instructions);
                 code.Add(ProgramFooter());
