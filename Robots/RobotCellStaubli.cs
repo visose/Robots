@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Rhino.Geometry;
 using static System.Math;
 using static Robots.Util;
+using System.Text;
 
 namespace Robots
 {
@@ -104,11 +105,17 @@ namespace Robots
 
         internal static class VAL3Syntax
         {
-            public static string Data(string name, string type, string value = null, int size = 1)
+            public static string Data(string name, string type, params string[] values)
             {
-                string attribute = $@"    <Data name=""{name}"" access=""private"" xsi:type=""array"" type=""{type}"" size=""{size}"">
-      <Value key=""0"" {value} />
-    </Data>";
+                var valuesText = new StringBuilder();
+
+                for (int i = 0; i < values.Length; i++)
+                {
+                    valuesText.AppendLine($@"        <Value key=""{i}"" {values[i]}/>");
+                }
+
+                string attribute = $@"    <Data name=""{name}"" access=""private"" xsi:type=""array"" type=""{type}"" size=""{values.Length}"">
+{valuesText}    </Data>";
 
                 return attribute;
             }
@@ -122,7 +129,7 @@ namespace Robots
             public static string TrsfData(string name, Plane plane)
             {
                 var values = PlaneToEuler(plane);
-                string value = $@"x =""{values[0]:0.###}"" y =""{values[1]:0.###}"" z =""{values[2]:0.###}"" rx =""{values[3]:0.####}"" ry =""{values[4]:0.####}"" rz =""{values[5]:0.####}""";
+                string value = $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}""";
                 return Data(name, "trsf", value);
             }
 
@@ -249,10 +256,117 @@ namespace Robots
                 return codes;
             }
 
+            List<string> DataList(Dictionary<(Speed speed, Zone zone), string> mdescs)
+            {
+                var codes = new List<string>();
+
+                string start = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Database xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Data/2"">
+  <Datas>";
+
+                codes.Add(start);
+                var attributes = _program.Attributes;
+
+                codes.Add(VAL3Syntax.NumData("Inertia", 0));
+                codes.Add(VAL3Syntax.Data("csame", "configRx", @"shoulder=""ssame"" elbow=""esame"" wrist=""wsame"""));
+                foreach (var tool in attributes.OfType<Tool>()) codes.Add(Tool(tool));
+                foreach (var frame in attributes.OfType<Frame>()) codes.Add(Frame(frame));
+                codes.AddRange(IOData());
+
+                codes.AddRange(Speeds(mdescs));
+
+                foreach (var command in attributes.OfType<Command>())
+                {
+                    string declaration = command.Declaration(_program);
+                    if (declaration != null)
+                        codes.Add(declaration);
+                }
+
+                string end = $@"  </Datas>
+</Database>";
+
+                codes.Add(end);
+                return codes;
+            }
+
+            List<string> IOData()
+            {
+                var datas = new List<string>();
+                var io = _cell.IO;
+
+                AddIO("dos", "dio", io.DO);
+                AddIO("dis", "dio", io.DI);
+                AddIO("aos", "aio", io.AO);
+                AddIO("ais", "aio", io.AI);
+
+                void AddIO(string name, string type, string[] ios)
+                {
+                    if (ios != null)
+                    {
+                        var iosData = ios.Where(d => !string.IsNullOrEmpty(d)).Select(d => $@"link = ""{d}""").ToArray();
+                        if (iosData.Length > 0)
+                            datas.Add(VAL3Syntax.Data(name, type, iosData));
+                    }
+                }
+
+                return datas;
+            }
+
+            string Tool(Tool tool)
+            {
+                var values = _cell.PlaneToNumbers(tool.Tcp);
+                double weight = (tool.Weight > 0.001) ? tool.Weight : 0.001;
+
+                Point3d centroid = tool.Centroid;
+                if (centroid.DistanceTo(Point3d.Origin) < 0.001)
+                    centroid = new Point3d(0, 0, 0.001);
+
+                string toolText = VAL3Syntax.Data(tool.Name, "tool", $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}"" fatherId=""flange[0]""");
+                string centroidText = VAL3Syntax.Data($"{tool.Name}_C", "trsf", $@"x=""{centroid.X:0.###}"" y=""{centroid.Y:0.###}"" z=""{centroid.Z:0.###}""");
+                string weightText = VAL3Syntax.NumData($"{tool.Name}_W", weight);
+
+                return $"{toolText}\r\n{centroidText}\r\n{weightText}";
+            }
+
+            string Frame(Frame frame)
+            {
+                if (frame.IsCoupled)
+                {
+                    _program.Warnings.Add(" Frame coupling not supported with Staubli robots.");
+                }
+
+                Plane plane = frame.Plane;
+                plane.Transform(Transform.PlaneToPlane(_cell.BasePlane, Plane.WorldXY));
+                var values = _cell.PlaneToNumbers(plane);
+
+                string code = VAL3Syntax.Data(frame.Name, "frame", $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}"" fatherId=""world[0]""");
+                return code;
+            }
+
+            List<string> Speeds(Dictionary<(Speed speed, Zone zone), string> mdescs)
+            {
+                var codes = new List<string>();
+
+                foreach (var pair in mdescs)
+                {
+                    var mdesc = pair.Key;
+                    var name = pair.Value;
+                    var speed = mdesc.speed.TranslationSpeed;
+                    double rotation = mdesc.speed.RotationSpeed.ToDegrees();
+                    var blend = mdesc.zone.IsFlyBy ? "Cartesian" : "off";
+                    var zone = mdesc.zone.Distance;
+
+                    string code = VAL3Syntax.Data(name, "mdesc", $@"accel=""100"" vel=""100"" decel=""100"" tmax=""{speed:0.###}"" rmax=""{rotation:0.###}"" blend=""{blend}"" leave=""{zone}"" reach=""{zone}""");
+                    codes.Add(code);
+                }
+
+                return codes;
+            }
+
             string ProgramHeader(string name)
             {
                 return $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
-<Programs xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Program/2"" >
+<Programs xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Program/2"">
   <Program name=""{name}"">";
             }
 
@@ -301,88 +415,6 @@ putln(""Program '{name}' stopped."")";
 
                 codes.Add(start);
                 codes.Add(ProgramFooter());
-                return codes;
-            }
-
-            List<string> DataList(Dictionary<(Speed speed, Zone zone), string> mdescs)
-            {
-                var codes = new List<string>();
-
-                string start = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
-<Database xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Data/2"">
-  <Datas>";
-
-                codes.Add(start);
-                var attributes = _program.Attributes;
-
-                VAL3Syntax.NumData("Inertia", 0);
-                foreach (var tool in attributes.OfType<Tool>()) codes.Add(Tool(tool));
-                foreach (var frame in attributes.OfType<Frame>()) codes.Add(Frame(frame));
-
-                codes.AddRange(Speeds(mdescs));
-
-                foreach (var command in attributes.OfType<Command>())
-                {
-                    string declaration = command.Declaration(_program);
-                    if (declaration != null)
-                        codes.Add(declaration);
-                }
-
-                string end = $@"  </Datas>
-</Database>";
-
-                codes.Add(end);
-                return codes;
-            }
-
-            string Tool(Tool tool)
-            {
-                var values = _cell.PlaneToNumbers(tool.Tcp);
-                double weight = (tool.Weight > 0.001) ? tool.Weight : 0.001;
-
-                Point3d centroid = tool.Centroid;
-                if (centroid.DistanceTo(Point3d.Origin) < 0.001)
-                    centroid = new Point3d(0, 0, 0.001);
-
-                string toolText = VAL3Syntax.Data(tool.Name, "tool", $@"x= ""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}"" fatherId=""flange[0]""");
-                string centroidText = VAL3Syntax.Data($"{tool.Name}_C", "trsf", $@"x=""{centroid.X:0.###}"" y=""{centroid.Y:0.###}"" z=""{centroid.Z:0.###}""");
-                string weightText = VAL3Syntax.NumData($"{tool.Name}_W", weight);
-
-                return $"{toolText}\r\n{centroidText}\r\n{weightText}";
-            }
-
-            string Frame(Frame frame)
-            {
-                if (frame.IsCoupled)
-                {
-                    _program.Warnings.Add(" Frame coupling not supported with Staubli robots.");
-                }
-
-                Plane plane = frame.Plane;
-                plane.Transform(Transform.PlaneToPlane(_cell.BasePlane, Plane.WorldXY));
-                var values = _cell.PlaneToNumbers(plane);
-
-                string code = VAL3Syntax.Data(frame.Name, "frame", $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}"" fatherId=""world[0]""");
-                return code;
-            }
-
-            List<string> Speeds(Dictionary<(Speed speed, Zone zone), string> mdescs)
-            {
-                var codes = new List<string>();
-
-                foreach (var pair in mdescs)
-                {
-                    var mdesc = pair.Key;
-                    var name = pair.Value;
-                    var speed = mdesc.speed.TranslationSpeed;
-                    double rotation = mdesc.speed.RotationSpeed.ToDegrees();
-                    var blend = mdesc.zone.IsFlyBy ? "Cartesian" : "off";
-                    var zone = mdesc.zone.Distance;
-
-                    string code = VAL3Syntax.Data(name, "mdesc", $@"accel=""100"" vel=""100"" decel=""100"" tmax=""{speed:0.###}"" rmax=""{rotation:0.###}"" blend=""{blend}"" leave=""{zone}"" reach=""{zone}""");
-                    codes.Add(code);
-                }
-
                 return codes;
             }
 
@@ -439,10 +471,7 @@ putln(""Program '{name}' stopped."")";
                         string targetName = $"points[{pointCount++}]";
                         var cartesian = programTarget.Target as CartesianTarget;
 
-                        string shoulderT = "ssame";
-                        string elbowT = "esame";
-                        string wristT = "wsame";
-
+                        string config = "csame";
                         string move = "";
 
                         switch (cartesian.Motion)
@@ -455,9 +484,10 @@ putln(""Program '{name}' stopped."")";
                                     if (shoulder) elbow = !elbow;
                                     bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
 
-                                    wristT = !wrist ? "wpositive" : "wnegative";
-                                    elbowT = !elbow ? "epositive" : "enegative";
-                                    shoulderT = !shoulder ? "lefty" : "righty";
+                                    var wristT = !wrist ? "wpositive" : "wnegative";
+                                    var elbowT = !elbow ? "epositive" : "enegative";
+                                    var shoulderT = !shoulder ? "lefty" : "righty";
+                                    config = $"{{{shoulderT}, {elbowT}, {wristT}}}";
 
                                     move = "movej";
                                     break;
@@ -478,8 +508,6 @@ putln(""Program '{name}' stopped."")";
 
                         var values = _cell.PlaneToNumbers(cartesian.Plane);
                         string localtrsf = $"{{{values[0]:0.###}, {values[1]:0.###}, {values[2]:0.###}, {values[3]:0.####}, {values[4]:0.####}, {values[5]:0.####}}}";
-
-                        string config = $"{{{shoulderT}, {elbowT}, {wristT}}}";
 
                         string point = $"{targetName} = {{{localtrsf}, {config}}}";
                         string link = $"link({targetName}, {target.Frame.Name})";
@@ -503,7 +531,7 @@ putln(""Program '{name}' stopped."")";
                 if (pointCount > 0)
                     locals.Add(VAL3Syntax.Local("points", "point", pointCount));
 
-                string programName = $"{_program.Name}_{groupName}_{file: 000}";
+                string programName = $"{_program.Name}_{groupName}_{file:000}";
                 string startCode = $@"{ProgramHeader(programName)}
     <Locals>";
 
