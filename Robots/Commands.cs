@@ -181,7 +181,7 @@ namespace Robots.Commands
         string CodeStaubli(RobotSystem robotSystem, Target target)
         {
             string textValue = Value ? "true" : "false";
-            return $"dos[{DO}] = {textValue}";
+            return $"waitEndMove()\r\ndos[{DO}] = {textValue}";
         }
 
         public override string ToString() => $"Command (DO {DO} set to {Value})";
@@ -364,7 +364,7 @@ namespace Robots.Commands
 
         string CodeStaubli(RobotSystem robotSystem, Target target)
         {
-            return $"delay({Name})";
+            return $"waitEndMove()\r\ndelay({Name})";
         }
 
         public override string ToString() => $"Command (Wait {Seconds} secs)";

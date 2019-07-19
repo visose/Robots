@@ -74,7 +74,8 @@ namespace Robots
             for (int i = 0; i < program.Code.Count; i++)
             {
                 string group = MechanicalGroups[i].Name;
-                string programName = $"{program.Name}_{group}";
+                //string programName = $"{program.Name}_{group}";
+                string programName = $"{program.Name}";
 
                 for (int j = 0; j < program.Code[i].Count; j++)
                 {
@@ -96,7 +97,12 @@ namespace Robots
 
                     string file = $@"{programDir}\{name}";
                     var joinedCode = string.Join("\r\n", program.Code[i][j]);
-                    File.WriteAllText(file, joinedCode);
+                    //File.WriteAllText(file, joinedCode);
+
+                    var utf8WithoutBom = new UTF8Encoding(true);
+                    var writer = new StreamWriter(file, false, utf8WithoutBom);
+                    writer.WriteLine(joinedCode);
+                    writer.Close();
                 }
             }
         }
@@ -151,6 +157,14 @@ namespace Robots
                 _cell = robotCell;
                 _program = program;
 
+                int groupCount = _cell.MechanicalGroups.Count;
+
+                if(groupCount > 1)
+                {
+                    _program.Errors.Add("Coordinated robots not supported for Staubli.");
+                    return;
+                }
+
                 if (!CheckNames()) return;
 
                 Code = new List<List<List<string>>>();
@@ -158,7 +172,8 @@ namespace Robots
                 for (int i = 0; i < _cell.MechanicalGroups.Count; i++)
                 {
                     var group = _cell.MechanicalGroups[i];
-                    var name = $"{_program.Name}_{group.Name}";
+                    //var name = $"{_program.Name}_{group.Name}";
+                    var name = $"{_program.Name}";
                     var mdescs = CreateMdescs(i);
 
                     var groupCode = new List<List<string>>
@@ -170,7 +185,7 @@ namespace Robots
                     };
 
                     for (int j = 0; j < program.MultiFileIndices.Count; j++)
-                        groupCode.Add(SubModule(j, i, mdescs, indices));
+                        groupCode.Add(SubModule(j, i, mdescs, indices, name));
 
                     Code.Add(groupCode);
                 }
@@ -303,7 +318,7 @@ namespace Robots
                 {
                     if (ios != null)
                     {
-                        var iosData = ios.Where(d => !string.IsNullOrEmpty(d)).Select(d => $@"link = ""{d}""").ToArray();
+                        var iosData = ios.Where(d => !string.IsNullOrEmpty(d)).Select(d => $@"link=""{d}""").ToArray();
                         if (iosData.Length > 0)
                             datas.Add(VAL3Syntax.Data(name, type, iosData));
                     }
@@ -473,7 +488,7 @@ putln(""Program '{name}' stopped."")";
                 return codes;
             }
 
-            List<string> SubModule(int file, int group, Dictionary<(Speed speed, Zone zone), string> mdescs, List<int> indices)
+            List<string> SubModule(int file, int group, Dictionary<(Speed speed, Zone zone), string> mdescs, List<int> indices, string name)
             {
                 string groupName = _cell.MechanicalGroups[group].Name;
 
@@ -558,7 +573,7 @@ putln(""Program '{name}' stopped."")";
                 //if (pointCount > 0)
                 //    locals.Add(VAL3Syntax.Local("points", "point", pointCount));
 
-                string programName = $"{_program.Name}_{groupName}_{file:000}";
+                string programName = $"{name}_{file:000}";
                 string startCode = $@"{ProgramHeader(programName)}
     <Locals>";
 

@@ -101,7 +101,7 @@
     </IO>
   </RobotCell>
 
-    <RobotCell name="Bartlett-KR60-B" manufacturer="KUKA">
+  <RobotCell name="Bartlett-KR60-B" manufacturer="KUKA">
     <Mechanisms group="0">
       <RobotArm model="KR60-HA" manufacturer="KUKA" payload="60">
         <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
@@ -138,7 +138,7 @@
     </IO>
   </RobotCell>
 
-    <RobotCell name="Bartlett-KR500" manufacturer="KUKA">
+  <RobotCell name="Bartlett-KR500" manufacturer="KUKA">
     <Mechanisms group="0">
       <RobotArm model="KR500-2" manufacturer="KUKA" payload="500">
         <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
@@ -160,7 +160,7 @@
     </IO>
   </RobotCell>
 
-    <RobotCell name="Bartlett-KR60 on track" manufacturer="KUKA">
+  <RobotCell name="Bartlett-KR60 on track" manufacturer="KUKA">
     <Mechanisms group="0">
       <RobotArm model="KR60-HA" manufacturer="KUKA" payload="60">
         <Base x="0.000" y="0.000" z="0.000" q1="-0.707107" q2="0.000" q3="0.000" q4="0.707107"/>
@@ -243,7 +243,7 @@
     </IO>
   </RobotCell>
 
-    <RobotCell name="Bartlett-TX200" manufacturer="Staubli">
+  <RobotCell name="Bartlett-TX200" manufacturer="Staubli">
     <Mechanisms group="0">
       <RobotArm model="TX200" manufacturer="Staubli" payload="100">
         <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
@@ -265,7 +265,7 @@
     </IO>
   </RobotCell>
 
-    <RobotCell name="Bartlett-TX200L" manufacturer="Staubli">
+  <RobotCell name="Bartlett-TX200L" manufacturer="Staubli">
     <Mechanisms group="0">
       <RobotArm model="TX200L" manufacturer="Staubli" payload="100">
         <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
@@ -287,7 +287,7 @@
     </IO>
   </RobotCell>
 
-    <RobotCell name="Bartlett-RX160" manufacturer="Staubli">
+  <RobotCell name="Bartlett-RX160" manufacturer="Staubli">
     <Mechanisms group="0">
       <RobotArm model="RX160" manufacturer="Staubli" payload="30">
         <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
@@ -309,7 +309,7 @@
     </IO>
   </RobotCell>
 
-      <RobotCell name="Bartlett-RX160L" manufacturer="Staubli">
+  <RobotCell name="Bartlett-RX160L" manufacturer="Staubli">
     <Mechanisms group="0">
       <RobotArm model="RX160L" manufacturer="Staubli" payload="28">
         <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
@@ -324,10 +324,8 @@
       </RobotArm>
     </Mechanisms>
     <IO>
-      <DO names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-      <AO names="1,2,3,4"/>
-      <AI names="1,2,3,4"/>
+      <DO names="BasicIO-1\%Q0,BasicIO-1\%Q1,BasicIO-1\%Q2"/>
+      <DI names="BasicIO-1\%I0,BasicIO-1\%I1,BasicIO-1\%I2"/>
     </IO>
   </RobotCell>
 
