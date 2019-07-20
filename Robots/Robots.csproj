@@ -13,6 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Costura.Fody" Version="4.0.0" />
     <PackageReference Include="RhinoCommon" Version="6.11.18344.20091" />
   </ItemGroup>
 

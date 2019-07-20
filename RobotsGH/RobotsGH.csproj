@@ -12,7 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Costura.Fody" Version="3.3.3" />
     <PackageReference Include="Grasshopper" Version="6.11.18344.20091" />
   </ItemGroup>
 
