@@ -105,7 +105,7 @@ namespace Robots
 
         public Collision CheckCollisions(IEnumerable<int> first = null, IEnumerable<int> second = null, Mesh environment = null, int environmentPlane = 0, double linearStep = 100, double angularStep = PI / 4)
         {
-            throw new NotImplementedException("Collision detection not implemented.");
+            return new Collision(this, first ?? new int[] { 7 }, second ?? new int[] { 4 }, environment, environmentPlane, linearStep, angularStep);
         }
 
         public void Save(string folder) => RobotSystem.SaveCode(this, folder);

@@ -416,7 +416,7 @@ namespace Robots.Commands
         string CodeStaubli(RobotSystem robotSystem, Target target)
         {
             string textValue = Value ? "true" : "false";
-            return $"wait(dis[{DI}] == {textValue})";
+            return $"waitEndMove()\r\nwait(dis[{DI}] == {textValue})";
         }
 
         public override string ToString() => $"Command (WaitDI until {DI} is {Value})";
