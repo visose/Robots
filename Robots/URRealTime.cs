@@ -53,7 +53,6 @@ namespace Robots
 
         byte[] GetByteStream()
         {
-            Stopwatch stopwatch = new Stopwatch();
             int bufferSize = 812;
 
             var client = new TcpClient()
@@ -64,9 +63,7 @@ namespace Robots
 
             client.Connect(IPEndPoint);
 
-            stopwatch.Start();
-
-            var byteStream = new Byte[bufferSize];
+            var byteStream = new byte[bufferSize];
             int size = 0;
 
             using (var stream = client.GetStream())
@@ -79,11 +76,7 @@ namespace Robots
                 }
             }
 
-            stopwatch.Stop();
-
             client.Close();
-
-           // Log.Add($"Elapsed: {stopwatch.Elapsed.TotalMilliseconds}");
 
             return byteStream.Take(size).ToArray();
         }
