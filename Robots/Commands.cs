@@ -409,8 +409,10 @@ namespace Robots.Commands
 
         string CodeUR(RobotSystem robotSystem, Target target)
         {
-            string textValue = Value ? "True" : "False";
-            return $"while get_digital_in({robotSystem.IO.DI[DI]}) = {textValue}: end";
+            //string textValue = Value ? "True" : "False";
+            string indent = "  ";
+            string textValue = Value ? "not " : "";
+            return $"while {textValue}get_digital_in({robotSystem.IO.DI[DI]}):\r\n{indent}{indent}sleep(0.008)\r\n{indent}end";
         }
 
         string CodeStaubli(RobotSystem robotSystem, Target target)

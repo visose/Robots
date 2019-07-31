@@ -490,8 +490,6 @@ putln(""Program '{name}' stopped."")";
 
             List<string> SubModule(int file, int group, Dictionary<(Speed speed, Zone zone), string> mdescs, List<int> indices, string name)
             {
-                string groupName = _cell.MechanicalGroups[group].Name;
-
                 int start = _program.MultiFileIndices[file];
                 int end = (file == _program.MultiFileIndices.Count - 1) ? _program.Targets.Count : _program.MultiFileIndices[file + 1];
 
