@@ -148,8 +148,8 @@ namespace Robots
             Externals = mechanisms;
 
             DefaultPlanes = mechanisms
-                .Select(m => m.Joints.Select(j => j.Plane).Prepend(m.BasePlane)).SelectMany(p => p)
-                .Append(Robot.BasePlane).Concat(Robot.Joints.Select(j => j.Plane).Append(Plane.WorldXY))
+                .Select(m => m.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY)).SelectMany(p => p)
+                .Append(Plane.WorldXY).Concat(Robot.Joints.Select(j => j.Plane).Append(Plane.WorldXY))
                 .ToList();
 
             DefaultMeshes = mechanisms
