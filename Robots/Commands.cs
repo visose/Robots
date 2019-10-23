@@ -61,6 +61,9 @@ namespace Robots.Commands
 {
     public class Custom : Command
     {
+        Dictionary<Manufacturers, string> _customCommands = new Dictionary<Manufacturers, string>();
+        Dictionary<Manufacturers, string> _customDeclarations = new Dictionary<Manufacturers, string>();
+
         public Custom(string name = "Custom command", Manufacturers manufacturer = Manufacturers.All, string command = null, string declaration = null)
         {
             Name = name;
@@ -71,8 +74,17 @@ namespace Robots.Commands
 
         public void AddCommand(Manufacturers manufacturer, string command, string declaration = null)
         {
-            _commands.Add(manufacturer, (_, __) => command);
-            _declarations.Add(manufacturer, _ => declaration);
+            _customCommands.Add(manufacturer, command);
+            _customDeclarations.Add(manufacturer, declaration);
+        }
+
+        protected override void Populate()
+        {
+            foreach (var command in _customCommands)
+                _commands.Add(command.Key, (_, __) => command.Value);
+
+            foreach (var declaration in _customDeclarations)
+                _declarations.Add(declaration.Key, _  => declaration.Value);
         }
 
         public override string ToString() => $"Command ({Name})";

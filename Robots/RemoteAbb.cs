@@ -167,7 +167,7 @@ namespace Robots
                         }
                         catch (Exception e)
                         {
-                            Log.Add($"Retrying {count}: {e}");
+                            Log.Insert(0,$"Retrying {count}: {e}");
                         }
                     }
 
