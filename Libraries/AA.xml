@@ -14,7 +14,8 @@
         </Joints>
       </RobotArm>
       <Positioner model="KP1-V500" manufacturer="KUKA" payload="500">
-      <Base x="371" y="1410" z="21.8" q1="0.992071" q2="-0.000807" q3="-0.000174" q4="0.125679"/>
+       <Base x="1382.72" y="665.46" z="0.00" q1="0.992071" q2="-0.000807" q3="-0.000174" q4="0.125679"/>
+       <!-- 2016 values <Base x="371" y="1410" z="21.8" q1="0.992071" q2="-0.000807" q3="-0.000174" q4="0.125679"/> -->
        <!-- <Base x="371" y="1410" z="700" q1="1" q2="0" q3="0" q4="0"/> -->
        <!-- <Base x="371.1171" y="1410.435" z="-33.1927" q1="-0.99995" q2="-0.004848" q3="0.00041" q4="0.008704"/> -->
         <Joints>
@@ -67,7 +68,7 @@
         </Joints>
       </RobotArm>
       <Positioner model="KP1-V500" manufacturer="KUKA" payload="500">
-        <Base x="371.1171" y="1410.435" z="-33.1927" q1="-0.99995" q2="-0.004848" q3="0.00041" q4="0.008704"/>
+        <Base x="1382.72" y="665.46" z="0.00" q1="0.992071" q2="-0.000807" q3="-0.000174" q4="0.125679"/>
         <Joints>
           <Revolute number="7" a ="0" d ="705" minrange = "-INF" maxrange ="INF" maxspeed ="126"/>
         </Joints>
@@ -75,7 +76,7 @@
     </Mechanisms>
         <Mechanisms group="1">
       <RobotArm model="KR30-3" manufacturer="KUKA" payload="30">
-        <Base x="1803.120" y="-1803.120" z="0.000" q1="0.707107" q2="0.000" q3="0.000" q4="0.707107"/>
+        <Base x="0.0" y="-2200.00" z="0.000" q1="1.0" q2="0.000" q3="0.000" q4="0.0"/>
         <Joints>
           <Revolute number="1" a ="350" d ="815" minrange ="-185" maxrange ="185" maxspeed ="140"/>
           <Revolute number="2" a ="850" d ="0" minrange ="-135" maxrange ="35" maxspeed ="126"/>
