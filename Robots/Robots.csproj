@@ -2,24 +2,29 @@
 
   <PropertyGroup>
     <TargetFramework>net471</TargetFramework>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OutputPath>bin\</OutputPath>
+    <OutputPath>C:\Users\vicen\AppData\Roaming\Grasshopper\Libraries</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <OutputPath>bin\</OutputPath>
+    <OutputPath>C:\Users\vicen\AppData\Roaming\Grasshopper\Libraries</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Costura.Fody" Version="4.0.0" />
+    <PackageReference Include="Costura.Fody" Version="4.1.0" />
+    <!--<PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.7">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>-->
     <PackageReference Include="RhinoCommon" Version="6.11.18344.20091" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="ABB.Robotics.Controllers.PC">
-      <HintPath>C:\Program Files (x86)\ABB Industrial IT\Robotics IT\SDK\PCSDK 6.06\ABB.Robotics.Controllers.PC.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\ABB\SDK\PCSDK 2019\ABB.Robotics.Controllers.PC.dll</HintPath>
     </Reference>
   </ItemGroup>
 
@@ -38,10 +43,10 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <Target Name="PreventCopyLocal" AfterTargets="ResolveReferences">
+  <!--<Target Name="PreventCopyLocal" AfterTargets="ResolveReferences">
     <ItemGroup>
       <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' == 'RhinoCommon'" />
     </ItemGroup>
-  </Target>
+  </Target>-->
 
 </Project>

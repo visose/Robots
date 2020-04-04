@@ -20,7 +20,7 @@ namespace Robots.Grasshopper
         {
             switch (Value.Targets)
             {
-                case IList<Target> list:
+                case IList<Target> _:
                     var targets = Value.Targets as IList<Target>;
                     return $"Toolpath with ({targets.Count} targets)";
                 case Target target:
@@ -33,16 +33,14 @@ namespace Robots.Grasshopper
 
         public override bool CastFrom(object source)
         {
-            if (source is GH_Target)
+            switch (source)
             {
-                Value = (source as GH_Target).Value;
-                return true;
-            }
-
-            if (source is IToolpath)
-            {
-                Value = source as IToolpath;
-                return true;
+                case GH_Target target:
+                    Value = target?.Value;
+                    return true;
+                case IToolpath toolpath:
+                    Value = toolpath;
+                    return true;
             }
             return false;
         }
@@ -62,12 +60,14 @@ namespace Robots.Grasshopper
 
         public override bool CastFrom(object source)
         {
-            if (source is Program)
+            switch (source)
             {
-                Value = source as Program;
-                return true;
+                case Program program:
+                    Value = program;
+                    return true;
+                default:
+                    return false;
             }
-            return false;
         }
     }
 
@@ -85,37 +85,31 @@ namespace Robots.Grasshopper
 
         public override bool CastFrom(object source)
         {
-            if (source is Target)
+            switch (source)
             {
-                Value = source as Target;
-                return true;
+                case Target target:
+                    Value = target;
+                    return true;
+                case GH_Point point:
+                    Value = new CartesianTarget(new Plane(point.Value, Vector3d.XAxis, Vector3d.YAxis));
+                    return true;
+                case GH_Plane plane:
+                    Value = new CartesianTarget(plane.Value);
+                    return true;
+                case GH_String text:
+                    {
+                        string[] jointsText = text.Value.Split(',');
+                        if (jointsText.Length != 6) return false;
+
+                        var joints = new double[6];
+                        for (int i = 0; i < 6; i++)
+                            if (!GH_Convert.ToDouble_Secondary(jointsText[i], ref joints[i])) return false;
+
+                        Value = new JointTarget(joints);
+                        return true;
+                    }
             }
 
-            if (source is GH_Point)
-            {
-                Value = new CartesianTarget(new Plane((source as GH_Point).Value, Vector3d.XAxis, Vector3d.YAxis));
-                return true;
-            }
-
-            if (source is GH_Plane)
-            {
-                Value = new CartesianTarget((source as GH_Plane).Value);
-                return true;
-            }
-
-            if (source is GH_String)
-            {
-                string text = (source as GH_String).Value;
-                string[] jointsText = text.Split(',');
-                if (jointsText.Length != 6) return false;
-
-                var joints = new double[6];
-                for (int i = 0; i < 6; i++)
-                    if (!GH_Convert.ToDouble_Secondary(jointsText[i], ref joints[i])) return false;
-
-                Value = new JointTarget(joints);
-                return true;
-            }
             return false;
         }
     }
@@ -134,12 +128,14 @@ namespace Robots.Grasshopper
 
         public override bool CastFrom(object source)
         {
-            if (source is Tool)
+            switch (source)
             {
-                Value = source as Tool;
-                return true;
+                case Tool tool:
+                    Value = tool;
+                    return true;
+                default:
+                    return false;
             }
-            return false;
         }
     }
 
@@ -157,36 +153,35 @@ namespace Robots.Grasshopper
 
         public override bool CastFrom(object source)
         {
-            if (source is Speed)
+            switch (source)
             {
-                Value = source as Speed;
-                return true;
-            }
-
-            if (source is GH_Number)
-            {
-                Value = new Speed((source as GH_Number).Value);
-                return true;
-            }
-
-            if (source is GH_String)
-            {
-                string[] texts = (source as GH_String).Value.Split(',');
-                double[] values = new double[texts.Length];
-
-                for (int i = 0; i < texts.Length; i++)
-                    if (!GH_Convert.ToDouble_Secondary(texts[i], ref values[i])) return false;
-
-                if (texts.Length == 1)
-                {
-                    Value = new Speed(values[0]);
+                case Speed speed:
+                    Value = speed;
                     return true;
-                }
-                else if (texts.Length == 2)
-                {
-                    Value = new Speed(values[0], values[1]);
+                case GH_Number number:
+                    Value = new Speed(number.Value);
                     return true;
-                }
+                case GH_String text:
+                    {
+                        string[] texts = text.Value.Split(',');
+                        double[] values = new double[texts.Length];
+
+                        for (int i = 0; i < texts.Length; i++)
+                            if (!GH_Convert.ToDouble_Secondary(texts[i], ref values[i])) return false;
+
+                        if (texts.Length == 1)
+                        {
+                            Value = new Speed(values[0]);
+                            return true;
+                        }
+                        else if (texts.Length == 2)
+                        {
+                            Value = new Speed(values[0], values[1]);
+                            return true;
+                        }
+
+                        break;
+                    }
             }
             return false;
         }
@@ -206,36 +201,35 @@ namespace Robots.Grasshopper
 
         public override bool CastFrom(object source)
         {
-            if (source is Zone)
+            switch (source)
             {
-                Value = source as Zone;
-                return true;
-            }
-
-            if (source is GH_Number)
-            {
-                Value = new Zone((source as GH_Number).Value);
-                return true;
-            }
-
-            if (source is GH_String)
-            {
-                string[] texts = (source as GH_String).Value.Split(',');
-                double[] values = new double[texts.Length];
-
-                for (int i = 0; i < texts.Length; i++)
-                    if (!GH_Convert.ToDouble_Secondary(texts[i], ref values[i])) return false;
-
-                if (texts.Length == 1)
-                {
-                    Value = new Zone(values[0]);
+                case Zone zone:
+                    Value = zone;
                     return true;
-                }
-                else if (texts.Length == 2)
-                {
-                    Value = new Zone(values[0], values[1]);
+                case GH_Number number:
+                    Value = new Zone(number.Value);
                     return true;
-                }
+                case GH_String text:
+                    {
+                        string[] texts = text.Value.Split(',');
+                        double[] values = new double[texts.Length];
+
+                        for (int i = 0; i < texts.Length; i++)
+                            if (!GH_Convert.ToDouble_Secondary(texts[i], ref values[i])) return false;
+
+                        if (texts.Length == 1)
+                        {
+                            Value = new Zone(values[0]);
+                            return true;
+                        }
+                        else if (texts.Length == 2)
+                        {
+                            Value = new Zone(values[0], values[1]);
+                            return true;
+                        }
+
+                        break;
+                    }
             }
 
             double value = 0;
@@ -245,7 +239,9 @@ namespace Robots.Grasshopper
                 return true;
             }
             else
+            {
                 return false;
+            }
         }
     }
 
@@ -263,23 +259,20 @@ namespace Robots.Grasshopper
 
         public override bool CastFrom(object source)
         {
-            if (source is Frame)
+            switch (source)
             {
-                Value = source as Frame;
-                return true;
+                case Frame frame:
+                    Value = frame;
+                    return true;
+                case GH_Plane plane:
+                    Value = new Frame(plane.Value);
+                    return true;
+                case GH_Point point:
+                    Value = new Frame(new Plane(point.Value, Vector3d.XAxis, Vector3d.YAxis));
+                    return true;
+                default:
+                    return false;
             }
-            else if (source is GH_Plane)
-            {
-                Value = new Frame((source as GH_Plane).Value);
-                return true;
-            }
-            if (source is GH_Point)
-            {
-                Value = new Frame(new Plane((source as GH_Point).Value, Vector3d.XAxis, Vector3d.YAxis));
-                return true;
-            }
-            else
-                return false;
         }
     }
 
@@ -297,12 +290,14 @@ namespace Robots.Grasshopper
 
         public override bool CastFrom(object source)
         {
-            if (source is Command)
+            switch (source)
             {
-                Value = source as Command;
-                return true;
+                case Command command:
+                    Value = command;
+                    return true;
+                default:
+                    return false;
             }
-            return false;
         }
     }
 
@@ -320,27 +315,25 @@ namespace Robots.Grasshopper
 
         public override bool CastFrom(object source)
         {
-            if (source is RobotSystem)
+            switch (source)
             {
-                Value = source as RobotSystem;
-                return true;
+                case RobotSystem system:
+                        Value = system;
+                        return true;
+                default:
+                        return false;
             }
-            else
-                return false;
         }
 
         public BoundingBox ClippingBox => Value.DisplayMesh.GetBoundingBox(true);
-
 
         public void DrawViewportMeshes(GH_PreviewMeshArgs args)
         {
             args.Pipeline.DrawMeshShaded(Value.DisplayMesh, args.Material);
         }
 
-
         public void DrawViewportWires(GH_PreviewWireArgs args)
         {
         }
-
     }
 }

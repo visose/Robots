@@ -96,6 +96,7 @@ namespace Robots
             Disconnect();
         }
 
+        [Obsolete]
         string StartCommand()
         {
             if (_controller.OperatingMode != ControllerOperatingMode.Auto)

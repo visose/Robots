@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net.Sockets;
-using System.Diagnostics;
 using System.Net;
+using System.Net.Sockets;
+using System.Text;
 
 namespace Robots
 {
@@ -14,8 +12,8 @@ namespace Robots
         public List<string> Log { get; set; }
         public List<FeedbackType> FeedbackData { get; set; }
 
-        ASCIIEncoding encoder = new ASCIIEncoding();
-        IPEndPoint IPEndPoint;
+        readonly ASCIIEncoding encoder = new ASCIIEncoding();
+        readonly IPEndPoint IPEndPoint;
 
         public URRealTime(string IP)
         {
@@ -53,7 +51,7 @@ namespace Robots
 
         byte[] GetByteStream()
         {
-            int bufferSize = 812;
+            const int bufferSize = 812;
 
             var client = new TcpClient()
             {
@@ -100,17 +98,14 @@ namespace Robots
 
         public void UpdateFeedback()
         {
-            var results = new List<double[]>();
+            //var results = new List<double[]>();
             var byteStream = GetByteStream();
             if (byteStream == null) return;
 
             foreach (var type in this.FeedbackData)
             {
                 var result = ReadDataType(type, byteStream);
-                if (result != null)
-                    type.Value = result;
-                else
-                    type.Value = new double[type.Length];
+                type.Value = result ?? new double[type.Length];
             }
         }
 

@@ -74,7 +74,7 @@ namespace Robots.Grasshopper
             if (!DA.GetData(0, ref name)) { return; }
             if (!DA.GetData(1, ref basePlane)) { return; }
 
-            var robotSystem = RobotSystem.Load(name, basePlane.Value); ;
+            var robotSystem = RobotSystem.Load(name, basePlane.Value);
             DA.SetData(0, new GH_RobotSystem(robotSystem));
         }
     }
@@ -88,7 +88,6 @@ namespace Robots.Grasshopper
         public override GH_Exposure Exposure => GH_Exposure.primary;
         public override Guid ComponentGuid => new Guid("{542aa5fd-4f02-4ee5-a2a0-02b0fac8777f}");
         protected override Bitmap Icon => Properties.Resources.iconTool;
-
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
@@ -141,7 +140,7 @@ namespace Robots.Grasshopper
 
             if (!DA.GetData(0, ref name)) { return; }
 
-            var tool = Tool.Load(name); ;
+            var tool = Tool.Load(name);
             DA.SetData(0, new GH_Tool(tool));
         }
     }
@@ -202,5 +201,4 @@ namespace Robots.Grasshopper
             DA.SetData(1, tool.Tcp);
         }
     }
-
 }

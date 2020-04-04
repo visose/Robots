@@ -1,13 +1,11 @@
-﻿using System;
-using System.Linq;
-using System.IO;
+﻿using Rhino.Geometry;
+using System;
 using System.Collections.Generic;
-using static System.Math;
-
-using Rhino.Geometry;
-using static Robots.Util;
+using System.IO;
+using System.Linq;
 using static Rhino.RhinoMath;
-
+using static Robots.Util;
+using static System.Math;
 
 namespace Robots
 {
@@ -27,9 +25,9 @@ namespace Robots
             double cc = Cos(c);
             double sc = Sin(c);
             var tt = new Transform(1);
-            tt[0, 0] = ca * cb;  tt[0, 1] = sa * cc + ca * sb * sc; tt[0, 2] = sa * sc - ca * sb * cc;
+            tt[0, 0] = ca * cb; tt[0, 1] = sa * cc + ca * sb * sc; tt[0, 2] = sa * sc - ca * sb * cc;
             tt[1, 0] = -sa * cb; tt[1, 1] = ca * cc - sa * sb * sc; tt[1, 2] = ca * sc + sa * sb * cc;
-            tt[2, 0] = sb;       tt[2, 1] = -cb * sc;               tt[2, 2] = cb * cc;
+            tt[2, 0] = sb; tt[2, 1] = -cb * sc; tt[2, 2] = cb * cc;
 
             var plane = tt.ToPlane();
             plane.Origin = new Point3d(x, y, z);
@@ -64,10 +62,9 @@ namespace Robots
         public override double[] PlaneToNumbers(Plane plane) => PlaneToEuler(plane);
         public override Plane NumbersToPlane(double[] numbers) => EulerToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5]);
 
-
         public override Plane CartesianLerp(Plane a, Plane b, double t, double min, double max)
         {
-           // return base.CartesianLerp(a, b, t, min, max);
+            // return base.CartesianLerp(a, b, t, min, max);
 
             t = (t - min) / (max - min);
             if (double.IsNaN(t)) t = 0;
@@ -94,25 +91,25 @@ namespace Robots
         {
             if (!Directory.Exists(folder)) throw new DirectoryNotFoundException($" Folder \"{folder}\" not found");
             if (program.Code == null) throw new NullReferenceException(" Program code not generated");
-            Directory.CreateDirectory($@"{folder}\{program.Name}");
+            Directory.CreateDirectory(Path.Combine(folder, program.Name));
 
             for (int i = 0; i < program.Code.Count; i++)
             {
                 string group = MechanicalGroups[i].Name;
                 {
-                    string file = $@"{folder}\{program.Name}\{program.Name}_{group}.SRC";
+                    string file = Path.Combine(folder, program.Name, $"{program.Name}_{group}.SRC");
                     var joinedCode = string.Join("\r\n", program.Code[i][0]);
                     File.WriteAllText(file, joinedCode);
                 }
                 {
-                    string file = $@"{folder}\{program.Name}\{program.Name}_{group}.DAT";
+                    string file = Path.Combine(folder, program.Name, $"{program.Name}_{group}.DAT");
                     var joinedCode = string.Join("\r\n", program.Code[i][1]);
                     File.WriteAllText(file, joinedCode);
                 }
                 for (int j = 2; j < program.Code[i].Count; j++)
                 {
                     int index = j - 2;
-                    string file = $@"{folder}\{program.Name}\{program.Name}_{group}_{index:000}.SRC";
+                    string file = Path.Combine(folder, program.Name, $"{program.Name}_{group}_{index:000}.SRC");
                     var joinedCode = string.Join("\r\n", program.Code[i][j]);
                     File.WriteAllText(file, joinedCode);
                 }
@@ -121,8 +118,8 @@ namespace Robots
 
         class KRLPostProcessor
         {
-            RobotCellKuka cell;
-            Program program;
+            readonly RobotCellKuka cell;
+            readonly Program program;
             internal List<List<List<string>>> Code { get; }
 
             internal KRLPostProcessor(RobotCellKuka robotCell, Program program)
@@ -197,10 +194,9 @@ $APO.CPTP=100
                 foreach (var command in program.InitCommands)
                     code.Add(command.Code(program, Target.Default));
 
-
                 for (int i = 0; i < program.MultiFileIndices.Count; i++)
                 {
-                    code.Add($@"{program.Name}_{groupName}_{i:000}()");
+                    code.Add($"{program.Name}_{groupName}_{i:000}()");
                 }
 
                 code.Add("END");
@@ -260,7 +256,6 @@ DEF {program.Name}_{groupName}_{file:000}()
                         code.Add($"$APO.CDIS={target.Zone.Name}");
                         currentZone = target.Zone;
                     }
-
 
                     if (programTarget.Index > 0)
                     {

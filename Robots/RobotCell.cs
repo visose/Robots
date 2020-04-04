@@ -17,7 +17,7 @@ namespace Robots
             this.DisplayMesh = new Mesh();
             foreach (var group in mechanicalGroups)
             {
-                var movesRobot = group.Externals.FirstOrDefault(m => m.MovesRobot);
+                var movesRobot = group.Externals.Find(m => m.MovesRobot);
                 var robotDisplay = group.Robot.DisplayMesh;
                 if (movesRobot != null)
                 {
@@ -173,7 +173,6 @@ namespace Robots
 
         public KinematicSolution Kinematics(Target target, double[] prevJoints = null, Plane? coupledPlane = null, Plane? basePlane = null) => new MechanicalGroupKinematics(this, target, prevJoints, coupledPlane, basePlane);
 
-
         public double DegreeToRadian(double degree, int i)
         {
             if (i < 6)
@@ -223,7 +222,6 @@ namespace Robots
                 {
                     coupledMech = group.Externals[target.Frame.CoupledMechanism];
                 }
-
 
                 // Externals
                 foreach (var external in group.Externals)

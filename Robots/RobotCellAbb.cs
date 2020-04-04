@@ -43,7 +43,7 @@ namespace Robots
         internal override void SaveCode(Program program, string folder)
         {
             if (!Directory.Exists(folder)) throw new DirectoryNotFoundException($" Folder \"{folder}\" not found");
-            Directory.CreateDirectory($@"{folder}\{program.Name}");
+            Directory.CreateDirectory(Path.Combine(folder, program.Name));
             bool multiProgram = program.MultiFileIndices.Count > 1;
 
             for (int i = 0; i < program.Code.Count; i++)
@@ -51,7 +51,7 @@ namespace Robots
                 string group = MechanicalGroups[i].Name;
                 {
                     // program
-                    string file = $@"{folder}\{program.Name}\{program.Name}_{group}.pgf";
+                    string file = Path.Combine(folder, program.Name, $"{program.Name}_{group}.pgf");
                     string mainModule = $@"{program.Name}_{group}.mod";
                     string code = $@"<?xml version=""1.0"" encoding=""ISO-8859-1"" ?>
     <Program>
@@ -62,7 +62,7 @@ namespace Robots
                 }
 
                 {
-                    string file = $@"{folder}\{program.Name}\{program.Name}_{group}.mod";
+                    string file = Path.Combine(folder, program.Name, $"{program.Name}_{group}.mod");
                     var code = program.Code[i][0].ToList();
                     if (!multiProgram) code.AddRange(program.Code[i][1]);
                     var joinedCode = string.Join("\r\n", code);
@@ -74,7 +74,7 @@ namespace Robots
                     for (int j = 1; j < program.Code[i].Count; j++)
                     {
                         int index = j - 1;
-                        string file = $@"{folder}\{program.Name}\{program.Name}_{group}_{index:000}.mod";
+                        string file = Path.Combine(folder, program.Name, $"{program.Name}_{group}_{index:000}.mod");
                         var joinedCode = string.Join("\r\n", program.Code[i][j]);
                         File.WriteAllText(file, joinedCode);
                     }
@@ -244,7 +244,7 @@ namespace Robots
                     {
                         var cartesian = programTarget.Target as CartesianTarget;
                         var plane = cartesian.Plane;
-                       // var quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
+                        // var quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
                         Quaternion quaternion = GetRotation(plane);
 
                         switch (cartesian.Motion)
@@ -315,7 +315,7 @@ namespace Robots
 
             string Tool(Tool tool)
             {
-               // Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, tool.Tcp);
+                // Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, tool.Tcp);
                 Quaternion quaternion = GetRotation(tool.Tcp);
                 double weight = (tool.Weight > 0.001) ? tool.Weight : 0.001;
 

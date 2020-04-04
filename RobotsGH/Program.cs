@@ -73,7 +73,6 @@ namespace Robots.Grasshopper
 
             DA.SetData(0, new GH_Program(program));
 
-
             if (program.Code != null)
             {
                 var path = DA.ParameterTargetPath(2);
@@ -128,9 +127,8 @@ namespace Robots.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             GH_Program program = null;
-            var code = new List<string>();
+            //var code = new List<string>();
             string folder = null;
-
 
             if (!DA.GetData(0, ref program)) { return; }
             if (!DA.GetData(1, ref folder)) { return; }
@@ -159,13 +157,14 @@ namespace Robots.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             GH_Program program = null;
-            GH_Structure<GH_String> codeTree;
 
             if (!DA.GetData(0, ref program)) { return; }
-            if (!DA.GetDataTree(1, out codeTree)) { return; }
+            if (!DA.GetDataTree(1, out GH_Structure<GH_String> codeTree)) { return; }
 
-            var code = new List<List<List<string>>>();
-            code.Add(new List<List<string>>());
+            var code = new List<List<List<string>>>
+            {
+                new List<List<string>>()
+            };
 
             foreach (var branch in codeTree.Branches)
             {
@@ -173,7 +172,7 @@ namespace Robots.Grasshopper
             }
 
             var programCode = program.Value.Code;
-            if (programCode != null && programCode.Count > 0)
+            if (programCode?.Count > 0)
             {
                 //var copyCode = programCode.ToList();
 
@@ -245,5 +244,4 @@ namespace Robots.Grasshopper
             if (collision.HasCollision) DA.SetDataList(2, collision.Meshes);
         }
     }
-
 }

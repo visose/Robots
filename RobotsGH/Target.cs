@@ -1,4 +1,5 @@
-﻿using Grasshopper;
+﻿using GH_IO.Serialization;
+using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Parameters;
@@ -6,10 +7,8 @@ using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using GH_IO.Serialization;
 using static System.Math;
 
 namespace Robots.Grasshopper
@@ -74,18 +73,20 @@ namespace Robots.Grasshopper
             }
             else if (sourceTarget != null)
             {
-                if (sourceTarget.Value is JointTarget) joints = (sourceTarget.Value as JointTarget).Joints;
+                if (sourceTarget.Value is JointTarget jointTarget)
+                    joints = jointTarget.Joints;
             }
 
             if (hasPlane)
             {
                 GH_Plane planeGH = null;
-                if (hasPlane) if (!DA.GetData("Plane", ref planeGH)) return;
+                if (hasPlane && !DA.GetData("Plane", ref planeGH)) return;
                 plane = planeGH.Value;
             }
             else if (sourceTarget != null)
             {
-                if (sourceTarget.Value is CartesianTarget) plane = (sourceTarget.Value as CartesianTarget).Plane;
+                if (sourceTarget.Value is CartesianTarget cartesian)
+                    plane = cartesian.Plane;
             }
 
             if (hasConfig)
@@ -96,7 +97,8 @@ namespace Robots.Grasshopper
             }
             else if (sourceTarget != null)
             {
-                if (sourceTarget.Value is CartesianTarget) configuration = (sourceTarget.Value as CartesianTarget).Configuration;
+                if (sourceTarget.Value is CartesianTarget cartesian)
+                    configuration = cartesian.Configuration;
             }
 
             if (hasMotion)
@@ -107,7 +109,8 @@ namespace Robots.Grasshopper
             }
             else if (sourceTarget != null)
             {
-                if (sourceTarget.Value is CartesianTarget) motion = (sourceTarget.Value as CartesianTarget).Motion;
+                if (sourceTarget.Value is CartesianTarget cartesian)
+                    motion = cartesian.Motion;
             }
 
             if (hasTool)
@@ -206,7 +209,7 @@ namespace Robots.Grasshopper
 
         // Variable inputs
 
-        IGH_Param[] parameters = new IGH_Param[11]
+        readonly IGH_Param[] parameters = new IGH_Param[11]
 {
          new TargetParameter() { Name = "Target", NickName = "T", Description = "Reference target", Optional = false },
          new Param_String() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false },
@@ -263,12 +266,11 @@ namespace Robots.Grasshopper
         {
             if (isCartesian)
             {
-                Params.UnregisterInputParameter(Params.Input.FirstOrDefault(x => x.Name == "Plane"), true);
-                Params.UnregisterInputParameter(Params.Input.FirstOrDefault(x => x.Name == "RobConf"), true);
-                Params.UnregisterInputParameter(Params.Input.FirstOrDefault(x => x.Name == "Motion"), true);
+                Params.UnregisterInputParameter(Params.Input.Find(x => x.Name == "Plane"), true);
+                Params.UnregisterInputParameter(Params.Input.Find(x => x.Name == "RobConf"), true);
+                Params.UnregisterInputParameter(Params.Input.Find(x => x.Name == "Motion"), true);
                 AddParam(1);
                 isCartesian = false;
-
             }
             else
             {
@@ -287,7 +289,9 @@ namespace Robots.Grasshopper
             IGH_Param parameter = parameters[index];
 
             if (Params.Input.Any(x => x.Name == parameter.Name))
+            {
                 Params.UnregisterInputParameter(Params.Input.First(x => x.Name == parameter.Name), true);
+            }
             else
             {
                 int insertIndex = Params.Input.Count;
@@ -366,7 +370,6 @@ namespace Robots.Grasshopper
         void IGH_VariableParameterComponent.VariableParameterMaintenance() { }
     }
 
-
     public sealed class DeconstructTarget : GH_Component, IGH_VariableParameterComponent
     {
         public DeconstructTarget() : base("Deconstruct target", "DeTarget", "Deconstructs a target. Right click for additional outputs", "Robots", "Components") { }
@@ -404,9 +407,9 @@ namespace Robots.Grasshopper
             bool hasExternal = Params.Output.Any(x => x.Name == "External");
 
             if (hasJoints) DA.SetData("Joints", isCartesian ? null : new GH_String(string.Join(",", (target.Value as JointTarget).Joints.Select(x => $"{x:0.000}"))));
-            if (hasPlane) DA.SetData("Plane", isCartesian ? new GH_Plane((target.Value as CartesianTarget).Plane) : null);
-            if (hasConfig) DA.SetData("RobConf", isCartesian ? (target.Value as CartesianTarget).Configuration == null ? null : new GH_Integer((int)(target.Value as CartesianTarget).Configuration) : null);
-            if (hasMotion) DA.SetData("Motion", isCartesian ? new GH_String((target.Value as CartesianTarget).Motion.ToString()) : null);
+            if (hasPlane) DA.SetData("Plane", isCartesian ? new GH_Plane(((CartesianTarget)target.Value).Plane) : null);
+            if (hasConfig) DA.SetData("RobConf", isCartesian ? ((CartesianTarget)target.Value).Configuration == null ? null : new GH_Integer((int)((CartesianTarget)target.Value).Configuration) : null);
+            if (hasMotion) DA.SetData("Motion", isCartesian ? new GH_String(((CartesianTarget)target.Value).Motion.ToString()) : null);
             if (hasTool && (target.Value.Tool != null)) DA.SetData("Tool", new GH_Tool(target.Value.Tool));
             if (hasSpeed && (target.Value.Speed != null)) DA.SetData("Speed", new GH_Speed(target.Value.Speed));
             if (hasZone && (target.Value.Zone != null)) DA.SetData("Zone", new GH_Zone(target.Value.Zone));
@@ -419,7 +422,7 @@ namespace Robots.Grasshopper
 
         //bool isCartesian = false;
 
-        IGH_Param[] parameters = new IGH_Param[10]
+        readonly IGH_Param[] parameters = new IGH_Param[10]
 {
          new Param_String() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false },
          new Param_Plane() { Name = "Plane", NickName = "P", Description = "Target plane", Optional = false },
@@ -456,7 +459,9 @@ namespace Robots.Grasshopper
             IGH_Param parameter = parameters[index];
 
             if (Params.Output.Any(x => x.Name == parameter.Name))
+            {
                 Params.UnregisterOutputParameter(Params.Output.First(x => x.Name == parameter.Name), true);
+            }
             else
             {
                 int insertIndex = Params.Output.Count;
@@ -493,7 +498,6 @@ namespace Robots.Grasshopper
         void IGH_VariableParameterComponent.VariableParameterMaintenance() { }
     }
 
-
     public class ConfigParam : GH_ValueList
     {
         public override string Name => "Flag fields";
@@ -509,8 +513,12 @@ namespace Robots.Grasshopper
                 var values = VolatileData.get_Branch(0);
 
                 foreach (var value in values)
-                    if (value is GH_Integer)
-                        config += (value as GH_Integer).Value;
+                {
+                    if (value is GH_Integer integer)
+                    {
+                        config += integer.Value;
+                    }
+                }
             }
 
             VolatileData.Clear();

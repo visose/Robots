@@ -1,10 +1,8 @@
 ﻿#define RHINOCOMMON
 
 using Rhino.Geometry;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using static System.Math;
 
@@ -12,18 +10,17 @@ namespace Robots
 {
     public class Collision
     {
-        Program program;
-        RobotSystem robotSystem;
-        double linearStep;
-        double angularStep;
-        IEnumerable<int> first;
-        IEnumerable<int> second;
-        Mesh environment;
-        int environmentPlane;
-
-        bool _onlyOne;
-        int _oneFirst;
-        int _oneSecond;
+        readonly Program program;
+        readonly RobotSystem robotSystem;
+        readonly double linearStep;
+        readonly double angularStep;
+        readonly IEnumerable<int> first;
+        readonly IEnumerable<int> second;
+        readonly Mesh environment;
+        readonly int environmentPlane;
+        readonly bool _onlyOne;
+        readonly int _oneFirst;
+        readonly int _oneSecond;
 
         public bool HasCollision { get; private set; } = false;
         public Mesh[] Meshes { get; private set; }
@@ -31,7 +28,6 @@ namespace Robots
 
         internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh environment, int environmentPlane, double linearStep, double angularStep)
         {
-
 #if RHINOCOMMON
             this.program = program;
             this.robotSystem = program.RobotSystem;
@@ -149,9 +145,7 @@ namespace Robots
 
         public static List<Mesh> PoseMeshes(RobotSystem robot, List<KinematicSolution> solutions, List<Mesh> tools)
         {
-            var cell = robot as RobotCell;
-
-            if (cell != null)
+            if (robot is RobotCell cell)
             {
                 var meshes = solutions.SelectMany((_, i) => PoseMeshes(cell.MechanicalGroups[i], solutions[i].Planes, tools[i])).ToList();
                 return meshes;

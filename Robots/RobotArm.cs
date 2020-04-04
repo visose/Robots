@@ -94,7 +94,6 @@ namespace Robots
         public override double RadianToDegree(double radian, int i) => radian * (180 / PI);
     }
 
-
     public class RobotStaubli : RobotArm
     {
         internal RobotStaubli(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints) : base(model, Manufacturers.Staubli, payload, basePlane, baseMesh, joints) { }

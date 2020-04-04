@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using static Rhino.RhinoMath;
 using static Robots.Util;
 using static System.Math;
 
@@ -10,18 +9,18 @@ namespace Robots
 {
     class CheckProgram
     {
-        Program program;
-        RobotSystem robotSystem;
+        readonly Program program;
+        readonly RobotSystem robotSystem;
         internal List<CellTarget> keyframes = new List<CellTarget>();
         int lastIndex;
         internal int indexError;
-        int groupCount;
+        //readonly int groupCount;
 
         internal CheckProgram(Program program, List<CellTarget> cellTargets, double stepSize)
         {
             this.robotSystem = program.RobotSystem;
             this.program = program;
-            this.groupCount = cellTargets[0].ProgramTargets.Count;
+           // this.groupCount = cellTargets[0].ProgramTargets.Count;
 
             FixFirstTarget(cellTargets[0]);
             FixTargetAttributes(cellTargets);
@@ -32,7 +31,7 @@ namespace Robots
         {
             var fix = firstTarget.ProgramTargets.Where(x => !x.IsJointTarget);
 
-            if (fix.Count() > 0)
+            if (fix.Any())
             {
                 var kinematics = robotSystem.Kinematics(firstTarget.ProgramTargets.Select(x => x.Target));
 
@@ -84,14 +83,26 @@ namespace Robots
 
             // Warn about defaults
 
-            var defaultTools = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target.Tool == Tool.Default);
-            if (defaultTools.Count() > 0) program.Warnings.Add($" {defaultTools.Count()} targets have their tool set to default, the first one being target {defaultTools.First().Index} in robot {defaultTools.First().Group}");
+            var defaultTools = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target.Tool == Tool.Default).ToList();
+            if (defaultTools.Count > 0)
+            {
+                var first = defaultTools[0];
+                program.Warnings.Add($" {defaultTools.Count} targets have their tool set to default, the first one being target {first.Index} in robot {first.Group}");
+            }
 
-            var defaultSpeeds = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target.Speed == Speed.Default);
-            if (defaultSpeeds.Count() > 0) program.Warnings.Add($" {defaultSpeeds.Count()} targets have their speed set to default, the first one being target {defaultSpeeds.First().Index} in robot {defaultSpeeds.First().Group}");
+            var defaultSpeeds = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target.Speed == Speed.Default).ToList();
+            if (defaultSpeeds.Count > 0)
+            {
+                var first = defaultSpeeds[0];
+                program.Warnings.Add($" {defaultSpeeds.Count} targets have their speed set to default, the first one being target {first.Index} in robot {first.Group}");
+            }
 
-            var linearForced = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target is CartesianTarget).Where(x => (x.Target as CartesianTarget).Motion == Motions.Linear && (x.Target as CartesianTarget).Configuration != null);
-            if (linearForced.Count() > 0) program.Warnings.Add($" {linearForced.Count()} targets are set to linear with a forced configuration, the first one being target {linearForced.First().Index} in robot {linearForced.First().Group}");
+            var linearForced = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target is CartesianTarget cartesian && cartesian.Motion == Motions.Linear && cartesian.Configuration != null).ToList();
+            if (linearForced.Count > 0)
+            {
+                var first = linearForced[0];
+                program.Warnings.Add($" {linearForced.Count} targets are set to linear with a forced configuration, the first one being target {first.Index} in robot {first.Group}. Configuration setting is ignored for linear motions.");
+            }
 
             foreach (var target in linearForced)
             {
@@ -101,7 +112,7 @@ namespace Robots
 
             // Check max payload
 
-            var tools = cellTargets.SelectMany(x => x.ProgramTargets.Select(y => new { Tool = y.Target.Tool, Group = y.Group })).Distinct();
+            var tools = cellTargets.SelectMany(x => x.ProgramTargets.Select(y => new { y.Target.Tool, y.Group })).Distinct();
             foreach (var tool in tools)
             {
                 double payload = robotSystem.Payload(tool.Group);
@@ -118,7 +129,6 @@ namespace Robots
             var commands = new List<Command>();
             commands.AddRange(program.InitCommands);
             commands.AddRange(cellTargets.SelectMany(x => x.ProgramTargets.SelectMany(y => y.Commands)));
-            
             program.Attributes.AddRange(commands.Distinct());
 
             // Name attributes with no name
@@ -130,7 +140,7 @@ namespace Robots
                     {
                         var type = attribute.GetType();
                         types.Add(type);
-                        int i = types.FindAll(x => x == type).Count();
+                        int i = types.FindAll(x => x == type).Count;
                         string name = $"{type.Name}{i - 1:000}";
                         SetAttributeName(attribute, cellTargets.SelectMany(x => x.ProgramTargets), name);
                     }
@@ -160,12 +170,12 @@ namespace Robots
                     {
                         throw new Exception($" Frame {frame.Name} has a coupled mechanism set but no mechanical group.");
                     }
-                   
+
                     if (frame.CoupledMechanicalGroup == 0 && frame.CoupledMechanism == -1)
                     {
                         throw new Exception($" Frame {frame.Name} is set to couple the robot rather than a mechanism.");
                     }
-                    
+
                     if (frame.IsCoupled)
                     {
                         var cell = robotSystem as RobotCell;
@@ -179,7 +189,7 @@ namespace Robots
                             throw new Exception($" Frame {frame.Name} is set to couple an inexistant mechanism.");
                         }
 
-                        frame.CoupledPlaneIndex = (robotSystem as RobotCell).GetPlaneIndex(frame);
+                        frame.CoupledPlaneIndex = ((RobotCell)robotSystem).GetPlaneIndex(frame);
                     }
                 }
             }
@@ -213,7 +223,7 @@ namespace Robots
                     {
                         var kineTargets = cellTarget.ProgramTargets.Select(x => x.Target.ShallowClone()).ToList();
 
-                        for (int j = 0; j < kineTargets.Count(); j++)
+                        for (int j = 0; j < kineTargets.Count; j++)
                         {
                             if (kineTargets[j] is CartesianTarget target && target.Motion == Motions.Linear)
                             {
@@ -228,7 +238,7 @@ namespace Robots
 
                     double divisions = 1;
                     var linearTargets = cellTarget.ProgramTargets.Where(x => !x.IsJointMotion);
-                 //   if (linearTargets.Count() > 0) program.Errors.Clear();
+                    //   if (linearTargets.Count() > 0) program.Errors.Clear();
 
                     foreach (var target in linearTargets)
                     {
@@ -287,7 +297,7 @@ namespace Robots
                         interTarget.MinTime = minTimeSinceLast;
                         interTarget.TotalTime = time;
 
-                        prevInterTarget = interTarget;                     
+                        prevInterTarget = interTarget;
                     }
 
                     if (program.Errors.Count > 0) { errorIndex = i; }
@@ -305,7 +315,6 @@ namespace Robots
 
                         if (longestWaitTime > TimeTol)
                         {
-
                             time += longestWaitTime;
                             totalDeltaTime += longestWaitTime;
 
@@ -391,7 +400,7 @@ namespace Robots
             }
         }
 
-        Tuple<double, double, int> GetSpeeds(ProgramTarget target, ProgramTarget prevTarget)
+        (double, double, int) GetSpeeds(ProgramTarget target, ProgramTarget prevTarget)
         {
             Plane prevPlane = target.GetPrevPlane(prevTarget);
             var joints = robotSystem.GetJoints(target.Group).ToArray();
@@ -431,7 +440,6 @@ namespace Robots
                     externalLeadingJoint = i + 6;
                 }
             }
-
 
             if (target.Target.Speed.Time == 0)
             {
@@ -486,19 +494,19 @@ namespace Robots
                 // Get slowest by time
                 double deltaTimeTime = target.Target.Speed.Time;
                 double[] deltaTimes = new double[] { deltaTimeTime, deltaAxisTime, deltaExternalTime };
-                int deltaIndex = -1;
+                //int deltaIndex = -1;
 
                 for (int i = 0; i < deltaTimes.Length; i++)
                 {
                     if (deltaTimes[i] > deltaTime)
                     {
                         deltaTime = deltaTimes[i];
-                        deltaIndex = i;
+                        //deltaIndex = i;
                     }
                 }
             }
 
-            return Tuple.Create(deltaTime, deltaAxisTime, leadingJoint);
+            return (deltaTime, deltaAxisTime, leadingJoint);
         }
     }
 }

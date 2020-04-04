@@ -179,6 +179,5 @@ namespace Robots.Grasshopper
         public BoundingBox ClippingBox => base.Preview_ComputeClippingBox();
         public void DrawViewportWires(IGH_PreviewArgs args) => base.Preview_DrawMeshes(args);
         public void DrawViewportMeshes(IGH_PreviewArgs args) => base.Preview_DrawMeshes(args);
-
     }
 }

@@ -15,7 +15,7 @@ namespace Robots
     {
         readonly string model;
         public Manufacturers Manufacturer { get; protected set; }
-        public string Model => $"{Manufacturer.ToString()}.{model}";
+        public string Model => $"{Manufacturer}.{model}";
         public double Payload { get; }
         public Plane BasePlane { get; set; }
         public Mesh BaseMesh { get; }
@@ -109,7 +109,7 @@ namespace Robots
         {
             var modelName = element.Attribute(XName.Get("model")).Value;
             var manufacturer = (Manufacturers)Enum.Parse(typeof(Manufacturers), element.Attribute(XName.Get("manufacturer")).Value);
-            string fullName = $"{element.Name.LocalName}.{manufacturer.ToString()}.{modelName}";
+            string fullName = $"{element.Name.LocalName}.{manufacturer}.{modelName}";
 
             bool movesRobot = false;
             var movesRobotAttribute = element.Attribute(XName.Get("movesRobot"));
@@ -181,7 +181,6 @@ namespace Robots
                 default:
                     return null;
             }
-
         }
 
         /*
@@ -254,7 +253,6 @@ namespace Robots
                 var transform = Planes[0].ToTransform();
                 for (int i = 1; i < jointCount + 1; i++)
                     Planes[i].Transform(transform);
-
             }
 
             protected abstract void SetJoints(Target target, double[] prevJoints);
@@ -284,18 +282,15 @@ namespace Robots
 
     public class BaseJoint
     {
-
     }
 
     public class RevoluteJoint : Joint
     {
-
     }
 
     public class PrismaticJoint : Joint
     {
     }
-
 
     [Serializable]
     class JointMeshes

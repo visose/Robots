@@ -123,7 +123,7 @@ namespace Robots.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             var numbers = new List<double>();
-            Plane plane = Plane.Unset;
+            Plane plane;
             GH_RobotSystem robotSystem = null;
 
             if (!DA.GetDataList(0, numbers)) { return; }
@@ -173,7 +173,7 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            double[] numbers = null;
+            double[] numbers;
             GH_Plane plane = null;
             GH_RobotSystem robotSystem = null;
 
