@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Rhino.Geometry;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Robots
 {
@@ -61,8 +58,8 @@ namespace Robots.Commands
 {
     public class Custom : Command
     {
-        Dictionary<Manufacturers, string> _customCommands = new Dictionary<Manufacturers, string>();
-        Dictionary<Manufacturers, string> _customDeclarations = new Dictionary<Manufacturers, string>();
+        readonly Dictionary<Manufacturers, string> _customCommands = new Dictionary<Manufacturers, string>();
+        readonly Dictionary<Manufacturers, string> _customDeclarations = new Dictionary<Manufacturers, string>();
 
         public Custom(string name = "Custom command", Manufacturers manufacturer = Manufacturers.All, string command = null, string declaration = null)
         {
@@ -84,7 +81,7 @@ namespace Robots.Commands
                 _commands.Add(command.Key, (_, __) => command.Value);
 
             foreach (var declaration in _customDeclarations)
-                _declarations.Add(declaration.Key, _  => declaration.Value);
+                _declarations.Add(declaration.Key, _ => declaration.Value);
         }
 
         public override string ToString() => $"Command ({Name})";
@@ -92,7 +89,7 @@ namespace Robots.Commands
 
     public class Group : Command, IList<Command>
     {
-        List<Command> commands = new List<Command>();
+        readonly List<Command> commands = new List<Command>();
 
         public Group() { }
         public Group(IEnumerable<Command> commands)
@@ -127,8 +124,8 @@ namespace Robots.Commands
             var commands = new List<Command>();
             foreach (var command in this.commands)
             {
-                if (command is Group)
-                    commands.AddRange((command as Group).Flatten());
+                if (command is Group group)
+                    commands.AddRange(group.Flatten());
                 else
                     commands.Add(command);
             }
@@ -275,7 +272,8 @@ namespace Robots.Commands
     public class PulseDO : Command
     {
         public int DO { get; }
-        double length;
+
+        readonly double length;
 
         public PulseDO(int DO, double length = 0.2)
         {
@@ -422,7 +420,7 @@ namespace Robots.Commands
         string CodeUR(RobotSystem robotSystem, Target target)
         {
             //string textValue = Value ? "True" : "False";
-            string indent = "  ";
+            const string indent = "  ";
             string textValue = Value ? "not " : "";
             return $"while {textValue}get_digital_in({robotSystem.IO.DI[DI]}):\r\n{indent}{indent}sleep(0.008)\r\n{indent}end";
         }
@@ -438,7 +436,7 @@ namespace Robots.Commands
 
     public class Stop : Command
     {
-        public Stop() {}
+        public Stop() { }
 
         protected override void Populate()
         {
@@ -453,7 +451,7 @@ namespace Robots.Commands
 
     public class Message : Command
     {
-        string _message;
+        readonly string _message;
 
         public Message(string message)
         {

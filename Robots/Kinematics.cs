@@ -4,7 +4,6 @@ using System.Linq;
 using static Robots.Util;
 using static System.Math;
 
-
 namespace Robots
 {
     public abstract class KinematicSolution
@@ -29,7 +28,7 @@ namespace Robots
                 }
                 else if (target is CartesianTarget cartesianTarget)
                 {
-                    double[] joints = null;
+                    double[] joints;
                     Plane tcp = target.Tool.Tcp;
                     tcp.Rotate(PI, Vector3d.ZAxis, Point3d.Origin);
 
@@ -47,7 +46,7 @@ namespace Robots
                     }
                     else
                     {
-                        joints = GetClosestSolution(transform, prevJoints, out var configuration, out errors, out var difference);
+                        joints = GetClosestSolution(transform, prevJoints, out var configuration, out errors, out _);
                         Configuration = configuration;
                     }
 
@@ -66,7 +65,7 @@ namespace Robots
 
                 if (target is JointTarget)
                 {
-                    var closest = GetClosestSolution(jointTransforms[jointTransforms.Length - 1], Joints, out var configuration, out var errors, out var difference);
+                    _ = GetClosestSolution(jointTransforms[jointTransforms.Length - 1], Joints, out var configuration, out _, out var difference);
                     this.Configuration = difference < AngleTol ? configuration : RobotConfigurations.Undefined;
                 }
 
@@ -127,7 +126,6 @@ namespace Robots
                 errors = solutionsErrors[closestSolutionIndex];
                 return solutions[closestSolutionIndex];
             }
-
         }
 
         protected class SphericalWristKinematics : RobotKinematics
@@ -248,7 +246,6 @@ namespace Robots
                 if (new Vector3d(center.X, center.Y, 0).Length < a[0] + SingularityTol)
                     errors.Add($"Near overhead singularity");
 
-
                 for (int i = 0; i < 6; i++)
                 {
                     if (double.IsNaN(joints[i])) joints[i] = 0;
@@ -274,6 +271,8 @@ namespace Robots
                 transforms[3] = Transform.Multiply(transforms[2], transforms[3]);
                 transforms[4] = Transform.Multiply(transforms[2], transforms[4]);
                 transforms[5] = Transform.Multiply(transforms[2], transforms[5]);
+
+                var dets = transforms.Select(t => t.Determinant).ToArray();
 
                 return transforms;
             }

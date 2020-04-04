@@ -48,7 +48,6 @@ namespace Robots
                 }
                 if (prevJoints != null)
                     Joints = JointTarget.GetAbsoluteJoints(Joints, prevJoints);
-
             }
 
             protected override void SetPlanes(Target target)
@@ -97,7 +96,9 @@ namespace Robots
                     int externalNum = mechanism.Joints[i].Number - 6;
 
                     if (target.External.Length < externalNum + 1)
+                    {
                         Errors.Add($"Custom external axis not configured on this target.");
+                    }
                     else
                     {
                         double value = target.External[externalNum];

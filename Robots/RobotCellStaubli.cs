@@ -68,7 +68,7 @@ namespace Robots
             if (program.Code == null) return;
 
             if (!Directory.Exists(folder)) throw new DirectoryNotFoundException($" Folder \"{folder}\" not found");
-            var programDir = $@"{folder}\{program.Name}";
+            var programDir = Path.Combine(folder, program.Name);
             Directory.CreateDirectory(programDir);
 
             for (int i = 0; i < program.Code.Count; i++)
@@ -95,7 +95,7 @@ namespace Robots
                             name = $"{programName}_{j - 4:000}.pgx"; break;
                     }
 
-                    string file = $@"{programDir}\{name}";
+                    string file = Path.Combine(programDir, name);
                     var joinedCode = string.Join("\r\n", program.Code[i][j]);
                     //File.WriteAllText(file, joinedCode);
 
@@ -159,7 +159,7 @@ namespace Robots
 
                 int groupCount = _cell.MechanicalGroups.Count;
 
-                if(groupCount > 1)
+                if (groupCount > 1)
                 {
                     _program.Errors.Add("Coordinated robots not supported for Staubli.");
                     return;
@@ -580,7 +580,7 @@ putln(""Program '{name}' stopped."")";
 
                 var code = new List<string>();
                 code.Add(startCode);
-               // code.AddRange(locals);
+                // code.AddRange(locals);
                 code.Add(midCode);
                 code.AddRange(instructions);
                 code.Add(ProgramFooter());

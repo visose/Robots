@@ -31,7 +31,7 @@ namespace Robots
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
         }
 
-        public RobotSystem(string name, Manufacturers manufacturer, IO io, Plane basePlane, Mesh environment)
+        protected RobotSystem(string name, Manufacturers manufacturer, IO io, Plane basePlane, Mesh environment)
         {
             this.Name = name;
             this.Manufacturer = manufacturer;
@@ -57,7 +57,7 @@ namespace Robots
 
             //  Quaternion q = Quaternion.Rotation(a, b);
             // var q = Quaternion.Identity.Rotate(a).Rotate(b);
-            
+
             var q = Slerp(GetRotation(a), GetRotation(b), t);
 
             //  q.GetRotation(out var angle, out var axis);
@@ -158,7 +158,7 @@ namespace Robots
             var type = element.Name.LocalName;
             var name = element.Attribute(XName.Get("name")).Value;
             var manufacturer = (Manufacturers)Enum.Parse(typeof(Manufacturers), element.Attribute(XName.Get("manufacturer")).Value);
-            var mechanisms = new List<Mechanism>();
+            //var mechanisms = new List<Mechanism>();
 
             var mechanicalGroups = new List<MechanicalGroup>();
             foreach (var mechanicalGroup in element.Elements(XName.Get("Mechanisms")))

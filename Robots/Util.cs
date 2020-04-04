@@ -61,7 +61,7 @@ namespace Robots
         }
 
         internal static double ToRadians(this double value)
-        {            
+        {
             return value * (PI / 180);
         }
 

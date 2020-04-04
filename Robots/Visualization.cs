@@ -1,23 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Rhino.Geometry;
-using System.Collections;
-using static Robots.Util;
-using static System.Math;
-using static Rhino.RhinoMath;
+﻿using Rhino.Geometry;
 
 namespace Robots
 {
     public class SimpleTrail
     {
-        Program program;
+        readonly Program program;
         double time;
-        int mechanicalGroup;
+        readonly int mechanicalGroup;
 
         public double Length { get; set; }
-        public Polyline Polyline { get; private set; }
+        public Polyline Polyline { get; }
 
         public SimpleTrail(Program program, double maxLength, int mechanicalGroup = 0)
         {

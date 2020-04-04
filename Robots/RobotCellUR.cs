@@ -11,8 +11,8 @@ namespace Robots
     public class RobotCellUR : RobotSystem
     {
         public RobotUR Robot { get; }
-      //  public RemoteConnection Remote { get; } = new RemoteConnection();
-       // public URRealTime URRealTime { get; set; }
+        //  public RemoteConnection Remote { get; } = new RemoteConnection();
+        // public URRealTime URRealTime { get; set; }
 
         internal RobotCellUR(string name, RobotArm robot, IO io, Plane basePlane, Mesh environment) : base(name, Manufacturers.UR, io, basePlane, environment)
         {
@@ -233,12 +233,10 @@ namespace Robots
             if (!Directory.Exists(folder)) throw new DirectoryNotFoundException($" Folder \"{folder}\" not found");
             if (program.Code == null) throw new NullReferenceException(" Program code not generated");
 
-            string file = $@"{folder}\{program.Name}.URS";
-            var joinedCode = string.Join("\r\n", program.Code[0].SelectMany(c=>c));
+            string file = Path.Combine(folder, $"{program.Name}.URS");
+            var joinedCode = string.Join("\r\n", program.Code[0].SelectMany(c => c));
             File.WriteAllText(file, joinedCode);
         }
-
-
 
         class URScriptPostProcessor
         {

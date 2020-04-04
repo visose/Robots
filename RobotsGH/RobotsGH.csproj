@@ -12,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Costura.Fody" Version="4.1.0" />
     <PackageReference Include="Grasshopper" Version="6.11.18344.20091" />
   </ItemGroup>
 
@@ -91,11 +92,11 @@
     <Exec Command="Copy &quot;$(TargetPath)&quot; &quot;$(TargetDir)Robots.gha&quot;&#xD;&#xA;Erase &quot;$(TargetPath)&quot;" />
   </Target>
 
-  <Target Name="PreventCopyLocal" AfterTargets="ResolveReferences">
+  <!--<Target Name="PreventCopyLocal" AfterTargets="ResolveReferences">
     <ItemGroup>
       <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' == 'Grasshopper'" />
       <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' == 'RhinoCommon'" />
     </ItemGroup>
-  </Target>
+  </Target>-->
 
 </Project>

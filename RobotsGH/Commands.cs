@@ -134,7 +134,6 @@ namespace Robots.Grasshopper.Commands
         }
     }
 
-
     public class SetDO : GH_Component
     {
         public SetDO() : base("Set DO", "SetDO", "Set digital output", "Robots", "Commands") { }
