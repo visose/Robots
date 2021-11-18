@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28714.193
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robots", "Robots\Robots.csproj", "{3896FB4D-9007-48FB-B302-6B289B15E9BF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robots", "src\Robots\Robots.csproj", "{3896FB4D-9007-48FB-B302-6B289B15E9BF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RobotsStandalone", "RobotsStandalone\RobotsStandalone.csproj", "{2556FB1C-3A8D-469B-8553-46C66BCF8BE4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RobotsStandalone", "src\RobotsStandalone\RobotsStandalone.csproj", "{2556FB1C-3A8D-469B-8553-46C66BCF8BE4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RobotsGH", "RobotsGH\RobotsGH.csproj", "{3E69607D-A2A9-4061-86E8-2EA7CCB79601}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RobotsGH", "src\RobotsGH\RobotsGH.csproj", "{3E69607D-A2A9-4061-86E8-2EA7CCB79601}"
 	ProjectSection(ProjectDependencies) = postProject
 		{3896FB4D-9007-48FB-B302-6B289B15E9BF} = {3896FB4D-9007-48FB-B302-6B289B15E9BF}
 	EndProjectSection

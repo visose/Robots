@@ -1,98 +1,98 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net471</TargetFramework>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <RootNamespace>Robots</RootNamespace>
-    <LangVersion>8.0</LangVersion>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net48</TargetFramework>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<RootNamespace>Robots</RootNamespace>
+		<LangVersion>8.0</LangVersion>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <OutputPath>C:\Users\vicen\AppData\Roaming\Grasshopper\Libraries</OutputPath>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputPath>..\..\artifacts\bin</OutputPath>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Costura.Fody" Version="4.1.0" />
-    <PackageReference Include="Grasshopper" Version="6.11.18344.20091" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Costura.Fody" Version="4.1.0" />
+		<PackageReference Include="Grasshopper" Version="7.12.21313.6341" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Robots\Robots.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Robots\Robots.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="System.Windows.Forms" />
-  </ItemGroup>
+	<ItemGroup>
+		<Reference Include="System.Windows.Forms" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\icons\iconAngles.png" />
-    <EmbeddedResource Include="Resources\icons\iconCheckCollisions.png" />
-    <EmbeddedResource Include="Resources\icons\iconCheckProgram.png" />
-    <EmbeddedResource Include="Resources\icons\iconCollision.png" />
-    <EmbeddedResource Include="Resources\icons\iconCommand.png" />
-    <EmbeddedResource Include="Resources\icons\iconCommandParam.png" />
-    <EmbeddedResource Include="Resources\icons\iconCreateProgram.png" />
-    <EmbeddedResource Include="Resources\icons\iconCreateTarget.png" />
-    <EmbeddedResource Include="Resources\icons\iconCustomCode.png" />
-    <EmbeddedResource Include="Resources\icons\iconCustomCommand.png" />
-    <EmbeddedResource Include="Resources\icons\iconDeconstructProgramTarget.png" />
-    <EmbeddedResource Include="Resources\icons\iconDeconstructTarget.png" />
-    <EmbeddedResource Include="Resources\icons\iconFrame.png" />
-    <EmbeddedResource Include="Resources\icons\iconFrameParam.png" />
-    <EmbeddedResource Include="Resources\icons\iconGetPlane.png" />
-    <EmbeddedResource Include="Resources\icons\iconGroupCommand.png" />
-    <EmbeddedResource Include="Resources\icons\iconIO.png" />
-    <EmbeddedResource Include="Resources\icons\iconKinematics.png" />
-    <EmbeddedResource Include="Resources\icons\iconLine To Aligned Plane.png" />
-    <EmbeddedResource Include="Resources\icons\iconMessage.png" />
-    <EmbeddedResource Include="Resources\icons\iconOutbox.png" />
-    <EmbeddedResource Include="Resources\icons\iconParamProgram.png" />
-    <EmbeddedResource Include="Resources\icons\iconPlay.png" />
-    <EmbeddedResource Include="Resources\icons\iconProgramParam.png" />
-    <EmbeddedResource Include="Resources\icons\iconPulseDO.png" />
-    <EmbeddedResource Include="Resources\icons\iconRobot.png" />
-    <EmbeddedResource Include="Resources\icons\iconRobotList.png" />
-    <EmbeddedResource Include="Resources\icons\iconRobotParam.png" />
-    <EmbeddedResource Include="Resources\icons\iconSave.png" />
-    <EmbeddedResource Include="Resources\icons\iconSetAO.png" />
-    <EmbeddedResource Include="Resources\icons\iconSetDO.png" />
-    <EmbeddedResource Include="Resources\icons\iconSimpleTrail.png" />
-    <EmbeddedResource Include="Resources\icons\iconSimulation.png" />
-    <EmbeddedResource Include="Resources\icons\iconSortPaths.png" />
-    <EmbeddedResource Include="Resources\icons\iconSpeed.png" />
-    <EmbeddedResource Include="Resources\icons\iconSpeedParam.png" />
-    <EmbeddedResource Include="Resources\icons\iconStopCommand.png" />
-    <EmbeddedResource Include="Resources\icons\iconTargetParam.png" />
-    <EmbeddedResource Include="Resources\icons\iconTool.png" />
-    <EmbeddedResource Include="Resources\icons\iconToolParam.png" />
-    <EmbeddedResource Include="Resources\icons\iconToPlane.png" />
-    <EmbeddedResource Include="Resources\icons\iconUpload.png" />
-    <EmbeddedResource Include="Resources\icons\iconURRemote.png" />
-    <EmbeddedResource Include="Resources\icons\iconWait.png" />
-    <EmbeddedResource Include="Resources\icons\iconWaitDI.png" />
-    <EmbeddedResource Include="Resources\icons\iconZoneParam.png" />
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Resources\icons\iconAngles.png" />
+		<EmbeddedResource Include="Resources\icons\iconCheckCollisions.png" />
+		<EmbeddedResource Include="Resources\icons\iconCheckProgram.png" />
+		<EmbeddedResource Include="Resources\icons\iconCollision.png" />
+		<EmbeddedResource Include="Resources\icons\iconCommand.png" />
+		<EmbeddedResource Include="Resources\icons\iconCommandParam.png" />
+		<EmbeddedResource Include="Resources\icons\iconCreateProgram.png" />
+		<EmbeddedResource Include="Resources\icons\iconCreateTarget.png" />
+		<EmbeddedResource Include="Resources\icons\iconCustomCode.png" />
+		<EmbeddedResource Include="Resources\icons\iconCustomCommand.png" />
+		<EmbeddedResource Include="Resources\icons\iconDeconstructProgramTarget.png" />
+		<EmbeddedResource Include="Resources\icons\iconDeconstructTarget.png" />
+		<EmbeddedResource Include="Resources\icons\iconFrame.png" />
+		<EmbeddedResource Include="Resources\icons\iconFrameParam.png" />
+		<EmbeddedResource Include="Resources\icons\iconGetPlane.png" />
+		<EmbeddedResource Include="Resources\icons\iconGroupCommand.png" />
+		<EmbeddedResource Include="Resources\icons\iconIO.png" />
+		<EmbeddedResource Include="Resources\icons\iconKinematics.png" />
+		<EmbeddedResource Include="Resources\icons\iconLine To Aligned Plane.png" />
+		<EmbeddedResource Include="Resources\icons\iconMessage.png" />
+		<EmbeddedResource Include="Resources\icons\iconOutbox.png" />
+		<EmbeddedResource Include="Resources\icons\iconParamProgram.png" />
+		<EmbeddedResource Include="Resources\icons\iconPlay.png" />
+		<EmbeddedResource Include="Resources\icons\iconProgramParam.png" />
+		<EmbeddedResource Include="Resources\icons\iconPulseDO.png" />
+		<EmbeddedResource Include="Resources\icons\iconRobot.png" />
+		<EmbeddedResource Include="Resources\icons\iconRobotList.png" />
+		<EmbeddedResource Include="Resources\icons\iconRobotParam.png" />
+		<EmbeddedResource Include="Resources\icons\iconSave.png" />
+		<EmbeddedResource Include="Resources\icons\iconSetAO.png" />
+		<EmbeddedResource Include="Resources\icons\iconSetDO.png" />
+		<EmbeddedResource Include="Resources\icons\iconSimpleTrail.png" />
+		<EmbeddedResource Include="Resources\icons\iconSimulation.png" />
+		<EmbeddedResource Include="Resources\icons\iconSortPaths.png" />
+		<EmbeddedResource Include="Resources\icons\iconSpeed.png" />
+		<EmbeddedResource Include="Resources\icons\iconSpeedParam.png" />
+		<EmbeddedResource Include="Resources\icons\iconStopCommand.png" />
+		<EmbeddedResource Include="Resources\icons\iconTargetParam.png" />
+		<EmbeddedResource Include="Resources\icons\iconTool.png" />
+		<EmbeddedResource Include="Resources\icons\iconToolParam.png" />
+		<EmbeddedResource Include="Resources\icons\iconToPlane.png" />
+		<EmbeddedResource Include="Resources\icons\iconUpload.png" />
+		<EmbeddedResource Include="Resources\icons\iconURRemote.png" />
+		<EmbeddedResource Include="Resources\icons\iconWait.png" />
+		<EmbeddedResource Include="Resources\icons\iconWaitDI.png" />
+		<EmbeddedResource Include="Resources\icons\iconZoneParam.png" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Compile Update="Properties\Resources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Update="Properties\Resources.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Resources.resx</DependentUpon>
+		</Compile>
+	</ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Update="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Update="Properties\Resources.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>Resources.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+	</ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="Copy &quot;$(TargetPath)&quot; &quot;$(TargetDir)Robots.gha&quot;&#xD;&#xA;Erase &quot;$(TargetPath)&quot;" />
-  </Target>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Exec Command="Copy &quot;$(TargetPath)&quot; &quot;$(TargetDir)Robots.gha&quot;&#xD;&#xA;Erase &quot;$(TargetPath)&quot;" />
+	</Target>
 
-  <!--<Target Name="PreventCopyLocal" AfterTargets="ResolveReferences">
+	<!--<Target Name="PreventCopyLocal" AfterTargets="ResolveReferences">
     <ItemGroup>
       <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' == 'Grasshopper'" />
       <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' == 'RhinoCommon'" />
