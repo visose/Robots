@@ -58,7 +58,6 @@ namespace RobotsStandalone
                     _timer.Change(Timeout.Infinite, 0);
                 }
 
-
                 OnPropertyChanged();
             }
         }
@@ -142,8 +141,8 @@ namespace RobotsStandalone
             LightDirection.Normalize();
             SetHeadLight();
 
-            AmbientLightColor = Colors.White*1000;
-            DirectionalLightColor = Color.FromScRgb(1, 10, 10, 10);
+             AmbientLightColor = Color.FromScRgb(1, 0.02f, 0.02f, 0.02f);
+            DirectionalLightColor = Colors.White;
             BackgroundColor = Color.FromRgb(40, 40, 40);
 
             // model transform
@@ -221,16 +220,6 @@ namespace RobotsStandalone
             var t = (delta.TotalSeconds / Program.Duration) * 100;
             Time += t * _dir;
             _last = now;
-        }
-
-        public static MemoryStream LoadFileToMemory(string filePath)
-        {
-            using (var file = new FileStream(filePath, FileMode.Open))
-            {
-                var memory = new MemoryStream();
-                file.CopyTo(memory);
-                return memory;
-            }
         }
 
         #region IDisposable Support
