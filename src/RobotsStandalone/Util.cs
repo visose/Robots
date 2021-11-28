@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Rhino.Geometry;
 using SharpDX;
-using HelixToolkit.Wpf.SharpDX;
 using System.Windows.Media.Media3D;
-using MeshGeometry3D = HelixToolkit.Wpf.SharpDX.MeshGeometry3D;
+using MeshGeometry3D = HelixToolkit.SharpDX.Core.MeshGeometry3D;
+using HelixToolkit.SharpDX.Core;
 
 namespace RobotsStandalone
 {

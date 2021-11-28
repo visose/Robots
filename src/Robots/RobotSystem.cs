@@ -109,7 +109,7 @@ namespace Robots
             return names;
         }
 
-        public static RobotSystem Load(string name, Plane basePlane)
+        public static RobotSystem Load(string name, Plane basePlane, bool loadMeshes = true)
         {
             XElement element = null;
             //string folder = $@"{AssemblyDirectory}\robots";
@@ -150,10 +150,16 @@ namespace Robots
             }
             */
 
-            return Create(element, basePlane);
+            return Create(element, basePlane, loadMeshes);
         }
 
-        private static RobotSystem Create(XElement element, Plane basePlane)
+        public static RobotSystem Parse(string xml, Plane basePlane)
+        {
+            var element = XElement.Parse(xml);
+            return Create(element, basePlane, false);
+        }
+
+        private static RobotSystem Create(XElement element, Plane basePlane, bool loadMeshes)
         {
             var type = element.Name.LocalName;
             var name = element.Attribute(XName.Get("name")).Value;
@@ -163,7 +169,7 @@ namespace Robots
             var mechanicalGroups = new List<MechanicalGroup>();
             foreach (var mechanicalGroup in element.Elements(XName.Get("Mechanisms")))
             {
-                mechanicalGroups.Add(MechanicalGroup.Create(mechanicalGroup));
+                mechanicalGroups.Add(MechanicalGroup.Create(mechanicalGroup, loadMeshes));
             }
 
             IO io = null;

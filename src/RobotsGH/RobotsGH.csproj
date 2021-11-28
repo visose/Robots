@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net48</TargetFramework>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<TargetFramework>net48</TargetFramework>		
 		<RootNamespace>Robots</RootNamespace>
 		<LangVersion>8.0</LangVersion>
 	</PropertyGroup>
@@ -12,7 +11,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Costura.Fody" Version="4.1.0" />
 		<PackageReference Include="Grasshopper" Version="7.12.21313.6341" />
 	</ItemGroup>
 
@@ -90,6 +88,7 @@
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<Exec Command="Copy &quot;$(TargetPath)&quot; &quot;$(TargetDir)Robots.gha&quot;&#xD;&#xA;Erase &quot;$(TargetPath)&quot;" />
+		<Exec Command="Erase &quot;$(TargetDir)Costura.dll&quot;" />
 	</Target>
 
 	<!--<Target Name="PreventCopyLocal" AfterTargets="ResolveReferences">

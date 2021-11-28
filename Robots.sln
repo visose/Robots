@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28714.193
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robots", "src\Robots\Robots.csproj", "{3896FB4D-9007-48FB-B302-6B289B15E9BF}"
 EndProject
@@ -15,6 +15,11 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{101C8522-302F-4233-A875-F76C3758F693}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Robots.Tests", "tests\Robots.Tests\Robots.Tests.csproj", "{16C2E987-7825-42F8-A2C7-8695F7964335}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3896FB4D-9007-48FB-B302-6B289B15E9BF} = {3896FB4D-9007-48FB-B302-6B289B15E9BF}
 	EndProjectSection
 EndProject
 Global
@@ -35,6 +40,10 @@ Global
 		{3E69607D-A2A9-4061-86E8-2EA7CCB79601}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E69607D-A2A9-4061-86E8-2EA7CCB79601}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E69607D-A2A9-4061-86E8-2EA7CCB79601}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16C2E987-7825-42F8-A2C7-8695F7964335}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16C2E987-7825-42F8-A2C7-8695F7964335}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16C2E987-7825-42F8-A2C7-8695F7964335}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16C2E987-7825-42F8-A2C7-8695F7964335}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

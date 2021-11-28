@@ -1,20 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net48</TargetFramework>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<TargetFrameworks>netstandard2.0;net48</TargetFrameworks>		
+		<LangVersion>8.0</LangVersion>
 	</PropertyGroup>
 
 	<PropertyGroup>
 		<OutputPath>..\..\artifacts\bin</OutputPath>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Costura.Fody" Version="4.1.0" />		
-		<!--<PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.7">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>-->
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+		<PackageReference Include="Rhino3dm" Version="7.11.0" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+		<PackageReference Include="Costura.Fody" Version="4.1.0" />
 		<PackageReference Include="RhinoCommon" Version="7.12.21313.6341" />
 	</ItemGroup>
 
