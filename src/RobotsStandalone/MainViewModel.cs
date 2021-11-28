@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Linq;
-using HelixToolkit.Wpf.SharpDX;
+using System.Threading;
 using System.IO;
+using System.Windows.Input;
+using Rhino.Geometry;
 using SharpDX;
+using HelixToolkit.SharpDX.Core;
+using HelixToolkit.Wpf.SharpDX;
 using Vector3D = System.Windows.Media.Media3D.Vector3D;
 using Point3D = System.Windows.Media.Media3D.Point3D;
 using Color = System.Windows.Media.Color;
 using Colors = System.Windows.Media.Colors;
 using Transform3D = System.Windows.Media.Media3D.Transform3D;
-using System.Windows.Input;
-using Rhino.Geometry;
 using Plane = Rhino.Geometry.Plane;
-using System.Threading;
 
 namespace RobotsStandalone
 {

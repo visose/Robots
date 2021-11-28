@@ -105,7 +105,7 @@ namespace Robots
             }
         }
 
-        internal static Mechanism Create(XElement element)
+        internal static Mechanism Create(XElement element, bool loadMeshes)
         {
             var modelName = element.Attribute(XName.Get("model")).Value;
             var manufacturer = (Manufacturers)Enum.Parse(typeof(Manufacturers), element.Attribute(XName.Get("manufacturer")).Value);
@@ -115,11 +115,8 @@ namespace Robots
             var movesRobotAttribute = element.Attribute(XName.Get("movesRobot"));
             if (movesRobotAttribute != null) movesRobot = XmlConvert.ToBoolean(movesRobotAttribute.Value);
 
-            var meshes = GetMeshes(fullName);
-
             double payload = Convert.ToDouble(element.Attribute(XName.Get("payload")).Value);
 
-            var baseMesh = meshes[0].DuplicateMesh();
             XElement baseElement = element.Element(XName.Get("Base"));
             double x = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("x")).Value);
             double y = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("y")).Value);
@@ -133,6 +130,9 @@ namespace Robots
             var jointElements = element.Element(XName.Get("Joints")).Descendants().ToArray();
             Joint[] joints = new Joint[jointElements.Length];
 
+            var meshes = loadMeshes ? GetMeshes(fullName) : null;
+            Mesh baseMesh = loadMeshes ? meshes[0].DuplicateMesh() : null;
+
             for (int i = 0; i < jointElements.Length; i++)
             {
                 var jointElement = jointElements[i];
@@ -143,7 +143,7 @@ namespace Robots
                 double maxRange = XmlConvert.ToDouble(jointElement.Attribute(XName.Get("maxrange")).Value);
                 Interval range = new Interval(minRange, maxRange);
                 double maxSpeed = XmlConvert.ToDouble(jointElement.Attribute(XName.Get("maxspeed")).Value);
-                Mesh mesh = meshes[i + 1].DuplicateMesh();
+                Mesh mesh = loadMeshes ? meshes[i + 1].DuplicateMesh() : null;
                 int number = XmlConvert.ToInt32(jointElement.Attribute(XName.Get("number")).Value) - 1;
 
                 if (jointElement.Name == "Revolute")

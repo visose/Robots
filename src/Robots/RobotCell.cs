@@ -158,7 +158,7 @@ namespace Robots
                  .ToList();
         }
 
-        internal static MechanicalGroup Create(XElement element)
+        internal static MechanicalGroup Create(XElement element, bool loadMeshes)
         {
             int index = 0;
             var groupAttribute = element.Attribute(XName.Get("group"));
@@ -166,7 +166,7 @@ namespace Robots
 
             var mechanisms = new List<Mechanism>();
             foreach (var mechanismElement in element.Elements())
-                mechanisms.Add(Mechanism.Create(mechanismElement));
+                mechanisms.Add(Mechanism.Create(mechanismElement, loadMeshes));
 
             return new MechanicalGroup(index, mechanisms);
         }

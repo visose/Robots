@@ -1,44 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net48</TargetFramework>
-		<ApplicationIcon />
+		<TargetFramework>net6.0-windows</TargetFramework>
 		<OutputType>WinExe</OutputType>
-		<StartupObject />
+		<UseWPF>true</UseWPF>
 	</PropertyGroup>
-
 
 	<PropertyGroup>
 		<OutputPath>..\..\artifacts\bin</OutputPath>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Remove="MainWindow.xaml" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="HelixToolkit.Wpf.SharpDX" Version="2.20.0" />
+		<PackageReference Include="HelixToolkit.SharpDX.Core.Wpf" Version="2.20.0" />
 		<PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<Page Include="MainWindow.xaml">
-			<Generator>MSBuild:Compile</Generator>
-		</Page>
-	</ItemGroup>
-
-	<ItemGroup>
 		<ProjectReference Include="..\Robots\Robots.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Reference Include="Microsoft.CSharp" />
-		<Reference Include="PresentationCore" />
-		<Reference Include="PresentationFramework" />
-		<Reference Include="System.Data.DataSetExtensions" />
-		<Reference Include="System.Net.Http" />
-		<Reference Include="System.Xaml" />
-		<Reference Include="WindowsBase" />
 	</ItemGroup>
 
 </Project>

@@ -1,13 +1,28 @@
-﻿#define RHINOCOMMON
-
-using Rhino.Geometry;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Rhino.Geometry;
 using static System.Math;
 
 namespace Robots
 {
+#if NETSTANDARD2_0
+    public class Collision
+    {
+        public bool HasCollision => throw NotImplemented();
+        public Mesh[] Meshes => throw NotImplemented();
+        public CellTarget CollisionTarget => throw NotImplemented();
+
+        internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh environment, int environmentPlane, double linearStep, double angularStep)
+        {
+            throw NotImplemented();
+        }
+
+        Exception NotImplemented() => new NotImplementedException(" Collisions have to be reimplemented.");
+    }
+
+#elif NET48
     public class Collision
     {
         readonly Program program;
@@ -28,7 +43,7 @@ namespace Robots
 
         internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh environment, int environmentPlane, double linearStep, double angularStep)
         {
-#if RHINOCOMMON
+
             this.program = program;
             this.robotSystem = program.RobotSystem;
             this.linearStep = linearStep;
@@ -46,9 +61,6 @@ namespace Robots
             }
 
             Collide();
-#else
-            throw new NotImplementedException(" Collisions have to be reimplemented.");
-#endif
         }
 
         void Collide()
@@ -143,7 +155,7 @@ namespace Robots
             });
         }
 
-        public static List<Mesh> PoseMeshes(RobotSystem robot, List<KinematicSolution> solutions, List<Mesh> tools)
+        static List<Mesh> PoseMeshes(RobotSystem robot, List<KinematicSolution> solutions, List<Mesh> tools)
         {
             if (robot is RobotCell cell)
             {
@@ -196,4 +208,6 @@ namespace Robots
             return outMeshes;
         }
     }
+
+#endif
 }
