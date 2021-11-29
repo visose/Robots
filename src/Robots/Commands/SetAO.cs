@@ -14,9 +14,9 @@ namespace Robots.Commands
         }
 
         protected override void ErrorChecking(RobotSystem robotSystem)
-        {
-            if (robotSystem.IO.AO == null) throw new Exception(" Robot contains no analog outputs.");
-            if (AO > robotSystem.IO.AO.Length - 1) throw new Exception(" Index of analog output is too high.");
+        {            
+            if (AO > robotSystem.IO.AO.Length - 1) 
+                throw new Exception(" Index of analog output is too high.");
         }
 
         protected override void Populate()

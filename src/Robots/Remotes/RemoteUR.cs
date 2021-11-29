@@ -18,7 +18,7 @@ namespace Robots
 
         public void Send(string message)
         {
-            if (IP == null)
+            if (IP is null)
             {
                 AddLog("IP hasn't been set.");
                 return;

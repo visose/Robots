@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Xml.Linq;
+using System.IO;
 using System.Threading;
 using System.Globalization;
+using System.Xml.Linq;
 using Rhino.Geometry;
 using static Robots.Util;
 
@@ -134,7 +134,7 @@ namespace Robots
                 throw new InvalidOperationException($" RobotSystem \"{name}\" not found");
 
             /*
-            if (element == null)
+            if (element is null)
             {
                 XElement data = XElement.Parse(Properties.Resources.robotsData);
                 try

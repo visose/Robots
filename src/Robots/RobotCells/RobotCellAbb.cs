@@ -9,7 +9,7 @@ using static Robots.Util;
 
 namespace Robots
 {
-    public partial class RobotCellAbb : RobotCell
+    public class RobotCellAbb : RobotCell
     {
         internal RobotCellAbb(string name, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.ABB, mechanicalGroups, io, basePlane, environment)
         {

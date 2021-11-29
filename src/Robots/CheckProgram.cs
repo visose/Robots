@@ -9,18 +9,18 @@ namespace Robots
 {
     class CheckProgram
     {
-        internal List<CellTarget> Keyframes = new List<CellTarget>();
-        internal int IndexError;
-
         readonly Program _program;
         readonly RobotSystem _robotSystem;
         int _lastIndex;
+
+        internal List<CellTarget> Keyframes { get; } = new List<CellTarget>();
+        internal int IndexError { get; private set; }
 
         internal CheckProgram(Program program, List<CellTarget> cellTargets, double stepSize)
         {
             _robotSystem = program.RobotSystem;
             _program = program;
-            // this.groupCount = cellTargets[0].ProgramTargets.Count;
+            // groupCount = cellTargets[0].ProgramTargets.Count;
 
             FixFirstTarget(cellTargets[0]);
             FixTargetAttributes(cellTargets);
@@ -138,7 +138,7 @@ namespace Robots
                 var types = new List<Type>();
                 foreach (var attribute in _program.Attributes.ToList())
                 {
-                    if (attribute.Name == null)
+                    if (attribute.Name is null)
                     {
                         var type = attribute.GetType();
                         types.Add(type);

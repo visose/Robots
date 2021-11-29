@@ -5,20 +5,14 @@ namespace Robots
 {
     public abstract class Command : TargetAttribute
     {
-        protected virtual void ErrorChecking(RobotSystem robotSystem) { }
-        protected virtual void Populate() { }
+        public static Command Default { get; } = new Commands.Custom("DefaultCommand");
 
         protected Dictionary<Manufacturers, Func<RobotSystem, string>> _declarations = new Dictionary<Manufacturers, Func<RobotSystem, string>>(4);
         protected Dictionary<Manufacturers, Func<RobotSystem, Target, string>> _commands = new Dictionary<Manufacturers, Func<RobotSystem, Target, string>>(4);
-
         public bool RunBefore { get; set; } = false;
 
-        public static Command Default { get; }
-
-        static Command()
-        {
-            Default = new Commands.Custom("DefaultCommand");
-        }
+        protected virtual void ErrorChecking(RobotSystem robotSystem) { }
+        protected virtual void Populate() { }
 
         internal string Declaration(Program program)
         {

@@ -4,7 +4,7 @@ namespace Robots
 {
     public class Frame : TargetAttribute
     {
-        public static Frame Default { get; }
+        public static Frame Default { get; } = new Frame(Plane.WorldXY, -1, -1, "DefaultFrame");
 
         /// <summary>
         /// Reference frame of plane for a target
@@ -12,14 +12,8 @@ namespace Robots
         public Plane Plane { get; internal set; }
         public int CoupledMechanism { get; }
         public int CoupledMechanicalGroup { get; }
-        public bool IsCoupled { get { return (CoupledMechanicalGroup != -1); } }
-
         internal int CoupledPlaneIndex { get; set; }
-
-        static Frame()
-        {
-            Default = new Frame(Plane.WorldXY, -1, -1, "DefaultFrame");
-        }
+        public bool IsCoupled => (CoupledMechanicalGroup != -1);
 
         public Frame(Plane plane, int coupledMechanism = -1, int coupledMechanicalGroup = -1, string? name = null)
         {

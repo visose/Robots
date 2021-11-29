@@ -6,23 +6,22 @@ namespace Robots
 {
     class Simulation
     {
+        readonly Program _program;
+        // readonly int _groupCount;
+        readonly List<CellTarget> _keyframes;
+        int _currentTarget = 0;
+
         internal double Duration;
         internal double CurrentTime = 0;
         internal CellTarget CurrentSimulationTarget;
 
-        readonly Program _program;
-        readonly int _groupCount;
-        readonly List<CellTarget> _keyframes;
-
-        int _currentTarget = 0;
-
         public Simulation(Program program, List<CellTarget> targets)
         {
             _program = program;
-            _groupCount = targets.Count;
+            // _groupCount = targets.Count;
+            _keyframes = targets;
             Duration = program.Duration;
             CurrentSimulationTarget = program.Targets[0].ShallowClone(0);
-            _keyframes = targets;
         }
 
         public void Step(double time, bool isNormalized)
@@ -72,7 +71,10 @@ namespace Robots
 
             //  var newSimulationTarget = cellTarget.ShallowClone(cellTarget.Index);
             var newSimulationTarget = _program.Targets[cellTarget.Index].ShallowClone();
-            foreach (var programTarget in newSimulationTarget.ProgramTargets) programTarget.Kinematics = kinematics[programTarget.Group];
+
+            foreach (var programTarget in newSimulationTarget.ProgramTargets)
+                programTarget.Kinematics = kinematics[programTarget.Group];
+
             CurrentSimulationTarget = newSimulationTarget;
         }
     }

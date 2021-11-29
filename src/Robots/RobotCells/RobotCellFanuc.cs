@@ -1,20 +1,14 @@
 ﻿using System;
-using System.Text;
-using System.Linq;
-using System.IO;
 using System.Collections.Generic;
-
 using Rhino.Geometry;
-using static System.Math;
 using static Robots.Util;
 
 namespace Robots
 {
-
     /// <summary>
     /// Placeholder at the moment. Need to look into getting proper Fanuc data and conventions, etc...
     /// </summary>
-    public partial class RobotCellFanuc : RobotCell
+    public class RobotCellFanuc : RobotCell
     {
         internal RobotCellFanuc(string name, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.ABB, mechanicalGroups, io, basePlane, environment)
         {
@@ -107,9 +101,9 @@ namespace Robots
 
             internal RapidPostProcessor(RobotCellFanuc robotCell, Program program)
             {
-                this.cell = robotCell;
-                this.program = program;
-                this.Code = new List<List<List<string>>>();
+                cell = robotCell;
+                program = program;
+                Code = new List<List<List<string>>>();
 
                 for (int i = 0; i < cell.MechanicalGroups.Count; i++)
                 {

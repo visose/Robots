@@ -10,13 +10,12 @@ namespace Robots
 {
     public class RemoteAbb : IRemote
     {        
-        internal bool Connected => _controller != null && _controller.Connected;
-        //internal Mesh[] Meshes { get; private set; }
+        readonly RobotCellAbb _cell;
+        Controller? _controller;
+
         public string? IP { get; set; }
         public List<string> Log { get; } = new List<string>();
-
-        Controller? _controller;
-        readonly RobotCellAbb _cell;
+        public bool Connected => _controller != null && _controller.Connected;
 
         internal RemoteAbb(RobotCellAbb cell)
         {
@@ -43,7 +42,7 @@ namespace Robots
                      scanner.Controllers.FirstOrDefault(c => c.IPAddress.ToString() == IP) :
                      scanner.Controllers.FirstOrDefault();
 
-            if (controllerInfo == null)
+            if (controllerInfo is null)
             {
                 AddLog("Controller not found.");
                 return;

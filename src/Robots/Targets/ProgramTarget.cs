@@ -7,26 +7,25 @@ namespace Robots
 {
     public class ProgramTarget
     {
+        KinematicSolution? _kinematics;
+        CellTarget? _cellTarget;
+
         public Target Target { get; internal set; }
         public int Group { get; internal set; }
         public Commands.Group? Commands { get; private set; }
-
         internal bool ChangesConfiguration { get; set; } = false;
         internal int LeadingJoint { get; set; }
 
-        internal bool IsJointTarget => Target is JointTarget;
+        public int Index => CellTarget.Index;
         public bool IsJointMotion => IsJointTarget || ((CartesianTarget)Target).Motion == Motions.Joint;
         public Plane WorldPlane => Kinematics.Planes[Kinematics.Planes.Length - 1];
-        public int Index => CellTarget.Index;
+        internal bool IsJointTarget => Target is JointTarget;
 
-        KinematicSolution? _kinematics;
         public KinematicSolution Kinematics
         {
             get => _kinematics ?? throw new NullReferenceException(" Kinematics shouldn't be null.");
             internal set => _kinematics = value;
         }
-
-        internal CellTarget? _cellTarget;
 
         internal CellTarget CellTarget
         {
@@ -49,7 +48,7 @@ namespace Robots
         {
             get
             {
-                //   var cartesian = this.Target as CartesianTarget;
+                //   var cartesian = Target as CartesianTarget;
                 //   if (cartesian != null) return cartesian.Plane;
 
                 Plane plane = WorldPlane;
@@ -159,8 +158,8 @@ namespace Robots
             {
                 Plane prevPlane = GetPrevPlane(prevTarget);
                 Plane plane = robot.CartesianLerp(prevPlane, Plane, t, start, end);
-                //   Plane plane = CartesianTarget.Lerp(prevTarget.WorldPlane, this.WorldPlane, t, start, end);
-                //  Target.RobotConfigurations? configuration = (Abs(prevTarget.cellTarget.TotalTime - t) < TimeTol) ? prevTarget.Kinematics.Configuration : this.Kinematics.Configuration;
+                //   Plane plane = CartesianTarget.Lerp(prevTarget.WorldPlane, WorldPlane, t, start, end);
+                //  Target.RobotConfigurations? configuration = (Abs(prevTarget.cellTarget.TotalTime - t) < TimeTol) ? prevTarget.Kinematics.Configuration : Kinematics.Configuration;
 
                 var target = new CartesianTarget(plane, Target, prevTarget.Kinematics.Configuration, Motions.Linear, external);
                 // target.Frame = Frame.Default;

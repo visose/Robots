@@ -9,11 +9,11 @@ namespace Robots
 {
     public class URRealTime
     {
-        public List<string> Log { get; set; }
-        public List<FeedbackType> FeedbackData { get; } = new List<FeedbackType>();
-
         readonly ASCIIEncoding _encoder = new ASCIIEncoding();
         readonly IPEndPoint _ipEndPoint;
+
+        public List<string> Log { get; set; }
+        public List<FeedbackType> FeedbackData { get; } = new List<FeedbackType>();
 
         public URRealTime(string IP)
         {

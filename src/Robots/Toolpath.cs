@@ -12,9 +12,8 @@ namespace Robots
 
     public class SimpleToolpath : IToolpath, IEnumerable<Target>
     {
-        public IEnumerable<Target> Targets => _targets;
-
         protected List<Target> _targets = new List<Target>();
+        public IEnumerable<Target> Targets => _targets;
 
         public SimpleToolpath() { }
 
@@ -34,7 +33,7 @@ namespace Robots
 
         public IToolpath ShallowClone(List<Target>? targets = null)
         {
-            if (targets == null)
+            if (targets is null)
                 targets = _targets.ToList();
 
             var clone = (SimpleToolpath)MemberwiseClone();

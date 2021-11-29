@@ -14,9 +14,9 @@ namespace Robots.Commands
         }
 
         protected override void ErrorChecking(RobotSystem robotSystem)
-        {
-            if (robotSystem.IO.DI == null) throw new Exception(" Robot contains no digital inputs.");
-            if (DI > robotSystem.IO.DI.Length - 1) throw new Exception(" Index of digital input is too high.");
+        {            
+            if (DI > robotSystem.IO.DI.Length - 1)
+                throw new Exception(" Index of digital input is too high.");
         }
 
         protected override void Populate()

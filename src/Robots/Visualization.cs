@@ -4,29 +4,29 @@ namespace Robots
 {
     public class SimpleTrail
     {
-        readonly Program program;
-        double time;
-        readonly int mechanicalGroup;
+        readonly Program _program;
+        readonly int _mechanicalGroup;
+        double _time;
 
         public double Length { get; set; }
         public Polyline Polyline { get; }
 
         public SimpleTrail(Program program, double maxLength, int mechanicalGroup = 0)
         {
-            this.program = program;
-            this.Length = maxLength;
-            this.mechanicalGroup = mechanicalGroup;
+            _program = program;
+            _mechanicalGroup = mechanicalGroup;
+            _time = program.CurrentSimulationTime;
+            Length = maxLength;
             Polyline = new Polyline();
-            time = program.CurrentSimulationTime;
         }
 
         public void Update()
         {
-            if (program.CurrentSimulationTime < time)
+            if (_program.CurrentSimulationTime < _time)
                 Polyline.Clear();
 
-            time = program.CurrentSimulationTime;
-            Polyline.Add(program.CurrentSimulationTarget.ProgramTargets[mechanicalGroup].WorldPlane.Origin);
+            _time = _program.CurrentSimulationTime;
+            Polyline.Add(_program.CurrentSimulationTarget.ProgramTargets[_mechanicalGroup].WorldPlane.Origin);
 
             while (Polyline.Length > Length)
                 Polyline.RemoveAt(0);

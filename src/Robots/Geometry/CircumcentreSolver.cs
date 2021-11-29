@@ -8,12 +8,12 @@ namespace Robots.Geometry
     /// </summary>
     class CircumcentreSolver
     {
-        internal Point3d Center => new Point3d(_x, _y, _z);
-        internal double Radius => _radius;
-
         double _x, _y, _z;
         double _radius;
         readonly double[,] _p = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
+
+        internal Point3d Center => new Point3d(_x, _y, _z);
+        internal double Radius => _radius;
 
         /// <summary>
         /// Computes the centre of a sphere such that all four specified points in

@@ -9,7 +9,7 @@ using static System.Math;
 
 namespace Robots
 {
-    public partial class RobotCellKuka : RobotCell
+    public class RobotCellKuka : RobotCell
     {
         internal RobotCellKuka(string name, List<MechanicalGroup> mechanicalGroup, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.KUKA, mechanicalGroup, io, basePlane, environment) { }
 

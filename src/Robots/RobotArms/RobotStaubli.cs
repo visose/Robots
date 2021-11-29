@@ -1,5 +1,4 @@
 ﻿using Rhino.Geometry;
-using static System.Math;
 using static Robots.Util;
 
 namespace Robots
@@ -8,7 +7,7 @@ namespace Robots
     {
         internal RobotStaubli(string model, double payload, Plane basePlane, Mesh? baseMesh, Joint[] joints) : base(model, Manufacturers.Staubli, payload, basePlane, baseMesh, joints) { }
 
-        protected override JointTarget GetStartPose() => new JointTarget(new double[] { 0, PI / 2, PI / 2, 0, 0, 0 });
+        protected override JointTarget GetStartPose() => new JointTarget(new double[] { 0, HalfPI, HalfPI, 0, 0, 0 });
 
         public override KinematicSolution Kinematics(Target target, double[]? prevJoints, Plane? basePlane = null) => new SphericalWristKinematics(this, target, prevJoints, basePlane);
 

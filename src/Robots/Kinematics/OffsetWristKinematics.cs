@@ -30,8 +30,8 @@ namespace Robots
 
                 transform *= Transform.Rotation(PI / 2, Point3d.Origin);
 
-                double[] a = mechanism.Joints.Select(joint => joint.A).ToArray();
-                double[] d = mechanism.Joints.Select(joint => joint.D).ToArray();
+                double[] a = _mechanism.Joints.Select(joint => joint.A).ToArray();
+                double[] d = _mechanism.Joints.Select(joint => joint.D).ToArray();
 
                 // shoulder
                 {
@@ -136,8 +136,8 @@ namespace Robots
                 var transforms = new Transform[6];
                 double[] c = joints.Select(x => Cos(x)).ToArray();
                 double[] s = joints.Select(x => Sin(x)).ToArray();
-                double[] a = mechanism.Joints.Select(joint => joint.A).ToArray();
-                double[] d = mechanism.Joints.Select(joint => joint.D).ToArray();
+                double[] a = _mechanism.Joints.Select(joint => joint.A).ToArray();
+                double[] d = _mechanism.Joints.Select(joint => joint.D).ToArray();
                 double s23 = Sin(joints[1] + joints[2]);
                 double c23 = Cos(joints[1] + joints[2]);
                 double s234 = Sin(joints[1] + joints[2] + joints[3]);

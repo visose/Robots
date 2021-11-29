@@ -12,6 +12,7 @@ namespace Robots
     {
         readonly RobotCellKuka _cell;
         readonly Program _program;
+
         internal List<List<List<string>>> Code { get; }
 
         internal KRLPostProcessor(RobotCellKuka robotCell, Program program)
@@ -121,13 +122,13 @@ DEF {_program.Name}_{groupName}_{file:000}()
                 var programTarget = cellTarget.ProgramTargets[group];
                 var target = programTarget.Target;
 
-                if (currentTool == null || target.Tool != currentTool)
+                if (currentTool is null || target.Tool != currentTool)
                 {
                     code.Add(SetTool(target.Tool));
                     currentTool = target.Tool;
                 }
 
-                if (currentFrame == null || target.Frame != currentFrame)
+                if (currentFrame is null || target.Frame != currentFrame)
                 {
                     if (target.Frame.IsCoupled)
                     {
@@ -143,7 +144,7 @@ DEF {_program.Name}_{groupName}_{file:000}()
                     currentFrame = target.Frame;
                 }
 
-                if (target.Zone.IsFlyBy && (currentZone == null || target.Zone != currentZone))
+                if (target.Zone.IsFlyBy && (currentZone is null || target.Zone != currentZone))
                 {
                     code.Add($"$APO.CDIS={target.Zone.Name}");
                     currentZone = target.Zone;
@@ -157,7 +158,7 @@ DEF {_program.Name}_{groupName}_{file:000}()
                     }
                     else
                     {
-                        if (currentSpeed == null || target.Speed != currentSpeed)
+                        if (currentSpeed is null || target.Speed != currentSpeed)
                         {
                             if (!programTarget.IsJointMotion)
                             {

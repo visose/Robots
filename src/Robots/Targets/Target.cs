@@ -6,7 +6,7 @@ namespace Robots
 {
     public abstract class Target : IToolpath
     {
-        public static Target Default { get; }
+        public static Target Default { get; } = new JointTarget(new double[] { 0, HalfPI, 0, 0, 0, 0 });
 
         public Tool Tool { get; set; }
         public Frame Frame { get; set; }
@@ -17,11 +17,6 @@ namespace Robots
         public string[]? ExternalCustom { get; set; }
 
         public IEnumerable<Target> Targets => Enumerable.Repeat(this, 1);
-
-        static Target()
-        {
-            Default = new JointTarget(new double[] { 0, HalfPI, 0, 0, 0, 0 });
-        }
 
         protected Target(Tool? tool, Speed? speed, Zone? zone, Command? command, Frame? frame, IEnumerable<double>? external)
         {
@@ -37,7 +32,7 @@ namespace Robots
         {
             var current = Command;
 
-            if (current == null || current == Command.Default)
+            if (current is null || current == Command.Default)
             {
                 Command = command;
             }
