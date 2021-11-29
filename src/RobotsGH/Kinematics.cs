@@ -64,7 +64,8 @@ namespace Robots.Grasshopper
                         var prevJoint = new double[jointsText.Length];
 
                         for (int i = 0; i < jointsText.Length; i++)
-                            if (!GH_Convert.ToDouble_Secondary(jointsText[i], ref prevJoint[i])) throw new Exception(" Previous joints not formatted correctly.");
+                            if (!GH_Convert.ToDouble_Secondary(jointsText[i], ref prevJoint[i]))
+                                throw new Exception(" Previous joints not formatted correctly.");
 
                         prevJoints.Add(prevJoint);
                     }
@@ -140,11 +141,16 @@ namespace Robots.Grasshopper
             if (!DA.GetData(1, ref sliderTimeGH)) { return; }
             if (!DA.GetData(2, ref isNormalized)) { return; }
 
-            sliderTime = (isNormalized.Value) ? sliderTimeGH.Value * program.Value.Duration : sliderTimeGH.Value;
+            if(!(program.Value is Program p))
+            {
+                throw new ArgumentException(" Input program can't have custom code.");
+            }
+
+            sliderTime = (isNormalized.Value) ? sliderTimeGH.Value * p.Duration : sliderTimeGH.Value;
             if (!form.Visible) time = sliderTime;
 
-            program.Value.Animate(time, false);
-            var currentTarget = program.Value.CurrentSimulationTarget;
+            p.Animate(time, false);
+            var currentTarget = p.CurrentSimulationTarget;
 
             var errors = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Errors);
             var joints = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Joints);
@@ -158,7 +164,7 @@ namespace Robots.Grasshopper
             DA.SetDataList(1, joints);
             DA.SetDataList(2, planes.Select(x => new GH_Plane(x)));
             DA.SetData(3, currentTarget.Index);
-            DA.SetData(4, program.Value.CurrentSimulationTime);
+            DA.SetData(4, p.CurrentSimulationTime);
             DA.SetData(5, new GH_Program(program.Value));
             DA.SetDataList(6, errors);
 

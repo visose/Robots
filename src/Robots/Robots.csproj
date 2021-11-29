@@ -7,6 +7,7 @@
 
 	<PropertyGroup>
 		<OutputPath>..\..\artifacts\bin</OutputPath>
+		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">

@@ -1,39 +1,37 @@
-﻿using Rhino.Geometry;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml.Linq;
 using System.Xml;
+using Rhino.Geometry;
 using static Robots.Util;
-using static System.Math;
 
 namespace Robots
 {
-    public abstract class Mechanism
+    public abstract partial class Mechanism
     {
-        readonly string model;
+        readonly string _model;
         public Manufacturers Manufacturer { get; protected set; }
-        public string Model => $"{Manufacturer}.{model}";
+        public string Model => $"{Manufacturer}.{_model}";
         public double Payload { get; }
         public Plane BasePlane { get; set; }
-        public Mesh BaseMesh { get; }
+        public Mesh? BaseMesh { get; }
         public Joint[] Joints { get; }
         public bool MovesRobot { get; }
         public Mesh DisplayMesh { get; }
 
-        internal Mechanism(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh baseMesh, IEnumerable<Joint> joints, bool movesRobot)
+        internal Mechanism(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh? baseMesh, IEnumerable<Joint> joints, bool movesRobot)
         {
-            this.model = model;
-            this.Manufacturer = manufacturer;
-            this.Payload = payload;
-            this.BasePlane = basePlane;
-            this.BaseMesh = baseMesh;
-            this.Joints = joints.ToArray();
-            this.MovesRobot = movesRobot;
+            _model = model;
+            Manufacturer = manufacturer;
+            Payload = payload;
+            BasePlane = basePlane;
+            BaseMesh = baseMesh;
+            Joints = joints.ToArray();
+            MovesRobot = movesRobot;
 
-            this.DisplayMesh = CreateDisplayMesh();
+            DisplayMesh = CreateDisplayMesh();
 
             // Joints to radians
             for (int i = 0; i < Joints.Length; i++)
@@ -47,6 +45,10 @@ namespace Robots
         Mesh CreateDisplayMesh()
         {
             var mesh = new Mesh();
+
+            if (BaseMesh is null)
+                return mesh;
+
             mesh.Append(BaseMesh);
 
             foreach (var joint in Joints)
@@ -131,7 +133,7 @@ namespace Robots
             Joint[] joints = new Joint[jointElements.Length];
 
             var meshes = loadMeshes ? GetMeshes(fullName) : null;
-            Mesh baseMesh = loadMeshes ? meshes[0].DuplicateMesh() : null;
+            Mesh? baseMesh = meshes?[0].DuplicateMesh();
 
             for (int i = 0; i < jointElements.Length; i++)
             {
@@ -143,7 +145,7 @@ namespace Robots
                 double maxRange = XmlConvert.ToDouble(jointElement.Attribute(XName.Get("maxrange")).Value);
                 Interval range = new Interval(minRange, maxRange);
                 double maxSpeed = XmlConvert.ToDouble(jointElement.Attribute(XName.Get("maxspeed")).Value);
-                Mesh mesh = loadMeshes ? meshes[i + 1].DuplicateMesh() : null;
+                Mesh? mesh = meshes?[i + 1].DuplicateMesh();
                 int number = XmlConvert.ToInt32(jointElement.Attribute(XName.Get("number")).Value) - 1;
 
                 if (jointElement.Name == "Revolute")
@@ -152,35 +154,22 @@ namespace Robots
                     joints[i] = new PrismaticJoint() { Index = i, Number = number, A = a, D = d, Range = range, MaxSpeed = maxSpeed, Mesh = mesh };
             }
 
-            switch (element.Name.ToString())
+            return element.Name.ToString() switch
             {
-                case ("RobotArm"):
-                    {
-                        switch (manufacturer)
-                        {
-                            case (Manufacturers.ABB):
-                                return new RobotAbb(modelName, payload, basePlane, baseMesh, joints);
-                            case (Manufacturers.KUKA):
-                                return new RobotKuka(modelName, payload, basePlane, baseMesh, joints);
-                            case (Manufacturers.UR):
-                                return new RobotUR(modelName, payload, basePlane, baseMesh, joints);
-                            //case (Manufacturers.FANUC):
-                            //    return new RobotFanuc(modelName, payload, basePlane, baseMesh, joints);
-                            case (Manufacturers.Staubli):
-                                return new RobotStaubli(modelName, payload, basePlane, baseMesh, joints);
-                            default:
-                                return null;
-                        }
-                    }
-                case ("Positioner"):
-                    return new Positioner(modelName, manufacturer, payload, basePlane, baseMesh, joints, movesRobot);
-                case ("Track"):
-                    return new Track(modelName, manufacturer, payload, basePlane, baseMesh, joints, movesRobot);
-                case ("Custom"):
-                    return new Custom(modelName, manufacturer, payload, basePlane, baseMesh, joints, movesRobot);
-                default:
-                    return null;
-            }
+                "RobotArm" => manufacturer switch
+                {
+                    Manufacturers.ABB => new RobotAbb(modelName, payload, basePlane, baseMesh, joints),
+                    Manufacturers.KUKA => new RobotKuka(modelName, payload, basePlane, baseMesh, joints),
+                    Manufacturers.UR => new RobotUR(modelName, payload, basePlane, baseMesh, joints),
+                    // Manufacturers.FANUC => new RobotFanuc(modelName, payload, basePlane, baseMesh, joints);
+                    Manufacturers.Staubli => new RobotStaubli(modelName, payload, basePlane, baseMesh, joints),
+                    _ => throw new ArgumentException($" Manufacturer '{manufacturer}' not supported."),
+                },
+                "Positioner" => new Positioner(modelName, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
+                "Track" => new Track(modelName, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
+                "Custom" => new Custom(modelName, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
+                _ => throw new ArgumentException($" Unknown mechanism type '{element.Name}'.")
+            };
         }
 
         /*
@@ -216,86 +205,11 @@ namespace Robots
         }
         */
 
-        public abstract KinematicSolution Kinematics(Target target, double[] prevJoints = null, Plane? basePlane = null);
+        public abstract KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? basePlane = null);
 
         protected abstract void SetStartPlanes();
         public abstract double DegreeToRadian(double degree, int i);
         public abstract double RadianToDegree(double radian, int i);
-        public override string ToString() => $"{this.GetType().Name} ({Model})";
-
-        protected abstract class MechanismKinematics : KinematicSolution
-        {
-            protected Mechanism mechanism;
-
-            internal MechanismKinematics(Mechanism mechanism, Target target, double[] prevJoints, Plane? basePlane)
-            {
-                this.mechanism = mechanism;
-                int jointCount = mechanism.Joints.Length;
-
-                // Init properties
-                Joints = new double[jointCount];
-                Planes = new Plane[jointCount + 1];
-
-                // Base plane
-                Planes[0] = mechanism.BasePlane;
-
-                if (basePlane != null)
-                {
-                    Planes[0].Transform(Transform.PlaneToPlane(Plane.WorldXY, (Plane)basePlane));
-                }
-
-                SetJoints(target, prevJoints);
-                JointsOutOfRange();
-
-                SetPlanes(target);
-
-                // Move planes to base
-                var transform = Planes[0].ToTransform();
-                for (int i = 1; i < jointCount + 1; i++)
-                    Planes[i].Transform(transform);
-            }
-
-            protected abstract void SetJoints(Target target, double[] prevJoints);
-            protected abstract void SetPlanes(Target target);
-
-            protected virtual void JointsOutOfRange()
-            {
-                var outofRangeErrors = mechanism.Joints
-                .Where(x => !x.Range.IncludesParameter(Joints[x.Index]))
-                .Select(x => $"Axis {x.Number + 1} is outside the permitted range.");
-                Errors.AddRange(outofRangeErrors);
-            }
-        }
-    }
-
-    public abstract class Joint
-    {
-        public int Index { get; set; }
-        public int Number { get; set; }
-        internal double A { get; set; }
-        internal double D { get; set; }
-        public Interval Range { get; internal set; }
-        public double MaxSpeed { get; internal set; }
-        public Plane Plane { get; set; }
-        public Mesh Mesh { get; set; }
-    }
-
-    public class BaseJoint
-    {
-    }
-
-    public class RevoluteJoint : Joint
-    {
-    }
-
-    public class PrismaticJoint : Joint
-    {
-    }
-
-    [Serializable]
-    class JointMeshes
-    {
-        internal List<string> Names { get; set; } = new List<string>();
-        internal List<List<Mesh>> Meshes { get; set; } = new List<List<Mesh>>();
+        public override string ToString() => $"{GetType().Name} ({Model})";
     }
 }

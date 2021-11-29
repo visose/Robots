@@ -1,23 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Robots
 {
     public class RemoteUR : IRemote
     {
-        public string IP { get; set; }
+        public string? IP { get; set; }
         public int Port { get; set; } = 30002;
-        public List<string> Log { get; }
+        public List<string> Log { get; } = new List<string>();
 
         void AddLog(string text)
         {
             Log.Insert(0, $"{DateTime.Now.ToShortTimeString()} - {text}");
         }
-
 
         public void Send(string message)
         {
@@ -56,8 +53,11 @@ namespace Robots
             }
         }
 
-        public void Upload(Program program)
+        public void Upload(IProgram program)
         {
+            if (program.Code is null)
+                return;
+
             var joinedCode = string.Join("\n", program.Code[0][0]);
             //joinedCode += "\nsleep(0.1)";
             //joinedCode += "\npause program";

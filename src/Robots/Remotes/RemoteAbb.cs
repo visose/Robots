@@ -1,18 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
-using System.Xml.XPath;
-using System.Net;
+using System.IO;
 using ABB.Robotics.Controllers;
 using ABB.Robotics.Controllers.RapidDomain;
 using ABB.Robotics.Controllers.Discovery;
-using ABB.Robotics.Controllers.FileSystemDomain;
-using Robots;
-using Rhino.Geometry;
-using System.IO;
 
 namespace Robots
 {
@@ -20,11 +12,11 @@ namespace Robots
     {        
         internal bool Connected => _controller != null && _controller.Connected;
         //internal Mesh[] Meshes { get; private set; }
-        public string IP { get; set; }
+        public string? IP { get; set; }
         public List<string> Log { get; } = new List<string>();
 
-        Controller _controller;
-        RobotCellAbb _cell;
+        Controller? _controller;
+        readonly RobotCellAbb _cell;
 
         internal RemoteAbb(RobotCellAbb cell)
         {
@@ -33,7 +25,7 @@ namespace Robots
 
         public void Play() => Command(StartCommand);
         public void Pause() => Command(StopCommand);
-        public void Upload(Program p) => Command(() => UploadCommand(p));
+        public void Upload(IProgram p) => Command(() => UploadCommand(p));
 
         void AddLog(string text)
         {
@@ -99,6 +91,9 @@ namespace Robots
         [Obsolete]
         string StartCommand()
         {
+            if (_controller is null)
+                return "Controller is null.";
+
             if (_controller.OperatingMode != ControllerOperatingMode.Auto)
                 return "Controller not set in automatic.";
 
@@ -115,6 +110,9 @@ namespace Robots
 
         string StopCommand()
         {
+            if (_controller is null)
+                return "Controller is null.";
+
             if (_controller.OperatingMode != ControllerOperatingMode.Auto)
                 return "Controller not set in automatic.";
 
@@ -126,8 +124,11 @@ namespace Robots
             return "Program stopped.";
         }
 
-        string UploadCommand(Program program)
+        string UploadCommand(IProgram program)
         {
+            if (_controller is null)
+                return "Controller is null.";
+
             try
             {
                 // task.Stop(StopMode.Instruction);
@@ -186,6 +187,9 @@ namespace Robots
         public JointTarget GetPosition()
         {
             if (!Connected) Connect();// return Target.Default as JointTarget;
+
+            if (_controller is null)
+                throw new NullReferenceException(" Controller is null.");
 
             var joints = _controller.MotionSystem.ActiveMechanicalUnit.GetPosition();
             var values = new double[] { joints.RobAx.Rax_1, joints.RobAx.Rax_2, joints.RobAx.Rax_3, joints.RobAx.Rax_4, joints.RobAx.Rax_5, joints.RobAx.Rax_6 };

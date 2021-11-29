@@ -10,14 +10,14 @@ namespace Robots
     public class URRealTime
     {
         public List<string> Log { get; set; }
-        public List<FeedbackType> FeedbackData { get; set; }
+        public List<FeedbackType> FeedbackData { get; } = new List<FeedbackType>();
 
-        readonly ASCIIEncoding encoder = new ASCIIEncoding();
-        readonly IPEndPoint IPEndPoint;
+        readonly ASCIIEncoding _encoder = new ASCIIEncoding();
+        readonly IPEndPoint _ipEndPoint;
 
         public URRealTime(string IP)
         {
-            IPEndPoint = new IPEndPoint(IPAddress.Parse(IP), 30003);
+            _ipEndPoint = new IPEndPoint(IPAddress.Parse(IP), 30003);
             Log = new List<string>();
             MakeDataTypes();
         }
@@ -25,7 +25,6 @@ namespace Robots
         void MakeDataTypes()
         {
             var lines = Properties.Resources.URRealTime.Split(new string[] { "\r\n" }, StringSplitOptions.None);
-            this.FeedbackData = new List<FeedbackType>();
             int start = 0;
 
             foreach (var line in lines)
@@ -45,7 +44,7 @@ namespace Robots
                 };
 
                 start += dataType.Size;
-                this.FeedbackData.Add(dataType);
+                FeedbackData.Add(dataType);
             }
         }
 
@@ -59,7 +58,7 @@ namespace Robots
                 ReceiveBufferSize = bufferSize,
             };
 
-            client.Connect(IPEndPoint);
+            client.Connect(_ipEndPoint);
 
             var byteStream = new byte[bufferSize];
             int size = 0;
@@ -79,7 +78,7 @@ namespace Robots
             return byteStream.Take(size).ToArray();
         }
 
-        double[] ReadDataType(FeedbackType type, byte[] byteStream)
+        double[]? ReadDataType(FeedbackType type, byte[] byteStream)
         {
             bool isInteger = type.Type == "integer";
             int take = isInteger ? 4 : 8;
@@ -88,7 +87,10 @@ namespace Robots
             for (int i = 0; i < type.Length; i++)
             {
                 int index = type.Start + i * take;
-                if (index >= byteStream.Length) return null;
+
+                if (index >= byteStream.Length) 
+                    return null;
+
                 var bytes = byteStream.Skip(index).Take(take).Reverse().ToArray();
                 result[i] = isInteger ? (double)BitConverter.ToInt32(bytes, 0) : BitConverter.ToDouble(bytes, 0);
             }
@@ -98,11 +100,12 @@ namespace Robots
 
         public void UpdateFeedback()
         {
-            //var results = new List<double[]>();
             var byteStream = GetByteStream();
-            if (byteStream == null) return;
 
-            foreach (var type in this.FeedbackData)
+            if (byteStream is null)
+                return;
+
+            foreach (var type in FeedbackData)
             {
                 var result = ReadDataType(type, byteStream);
                 type.Value = result ?? new double[type.Length];
@@ -116,10 +119,10 @@ namespace Robots
                 NoDelay = true,
             };
 
-            client.Connect(IPEndPoint);
+            client.Connect(_ipEndPoint);
 
             message += '\n';
-            byte[] byteArray = encoder.GetBytes(message);
+            byte[] byteArray = _encoder.GetBytes(message);
 
             using (var stream = client.GetStream())
             {
@@ -132,12 +135,12 @@ namespace Robots
 
     public class FeedbackType
     {
-        public string Meaning { get; set; }
-        public string Notes { get; set; }
-        internal string Type { get; set; }
+        public string Meaning { get; set; } = null!;
+        public string Notes { get; set; } = null!;
+        internal string Type { get; set; } = null!;
         internal int Length { get; set; }
         internal int Size { get; set; }
         internal int Start { get; set; }
-        public double[] Value { get; set; }
+        public double[] Value { get; set; } = null!;
     }
 }

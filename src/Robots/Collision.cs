@@ -14,7 +14,7 @@ namespace Robots
         public Mesh[] Meshes => throw NotImplemented();
         public CellTarget CollisionTarget => throw NotImplemented();
 
-        internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh environment, int environmentPlane, double linearStep, double angularStep)
+        internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh? environment, int environmentPlane, double linearStep, double angularStep)
         {
             throw NotImplemented();
         }
@@ -25,50 +25,42 @@ namespace Robots
 #elif NET48
     public class Collision
     {
-        readonly Program program;
-        readonly RobotSystem robotSystem;
-        readonly double linearStep;
-        readonly double angularStep;
-        readonly IEnumerable<int> first;
-        readonly IEnumerable<int> second;
-        readonly Mesh environment;
-        readonly int environmentPlane;
-        readonly bool _onlyOne;
-        readonly int _oneFirst;
-        readonly int _oneSecond;
+        readonly Program _program;
+        readonly RobotSystem _robotSystem;
+        readonly double _linearStep;
+        readonly double _angularStep;
+        readonly IEnumerable<int> _first;
+        readonly IEnumerable<int> _second;
+        readonly Mesh? _environment;
+        readonly int _environmentPlane;
 
-        public bool HasCollision { get; private set; } = false;
-        public Mesh[] Meshes { get; private set; }
-        public CellTarget CollisionTarget { get; private set; }
+        public bool HasCollision => CollisionTarget != null;
+        public Mesh[]? Meshes { get; private set; }
+        public CellTarget? CollisionTarget { get; private set; }
 
-        internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh environment, int environmentPlane, double linearStep, double angularStep)
+        internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh? environment, int environmentPlane, double linearStep, double angularStep)
         {
 
-            this.program = program;
-            this.robotSystem = program.RobotSystem;
-            this.linearStep = linearStep;
-            this.angularStep = angularStep;
-            this.first = first;
-            this.second = second;
-            this.environment = environment;
-            this.environmentPlane = environmentPlane;
-
-            if (first.Count() == 1 && second.Count() == 1)
-            {
-                _onlyOne = true;
-                _oneFirst = first.First();
-                _oneSecond = second.First();
-            }
+            _program = program;
+            _robotSystem = program.RobotSystem;
+            _linearStep = linearStep;
+            _angularStep = angularStep;
+            _first = first;
+            _second = second;
+            _environment = environment;
+            _environmentPlane = environmentPlane;
 
             Collide();
         }
 
         void Collide()
         {
-            Parallel.ForEach(program.Targets, (cellTarget, state) =>
+            Parallel.ForEach(_program.Targets, (cellTarget, state) =>
             {
-                if (cellTarget.Index == 0) return;
-                var prevcellTarget = program.Targets[cellTarget.Index - 1];
+                if (cellTarget.Index == 0)
+                    return;
+
+                var prevcellTarget = _program.Targets[cellTarget.Index - 1];
 
                 double divisions = 1;
 
@@ -80,10 +72,10 @@ namespace Robots
                     var prevTarget = prevcellTarget.ProgramTargets[group];
 
                     double distance = prevTarget.WorldPlane.Origin.DistanceTo(target.WorldPlane.Origin);
-                    double linearDivisions = Ceiling(distance / linearStep);
+                    double linearDivisions = Ceiling(distance / _linearStep);
 
                     double maxAngle = target.Kinematics.Joints.Zip(prevTarget.Kinematics.Joints, (x, y) => Abs(x - y)).Max();
-                    double angularDivisions = Ceiling(maxAngle / angularStep);
+                    double angularDivisions = Ceiling(maxAngle / _angularStep);
 
                     double tempDivisions = Max(linearDivisions, angularDivisions);
                     if (tempDivisions > divisions) divisions = tempDivisions;
@@ -96,60 +88,41 @@ namespace Robots
                 for (int i = j; i < divisions; i++)
                 {
                     double t = (double)i / (double)divisions;
-                    var kineTargets = cellTarget.Lerp(prevcellTarget, robotSystem, t, 0.0, 1.0);
-                    var kinematics = program.RobotSystem.Kinematics(kineTargets);
+                    var kineTargets = cellTarget.Lerp(prevcellTarget, _robotSystem, t, 0.0, 1.0);
+                    var kinematics = _program.RobotSystem.Kinematics(kineTargets);
 
                     meshes.Clear();
 
                     // TODO: Meshes not a property of KinematicSolution anymore
                     // meshes.AddRange(kinematics.SelectMany(x => x.Meshes)); 
                     var tools = cellTarget.ProgramTargets.Select(p => p.Target.Tool.Mesh).ToList();
-                    var robotMeshes = PoseMeshes(program.RobotSystem, kinematics, tools);
+                    var robotMeshes = PoseMeshes(_program.RobotSystem, kinematics, tools);
                     meshes.AddRange(robotMeshes);
 
-                    if (this.environment != null)
+                    if (_environment != null)
                     {
-                        if (this.environmentPlane != -1)
+                        if (_environmentPlane != -1)
                         {
-                            Mesh currentEnvironment = this.environment.DuplicateMesh();
-                            currentEnvironment.Transform(Transform.PlaneToPlane(Plane.WorldXY, kinematics.SelectMany(x => x.Planes).ToList()[environmentPlane]));
+                            Mesh currentEnvironment = _environment.DuplicateMesh();
+                            currentEnvironment.Transform(Transform.PlaneToPlane(Plane.WorldXY, kinematics.SelectMany(x => x.Planes).ToList()[_environmentPlane]));
                             meshes.Add(currentEnvironment);
                         }
                         else
                         {
-                            meshes.Add(this.environment);
+                            meshes.Add(_environment);
                         }
                     }
 
-                    if (_onlyOne)
-                    {
-                        var meshA = meshes[_oneFirst];
-                        var meshB = meshes[_oneSecond];
+                    var setA = _first.Select(x => meshes[x]);
+                    var setB = _second.Select(x => meshes[x]);
 
-                        var meshClash = Rhino.Geometry.Intersect.Intersection.MeshMeshFast(meshA, meshB);
+                    var meshClash = Rhino.Geometry.Intersect.MeshClash.Search(setA, setB, 1, 1);
 
-                        if (meshClash.Length > 0 && (!HasCollision || CollisionTarget.Index > cellTarget.Index))
-                        {
-                            HasCollision = true;
-                            Meshes = new Mesh[] { meshA, meshB };
-                            this.CollisionTarget = cellTarget;
-                            state.Break();
-                        }
-                    }
-                    else
-                    {
-                        var setA = first.Select(x => meshes[x]);
-                        var setB = second.Select(x => meshes[x]);
-
-                        var meshClash = Rhino.Geometry.Intersect.MeshClash.Search(setA, setB, 1, 1);
-
-                        if (meshClash.Length > 0 && (!HasCollision || CollisionTarget.Index > cellTarget.Index))
-                        {
-                            HasCollision = true;
-                            Meshes = new Mesh[] { meshClash[0].MeshA, meshClash[0].MeshB };
-                            this.CollisionTarget = cellTarget;
-                            state.Break();
-                        }
+                    if (meshClash.Length > 0 && (CollisionTarget is null || CollisionTarget.Index > cellTarget.Index))
+                    {                        
+                        Meshes = new Mesh[] { meshClash[0].MeshA, meshClash[0].MeshB };
+                        CollisionTarget = cellTarget;
+                        state.Break();
                     }
                 }
             });
@@ -164,7 +137,7 @@ namespace Robots
             }
             else
             {
-                var ur = robot as RobotCellUR;
+                var ur = (RobotCellUR)robot;
                 var meshes = PoseMeshesRobot(ur.Robot, solutions[0].Planes, tools[0]);
                 return meshes;
             }
@@ -190,13 +163,16 @@ namespace Robots
 
         static List<Mesh> PoseMeshesRobot(RobotArm arm, IList<Plane> planes, Mesh tool)
         {
+            if (arm.BaseMesh is null)
+                return new List<Mesh>(0);
+
             planes = planes.ToList();
             var count = planes.Count - 1;
             planes.RemoveAt(count);
             planes.Add(planes[count - 1]);
 
             var defaultPlanes = arm.Joints.Select(m => m.Plane).Prepend(arm.BasePlane).Append(Plane.WorldXY).ToList();
-            var defaultMeshes = arm.Joints.Select(m => m.Mesh).Prepend(arm.BaseMesh).Append(tool);
+            var defaultMeshes = arm.Joints.Select(m => m.Mesh ?? throw new NullReferenceException("Joint mesh shouldn't be null.")).Prepend(arm.BaseMesh).Append(tool);
             var outMeshes = defaultMeshes.Select(m => m.DuplicateMesh()).ToList();
 
             for (int i = 0; i < defaultPlanes.Count; i++)

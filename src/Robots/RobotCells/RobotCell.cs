@@ -11,10 +11,9 @@ namespace Robots
     {
         public List<MechanicalGroup> MechanicalGroups { get; }
 
-        internal RobotCell(string name, Manufacturers manufacturer, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh environment) : base(name, manufacturer, io, basePlane, environment)
+        internal RobotCell(string name, Manufacturers manufacturer, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment) : base(name, manufacturer, io, basePlane, environment)
         {
-            this.MechanicalGroups = mechanicalGroups;
-            this.DisplayMesh = new Mesh();
+            MechanicalGroups = mechanicalGroups;            
             foreach (var group in mechanicalGroups)
             {
                 var movesRobot = group.Externals.Find(m => m.MovesRobot);
@@ -29,12 +28,12 @@ namespace Robots
                 DisplayMesh.Append(robotDisplay);
                 foreach (var external in group.Externals) DisplayMesh.Append(external.DisplayMesh);
             }
-            this.DisplayMesh.Transform(this.BasePlane.ToTransform());
+            DisplayMesh.Transform(BasePlane.ToTransform());
         }
 
         internal override double Payload(int group)
         {
-            return this.MechanicalGroups[group].Robot.Payload;
+            return MechanicalGroups[group].Robot.Payload;
         }
 
         internal override Joint[] GetJoints(int group)
@@ -50,12 +49,12 @@ namespace Robots
 
                 for (int i = 0; i < frame.CoupledMechanicalGroup; i++)
                 {
-                    index += this.MechanicalGroups[i].Joints.Count + 2;
+                    index += MechanicalGroups[i].Joints.Count + 2;
                 }
 
                 for (int i = 0; i <= frame.CoupledMechanism; i++)
                 {
-                    index += this.MechanicalGroups[frame.CoupledMechanicalGroup].Externals[i].Joints.Length + 1;
+                    index += MechanicalGroups[frame.CoupledMechanicalGroup].Externals[i].Joints.Length + 1;
                 }
 
                 return index;
@@ -66,24 +65,24 @@ namespace Robots
 
                 for (int i = 0; i <= frame.CoupledMechanicalGroup; i++)
                 {
-                    index += this.MechanicalGroups[i].Joints.Count + 2;
+                    index += MechanicalGroups[i].Joints.Count + 2;
                 }
 
                 return index;
             }
         }
 
-        public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]> prevJoints = null) => new RobotCellKinematics(this, targets, prevJoints).Solutions;
+        public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]>? prevJoints = null) => new RobotCellKinematics(this, targets, prevJoints).Solutions;
 
-        public override double DegreeToRadian(double degree, int i, int group = 0) => this.MechanicalGroups[group].DegreeToRadian(degree, i);
+        public override double DegreeToRadian(double degree, int i, int group = 0) => MechanicalGroups[group].DegreeToRadian(degree, i);
 
         class RobotCellKinematics
         {
             internal List<KinematicSolution> Solutions;
 
-            internal RobotCellKinematics(RobotCell cell, IEnumerable<Target> targets, IEnumerable<double[]> prevJoints)
+            internal RobotCellKinematics(RobotCell cell, IEnumerable<Target> targets, IEnumerable<double[]>? prevJoints)
             {
-                this.Solutions = new List<KinematicSolution>(new KinematicSolution[cell.MechanicalGroups.Count]);
+                Solutions = new List<KinematicSolution>(new KinematicSolution[cell.MechanicalGroups.Count]);
 
                 if (targets.Count() != cell.MechanicalGroups.Count) throw new Exception(" Incorrect number of targets.");
                 if (prevJoints != null && prevJoints.Count() != cell.MechanicalGroups.Count) throw new Exception(" Incorrect number of previous joint values.");
@@ -136,7 +135,7 @@ namespace Robots
         public List<Mechanism> Externals { get; }
         public List<Joint> Joints { get; }
         public List<Plane> DefaultPlanes { get; }
-        public List<Mesh> DefaultMeshes { get; }
+        public List<Mesh>? DefaultMeshes { get; }
 
         internal MechanicalGroup(int index, List<Mechanism> mechanisms)
         {
@@ -152,10 +151,15 @@ namespace Robots
                 .Append(Plane.WorldXY).Concat(Robot.Joints.Select(j => j.Plane).Append(Plane.WorldXY))
                 .ToList();
 
-            DefaultMeshes = mechanisms
-                 .Select(m => m.Joints.Select(j => j.Mesh).Prepend(m.BaseMesh)).SelectMany(p => p)
-                 .Append(Robot.BaseMesh).Concat(Robot.Joints.Select(j => j.Mesh))
-                 .ToList();
+            if (!(Robot.BaseMesh is null))
+            {
+                DefaultMeshes = mechanisms
+                     .Select(m => m.Joints.Select(j => j.Mesh ?? throw NullEx()).Prepend(m.BaseMesh ?? throw NullEx())).SelectMany(p => p)
+                     .Append(Robot.BaseMesh ?? throw NullEx()).Concat(Robot.Joints.Select(j => j.Mesh ?? throw NullEx()))
+                     .ToList();
+            }
+
+            static Exception NullEx() => new NullReferenceException(" Mesh shouldn't be null.");
         }
 
         internal static MechanicalGroup Create(XElement element, bool loadMeshes)
@@ -171,7 +175,7 @@ namespace Robots
             return new MechanicalGroup(index, mechanisms);
         }
 
-        public KinematicSolution Kinematics(Target target, double[] prevJoints = null, Plane? coupledPlane = null, Plane? basePlane = null) => new MechanicalGroupKinematics(this, target, prevJoints, coupledPlane, basePlane);
+        public KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? coupledPlane = null, Plane? basePlane = null) => new MechanicalGroupKinematics(this, target, prevJoints, coupledPlane, basePlane);
 
         public double DegreeToRadian(double degree, int i)
         {
@@ -206,7 +210,7 @@ namespace Robots
 
         class MechanicalGroupKinematics : KinematicSolution
         {
-            internal MechanicalGroupKinematics(MechanicalGroup group, Target target, double[] prevJoints, Plane? coupledPlane, Plane? basePlane)
+            internal MechanicalGroupKinematics(MechanicalGroup group, Target target, double[]? prevJoints, Plane? coupledPlane, Plane? basePlane)
             {
                 var jointCount = group.Joints.Count;
                 Joints = new double[jointCount];
@@ -216,7 +220,7 @@ namespace Robots
                 Plane? robotBase = basePlane;
 
                 target = target.ShallowClone();
-                Mechanism coupledMech = null;
+                Mechanism? coupledMech = null;
 
                 if (target.Frame.CoupledMechanism != -1 && target.Frame.CoupledMechanicalGroup == group.Index)
                 {

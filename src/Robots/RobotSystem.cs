@@ -1,15 +1,12 @@
-﻿using Rhino.Geometry;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml.Linq;
-using System.Xml;
 using System.Threading;
 using System.Globalization;
+using Rhino.Geometry;
 using static Robots.Util;
-using static System.Math;
 
 namespace Robots
 {
@@ -21,9 +18,9 @@ namespace Robots
         public Manufacturers Manufacturer { get; }
         public IO IO { get; }
         public Plane BasePlane { get; }
-        public Mesh Environment { get; }
-        public Mesh DisplayMesh { get; set; }
-        public IRemote Remote { get; protected set; }
+        public Mesh? Environment { get; }
+        public Mesh DisplayMesh { get; } = new Mesh();
+        public IRemote? Remote { get; protected set; }
 
         static RobotSystem()
         {
@@ -31,13 +28,13 @@ namespace Robots
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
         }
 
-        protected RobotSystem(string name, Manufacturers manufacturer, IO io, Plane basePlane, Mesh environment)
+        protected RobotSystem(string name, Manufacturers manufacturer, IO io, Plane basePlane, Mesh? environment)
         {
-            this.Name = name;
-            this.Manufacturer = manufacturer;
-            this.IO = io;
-            this.BasePlane = basePlane;
-            this.Environment = environment;
+            Name = name;
+            Manufacturer = manufacturer;
+            IO = io;
+            BasePlane = basePlane;
+            Environment = environment;
         }
 
         /// <summary>
@@ -70,11 +67,11 @@ namespace Robots
             return a;
         }
 
-        internal abstract void SaveCode(Program program, string folder);
+        internal abstract void SaveCode(IProgram program, string folder);
         internal abstract List<List<List<string>>> Code(Program program);
         internal abstract double Payload(int group);
         internal abstract Joint[] GetJoints(int group);
-        public abstract List<KinematicSolution> Kinematics(IEnumerable<Target> target, IEnumerable<double[]> prevJoints = null);
+        public abstract List<KinematicSolution> Kinematics(IEnumerable<Target> target, IEnumerable<double[]>? prevJoints = null);
         public abstract double DegreeToRadian(double degree, int i, int group = 0);
         public abstract double[] PlaneToNumbers(Plane plane);
         public abstract Plane NumbersToPlane(double[] numbers);
@@ -111,7 +108,7 @@ namespace Robots
 
         public static RobotSystem Load(string name, Plane basePlane, bool loadMeshes = true)
         {
-            XElement element = null;
+            XElement? element = null;
             //string folder = $@"{AssemblyDirectory}\robots";
             string folder = LibraryPath;
 
@@ -133,7 +130,8 @@ namespace Robots
                 throw new DirectoryNotFoundException($" Folder '{folder}' not found");
             }
 
-            if (element == null) throw new InvalidOperationException($" RobotSystem \"{name}\" not found");
+            if (element is null)
+                throw new InvalidOperationException($" RobotSystem \"{name}\" not found");
 
             /*
             if (element == null)
@@ -172,11 +170,12 @@ namespace Robots
                 mechanicalGroups.Add(MechanicalGroup.Create(mechanicalGroup, loadMeshes));
             }
 
-            IO io = null;
+            IO io;
             XElement ioElement = element.Element(XName.Get("IO"));
+
             if (ioElement != null)
             {
-                string[] doNames = null, diNames = null, aoNames = null, aiNames = null;
+                string[]? doNames = null, diNames = null, aoNames = null, aiNames = null;
 
                 var doElement = ioElement.Element(XName.Get("DO"));
                 var diElement = ioElement.Element(XName.Get("DI"));
@@ -188,39 +187,47 @@ namespace Robots
                 if (aoElement != null) aoNames = aoElement.Attribute(XName.Get("names")).Value.Split(',');
                 if (aiElement != null) aiNames = aiElement.Attribute(XName.Get("names")).Value.Split(',');
 
-                io = new IO() { DO = doNames, DI = diNames, AO = aoNames, AI = aiNames };
+                io = new IO(doNames, diNames, aoNames, aiNames);
+            }
+            else
+            {
+                io = new IO();
             }
 
-            Mesh environment = null;
+            Mesh? environment = null;
 
             if (type == "RobotCell")
             {
-                switch (manufacturer)
+                return manufacturer switch
                 {
-                    case (Manufacturers.ABB):
-                        return new RobotCellAbb(name, mechanicalGroups, io, basePlane, environment);
-                    case (Manufacturers.KUKA):
-                        return new RobotCellKuka(name, mechanicalGroups, io, basePlane, environment);
-                    case (Manufacturers.UR):
-                        return new RobotCellUR(name, mechanicalGroups[0].Robot, io, basePlane, environment);
-                    case (Manufacturers.FANUC):
-                        return new RobotCellFanuc(name, mechanicalGroups, io, basePlane, environment);
-                    case (Manufacturers.Staubli):
-                        return new RobotCellStaubli(name, mechanicalGroups, io, basePlane, environment);
-                }
+                    Manufacturers.ABB => new RobotCellAbb(name, mechanicalGroups, io, basePlane, environment),
+                    Manufacturers.KUKA => new RobotCellKuka(name, mechanicalGroups, io, basePlane, environment),
+                    Manufacturers.UR => new RobotCellUR(name, (RobotUR)mechanicalGroups[0].Robot, io, basePlane, environment),
+                    Manufacturers.FANUC => new RobotCellFanuc(name, mechanicalGroups, io, basePlane, environment),
+                    Manufacturers.Staubli => new RobotCellStaubli(name, mechanicalGroups, io, basePlane, environment),
+                    _ => throw new ArgumentException($" Manufacturer '{manufacturer} is not supported.")
+                };
             }
 
-            return null;
+            throw new ArgumentException($" Type '{type}' should be 'RobotCell'");
         }
 
-        public override string ToString() => $"{this.GetType().Name} ({Name})";
+        public override string ToString() => $"{GetType().Name} ({Name})";
     }
 
     public class IO
     {
-        public string[] DO { get; internal set; }
-        public string[] DI { get; internal set; }
-        public string[] AO { get; internal set; }
-        public string[] AI { get; internal set; }
+        public string[] DO { get; }
+        public string[] DI { get; }
+        public string[] AO { get; }
+        public string[] AI { get; }
+
+        public IO(string[]? @do = null, string[]? di = null, string[]? ao = null, string[]? ai = null)
+        {
+            DO = @do ?? new string[0];
+            DI = di ?? new string[0];
+            AO = ao ?? new string[0];
+            AI = ai ?? new string[0];
+        }
     }
 }

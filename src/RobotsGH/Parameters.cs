@@ -35,8 +35,8 @@ namespace Robots.Grasshopper
         {
             value = new GH_Program();
 
-            if (value.Value.HasCustomCode)
-                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, " Program contains custom code");
+            if (value.Value is CustomProgram)
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, " Program contains custom code");
 
             return GH_GetterResult.success;
         }
