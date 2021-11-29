@@ -1,7 +1,7 @@
-﻿using Rhino.Geometry;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Rhino.Geometry;
 using static System.Math;
 
 namespace Robots
@@ -32,14 +32,13 @@ namespace Robots
 
         public void Save(string folder) => RobotSystem.SaveCode(this, folder);
 
-        public override string ToString()
-        {
-            return $"Program ({Name} with custom code)";
-        }
+        public override string ToString() => $"Program ({Name} with custom code)";        
     }
 
     public class Program : IProgram
     {
+        readonly Simulation _simulation;
+
         public string Name { get; }
         public RobotSystem RobotSystem { get; }
         public List<CellTarget> Targets { get; }
@@ -52,8 +51,6 @@ namespace Robots
         public double Duration { get; internal set; }
         public CellTarget CurrentSimulationTarget => _simulation.CurrentSimulationTarget;
         public double CurrentSimulationTime => _simulation.CurrentTime;
-
-        readonly Simulation _simulation;
 
         public Program(string name, RobotSystem robotSystem, IEnumerable<IToolpath> toolpaths, Commands.Group? initCommands = null, IEnumerable<int>? multiFileIndices = null, double stepSize = 1.0)
         {
@@ -95,7 +92,7 @@ namespace Robots
             {
                 var programTargets = subTargets.Select((x, i) =>
                 {
-                    if (x == null) throw new NullReferenceException($" Target {targetIndex} in robot {i} is null or invalid.");
+                    if (x is null) throw new NullReferenceException($" Target {targetIndex} in robot {i} is null or invalid.");
                     return new ProgramTarget(x, i);
                 });
 

@@ -5,11 +5,11 @@ namespace Robots
 {
     abstract class MechanismKinematics : KinematicSolution
     {
-        protected Mechanism mechanism;
+        protected Mechanism _mechanism;
 
         internal MechanismKinematics(Mechanism mechanism, Target target, double[]? prevJoints, Plane? basePlane)
         {
-            this.mechanism = mechanism;
+            _mechanism = mechanism;
             int jointCount = mechanism.Joints.Length;
 
             // Init properties
@@ -40,7 +40,7 @@ namespace Robots
 
         protected virtual void JointsOutOfRange()
         {
-            var outofRangeErrors = mechanism.Joints
+            var outofRangeErrors = _mechanism.Joints
             .Where(x => !x.Range.IncludesParameter(Joints[x.Index]))
             .Select(x => $"Axis {x.Number + 1} is outside the permitted range.");
             Errors.AddRange(outofRangeErrors);

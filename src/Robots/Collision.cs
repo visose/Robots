@@ -34,9 +34,9 @@ namespace Robots
         readonly Mesh? _environment;
         readonly int _environmentPlane;
 
-        public bool HasCollision => CollisionTarget != null;
         public Mesh[]? Meshes { get; private set; }
         public CellTarget? CollisionTarget { get; private set; }
+        public bool HasCollision => CollisionTarget != null;
 
         internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh? environment, int environmentPlane, double linearStep, double angularStep)
         {

@@ -8,7 +8,7 @@ using static Robots.Util;
 
 namespace Robots
 {
-    public partial class RobotCellStaubli : RobotCell
+    public class RobotCellStaubli : RobotCell
     {
         internal RobotCellStaubli(string name, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.Staubli, mechanicalGroups, io, basePlane, environment)
         {

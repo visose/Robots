@@ -6,23 +6,17 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using static Robots.Util;
-using static System.Math;
 
 namespace Robots
 {
-    public partial class Tool : TargetAttribute
+    public class Tool : TargetAttribute
     {
+        public static Tool Default { get; } = new Tool(Plane.WorldXY, "DefaultTool");
+
         public Plane Tcp { get; set; }
         public double Weight { get; set; }
         public Point3d Centroid { get; set; }
         public Mesh Mesh { get; set; }
-
-        public static Tool Default { get; }
-
-        static Tool()
-        {
-            Default = new Tool(Plane.WorldXY, "DefaultTool");
-        }
 
         public Tool(Plane tcp, string? name = null, double weight = 0, Point3d? centroid = null, Mesh? mesh = null)
         {

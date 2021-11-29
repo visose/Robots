@@ -4,6 +4,8 @@ namespace Robots
 {
     public class Zone : TargetAttribute
     {
+        public static Zone Default { get; } = new Zone(0, name: "DefaultZone");
+
         /// <summary>
         /// Radius of the TCP zone in mm
         /// </summary>
@@ -18,13 +20,6 @@ namespace Robots
         public double RotationExternal { get; set; }
 
         public bool IsFlyBy => Distance > DistanceTol;
-
-        public static Zone Default { get; }
-
-        static Zone()
-        {
-            Default = new Zone(0, name:"DefaultZone");
-        }
 
         //public Zone(double distance, string name = null)
         //{

@@ -9,17 +9,18 @@ using static Robots.Util;
 
 namespace Robots
 {
-    public abstract partial class Mechanism
+    public abstract class Mechanism
     {
         readonly string _model;
-        public Manufacturers Manufacturer { get; protected set; }
-        public string Model => $"{Manufacturer}.{_model}";
+
+        public Manufacturers Manufacturer { get; }
         public double Payload { get; }
         public Plane BasePlane { get; set; }
         public Mesh? BaseMesh { get; }
         public Joint[] Joints { get; }
         public bool MovesRobot { get; }
         public Mesh DisplayMesh { get; }
+        public string Model => $"{Manufacturer}.{_model}";
 
         internal Mechanism(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh? baseMesh, IEnumerable<Joint> joints, bool movesRobot)
         {
@@ -90,7 +91,7 @@ namespace Robots
                         {
                             string name = $"{i++}";
                             var jointLayer = geometry.AllLayers.FirstOrDefault(x => (x.Name == name) && (x.ParentLayerId == layer.Id));
-                            if (jointLayer == null) break;
+                            if (jointLayer is null) break;
                             var mesh = geometry.Objects.FirstOrDefault(x => x.Attributes.LayerIndex == jointLayer.Index)?.Geometry as Mesh ?? new Mesh();
                             meshes.Add(mesh);
                         }
@@ -190,7 +191,7 @@ namespace Robots
                 {
                     string name = $"{i++ + 1}";
                     var jointLayer = robotsGeometry.Layers.FirstOrDefault(x => (x.Name == name) && (x.ParentLayerId == layer.Id));
-                    if (jointLayer == null) break;
+                    if (jointLayer is null) break;
                     meshes.Add(robotsGeometry.Objects.First(x => x.Attributes.LayerIndex == jointLayer.LayerIndex).Geometry as Mesh);
                 }
                 jointmeshes.Meshes.Add(meshes);

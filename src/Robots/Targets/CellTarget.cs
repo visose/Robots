@@ -8,7 +8,6 @@ namespace Robots
     {
         public List<ProgramTarget> ProgramTargets { get; internal set; }
         public int Index { get; internal set; }
-
         public double TotalTime { get; internal set; }
         public double DeltaTime { get; internal set; }
         internal double MinTime { get; set; }

@@ -29,8 +29,8 @@ namespace Robots
 
             bool isUnreachable = false;
 
-            double[] a = mechanism.Joints.Select(joint => joint.A).ToArray();
-            double[] d = mechanism.Joints.Select(joint => joint.D).ToArray();
+            double[] a = _mechanism.Joints.Select(joint => joint.A).ToArray();
+            double[] d = _mechanism.Joints.Select(joint => joint.D).ToArray();
 
             Plane flange = Plane.WorldXY;
             flange.Transform(transform);
@@ -136,8 +136,8 @@ namespace Robots
             var transforms = new Transform[6];
             double[] c = joints.Select(x => Cos(x)).ToArray();
             double[] s = joints.Select(x => Sin(x)).ToArray();
-            double[] a = mechanism.Joints.Select(joint => joint.A).ToArray();
-            double[] d = mechanism.Joints.Select(joint => joint.D).ToArray();
+            double[] a = _mechanism.Joints.Select(joint => joint.A).ToArray();
+            double[] d = _mechanism.Joints.Select(joint => joint.D).ToArray();
 
             transforms[0] = new double[4, 4] { { c[0], 0, c[0], c[0] + a[0] * c[0] }, { s[0], -c[0], s[0], s[0] + a[0] * s[0] }, { 0, 0, 0, d[0] }, { 0, 0, 0, 1 } }.ToTransform();
             transforms[1] = new double[4, 4] { { c[0] * (c[1] - s[1]), s[0], c[0] * (c[1] + s[1]), c[0] * ((c[1] - s[1]) + a[1] * c[1]) + a[0] * c[0] }, { s[0] * (c[1] - s[1]), -c[0], s[0] * (c[1] + s[1]), s[0] * ((c[1] - s[1]) + a[1] * c[1]) + a[0] * s[0] }, { s[1] + c[1], 0, s[1] - c[1], (s[1] + c[1]) + a[1] * s[1] + d[0] }, { 0, 0, 0, 1 } }.ToTransform();

@@ -1,9 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using Rhino.Geometry;
 using static System.Math;
 using static Robots.Util;
-using System;
 
 namespace Robots
 {
@@ -11,6 +11,7 @@ namespace Robots
     {
         readonly RobotCellAbb _cell;
         readonly Program _program;
+
         internal List<List<List<string>>> Code { get; }
 
         internal RapidPostProcessor(RobotCellAbb robotCell, Program program)
@@ -138,7 +139,7 @@ namespace Robots
                     for (int i = 0; i < 6; i++)
                         externals[i] = "9E9";
 
-                    if (target.ExternalCustom == null)
+                    if (target.ExternalCustom is null)
                     {
                         for (int i = 0; i < target.External.Length; i++)
                             externals[i] = $"{values[i]:0.####}";

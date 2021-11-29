@@ -20,6 +20,7 @@ namespace Robots
         internal static Transform ToTransform(this double[,] matrix)
         {
             var transform = new Transform();
+
             for (int i = 0; i < 4; i++)
                 for (int j = 0; j < 4; j++)
                     transform[i, j] = matrix[i, j];

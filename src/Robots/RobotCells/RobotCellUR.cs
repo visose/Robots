@@ -1,17 +1,16 @@
-﻿using Rhino.Geometry;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using System.Net.Sockets;
+using Rhino.Geometry;
 using static System.Math;
 
 namespace Robots
 {
-    public partial class RobotCellUR : RobotSystem
+    public class RobotCellUR : RobotSystem
     {
         public RobotUR Robot { get; }
-        //  public RemoteConnection Remote { get; } = new RemoteConnection();
+        // public RemoteConnection Remote { get; } = new RemoteConnection();
         // public URRealTime URRealTime { get; set; }
 
         internal RobotCellUR(string name, RobotUR robot, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.UR, io, basePlane, environment)
@@ -196,7 +195,7 @@ namespace Robots
             var target = targets.First();
             var prevJoint = prevJoints?.First();
             var kinematics = new List<KinematicSolution>();
-            var kinematic = Robot.Kinematics(target, prevJoint, this.BasePlane);
+            var kinematic = Robot.Kinematics(target, prevJoint, BasePlane);
             var planes = kinematic.Planes.ToList();
 
 
