@@ -44,7 +44,11 @@ namespace Robots.Grasshopper
 
             if (ghProgram.Value != program)
             {
-                program = ghProgram.Value;
+                program = ghProgram.Value as Program;
+
+                if (program is null)
+                    throw new ArgumentException(" Input program can't have custom code.");
+
                 trail = new SimpleTrail(program, length, mechanicalGroup);
             }
 

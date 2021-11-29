@@ -36,7 +36,7 @@ namespace Robots.Grasshopper
             if (!DA.GetData(0, ref program)) { return; }
 
             var remote = program.Value.RobotSystem.Remote;
-            if (remote == null) throw new Exception("No remote functionality for this robot.");
+            if (remote == null) throw new Exception(" No remote functionality for this robot.");
             if (DA.GetData(1, ref ip) && ip != null)
                 remote.IP = ip.Value;
 

@@ -1,11 +1,10 @@
 ﻿using System;
-using static System.Math;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Rhino.Geometry;
 using System.Reflection;
 using System.IO;
+using Rhino.Geometry;
+using static System.Math;
 
 namespace Robots
 {
@@ -16,8 +15,7 @@ namespace Robots
         public const double TimeTol = 0.00001;
         public const double UnitTol = 0.000001;
         public const double SingularityTol = 0.0001;
-
-        // internal const string ResourcesFolder = @"C:\Users\vicen\Documents\Work\Bartlett\RobotsApp\Robots\Robots\Resources";
+        public const double HalfPI = PI * 0.5;        
 
         internal static Transform ToTransform(this double[,] matrix)
         {

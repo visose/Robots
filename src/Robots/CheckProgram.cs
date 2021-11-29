@@ -1,7 +1,7 @@
-﻿using Rhino.Geometry;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Rhino.Geometry;
 using static Robots.Util;
 using static System.Math;
 
@@ -9,22 +9,22 @@ namespace Robots
 {
     class CheckProgram
     {
-        readonly Program program;
-        readonly RobotSystem robotSystem;
-        internal List<CellTarget> keyframes = new List<CellTarget>();
-        int lastIndex;
-        internal int indexError;
-        //readonly int groupCount;
+        internal List<CellTarget> Keyframes = new List<CellTarget>();
+        internal int IndexError;
+
+        readonly Program _program;
+        readonly RobotSystem _robotSystem;
+        int _lastIndex;
 
         internal CheckProgram(Program program, List<CellTarget> cellTargets, double stepSize)
         {
-            this.robotSystem = program.RobotSystem;
-            this.program = program;
-           // this.groupCount = cellTargets[0].ProgramTargets.Count;
+            _robotSystem = program.RobotSystem;
+            _program = program;
+            // this.groupCount = cellTargets[0].ProgramTargets.Count;
 
             FixFirstTarget(cellTargets[0]);
             FixTargetAttributes(cellTargets);
-            this.indexError = FixTargetMotions(cellTargets, stepSize);
+            IndexError = FixTargetMotions(cellTargets, stepSize);
         }
 
         void FixFirstTarget(CellTarget firstTarget)
@@ -33,19 +33,19 @@ namespace Robots
 
             if (fix.Any())
             {
-                var kinematics = robotSystem.Kinematics(firstTarget.ProgramTargets.Select(x => x.Target));
+                var kinematics = _robotSystem.Kinematics(firstTarget.ProgramTargets.Select(x => x.Target));
 
                 foreach (var programTarget in fix)
                 {
                     var kinematic = kinematics[programTarget.Group];
                     if (kinematic.Errors.Count > 0)
                     {
-                        program.Errors.Add($"Errors in target {programTarget.Index} of robot {programTarget.Group}:");
-                        program.Errors.AddRange(kinematic.Errors);
+                        _program.Errors.Add($"Errors in target {programTarget.Index} of robot {programTarget.Group}:");
+                        _program.Errors.AddRange(kinematic.Errors);
                     }
 
                     programTarget.Target = new JointTarget(kinematic.Joints, programTarget.Target);
-                    program.Warnings.Add($"First target in robot {programTarget.Group} changed to a joint motion using axis rotations");
+                    _program.Warnings.Add($"First target in robot {programTarget.Group} changed to a joint motion using axis rotations");
                 }
             }
         }
@@ -55,14 +55,14 @@ namespace Robots
             // Fix externals
 
             int resizeCount = 0;
-            ProgramTarget resizeTarget = null;
+            ProgramTarget? resizeTarget = null;
 
             foreach (var cellTarget in cellTargets)
             {
                 foreach (var programTarget in cellTarget.ProgramTargets)
                 {
                     int externalCount = 0;
-                    if (robotSystem is RobotCell cell)
+                    if (_robotSystem is RobotCell cell)
                         externalCount = cell.MechanicalGroups[programTarget.Group].Joints.Count - 6;
 
                     if (programTarget.Target.External.Length != externalCount)
@@ -71,14 +71,16 @@ namespace Robots
                         Array.Resize<double>(ref external, externalCount);
                         programTarget.Target.External = external;
                         resizeCount++;
-                        if (resizeTarget == null) resizeTarget = programTarget;
+
+                        if (resizeTarget is null)
+                            resizeTarget = programTarget;
                     }
                 }
             }
 
-            if (resizeCount > 0)
+            if (resizeTarget != null)
             {
-                program.Warnings.Add($"{resizeCount} targets had wrong number of external axes configured, the first one being target {resizeTarget.Index} of robot {resizeTarget.Group}.");
+                _program.Warnings.Add($"{resizeCount} targets had wrong number of external axes configured, the first one being target {resizeTarget.Index} of robot {resizeTarget.Group}.");
             }
 
             // Warn about defaults
@@ -87,26 +89,26 @@ namespace Robots
             if (defaultTools.Count > 0)
             {
                 var first = defaultTools[0];
-                program.Warnings.Add($" {defaultTools.Count} targets have their tool set to default, the first one being target {first.Index} in robot {first.Group}");
+                _program.Warnings.Add($" {defaultTools.Count} targets have their tool set to default, the first one being target {first.Index} in robot {first.Group}");
             }
 
             var defaultSpeeds = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target.Speed == Speed.Default).ToList();
             if (defaultSpeeds.Count > 0)
             {
                 var first = defaultSpeeds[0];
-                program.Warnings.Add($" {defaultSpeeds.Count} targets have their speed set to default, the first one being target {first.Index} in robot {first.Group}");
+                _program.Warnings.Add($" {defaultSpeeds.Count} targets have their speed set to default, the first one being target {first.Index} in robot {first.Group}");
             }
 
             var linearForced = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target is CartesianTarget cartesian && cartesian.Motion == Motions.Linear && cartesian.Configuration != null).ToList();
             if (linearForced.Count > 0)
             {
                 var first = linearForced[0];
-                program.Warnings.Add($" {linearForced.Count} targets are set to linear with a forced configuration, the first one being target {first.Index} in robot {first.Group}. Configuration setting is ignored for linear motions.");
+                _program.Warnings.Add($" {linearForced.Count} targets are set to linear with a forced configuration, the first one being target {first.Index} in robot {first.Group}. Configuration setting is ignored for linear motions.");
             }
 
             foreach (var target in linearForced)
             {
-                var cartesian = target.Target as CartesianTarget;
+                var cartesian = (CartesianTarget)target.Target;
                 cartesian.Configuration = null;
             }
 
@@ -115,26 +117,26 @@ namespace Robots
             var tools = cellTargets.SelectMany(x => x.ProgramTargets.Select(y => new { y.Target.Tool, y.Group })).Distinct();
             foreach (var tool in tools)
             {
-                double payload = robotSystem.Payload(tool.Group);
-                if (tool.Tool.Weight > payload) program.Warnings.Add($"Weight of tool {tool.Tool.Name} exceeds the robot {tool.Group} rated payload of {payload} kg");
+                double payload = _robotSystem.Payload(tool.Group);
+                if (tool.Tool.Weight > payload) _program.Warnings.Add($"Weight of tool {tool.Tool.Name} exceeds the robot {tool.Group} rated payload of {payload} kg");
             }
 
             // Get unique attributes
 
-            program.Attributes.AddRange(tools.Select(x => x.Tool).Distinct());
-            program.Attributes.AddRange(cellTargets.SelectMany(x => x.ProgramTargets.Select(y => y.Target.Frame)).Distinct());
-            program.Attributes.AddRange(cellTargets.SelectMany(x => x.ProgramTargets.Select(y => y.Target.Speed)).Distinct());
-            program.Attributes.AddRange(cellTargets.SelectMany(x => x.ProgramTargets.Select(y => y.Target.Zone)).Distinct());
+            _program.Attributes.AddRange(tools.Select(x => x.Tool).Distinct());
+            _program.Attributes.AddRange(cellTargets.SelectMany(x => x.ProgramTargets.Select(y => y.Target.Frame)).Distinct());
+            _program.Attributes.AddRange(cellTargets.SelectMany(x => x.ProgramTargets.Select(y => y.Target.Speed)).Distinct());
+            _program.Attributes.AddRange(cellTargets.SelectMany(x => x.ProgramTargets.Select(y => y.Target.Zone)).Distinct());
 
             var commands = new List<Command>();
-            commands.AddRange(program.InitCommands);
+            commands.AddRange(_program.InitCommands);
             commands.AddRange(cellTargets.SelectMany(x => x.ProgramTargets.SelectMany(y => y.Commands)));
-            program.Attributes.AddRange(commands.Distinct());
+            _program.Attributes.AddRange(commands.Distinct());
 
             // Name attributes with no name
             {
                 var types = new List<Type>();
-                foreach (var attribute in program.Attributes.ToList())
+                foreach (var attribute in _program.Attributes.ToList())
                 {
                     if (attribute.Name == null)
                     {
@@ -149,10 +151,10 @@ namespace Robots
 
             // Rename attributes with duplicate names
             {
-                var duplicates = program.Attributes.GroupBy(x => x.Name).Where(x => x.Count() > 1);
+                var duplicates = _program.Attributes.GroupBy(x => x.Name).Where(x => x.Count() > 1);
                 foreach (var group in duplicates)
                 {
-                    program.Warnings.Add($"Multiple target attributes named \"{group.Key}\" found");
+                    _program.Warnings.Add($"Multiple target attributes named \"{group.Key}\" found");
                     int i = 0;
                     foreach (var attribute in group)
                     {
@@ -164,7 +166,7 @@ namespace Robots
 
             // Fix frames
             {
-                foreach (var frame in program.Attributes.OfType<Frame>())
+                foreach (var frame in _program.Attributes.OfType<Frame>())
                 {
                     if (frame.CoupledMechanicalGroup == -1 && frame.CoupledMechanism != -1)
                     {
@@ -178,7 +180,7 @@ namespace Robots
 
                     if (frame.IsCoupled)
                     {
-                        var cell = robotSystem as RobotCell;
+                        var cell = (RobotCell)_robotSystem;
                         if (frame.CoupledMechanicalGroup > cell.MechanicalGroups.Count - 1)
                         {
                             throw new Exception($" Frame {frame.Name} is set to couple an inexistant mechanical group.");
@@ -189,7 +191,7 @@ namespace Robots
                             throw new Exception($" Frame {frame.Name} is set to couple an inexistant mechanism.");
                         }
 
-                        frame.CoupledPlaneIndex = ((RobotCell)robotSystem).GetPlaneIndex(frame);
+                        frame.CoupledPlaneIndex = ((RobotCell)_robotSystem).GetPlaneIndex(frame);
                     }
                 }
             }
@@ -208,11 +210,11 @@ namespace Robots
                 // first target
                 if (i == 0)
                 {
-                    var firstKinematics = robotSystem.Kinematics(cellTargets[0].ProgramTargets.Select(x => x.Target));
-                    cellTargets[0].SetTargetKinematics(firstKinematics, program.Errors, program.Warnings);
+                    var firstKinematics = _robotSystem.Kinematics(cellTargets[0].ProgramTargets.Select(x => x.Target));
+                    cellTargets[0].SetTargetKinematics(firstKinematics, _program.Errors, _program.Warnings);
                     CheckUndefined(cellTarget, cellTargets);
-                    keyframes.Add(cellTargets[0].ShallowClone());
-                    if (program.Errors.Count > 0) { errorIndex = i; }
+                    Keyframes.Add(cellTargets[0].ShallowClone());
+                    if (_program.Errors.Count > 0) { errorIndex = i; }
                 }
                 else
                 {
@@ -231,8 +233,8 @@ namespace Robots
                             }
                         }
 
-                        var kinematics = robotSystem.Kinematics(kineTargets, prevJoints);
-                        cellTarget.SetTargetKinematics(kinematics, program.Errors, program.Warnings, prevTarget);
+                        var kinematics = _robotSystem.Kinematics(kineTargets, prevJoints);
+                        cellTarget.SetTargetKinematics(kinematics, _program.Errors, _program.Warnings, prevTarget);
                         CheckUndefined(cellTarget, cellTargets);
                     }
 
@@ -263,9 +265,9 @@ namespace Robots
                     {
                         double t = j / divisions;
                         var interTarget = cellTarget.ShallowClone();
-                        var kineTargets = cellTarget.Lerp(prevTarget, robotSystem, t, 0.0, 1.0);
-                        var kinematics = program.RobotSystem.Kinematics(kineTargets, prevJoints);
-                        interTarget.SetTargetKinematics(kinematics, program.Errors, null, prevInterTarget);
+                        var kineTargets = cellTarget.Lerp(prevTarget, _robotSystem, t, 0.0, 1.0);
+                        var kinematics = _program.RobotSystem.Kinematics(kineTargets, prevJoints);
+                        interTarget.SetTargetKinematics(kinematics, _program.Errors, null, prevInterTarget);
 
                         // Set speed
 
@@ -281,7 +283,7 @@ namespace Robots
 
                         if ((j > 1) && (Abs(slowestDelta - lastDeltaTime) > 1E-09))
                         {
-                            keyframes.Add(prevInterTarget.ShallowClone());
+                            Keyframes.Add(prevInterTarget.ShallowClone());
                             deltaTimeSinceLast = 0;
                             minTimeSinceLast = 0;
                         }
@@ -300,9 +302,9 @@ namespace Robots
                         prevInterTarget = interTarget;
                     }
 
-                    if (program.Errors.Count > 0) { errorIndex = i; }
+                    if (_program.Errors.Count > 0) { errorIndex = i; }
 
-                    keyframes.Add(prevInterTarget.ShallowClone());
+                    Keyframes.Add(prevInterTarget.ShallowClone());
 
                     if (errorIndex == -1)
                     {
@@ -320,7 +322,7 @@ namespace Robots
 
                             prevInterTarget.TotalTime = time;
                             prevInterTarget.DeltaTime += longestWaitTime;
-                            keyframes.Add(prevInterTarget.ShallowClone());
+                            Keyframes.Add(prevInterTarget.ShallowClone());
                         }
                     }
 
@@ -339,7 +341,7 @@ namespace Robots
                     }
                 }
 
-                program.Duration = time;
+                _program.Duration = time;
 
                 if (errorIndex != -1) return errorIndex;
             }
@@ -356,8 +358,8 @@ namespace Robots
                 {
                     if (!cellTargets[i + 1].ProgramTargets[target.Group].IsJointMotion)
                     {
-                        program.Errors.Add($"Undefined configuration (probably due to a singularity) in target {target.Index} of robot {target.Group} before a linear motion");
-                        indexError = i;
+                        _program.Errors.Add($"Undefined configuration (probably due to a singularity) in target {target.Index} of robot {target.Group} before a linear motion");
+                        IndexError = i;
                     }
                 }
             }
@@ -367,35 +369,37 @@ namespace Robots
         {
             var namedAttribute = attribute.CloneWithName<TargetAttribute>(name);
 
-            int index = program.Attributes.FindIndex(x => x == attribute);
-            program.Attributes[index] = namedAttribute;
+            int index = _program.Attributes.FindIndex(x => x == attribute);
+            _program.Attributes[index] = namedAttribute;
 
-            if (namedAttribute is Tool)
+            if (namedAttribute is Tool tool)
             {
-                foreach (var target in targets) if (target.Target.Tool == attribute as Tool) { target.Target = target.Target.ShallowClone(); target.Target.Tool = namedAttribute as Tool; }
+                foreach (var target in targets) if (target.Target.Tool == attribute as Tool) { target.Target = target.Target.ShallowClone(); target.Target.Tool = tool; }
             }
-            else if (namedAttribute is Frame)
+            else if (namedAttribute is Frame frame)
             {
-                foreach (var target in targets) if (target.Target.Frame == attribute as Frame) { target.Target = target.Target.ShallowClone(); target.Target.Frame = namedAttribute as Frame; }
+                foreach (var target in targets) if (target.Target.Frame == attribute as Frame) { target.Target = target.Target.ShallowClone(); target.Target.Frame = frame; }
             }
-            else if (namedAttribute is Speed)
+            else if (namedAttribute is Speed speed)
             {
-                foreach (var target in targets) if (target.Target.Speed == attribute as Speed) { target.Target = target.Target.ShallowClone(); target.Target.Speed = namedAttribute as Speed; }
+                foreach (var target in targets) if (target.Target.Speed == attribute as Speed) { target.Target = target.Target.ShallowClone(); target.Target.Speed = speed; }
             }
-            else if (namedAttribute is Zone)
+            else if (namedAttribute is Zone zone)
             {
-                foreach (var target in targets) if (target.Target.Zone == attribute as Zone) { target.Target = target.Target.ShallowClone(); target.Target.Zone = namedAttribute as Zone; }
+                foreach (var target in targets) if (target.Target.Zone == attribute as Zone) { target.Target = target.Target.ShallowClone(); target.Target.Zone = zone; }
             }
-            else if (namedAttribute is Command)
+            else if (namedAttribute is Command command)
             {
-                for (int i = 0; i < program.InitCommands.Count; i++)
-                    if (program.InitCommands[i] == attribute as Command) program.InitCommands[i] = namedAttribute as Command;
+                for (int i = 0; i < _program.InitCommands.Count; i++)
+                    if (_program.InitCommands[i] == attribute as Command) _program.InitCommands[i] = command;
 
                 foreach (var target in targets)
                 {
-                    var group = target.Commands;
+                    var group = target.Commands ?? throw new NullReferenceException(nameof(target.Commands));
+
                     for (int i = 0; i < group.Count; i++)
-                        if (group[i] == attribute as Command) group[i] = namedAttribute as Command;
+                        if (group[i] == attribute as Command)
+                            group[i] = command;
                 }
             }
         }
@@ -403,7 +407,7 @@ namespace Robots
         (double, double, int) GetSpeeds(ProgramTarget target, ProgramTarget prevTarget)
         {
             Plane prevPlane = target.GetPrevPlane(prevTarget);
-            var joints = robotSystem.GetJoints(target.Group).ToArray();
+            var joints = _robotSystem.GetJoints(target.Group).ToArray();
             double deltaTime = 0;
 
             // Axis
@@ -469,23 +473,23 @@ namespace Robots
                 {
                     if (deltaTime < TimeTol)
                     {
-                        program.Warnings.Add($"Position and orientation don't change for {target.Index}");
+                        _program.Warnings.Add($"Position and orientation don't change for {target.Index}");
                     }
                     else if (deltaIndex == 1)
                     {
-                        if (target.Index != lastIndex) program.Warnings.Add($"Rotation speed limit reached in target {target.Index}");
-                        lastIndex = target.Index;
+                        if (target.Index != _lastIndex) _program.Warnings.Add($"Rotation speed limit reached in target {target.Index}");
+                        _lastIndex = target.Index;
                     }
                     else if (deltaIndex == 2)
                     {
-                        if (target.Index != lastIndex) program.Warnings.Add($"Axis {leadingJoint + 1} speed limit reached in target {target.Index}");
-                        lastIndex = target.Index;
+                        if (target.Index != _lastIndex) _program.Warnings.Add($"Axis {leadingJoint + 1} speed limit reached in target {target.Index}");
+                        _lastIndex = target.Index;
                     }
                     else if (deltaIndex == 3)
                     {
-                        if (target.Index != lastIndex) program.Warnings.Add($"External axis {externalLeadingJoint + 1} speed limit reached in target {target.Index}");
+                        if (target.Index != _lastIndex) _program.Warnings.Add($"External axis {externalLeadingJoint + 1} speed limit reached in target {target.Index}");
                         leadingJoint = externalLeadingJoint;
-                        lastIndex = target.Index;
+                        _lastIndex = target.Index;
                     }
                 }
             }

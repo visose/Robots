@@ -1,85 +1,79 @@
-﻿using Rhino.Geometry;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using static Rhino.RhinoMath;
-using static Robots.Util;
-using static System.Math;
-
 
 namespace Robots
 {
     class Simulation
     {
-        Program program;
-        int groupCount;
-        internal double duration;
-        List<CellTarget> keyframes;
+        internal double Duration;
+        internal double CurrentTime = 0;
+        internal CellTarget CurrentSimulationTarget;
 
-        internal double currentTime = 0;
-        int currentTarget = 0;
+        readonly Program _program;
+        readonly int _groupCount;
+        readonly List<CellTarget> _keyframes;
 
-        internal CellTarget currentSimulationTarget;
+        int _currentTarget = 0;
 
-        internal Simulation(Program program, List<CellTarget> targets)
+        public Simulation(Program program, List<CellTarget> targets)
         {
-            this.program = program;
-            this.groupCount = targets.Count;
-            duration = program.Duration;
-            currentSimulationTarget = program.Targets[0].ShallowClone(0);
-            this.keyframes = targets;
+            _program = program;
+            _groupCount = targets.Count;
+            Duration = program.Duration;
+            CurrentSimulationTarget = program.Targets[0].ShallowClone(0);
+            _keyframes = targets;
         }
 
-        internal void Step(double time, bool isNormalized)
+        public void Step(double time, bool isNormalized)
         {
-            if (keyframes.Count == 1)
+            if (_keyframes.Count == 1)
             {
-                this.currentSimulationTarget = program.Targets[0].ShallowClone();
-                var firstKinematics = program.RobotSystem.Kinematics(keyframes[0].ProgramTargets.Select(x => x.Target), null);
-                foreach (var programTarget in this.currentSimulationTarget.ProgramTargets) programTarget.Kinematics = firstKinematics[programTarget.Group];
+                CurrentSimulationTarget = _program.Targets[0].ShallowClone();
+                var firstKinematics = _program.RobotSystem.Kinematics(_keyframes[0].ProgramTargets.Select(x => x.Target), null);
+                foreach (var programTarget in CurrentSimulationTarget.ProgramTargets) programTarget.Kinematics = firstKinematics[programTarget.Group];
                 return;
             }
 
-            if (isNormalized) time *= program.Duration;
-            time = Clamp(time, 0, duration);
+            if (isNormalized) time *= _program.Duration;
+            time = Clamp(time, 0, Duration);
 
 
-            if (time >= currentTime)
+            if (time >= CurrentTime)
             {
-                for (int i = currentTarget; i < keyframes.Count - 1; i++)
+                for (int i = _currentTarget; i < _keyframes.Count - 1; i++)
                 {
-                    if (keyframes[i + 1].TotalTime >= time)
+                    if (_keyframes[i + 1].TotalTime >= time)
                     {
-                        currentTarget = i;
+                        _currentTarget = i;
                         break;
                     }
                 }
             }
             else
             {
-                for (int i = currentTarget; i >= 0; i--)
+                for (int i = _currentTarget; i >= 0; i--)
                 {
-                    if (keyframes[i].TotalTime <= time)
+                    if (_keyframes[i].TotalTime <= time)
                     {
-                        currentTarget = i;
+                        _currentTarget = i;
                         break;
                     }
                 }
             }
 
-            currentTime = time;
-            var cellTarget = keyframes[currentTarget + 1];
-            var prevCellTarget = keyframes[currentTarget + 0];
+            CurrentTime = time;
+            var cellTarget = _keyframes[_currentTarget + 1];
+            var prevCellTarget = _keyframes[_currentTarget + 0];
             var prevJoints = prevCellTarget.ProgramTargets.Select(x => x.Kinematics.Joints);
 
-            var kineTargets = cellTarget.Lerp(prevCellTarget, program.RobotSystem, currentTime, prevCellTarget.TotalTime, cellTarget.TotalTime);
-            var kinematics = program.RobotSystem.Kinematics(kineTargets, prevJoints);
+            var kineTargets = cellTarget.Lerp(prevCellTarget, _program.RobotSystem, CurrentTime, prevCellTarget.TotalTime, cellTarget.TotalTime);
+            var kinematics = _program.RobotSystem.Kinematics(kineTargets, prevJoints);
 
             //  var newSimulationTarget = cellTarget.ShallowClone(cellTarget.Index);
-            var newSimulationTarget = program.Targets[cellTarget.Index].ShallowClone();
+            var newSimulationTarget = _program.Targets[cellTarget.Index].ShallowClone();
             foreach (var programTarget in newSimulationTarget.ProgramTargets) programTarget.Kinematics = kinematics[programTarget.Group];
-            this.currentSimulationTarget = newSimulationTarget;
+            CurrentSimulationTarget = newSimulationTarget;
         }
     }
-
 }

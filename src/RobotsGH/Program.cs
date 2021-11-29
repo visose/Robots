@@ -60,7 +60,7 @@ namespace Robots.Grasshopper
 
             var toolpaths = new List<IToolpath>();
 
-            var toolpathA = new SimpleToolpath(toolpathsA.Select(t=>t.Value));
+            var toolpathA = new SimpleToolpath(toolpathsA.Select(t => t.Value));
             toolpaths.Add(toolpathA);
 
             if (toolpathsB.Count > 0)
@@ -186,8 +186,15 @@ namespace Robots.Grasshopper
 
                 //copyCode[0][0] = code;
 
-                var newProgram = program.Value.CustomCode(code);
-                DA.SetData(0, new GH_Program(newProgram));
+                if (program.Value is Program p)
+                {
+                    var newProgram = p.CustomCode(code);
+                    DA.SetData(0, new GH_Program(newProgram));
+                }
+                else
+                {
+                    throw new ArgumentException(" Input program can't have custom code.");
+                }
             }
         }
     }
@@ -237,11 +244,18 @@ namespace Robots.Grasshopper
             if (!DA.GetData(5, ref linearStep)) { return; }
             if (!DA.GetData(6, ref angularStep)) { return; }
 
-            var collision = program.Value.CheckCollisions(first.Select(x => x.Value), second.Select(x => x.Value), environment?.Value, environmentPlane, linearStep, angularStep);
 
-            DA.SetData(0, collision.HasCollision);
-            if (collision.HasCollision) DA.SetData(1, collision.CollisionTarget.Index);
-            if (collision.HasCollision) DA.SetDataList(2, collision.Meshes);
+            if (program.Value is Program p)
+            {
+                var collision = p.CheckCollisions(first.Select(x => x.Value), second.Select(x => x.Value), environment?.Value, environmentPlane, linearStep, angularStep);
+                DA.SetData(0, collision.HasCollision);
+                if (collision.HasCollision) DA.SetData(1, collision.CollisionTarget.Index);
+                if (collision.HasCollision) DA.SetDataList(2, collision.Meshes);
+            }
+            else
+            {
+                throw new ArgumentException(" Input program can't have custom code.");
+            }
         }
     }
 }

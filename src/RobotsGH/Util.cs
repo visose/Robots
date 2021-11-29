@@ -1,14 +1,11 @@
-﻿using Grasshopper.Kernel;
-using Grasshopper.Kernel.Types;
-using Grasshopper.Kernel.Data;
-using Grasshopper.GUI;
-using Grasshopper;
-using Rhino.Geometry;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Forms;
 using System.Drawing;
+using Rhino.Geometry;
+using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Data;
 
 namespace Robots.Grasshopper
 {
@@ -17,7 +14,7 @@ namespace Robots.Grasshopper
         public DeconstructProgramTargets() : base("Deconstruct program targets", "DecProgTarg", "Exposes the calculated simulation data for all targets.", "Robots", "Util") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{B78BF8E5-D5F2-4DE6-8589-26E069BA3D5B}");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.iconDeconstructProgramTarget;
+        protected override Bitmap Icon => Properties.Resources.iconDeconstructProgramTarget;
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
@@ -35,10 +32,14 @@ namespace Robots.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             GH_Program program = null;
+
+            if (!(program.Value is Program p))
+                throw new ArgumentException(" Input program can't have custom code.");
+
             DA.GetData(0, ref program);
 
             var path = DA.ParameterTargetPath(0);
-            var cellTargets = program.Value.Targets;
+            var cellTargets = p.Targets;
             var groupCount = cellTargets[0].ProgramTargets.Count;
 
             var planes = new GH_Structure<GH_Plane>();
