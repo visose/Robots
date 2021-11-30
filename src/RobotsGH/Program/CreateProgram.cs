@@ -39,16 +39,16 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            string name = null;
-            GH_RobotSystem robotSystem = null;
+            string? name = null;
+            GH_RobotSystem? robotSystem = null;
             var initCommandsGH = new List<GH_Command>();
             var toolpathsA = new List<GH_Toolpath>();
             var toolpathsB = new List<GH_Toolpath>();
             var multiFileIndices = new List<int>();
             double stepSize = 1;
 
-            if (!DA.GetData(0, ref name)) { return; }
-            if (!DA.GetData(1, ref robotSystem)) { return; }
+            if (!DA.GetData(0, ref name) || name is null) { return; }
+            if (!DA.GetData(1, ref robotSystem) || robotSystem is null) { return; }
             if (!DA.GetDataList(2, toolpathsA)) { return; }
             DA.GetDataList(3, toolpathsB);
             DA.GetDataList(4, initCommandsGH);
@@ -94,13 +94,13 @@ namespace Robots.Grasshopper
             if (program.Warnings.Count > 0)
             {
                 DA.SetDataList(3, program.Warnings);
-                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Warnings in program");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Warnings in program");
             }
 
             if (program.Errors.Count > 0)
             {
                 DA.SetDataList(4, program.Errors);
-                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in program");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in program");
             }
         }
     }

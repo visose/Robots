@@ -28,10 +28,10 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            GH_Program program = null;
-            GH_String ip = null;
+            GH_Program? program = null;
+            GH_String? ip = null;
 
-            if (!DA.GetData(0, ref program)) { return; }
+            if (!DA.GetData(0, ref program) || program is null) { return; }
 
             var remote = program.Value.RobotSystem.Remote;
             if (remote == null) throw new Exception(" No remote functionality for this robot.");

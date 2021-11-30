@@ -13,16 +13,12 @@ namespace Robots.Grasshopper
         public override string TypeDescription => "Toolpath";
         public override string ToString()
         {
-            switch (Value.Targets)
+            return Value.Targets switch
             {
-                case IList<Target> _:
-                    var targets = Value.Targets as IList<Target>;
-                    return $"Toolpath with ({targets.Count} targets)";
-                case Target target:
-                    return target.ToString();
-                default:
-                    return "Toolpath";
-            }
+                IList<Target> targets => $"Toolpath with ({targets.Count} targets)",
+                Target target => target.ToString(),
+                _ => "Toolpath",
+            };
         }
         public override object ScriptVariable() => Value;
 
@@ -31,13 +27,14 @@ namespace Robots.Grasshopper
             switch (source)
             {
                 case GH_Target target:
-                    Value = target?.Value;
+                    Value = target.Value;
                     return true;
                 case IToolpath toolpath:
                     Value = toolpath;
                     return true;
+                default:
+                    return false;
             }
-            return false;
         }
     }
 }

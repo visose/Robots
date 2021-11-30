@@ -29,7 +29,7 @@ namespace Robots.Grasshopper.Commands
             if (!DA.GetDataList(0, commands)) { return; }
 
             var command = new Robots.Commands.Group();
-            command.AddRange(commands.Select(x => x?.Value));
+            command.AddRange(commands.Select(x => x.Value));
             DA.SetData(0, new GH_Command(command));
         }
     }

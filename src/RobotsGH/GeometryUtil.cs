@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Rhino.Geometry;
 
@@ -8,19 +9,12 @@ namespace Robots.Grasshopper
     {
         public static List<Mesh> PoseMeshes(RobotSystem robot, List<KinematicSolution> solutions, List<Mesh> tools)
         {
-            var cell = robot as RobotCell;
-
-            if (cell != null)
+            return robot switch
             {
-                var meshes = solutions.SelectMany((_, i) => PoseMeshes(cell.MechanicalGroups[i], solutions[i].Planes, tools[i])).ToList();
-                return meshes;
-            }
-            else
-            {
-                var ur = robot as RobotCellUR;
-                var meshes = PoseMeshesRobot(ur.Robot, solutions[0].Planes, tools[0]);
-                return meshes;
-            }
+                RobotCell cell => solutions.SelectMany((_, i) => PoseMeshes(cell.MechanicalGroups[i], solutions[i].Planes, tools[i])).ToList(),
+                RobotCellUR ur => PoseMeshesRobot(ur.Robot, solutions[0].Planes, tools[0]),
+                _ => throw new ArgumentException(" Invalid RobotSystem type.")
+            };
         }
 
         static List<Mesh> PoseMeshes(MechanicalGroup group, IList<Plane> planes, Mesh tool)
@@ -43,6 +37,9 @@ namespace Robots.Grasshopper
 
         static List<Mesh> PoseMeshesRobot(RobotArm arm, IList<Plane> planes, Mesh tool)
         {
+            if (arm.BaseMesh is null)
+                return new List<Mesh>(0);
+
             planes = planes.ToList();
             var count = planes.Count - 1;
             planes.RemoveAt(count);
@@ -50,7 +47,7 @@ namespace Robots.Grasshopper
 
             var defaultPlanes = arm.Joints.Select(m => m.Plane).Prepend(arm.BasePlane).Append(Plane.WorldXY).ToList();
             var defaultMeshes = arm.Joints.Select(m => m.Mesh).Prepend(arm.BaseMesh).Append(tool);
-            var outMeshes = defaultMeshes.Select(m => m.DuplicateMesh()).ToList();
+            var outMeshes = defaultMeshes.Select(m => (m ?? throw new NullReferenceException("Mesh shoudn't be null.")).DuplicateMesh()).ToList();
 
             for (int i = 0; i < defaultPlanes.Count; i++)
             {

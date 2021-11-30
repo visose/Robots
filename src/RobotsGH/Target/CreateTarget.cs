@@ -42,32 +42,39 @@ namespace Robots.Grasshopper
             bool hasFrame = Params.Input.Any(x => x.Name == "Frame");
             bool hasExternal = Params.Input.Any(x => x.Name == "External");
 
-            GH_Target sourceTarget = null;
-            if (hasTarget) if (!DA.GetData("Target", ref sourceTarget)) return;
+            GH_Target? sourceTarget = null;
+            if (hasTarget)
+            {
+                if (!DA.GetData("Target", ref sourceTarget) || sourceTarget is null)
+                    return;
+            }
 
-            double[] joints = null;
+            double[]? joints = null;
             var plane = new Plane();
             RobotConfigurations? configuration = null;
             Motions motion = Motions.Joint;
-            Tool tool = null;
-            Speed speed = null;
-            Zone zone = null;
-            Command command = null;
-            Frame frame = null;
-            double[] external = null;
+            Tool? tool = null;
+            Speed? speed = null;
+            Zone? zone = null;
+            Command? command = null;
+            Frame? frame = null;
+            double[]? external = null;
 
             if (hasJoints)
             {
-                GH_String jointsGH = null;
-                if (!DA.GetData("Joints", ref jointsGH)) return;
+                GH_String? jointsGH = null;
+                if (!DA.GetData("Joints", ref jointsGH) || jointsGH is null) 
+                    return;
 
                 string[] jointsText = jointsGH.Value.Split(',');
-                if (jointsText.Length != 6) return;
+                if (jointsText.Length != 6)
+                    return;
 
                 joints = new double[6];
 
                 for (int i = 0; i < 6; i++)
-                    if (!GH_Convert.ToDouble_Secondary(jointsText[i], ref joints[i])) return;
+                    if (!GH_Convert.ToDouble_Secondary(jointsText[i], ref joints[i]))
+                        return;
             }
             else if (sourceTarget != null)
             {
@@ -77,8 +84,10 @@ namespace Robots.Grasshopper
 
             if (hasPlane)
             {
-                GH_Plane planeGH = null;
-                if (hasPlane && !DA.GetData("Plane", ref planeGH)) return;
+                GH_Plane? planeGH = null;
+                if (!DA.GetData("Plane", ref planeGH) || planeGH is null)
+                    return;
+
                 plane = planeGH.Value;
             }
             else if (sourceTarget != null)
@@ -89,9 +98,9 @@ namespace Robots.Grasshopper
 
             if (hasConfig)
             {
-                GH_Integer configGH = null;
-                if (hasConfig) DA.GetData("RobConf", ref configGH);
-                configuration = (configGH == null) ? null : (RobotConfigurations?)configGH.Value;
+                GH_Integer? configGH = null;
+                DA.GetData("RobConf", ref configGH);
+                configuration = (configGH is null) ? null : (RobotConfigurations?)configGH.Value;
             }
             else if (sourceTarget != null)
             {
@@ -101,7 +110,7 @@ namespace Robots.Grasshopper
 
             if (hasMotion)
             {
-                GH_String motionGH = null;
+                GH_String? motionGH = null;
                 DA.GetData("Motion", ref motionGH);
                 motion = (motionGH == null) ? Motions.Joint : (Motions)Enum.Parse(typeof(Motions), motionGH.Value);
             }
@@ -113,7 +122,7 @@ namespace Robots.Grasshopper
 
             if (hasTool)
             {
-                GH_Tool toolGH = null;
+                GH_Tool? toolGH = null;
                 DA.GetData("Tool", ref toolGH);
                 tool = toolGH?.Value;
             }
@@ -124,7 +133,7 @@ namespace Robots.Grasshopper
 
             if (hasSpeed)
             {
-                GH_Speed speedGH = null;
+                GH_Speed? speedGH = null;
                 DA.GetData("Speed", ref speedGH);
                 speed = speedGH?.Value;
             }
@@ -135,7 +144,7 @@ namespace Robots.Grasshopper
 
             if (hasZone)
             {
-                GH_Zone zoneGH = null;
+                GH_Zone? zoneGH = null;
                 DA.GetData("Zone", ref zoneGH);
                 zone = zoneGH?.Value;
             }
@@ -146,7 +155,7 @@ namespace Robots.Grasshopper
 
             if (hasCommand)
             {
-                GH_Command commandGH = null;
+                GH_Command? commandGH = null;
                 DA.GetData("Command", ref commandGH);
                 command = commandGH?.Value;
             }
@@ -157,7 +166,7 @@ namespace Robots.Grasshopper
 
             if (hasFrame)
             {
-                GH_Frame frameGH = null;
+                GH_Frame? frameGH = null;
                 DA.GetData("Frame", ref frameGH);
                 frame = frameGH?.Value;
             }
@@ -168,18 +177,21 @@ namespace Robots.Grasshopper
 
             if (hasExternal)
             {
-                GH_String externalGH = null;
-                if (!DA.GetData("External", ref externalGH))
+                GH_String? externalGH = null;
+
+                if (!DA.GetData("External", ref externalGH) || externalGH is null)
                 {
                     external = new double[0];
                 }
                 else
                 {
-                    string[] externalText = externalGH.Value.Split(',');
+                    string[]? externalText = externalGH.Value.Split(',');
                     int length = externalText.Length;
                     external = new double[length];
+
                     for (int i = 0; i < length; i++)
-                        if (!GH_Convert.ToDouble_Secondary(externalText[i], ref external[i])) return;
+                        if (!GH_Convert.ToDouble_Secondary(externalText[i], ref external[i]))
+                            return;
                 }
             }
             else if (sourceTarget != null)
@@ -187,17 +199,24 @@ namespace Robots.Grasshopper
                 external = sourceTarget.Value.External;
             }
 
-            Target target;
+            bool localCartesian = _isCartesian;
 
-            bool localCartesian = isCartesian;
-
-            if (hasTarget && !hasPlane && !hasJoints)
+            if (hasTarget && !hasPlane && !hasJoints && sourceTarget != null)
                 localCartesian = sourceTarget.Value is CartesianTarget;
 
+            Target target;
+
             if (localCartesian)
+            {
                 target = new CartesianTarget(plane, configuration, motion, tool, speed, zone, command, frame, external);
+            }
             else
+            {
+                if (joints is null)
+                    throw new NullReferenceException(" Joints shouldn't be null.");
+
                 target = new JointTarget(joints, tool, speed, zone, command, frame, external);
+            }
 
             if (sourceTarget != null)
                 target.ExternalCustom = sourceTarget.Value.ExternalCustom;
@@ -222,17 +241,17 @@ namespace Robots.Grasshopper
          new Param_String() { Name = "External", NickName = "E", Description = "External axis", Optional = true }
 };
 
-        bool isCartesian = true;
+        bool _isCartesian = true;
 
         public override bool Write(GH_IWriter writer)
         {
-            writer.SetBoolean("IsCartesian", isCartesian);
+            writer.SetBoolean("IsCartesian", _isCartesian);
             return base.Write(writer);
         }
 
         public override bool Read(GH_IReader reader)
         {
-            isCartesian = reader.GetBoolean("IsCartesian");
+            _isCartesian = reader.GetBoolean("IsCartesian");
             return base.Read(reader);
         }
 
@@ -242,13 +261,13 @@ namespace Robots.Grasshopper
         {
             Menu_AppendItem(menu, "Target input", AddTarget, true, Params.Input.Any(x => x.Name == "Target"));
             Menu_AppendSeparator(menu);
-            Menu_AppendItem(menu, "Joint target", SwitchCartesianEvent, true, !isCartesian);
-            Menu_AppendItem(menu, "Joint input", AddJoints, !isCartesian, Params.Input.Any(x => x.Name == "Joints"));
+            Menu_AppendItem(menu, "Joint target", SwitchCartesianEvent, true, !_isCartesian);
+            Menu_AppendItem(menu, "Joint input", AddJoints, !_isCartesian, Params.Input.Any(x => x.Name == "Joints"));
             Menu_AppendSeparator(menu);
-            Menu_AppendItem(menu, "Cartesian target", SwitchCartesianEvent, true, isCartesian);
-            Menu_AppendItem(menu, "Plane input", AddPlane, isCartesian, Params.Input.Any(x => x.Name == "Plane"));
-            Menu_AppendItem(menu, "Configuration input", AddConfig, isCartesian, Params.Input.Any(x => x.Name == "RobConf"));
-            Menu_AppendItem(menu, "Motion input", AddMotion, isCartesian, Params.Input.Any(x => x.Name == "Motion"));
+            Menu_AppendItem(menu, "Cartesian target", SwitchCartesianEvent, true, _isCartesian);
+            Menu_AppendItem(menu, "Plane input", AddPlane, _isCartesian, Params.Input.Any(x => x.Name == "Plane"));
+            Menu_AppendItem(menu, "Configuration input", AddConfig, _isCartesian, Params.Input.Any(x => x.Name == "RobConf"));
+            Menu_AppendItem(menu, "Motion input", AddMotion, _isCartesian, Params.Input.Any(x => x.Name == "Motion"));
             Menu_AppendSeparator(menu);
             Menu_AppendItem(menu, "Tool input", AddTool, true, Params.Input.Any(x => x.Name == "Tool"));
             Menu_AppendItem(menu, "Speed input", AddSpeed, true, Params.Input.Any(x => x.Name == "Speed"));
@@ -262,19 +281,19 @@ namespace Robots.Grasshopper
 
         private void SwitchCartesian()
         {
-            if (isCartesian)
+            if (_isCartesian)
             {
                 Params.UnregisterInputParameter(Params.Input.Find(x => x.Name == "Plane"), true);
                 Params.UnregisterInputParameter(Params.Input.Find(x => x.Name == "RobConf"), true);
                 Params.UnregisterInputParameter(Params.Input.Find(x => x.Name == "Motion"), true);
                 AddParam(1);
-                isCartesian = false;
+                _isCartesian = false;
             }
             else
             {
                 Params.UnregisterInputParameter(Params.Input.FirstOrDefault(x => x.Name == "Joints"), true);
                 AddParam(2);
-                isCartesian = true;
+                _isCartesian = true;
             }
 
             Params.OnParametersChanged();
@@ -293,6 +312,7 @@ namespace Robots.Grasshopper
             else
             {
                 int insertIndex = Params.Input.Count;
+
                 for (int i = 0; i < Params.Input.Count; i++)
                 {
                     int otherIndex = Array.FindIndex(parameters, x => x.Name == Params.Input[i].Name);
@@ -302,8 +322,10 @@ namespace Robots.Grasshopper
                         break;
                     }
                 }
+
                 Params.RegisterInputParam(parameter, insertIndex);
             }
+
             Params.OnParametersChanged();
             ExpireSolution(true);
         }
@@ -363,7 +385,7 @@ namespace Robots.Grasshopper
 
         bool IGH_VariableParameterComponent.CanInsertParameter(GH_ParameterSide side, int index) => false;
         bool IGH_VariableParameterComponent.CanRemoveParameter(GH_ParameterSide side, int index) => false;
-        IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index) => null;
+        IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index) => null!;
         bool IGH_VariableParameterComponent.DestroyParameter(GH_ParameterSide side, int index) => false;
         void IGH_VariableParameterComponent.VariableParameterMaintenance() { }
     }

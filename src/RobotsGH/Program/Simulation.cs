@@ -10,16 +10,19 @@ namespace Robots.Grasshopper
 {
     public sealed class Simulation : GH_Component, IDisposable
     {
+        readonly AnimForm _form;
+        double _speed = 1;
+        DateTime _lastTime;
+        double _time = 0;
+        double _sliderTime = 0;
+
         public Simulation() : base("Program simulation", "Sim", "Rough simulation of the robot program, right click for playback controls", "Robots", "Components")
         {
-            form = new AnimForm(this)
+            _form = new AnimForm(this)
             {
                 Owner = Rhino.UI.RhinoEtoApp.MainWindow
             };
         }
-
-        double time = 0;
-        double sliderTime = 0;
 
         public override GH_Exposure Exposure => GH_Exposure.quarternary;
         public override Guid ComponentGuid => new Guid("{6CE35140-A625-4686-B8B3-B734D9A36CFC}");
@@ -45,28 +48,29 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            GH_Program program = null;
-            GH_Number sliderTimeGH = null;
-            GH_Boolean isNormalized = null;
-            if (!DA.GetData(0, ref program)) { return; }
-            if (!DA.GetData(1, ref sliderTimeGH)) { return; }
-            if (!DA.GetData(2, ref isNormalized)) { return; }
+            GH_Program? program = null;
+            GH_Number? sliderTimeGH = null;
+            GH_Boolean? isNormalized = null;
+            if (!DA.GetData(0, ref program) || program is null) { return; }
+            if (!DA.GetData(1, ref sliderTimeGH) || sliderTimeGH is null) { return; }
+            if (!DA.GetData(2, ref isNormalized) || isNormalized is null) { return; }
 
-            if(!(program.Value is Program p))
+            if (!(program?.Value is Program p))
             {
-                throw new ArgumentException(" Input program can't have custom code.");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Input program can't have custom code.");
+                return;
             }
 
-            sliderTime = (isNormalized.Value) ? sliderTimeGH.Value * p.Duration : sliderTimeGH.Value;
-            if (!form.Visible) time = sliderTime;
+            _sliderTime = (isNormalized.Value) ? sliderTimeGH.Value * p.Duration : sliderTimeGH.Value;
+            if (!_form.Visible) _time = _sliderTime;
 
-            p.Animate(time, false);
+            p.Animate(_time, false);
             var currentTarget = p.CurrentSimulationTarget;
 
             var errors = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Errors);
             var joints = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Joints);
             var planes = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Planes).ToList();
-            var meshes = GeometryUtil.PoseMeshes(program.Value.RobotSystem, currentTarget.ProgramTargets.Select(p => p.Kinematics).ToList(), currentTarget.ProgramTargets.Select(p => p.Target.Tool.Mesh).ToList());
+            var meshes = GeometryUtil.PoseMeshes(p.RobotSystem, currentTarget.ProgramTargets.Select(p => p.Kinematics).ToList(), currentTarget.ProgramTargets.Select(p => p.Target.Tool.Mesh).ToList());
 
             if (errors.Count() > 0)
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in solution");
@@ -76,35 +80,33 @@ namespace Robots.Grasshopper
             DA.SetDataList(2, planes.Select(x => new GH_Plane(x)));
             DA.SetData(3, currentTarget.Index);
             DA.SetData(4, p.CurrentSimulationTime);
-            DA.SetData(5, new GH_Program(program.Value));
+            DA.SetData(5, new GH_Program(p));
             DA.SetDataList(6, errors);
 
-            if (form.Visible && form.play.Checked.Value)
+            var isChecked = _form.Play.Checked.HasValue && _form.Play.Checked.Value;
+
+            if (_form.Visible && isChecked)
             {
                 var currentTime = DateTime.Now;
-                TimeSpan delta = currentTime - lastTime;
-                time += delta.TotalSeconds * speed;
-                lastTime = currentTime;
+                TimeSpan delta = currentTime - _lastTime;
+                _time += delta.TotalSeconds * _speed;
+                _lastTime = currentTime;
                 ExpireSolution(true);
             }
         }
 
         // Form
-        AnimForm form;
-        double speed = 1;
-        DateTime lastTime;
-
         protected override void AppendAdditionalComponentMenuItems(System.Windows.Forms.ToolStripDropDown menu)
         {
-            Menu_AppendItem(menu, "Open controls", OpenForm, true, form.Visible);
+            Menu_AppendItem(menu, "Open controls", OpenForm, true, _form.Visible);
         }
 
         void OpenForm(object sender, EventArgs e)
         {
-            if (form.Visible)
+            if (_form.Visible)
             {
-                form.play.Checked = false;
-                form.Visible = false;
+                _form.Play.Checked = false;
+                _form.Visible = false;
             }
             else
             {
@@ -112,40 +114,40 @@ namespace Robots.Grasshopper
                 int x = (int)mousePos.X + 20;
                 int y = (int)mousePos.Y - 160;
 
-                form.Location = new Eto.Drawing.Point(x, y);
-                form.Show();
+                _form.Location = new Eto.Drawing.Point(x, y);
+                _form.Show();
             }
         }
 
         void ClickPlay(object sender, EventArgs e)
         {
-            lastTime = DateTime.Now;
+            _lastTime = DateTime.Now;
             ExpireSolution(true);
         }
 
         void ClickStop(object sender, EventArgs e)
         {
-            form.play.Checked = false;
-            time = sliderTime;
+            _form.Play.Checked = false;
+            _time = _sliderTime;
             ExpireSolution(true);
         }
 
         void ClickScroll(object sender, EventArgs e)
         {
-            speed = (double)form.slider.Value / 100.0;
+            _speed = (double)_form.Slider.Value / 100.0;
         }
 
         public void Dispose()
         {
-            form.Dispose();
+            _form.Dispose();
         }
 
         class AnimForm : Form
         {
             Simulation _component;
 
-            internal CheckBox play;
-            internal Slider slider;
+            internal CheckBox Play;
+            internal Slider Slider;
 
             public AnimForm(Simulation component)
             {
@@ -163,7 +165,7 @@ namespace Robots.Grasshopper
                 var font = new Font(FontFamilies.Sans, 12, FontStyle.None, FontDecoration.None);
                 var size = new Size(35, 35);
 
-                play = new CheckBox()
+                Play = new CheckBox()
                 {
                     Text = "\u25B6",
                     Size = size,
@@ -171,7 +173,7 @@ namespace Robots.Grasshopper
                     Checked = false,
                     TabIndex = 0
                 };
-                play.CheckedChanged += component.ClickPlay;
+                Play.CheckedChanged += component.ClickPlay;
 
                 var stop = new Button()
                 {
@@ -182,7 +184,7 @@ namespace Robots.Grasshopper
                 };
                 stop.Click += component.ClickStop;
 
-                slider = new Slider()
+                Slider = new Slider()
                 {
                     Orientation = Orientation.Vertical,
                     Size = new Size(45, 200),
@@ -193,7 +195,7 @@ namespace Robots.Grasshopper
                     SnapToTick = true,
                     Value = 100,
                 };
-                slider.ValueChanged += _component.ClickScroll;
+                Slider.ValueChanged += _component.ClickScroll;
 
                 var speedLabel = new Label()
                 {
@@ -203,9 +205,9 @@ namespace Robots.Grasshopper
 
                 var layout = new DynamicLayout();
                 layout.BeginVertical(new Padding(2), Size.Empty);
-                layout.AddSeparateRow(padding: new Padding(10), spacing: new Size(10, 0), controls: new Control[] { play, stop });
+                layout.AddSeparateRow(padding: new Padding(10), spacing: new Size(10, 0), controls: new Control[] { Play, stop });
                 layout.BeginGroup("Speeds");
-                layout.AddSeparateRow(slider, speedLabel);
+                layout.AddSeparateRow(Slider, speedLabel);
                 layout.EndGroup();
                 layout.EndVertical();
 
@@ -216,10 +218,9 @@ namespace Robots.Grasshopper
             {
                 //base.OnClosing(e);
                 e.Cancel = true;
-                play.Checked = false;
+                Play.Checked = false;
                 Visible = false;
             }
         }
     }
-
 }

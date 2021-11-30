@@ -131,22 +131,7 @@ namespace Robots
             }
 
             if (element is null)
-                throw new InvalidOperationException($" RobotSystem \"{name}\" not found");
-
-            /*
-            if (element is null)
-            {
-                XElement data = XElement.Parse(Properties.Resources.robotsData);
-                try
-                {
-                    element = data.Elements().First(x => name == $"{x.Attribute(XName.Get("name")).Value}");
-                }
-                catch (InvalidOperationException)
-                {
-                    throw new InvalidOperationException($" RobotSystem \"{name}\" not found");
-                }
-            }
-            */
+                throw new ArgumentException($" RobotSystem \"{name}\" not found");
 
             return Create(element, basePlane, loadMeshes);
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Drawing;
 using Grasshopper;
 using Grasshopper.Kernel;
@@ -8,8 +9,8 @@ namespace Robots.Grasshopper
 {
     public class LoadTool : GH_Component
     {
-        GH_ValueList valueList = null;
-        IGH_Param parameter = null;
+        GH_ValueList? _valueList = null;
+        IGH_Param? _parameter = null;
 
         public LoadTool() : base("Load robot tool", "Load tool", "Loads a tool either from the library or from a custom file", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.primary;
@@ -19,7 +20,7 @@ namespace Robots.Grasshopper
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Name", "N", "Name of the Tool", GH_ParamAccess.item);
-            parameter = pManager[0];
+            _parameter = pManager[0];
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -29,43 +30,34 @@ namespace Robots.Grasshopper
 
         protected override void BeforeSolveInstance()
         {
-            if (valueList == null)
-            {
-                if (parameter.Sources.Count == 0)
-                {
-                    valueList = new GH_ValueList();
-                }
-                else
-                {
-                    foreach (var source in parameter.Sources)
-                    {
-                        if (source is GH_ValueList) valueList = source as GH_ValueList;
-                        return;
-                    }
-                }
+            if (_parameter is null)
+                throw new NullReferenceException(nameof(_parameter));
 
-                valueList.CreateAttributes();
-                valueList.Attributes.Pivot = new PointF(this.Attributes.Pivot.X - 180, this.Attributes.Pivot.Y - 31);
-                valueList.ListItems.Clear();
+            if (_valueList != null)
+                return;
 
-                var tools = Tool.ListTools();
+            _valueList = _parameter.Sources.FirstOrDefault(s => s is GH_ValueList) as GH_ValueList ?? new GH_ValueList();
 
-                foreach (string toolName in tools)
-                {
-                    valueList.ListItems.Add(new GH_ValueListItem(toolName, $"\"{toolName}\""));
-                }
+            _valueList.CreateAttributes();
+            _valueList.Attributes.Pivot = new PointF(Attributes.Pivot.X - 180, Attributes.Pivot.Y - 31);
+            _valueList.ListItems.Clear();
 
-                Instances.ActiveCanvas.Document.AddObject(valueList, false);
-                parameter.AddSource(valueList);
-                parameter.CollectData();
-            }
+            var tools = Tool.ListTools();
+
+            foreach (string toolName in tools)
+                _valueList.ListItems.Add(new GH_ValueListItem(toolName, $"\"{toolName}\""));
+
+            Instances.ActiveCanvas.Document.AddObject(_valueList, false);
+            _parameter.AddSource(_valueList);
+            _parameter.CollectData();
+
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            string name = null;
+            string? name = null;
 
-            if (!DA.GetData(0, ref name)) { return; }
+            if (!DA.GetData(0, ref name) || name is null) { return; }
 
             var tool = Tool.Load(name);
             DA.SetData(0, new GH_Tool(tool));

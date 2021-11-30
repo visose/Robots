@@ -29,12 +29,12 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            GH_Plane plane = null;
+            GH_Plane? plane = null;
             int coupledGroup = -1;
             int coupledMechanism = -1;
-            string name = null;
+            string? name = null;
 
-            if (!DA.GetData(0, ref plane)) { return; }
+            if (!DA.GetData(0, ref plane) || plane is null) { return; }
             if (!DA.GetData(1, ref coupledGroup)) { return; }
             if (!DA.GetData(2, ref coupledMechanism)) { return; }
             DA.GetData(3, ref name);

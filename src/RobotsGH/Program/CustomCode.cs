@@ -27,10 +27,16 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            GH_Program program = null;
+            GH_Program? program = null;
 
-            if (!DA.GetData(0, ref program)) { return; }
+            if (!DA.GetData(0, ref program) || program is null) { return; }
             if (!DA.GetDataTree(1, out GH_Structure<GH_String> codeTree)) { return; }
+
+            if (!(program?.Value is Program p))
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " Input program can't have custom code.");
+                return;
+            }
 
             var code = new List<List<List<string>>>
             {
@@ -43,7 +49,7 @@ namespace Robots.Grasshopper
             }
 
             var programCode = program.Value.Code;
-            if (programCode?.Count > 0)
+            if (programCode != null && programCode.Count > 0)
             {
                 //var copyCode = programCode.ToList();
 
@@ -57,15 +63,8 @@ namespace Robots.Grasshopper
 
                 //copyCode[0][0] = code;
 
-                if (program.Value is Program p)
-                {
-                    var newProgram = p.CustomCode(code);
-                    DA.SetData(0, new GH_Program(newProgram));
-                }
-                else
-                {
-                    throw new ArgumentException(" Input program can't have custom code.");
-                }
+                var newProgram = p.CustomCode(code);
+                DA.SetData(0, new GH_Program(newProgram));
             }
         }
     }

@@ -36,13 +36,13 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            GH_Program program = null;
+            GH_Program? program = null;
             var first = new List<GH_Integer>();
             var second = new List<GH_Integer>();
-            GH_Mesh environment = null;
+            GH_Mesh? environment = null;
             int environmentPlane = -1;
             double linearStep = 100;
-            double angularStep = PI / 4;
+            double angularStep = PI / 4.0;
 
             if (!DA.GetData(0, ref program)) { return; }
             if (!DA.GetDataList(1, first)) { return; }
@@ -52,17 +52,19 @@ namespace Robots.Grasshopper
             if (!DA.GetData(5, ref linearStep)) { return; }
             if (!DA.GetData(6, ref angularStep)) { return; }
 
-
-            if (program.Value is Program p)
+            if (!(program?.Value is Program p))
             {
-                var collision = p.CheckCollisions(first.Select(x => x.Value), second.Select(x => x.Value), environment?.Value, environmentPlane, linearStep, angularStep);
-                DA.SetData(0, collision.HasCollision);
-                if (collision.HasCollision) DA.SetData(1, collision.CollisionTarget.Index);
-                if (collision.HasCollision) DA.SetDataList(2, collision.Meshes);
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Input program can't have custom code.");
+                return;
             }
-            else
+
+            var collision = p.CheckCollisions(first.Select(x => x.Value), second.Select(x => x.Value), environment?.Value, environmentPlane, linearStep, angularStep);
+            DA.SetData(0, collision.HasCollision);
+
+            if (collision.CollisionTarget != null)
             {
-                throw new ArgumentException(" Input program can't have custom code.");
+                DA.SetData(1, collision.CollisionTarget.Index);
+                DA.SetDataList(2, collision.Meshes);
             }
         }
     }

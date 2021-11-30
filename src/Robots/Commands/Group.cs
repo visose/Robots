@@ -53,7 +53,6 @@ namespace Robots.Commands
 
             return commands;
         }
-
         public override string ToString() => $"Command (Group with {Count} commands)";
     }
 }
