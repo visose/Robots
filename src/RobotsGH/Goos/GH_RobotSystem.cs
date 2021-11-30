@@ -5,15 +5,14 @@ using Grasshopper.Kernel.Types;
 namespace Robots.Grasshopper
 {
     public class GH_RobotSystem : GH_Goo<RobotSystem>, IGH_PreviewData
-    {
-        public GH_RobotSystem() { Value = null; }
+    {        
         public GH_RobotSystem(GH_RobotSystem goo) { Value = goo.Value; }
         public GH_RobotSystem(RobotSystem native) { Value = native; }
         public override IGH_Goo Duplicate() => new GH_RobotSystem(this);
         public override bool IsValid => true;
         public override string TypeName => "RobotSystem";
         public override string TypeDescription => "RobotSystem";
-        public override string ToString() => Value?.ToString();
+        public override string ToString() => Value.ToString();
         public override object ScriptVariable() => Value;
 
         public override bool CastFrom(object source)

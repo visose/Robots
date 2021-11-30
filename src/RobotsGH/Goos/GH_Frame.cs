@@ -12,7 +12,7 @@ namespace Robots.Grasshopper
         public override bool IsValid => true;
         public override string TypeName => "Frame";
         public override string TypeDescription => "Frame";
-        public override string ToString() => Value?.ToString();
+        public override string ToString() => Value.ToString();
         public override object ScriptVariable() => Value;
 
         public override bool CastFrom(object source)

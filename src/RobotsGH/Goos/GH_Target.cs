@@ -13,7 +13,7 @@ namespace Robots.Grasshopper
         public override bool IsValid => true;
         public override string TypeName => "Target";
         public override string TypeDescription => "Target";
-        public override string ToString() => Value?.ToString();
+        public override string ToString() => Value.ToString();
         public override object ScriptVariable() => Value;
 
         public override bool CastFrom(object source)

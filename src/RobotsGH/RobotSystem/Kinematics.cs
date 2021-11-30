@@ -32,17 +32,17 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            GH_RobotSystem robotSystem = null;
+            GH_RobotSystem? robotSystem = null;
             var targets = new List<GH_Target>();
             var prevJointsText = new List<GH_String>();
             bool drawMeshes = false;
 
-            if (!DA.GetData(0, ref robotSystem)) { return; }
+            if (!DA.GetData(0, ref robotSystem) || robotSystem is null) { return; }
             if (!DA.GetDataList(1, targets)) { return; }
             DA.GetDataList(2, prevJointsText);
             if (!DA.GetData(3, ref drawMeshes)) { return; }
 
-            List<double[]> prevJoints = null;
+            List<double[]>? prevJoints = null;
 
             if (prevJointsText.Count > 0)
             {

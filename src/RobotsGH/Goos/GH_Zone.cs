@@ -12,7 +12,7 @@ namespace Robots.Grasshopper
         public override bool IsValid => true;
         public override string TypeName => "Zone";
         public override string TypeDescription => "Zone";
-        public override string ToString() => Value?.ToString();
+        public override string ToString() => Value.ToString();
         public override object ScriptVariable() => Value;
 
         public override bool CastFrom(object source)
@@ -31,7 +31,8 @@ namespace Robots.Grasshopper
                         double[] values = new double[texts.Length];
 
                         for (int i = 0; i < texts.Length; i++)
-                            if (!GH_Convert.ToDouble_Secondary(texts[i], ref values[i])) return false;
+                            if (!GH_Convert.ToDouble_Secondary(texts[i], ref values[i]))
+                                return false;
 
                         if (texts.Length == 1)
                         {

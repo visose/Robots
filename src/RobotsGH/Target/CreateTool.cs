@@ -35,15 +35,15 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            string name = null;
-            GH_Plane tcp = null;
+            string? name = null;
+            GH_Plane? tcp = null;
             double weight = 0;
-            GH_Mesh mesh = null;
-            GH_Point centroid = null;
-            List<GH_Plane> planes = new List<GH_Plane>();
+            GH_Mesh? mesh = null;
+            GH_Point? centroid = null;
+            var planes = new List<GH_Plane>();
 
-            if (!DA.GetData(0, ref name)) { return; }
-            if (!DA.GetData(1, ref tcp)) { return; }
+            if (!DA.GetData(0, ref name) || name is null) { return; }
+            if (!DA.GetData(1, ref tcp) || tcp is null) { return; }
             DA.GetDataList(2, planes);
             if (!DA.GetData(3, ref weight)) { return; }
             DA.GetData(4, ref centroid);
@@ -54,7 +54,7 @@ namespace Robots.Grasshopper
             if (planes.Count > 0)
             {
                 if (planes.Count != 4)
-                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " Calibration input must be 4 planes");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " Calibration input must be 4 planes");
                 else
                     tool.FourPointCalibration(planes[0].Value, planes[1].Value, planes[2].Value, planes[3].Value);
             }

@@ -27,12 +27,12 @@ namespace Robots.Grasshopper.Commands
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            string name = null;
-            string manufacturerText = null;
-            string code = null, declaration = null;
+            string? name = null;
+            string? manufacturerText = null;
+            string? code = null, declaration = null;
 
-            if (!DA.GetData(0, ref name)) { return; }
-            if (!DA.GetData(1, ref manufacturerText)) { return; }
+            if (!DA.GetData(0, ref name) || name is null) { return; }
+            if (!DA.GetData(1, ref manufacturerText) || manufacturerText is null) { return; }
             DA.GetData(2, ref code);
             DA.GetData(3, ref declaration);
 
@@ -40,7 +40,8 @@ namespace Robots.Grasshopper.Commands
 
             if(!Enum.TryParse<Manufacturers>(manufacturerText, out var manufacturer))
             {
-                throw new ArgumentException($"Manufacturer {manufacturerText} not valid.");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $" Manufacturer '{manufacturerText}' not valid.");
+                return;
             }
 
             command.AddCommand(manufacturer, code, declaration);

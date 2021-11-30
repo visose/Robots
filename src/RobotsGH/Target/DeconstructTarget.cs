@@ -26,8 +26,8 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            GH_Target target = null;
-            if (!DA.GetData("Target", ref target)) return;
+            GH_Target? target = null;
+            if (!DA.GetData("Target", ref target) || target is null) return;
 
             bool isCartesian = target.Value is CartesianTarget;
             // if (isTargetCartesian != isCartesian) SwitchCartesian();
@@ -43,9 +43,15 @@ namespace Robots.Grasshopper
             bool hasFrame = Params.Output.Any(x => x.Name == "Frame");
             bool hasExternal = Params.Output.Any(x => x.Name == "External");
 
-            if (hasJoints) DA.SetData("Joints", isCartesian ? null : new GH_String(string.Join(",", (target.Value as JointTarget).Joints.Select(x => $"{x:0.000}"))));
+            if (hasJoints) DA.SetData("Joints", isCartesian ? null : new GH_String(string.Join(",", ((JointTarget)target.Value).Joints.Select(x => $"{x:0.000}"))));
             if (hasPlane) DA.SetData("Plane", isCartesian ? new GH_Plane(((CartesianTarget)target.Value).Plane) : null);
-            if (hasConfig) DA.SetData("RobConf", isCartesian ? ((CartesianTarget)target.Value).Configuration == null ? null : new GH_Integer((int)((CartesianTarget)target.Value).Configuration) : null);
+            if (hasConfig && isCartesian)
+            {
+                var targetConfig = ((CartesianTarget)target.Value).Configuration;
+
+                if (targetConfig != null)
+                    DA.SetData("RobConf", new GH_Integer((int)targetConfig));
+            }
             if (hasMotion) DA.SetData("Motion", isCartesian ? new GH_String(((CartesianTarget)target.Value).Motion.ToString()) : null);
             if (hasTool && (target.Value.Tool != null)) DA.SetData("Tool", new GH_Tool(target.Value.Tool));
             if (hasSpeed && (target.Value.Speed != null)) DA.SetData("Speed", new GH_Speed(target.Value.Speed));
@@ -130,7 +136,7 @@ namespace Robots.Grasshopper
 
         bool IGH_VariableParameterComponent.CanInsertParameter(GH_ParameterSide side, int index) => false;
         bool IGH_VariableParameterComponent.CanRemoveParameter(GH_ParameterSide side, int index) => false;
-        IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index) => null;
+        IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index) => null!;
         bool IGH_VariableParameterComponent.DestroyParameter(GH_ParameterSide side, int index) => false;
         void IGH_VariableParameterComponent.VariableParameterMaintenance() { }
     }

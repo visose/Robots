@@ -36,11 +36,11 @@ namespace Robots.Grasshopper.Commands
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            string name = null;
-            string abbDeclaration = null, kukaDeclaration = null, urDeclaration = null;
-            string abbCode = null, kukaCode = null, urCode = null;
+            string? name = null;
+            string? abbDeclaration = null, kukaDeclaration = null, urDeclaration = null;
+            string? abbCode = null, kukaCode = null, urCode = null;
 
-            if (!DA.GetData(0, ref name)) { return; }
+            if (!DA.GetData(0, ref name) || name is null) { return; }
             DA.GetData(1, ref abbDeclaration);
             DA.GetData(2, ref kukaDeclaration);
             DA.GetData(3, ref urDeclaration);

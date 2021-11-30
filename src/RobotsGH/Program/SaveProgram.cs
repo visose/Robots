@@ -23,12 +23,11 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            GH_Program program = null;
-            //var code = new List<string>();
-            string folder = null;
+            GH_Program? program = null;            
+            string? folder = null;
 
-            if (!DA.GetData(0, ref program)) { return; }
-            if (!DA.GetData(1, ref folder)) { return; }
+            if (!DA.GetData(0, ref program) || program is null) { return; }
+            if (!DA.GetData(1, ref folder) || folder is null) { return; }
             program.Value.Save(folder);
         }
     }

@@ -7,8 +7,8 @@ namespace Robots.Grasshopper
 {
     public class DrawSimpleTrail : GH_Component
     {
-        SimpleTrail trail;
-        Program program;
+        SimpleTrail? _trail;
+        Program? _program;
 
         public DrawSimpleTrail() : base("Simple trail", "Trail", "Draws a trail behind the TCP. To be used with the simulation component.", "Robots", "Util") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
@@ -29,30 +29,33 @@ namespace Robots.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            GH_Program ghProgram = null;
+            GH_Program? ghProgram = null;
             double length = 0;
             int mechanicalGroup = 0;
 
-            if (!DA.GetData(0, ref ghProgram)) { return; }
+            if (!DA.GetData(0, ref ghProgram) || ghProgram is null) { return; }
             if (!DA.GetData(1, ref length)) { return; }
             if (!DA.GetData(2, ref mechanicalGroup)) { return; }
 
-            if (ghProgram.Value != program)
+            if (!(ghProgram?.Value is Program p))
             {
-                program = ghProgram.Value as Program;
-
-                if (program is null)
-                    throw new ArgumentException(" Input program can't have custom code.");
-
-                trail = new SimpleTrail(program, length, mechanicalGroup);
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " Input program can't have custom code.");
+                return;
             }
 
-            if (trail != null)
+            if (ghProgram.Value != _program)
             {
-                trail.Length = length;
-                trail.Update();
-                if (trail.Polyline.Count >= 2)
-                    DA.SetData(0, new GH_Curve(trail.Polyline.ToNurbsCurve()));
+                _program = p;
+                _trail = new SimpleTrail(_program, length, mechanicalGroup);
+            }
+
+            if (_trail != null)
+            {
+                _trail.Length = length;
+                _trail.Update();
+
+                if (_trail.Polyline.Count >= 2)
+                    DA.SetData(0, new GH_Curve(_trail.Polyline.ToNurbsCurve()));
             }
         }
     }
