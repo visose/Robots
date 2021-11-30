@@ -1,9 +1,7 @@
-﻿using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using Rhino.PlugIns;
-using System;
+﻿using System;
 using System.Drawing;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using Grasshopper.Kernel;
 
 
@@ -11,7 +9,7 @@ using Grasshopper.Kernel;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyDescription("Provides components to visualize and create programs for ABB, KUKA and UR robots. Developed as an open source tool to interact with the robots at Bartlett School of Architecture.")]
-[assembly: AssemblyCopyright("Copyright ©  2017")]
+[assembly: AssemblyCopyright("Copyright ©  2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

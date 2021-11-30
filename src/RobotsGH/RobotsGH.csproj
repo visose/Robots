@@ -2,11 +2,9 @@
 
 	<PropertyGroup>
 		<TargetFramework>net48</TargetFramework>		
-		<RootNamespace>Robots</RootNamespace>
 		<LangVersion>8.0</LangVersion>
-	</PropertyGroup>
-
-	<PropertyGroup>
+		<Nullable>enable</Nullable>
+		<RootNamespace>Robots</RootNamespace>
 		<OutputPath>..\..\artifacts\bin</OutputPath>
 	</PropertyGroup>
 
