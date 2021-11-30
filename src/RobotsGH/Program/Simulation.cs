@@ -144,7 +144,7 @@ namespace Robots.Grasshopper
 
         class AnimForm : Form
         {
-            Simulation _component;
+            readonly Simulation _component;
 
             internal CheckBox Play;
             internal Slider Slider;

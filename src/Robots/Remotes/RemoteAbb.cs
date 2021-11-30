@@ -152,28 +152,26 @@ namespace Robots
                     filePath = $@"{localFolder}\{program.Name}_T_ROB1.pgf";
                 }
 
-                using (Mastership master = Mastership.Request(_controller.Rapid))
+                using Mastership master = Mastership.Request(_controller.Rapid);
+                var task = _controller.Rapid.GetTasks().First();
+                task.DeleteProgram();
+                int count = 0;
+                while (count++ < 10)
                 {
-                    var task = _controller.Rapid.GetTasks().First();
-                    task.DeleteProgram();
-                    int count = 0;
-                    while (count++ < 10)
+                    System.Threading.Thread.Sleep(100);
+                    try
                     {
-                        System.Threading.Thread.Sleep(100);
-                        try
-                        {
-                            _controller.AuthenticationSystem.DemandGrant(Grant.LoadRapidProgram);
-                            if (task.LoadProgramFromFile(filePath, RapidLoadMode.Replace))
-                                return $"Program {program.Name} uploaded to {_controller.Name}.";
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Insert(0,$"Retrying {count}: {e}");
-                        }
+                        _controller.AuthenticationSystem.DemandGrant(Grant.LoadRapidProgram);
+                        if (task.LoadProgramFromFile(filePath, RapidLoadMode.Replace))
+                            return $"Program {program.Name} uploaded to {_controller.Name}.";
                     }
-
-                    //    task.ResetProgramPointer();
+                    catch (Exception e)
+                    {
+                        Log.Insert(0, $"Retrying {count}: {e}");
+                    }
                 }
+
+                //    task.ResetProgramPointer();
             }
             catch (Exception e)
             {

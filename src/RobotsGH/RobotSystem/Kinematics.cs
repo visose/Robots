@@ -69,7 +69,7 @@ namespace Robots.Grasshopper
             var errors = kinematics.SelectMany(x => x.Errors);
             if (errors.Count() > 0)
             {
-                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in solution");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in solution");
             }
 
             var strings = kinematics.SelectMany(x => x.Joints).Select(x => new GH_Number(x).ToString());
