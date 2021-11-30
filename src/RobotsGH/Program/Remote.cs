@@ -1,8 +1,6 @@
-﻿using Grasshopper.Kernel;
+﻿using System;
+using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Robots.Grasshopper
 {

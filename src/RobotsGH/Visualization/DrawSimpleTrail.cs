@@ -1,12 +1,7 @@
-﻿using Grasshopper.Kernel;
-using Grasshopper.Kernel.Types;
-using Grasshopper.GUI;
-using Grasshopper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Drawing;
-using Robots;
+using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper
 {
