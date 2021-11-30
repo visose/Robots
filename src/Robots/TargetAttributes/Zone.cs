@@ -45,6 +45,6 @@ namespace Robots
                 RotationExternal = Rotation;
         }
 
-        public override string ToString() => (Name != null) ? $"Zone ({Name})" : IsFlyBy ? $"Zone ({Distance:0.00} mm)" : $"Zone (Stop point)";
+        public override string ToString() => (Name != null) ? $"Zone ({Name})" : IsFlyBy ? $"Zone ({Distance:0.##} mm)" : $"Zone (Stop point)";
     }
 }

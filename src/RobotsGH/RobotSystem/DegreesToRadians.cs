@@ -35,7 +35,7 @@ namespace Robots.Grasshopper
             if (!DA.GetData(2, ref group)) { return; }
 
             var radians = degrees.Select((x, i) => (robotSystem.Value).DegreeToRadian(x, i, group));
-            string radiansText = string.Join(",", radians.Select(x => $"{x:0.00000}"));
+            string radiansText = string.Join(",", radians.Select(x => $"{x:0.#####}"));
 
             DA.SetData(0, radiansText);
         }

@@ -27,10 +27,10 @@ namespace Robots
 
         public override string ToString()
         {
-            string type = $"Cartesian ({Plane.OriginX:0.00},{Plane.OriginY:0.00},{Plane.OriginZ:0.00})";
+            string type = $"Cartesian ({Plane.OriginX:0.##},{Plane.OriginY:0.##},{Plane.OriginZ:0.##})";
             string motion = $", {Motion}";
             string configuration = Configuration != null ? $", \"{Configuration}\"" : "";
-            string frame = $", Frame ({Frame.Plane.OriginX:0.00},{Frame.Plane.OriginY:0.00},{Frame.Plane.OriginZ:0.00})";
+            string frame = $", Frame ({Frame.Plane.OriginX:0.##},{Frame.Plane.OriginY:0.##},{Frame.Plane.OriginZ:0.##})";
             string tool = $", {Tool}";
             string speed = $", {Speed}";
             string zone = $", {Zone}";

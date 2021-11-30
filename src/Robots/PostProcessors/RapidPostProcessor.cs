@@ -249,9 +249,9 @@ namespace Robots
             if (centroid.DistanceTo(Point3d.Origin) < 0.001)
                 centroid = new Point3d(0, 0, 0.001);
 
-            string pos = $"[{tool.Tcp.OriginX:0.000},{tool.Tcp.OriginY:0.000},{tool.Tcp.OriginZ:0.000}]";
-            string orient = $"[{quaternion.A:0.00000},{quaternion.B:0.00000},{quaternion.C:0.00000},{quaternion.D:0.00000}]";
-            string loaddata = $"[{weight:0.000},[{centroid.X:0.000},{centroid.Y:0.000},{centroid.Z:0.000}],[1,0,0,0],0,0,0]";
+            string pos = $"[{tool.Tcp.OriginX:0.###},{tool.Tcp.OriginY:0.###},{tool.Tcp.OriginZ:0.###}]";
+            string orient = $"[{quaternion.A:0.#####},{quaternion.B:0.#####},{quaternion.C:0.#####},{quaternion.D:0.#####}]";
+            string loaddata = $"[{weight:0.###},[{centroid.X:0.###},{centroid.Y:0.###},{centroid.Z:0.###}],[1,0,0,0],0,0,0]";
             return $"PERS tooldata {tool.Name}:=[TRUE,[{pos},{orient}],{loaddata}];";
         }
 
@@ -261,8 +261,8 @@ namespace Robots
             plane.Transform(Transform.PlaneToPlane(_cell.BasePlane, Plane.WorldXY));
             //Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
             Quaternion quaternion = GetRotation(plane);
-            string pos = $"[{plane.OriginX:0.000},{plane.OriginY:0.000},{plane.OriginZ:0.000}]";
-            string orient = $"[{quaternion.A:0.00000},{quaternion.B:0.00000},{quaternion.C:0.00000},{quaternion.D:0.00000}]";
+            string pos = $"[{plane.OriginX:0.###},{plane.OriginY:0.###},{plane.OriginZ:0.###}]";
+            string orient = $"[{quaternion.A:0.#####},{quaternion.B:0.#####},{quaternion.C:0.#####},{quaternion.D:0.#####}]";
             string coupledMech = "";
             string coupledBool = frame.IsCoupled ? "FALSE" : "TRUE";
             if (frame.IsCoupled)
@@ -278,14 +278,14 @@ namespace Robots
         {
             double rotation = speed.RotationSpeed.ToDegrees();
             double rotationExternal = speed.RotationExternal.ToDegrees();
-            return $"TASK PERS speeddata {speed.Name}:=[{speed.TranslationSpeed:0.000},{rotation:0.000},{speed.TranslationExternal:0.000},{rotationExternal:0.000}];";
+            return $"TASK PERS speeddata {speed.Name}:=[{speed.TranslationSpeed:0.###},{rotation:0.###},{speed.TranslationExternal:0.###},{rotationExternal:0.###}];";
         }
 
         string Zone(Zone zone)
         {
             double angle = zone.Rotation.ToDegrees();
             double angleExternal = zone.RotationExternal.ToDegrees();
-            return $"TASK PERS zonedata {zone.Name}:=[FALSE,{zone.Distance:0.000},{zone.Distance:0.000},{zone.Distance:0.000},{angle:0.000},{zone.Distance:0.000},{angleExternal:0.000}];";
+            return $"TASK PERS zonedata {zone.Name}:=[FALSE,{zone.Distance:0.###},{zone.Distance:0.###},{zone.Distance:0.###},{angle:0.###},{zone.Distance:0.###},{angleExternal:0.###}];";
         }
     }
 }

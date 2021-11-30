@@ -143,7 +143,7 @@ namespace Robots
 
                                 string speed = target.Speed.Time == 0 ?
                                     $"v={target.Speed.Name}" :
-                                    $"t={target.Speed.Time: 0.000}";
+                                    $"t={target.Speed.Time: 0.###}";
 
                                 moveText = $"  movel(p[{axisAngle[0]:0.#####}, {axisAngle[1]:0.#####}, {axisAngle[2]:0.#####}, {axisAngle[3]:0.#####}, {axisAngle[4]:0.#####}, {axisAngle[5]:0.#####}],a={linearAccel:0.#####},{speed},r={zoneDistance})";
                                 break;

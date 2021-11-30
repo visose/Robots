@@ -30,7 +30,7 @@ namespace Robots
             if (Name != null)
                 return $"Frame ({Name})";
 
-            string origin = $"{Plane.OriginX:0.00},{Plane.OriginY:0.00},{Plane.OriginZ:0.00}";
+            string origin = $"{Plane.OriginX:0.##},{Plane.OriginY:0.##},{Plane.OriginZ:0.##}";
             return $"Frame ({origin}" + (IsCoupled ? " Coupled" : "") + ")";
         }
     }

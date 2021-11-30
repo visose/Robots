@@ -59,7 +59,7 @@ namespace Robots
 
         public override string ToString()
         {
-            string type = $"Joint ({string.Join(",", Joints.Select(x => $"{x:0.00}"))})";
+            string type = $"Joint ({string.Join(",", Joints.Select(x => $"{x:0.###}"))})";
             string tool = $", {Tool}";
             string speed = $", {Speed}";
             string zone = $", {Zone}";
