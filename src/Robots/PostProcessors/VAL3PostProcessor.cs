@@ -68,7 +68,7 @@ namespace Robots
 
             for (int i = 0; i < _cell.MechanicalGroups.Count; i++)
             {
-                var group = _cell.MechanicalGroups[i];
+                //var group = _cell.MechanicalGroups[i];
                 //var name = $"{_program.Name}_{group.Name}";
                 var name = $"{_program.Name}";
                 var mdescs = CreateMdescs(i);

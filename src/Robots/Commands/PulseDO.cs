@@ -28,17 +28,17 @@ namespace Robots.Commands
 
         string CodeAbb(RobotSystem robotSystem, Target target)
         {
-            return $@"PulseDO \PLength:={_length:0.00}, {robotSystem.IO.DO[DO]};";
+            return $@"PulseDO \PLength:={_length:0.###}, {robotSystem.IO.DO[DO]};";
         }
 
         string CodeKuka(RobotSystem robotSystem, Target target)
         {
             if (target.Zone.IsFlyBy)
-                return $"CONTINUE\r\nPULSE($OUT[{robotSystem.IO.DO[DO]}],TRUE,{_length:0.00})";
+                return $"CONTINUE\r\nPULSE($OUT[{robotSystem.IO.DO[DO]}],TRUE,{_length:0.###})";
             else
-                return $"PULSE($OUT[{robotSystem.IO.DO[DO]}],TRUE,{_length:0.00})";
+                return $"PULSE($OUT[{robotSystem.IO.DO[DO]}],TRUE,{_length:0.###})";
         }
 
-        public override string ToString() => $"Command (Pulse {DO} for {_length:0.00} secs)";
+        public override string ToString() => $"Command (Pulse {DO} for {_length:0.###} secs)";
     }
 }

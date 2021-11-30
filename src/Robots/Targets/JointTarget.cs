@@ -34,7 +34,7 @@ namespace Robots
             double PI2 = PI * 2;
             double absJoint = Abs(joint);
             double result = absJoint - Floor(absJoint / PI2) * PI2;
-            if (result > PI) result = (result - PI2);
+            if (result > PI) result -= PI2;
             result *= Sign(joint);
             return result;
         }

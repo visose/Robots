@@ -76,27 +76,20 @@ namespace Robots
 
             for (int i = 0; i < program.Code.Count; i++)
             {
-                string group = MechanicalGroups[i].Name;
+                //string group = MechanicalGroups[i].Name;
                 //string programName = $"{program.Name}_{group}";
                 string programName = $"{program.Name}";
 
                 for (int j = 0; j < program.Code[i].Count; j++)
                 {
-                    string name;
-
-                    switch (j)
+                    string name = j switch
                     {
-                        case 0:
-                            name = $"{programName}.pjx"; break;
-                        case 1:
-                            name = $"{programName}.dtx"; break;
-                        case 2:
-                            name = "start.pgx"; break;
-                        case 3:
-                            name = "stop.pgx"; break;
-                        default:
-                            name = $"{programName}_{j - 4:000}.pgx"; break;
-                    }
+                        0 => $"{programName}.pjx",
+                        1 => $"{programName}.dtx",
+                        2 => "start.pgx",
+                        3 => "stop.pgx",
+                        _ => $"{programName}_{j - 4:000}.pgx",
+                    };
 
                     string file = Path.Combine(programDir, name);
                     var joinedCode = string.Join("\r\n", program.Code[i][j]);

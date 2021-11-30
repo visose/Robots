@@ -13,6 +13,24 @@ namespace Robots.Grasshopper
 {
     public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
     {
+        // Variable inputs
+        readonly IGH_Param[] _parameters = new IGH_Param[11]
+        {
+            new TargetParameter() { Name = "Target", NickName = "T", Description = "Reference target", Optional = false },
+            new Param_String() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false },
+            new Param_Plane() { Name = "Plane", NickName = "P", Description = "Target plane", Optional = false },
+            new Param_Integer() { Name = "RobConf", NickName = "Cf", Description = "Robot configuration", Optional = true },
+            new Param_String() { Name = "Motion", NickName = "M", Description = "Type of motion", Optional = true },
+            new ToolParameter() { Name = "Tool", NickName = "T", Description = "Tool or end effector", Optional = true },
+            new SpeedParameter() { Name = "Speed", NickName = "S", Description = "Speed of robot in mm/s", Optional = true },
+            new ZoneParameter() { Name = "Zone", NickName = "Z", Description = "Aproximation zone in mm", Optional = true },
+            new CommandParameter() { Name = "Command", NickName = "C", Description = "Robot command", Optional = true },
+            new FrameParameter() { Name = "Frame", NickName = "F", Description = "Base frame", Optional = true },
+            new Param_String() { Name = "External", NickName = "E", Description = "External axis", Optional = true }
+        };
+
+        bool _isCartesian = true;
+
         public CreateTarget() : base("Create target", "Target", "Creates or modifies a target. Right click for additional inputs", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{BC68DC2C-EED6-4717-9F49-80A2B21B75B6}");
@@ -20,7 +38,7 @@ namespace Robots.Grasshopper
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            Params.RegisterInputParam(parameters[2]);
+            Params.RegisterInputParam(_parameters[2]);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -63,7 +81,7 @@ namespace Robots.Grasshopper
             if (hasJoints)
             {
                 GH_String? jointsGH = null;
-                if (!DA.GetData("Joints", ref jointsGH) || jointsGH is null) 
+                if (!DA.GetData("Joints", ref jointsGH) || jointsGH is null)
                     return;
 
                 string[] jointsText = jointsGH.Value.Split(',');
@@ -224,25 +242,6 @@ namespace Robots.Grasshopper
             DA.SetData(0, new GH_Target(target));
         }
 
-        // Variable inputs
-
-        readonly IGH_Param[] parameters = new IGH_Param[11]
-{
-         new TargetParameter() { Name = "Target", NickName = "T", Description = "Reference target", Optional = false },
-         new Param_String() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false },
-         new Param_Plane() { Name = "Plane", NickName = "P", Description = "Target plane", Optional = false },
-         new Param_Integer() { Name = "RobConf", NickName = "Cf", Description = "Robot configuration", Optional = true },
-         new Param_String() { Name = "Motion", NickName = "M", Description = "Type of motion", Optional = true },
-         new ToolParameter() { Name = "Tool", NickName = "T", Description = "Tool or end effector", Optional = true },
-         new SpeedParameter() { Name = "Speed", NickName = "S", Description = "Speed of robot in mm/s", Optional = true },
-         new ZoneParameter() { Name = "Zone", NickName = "Z", Description = "Aproximation zone in mm", Optional = true },
-         new CommandParameter() { Name = "Command", NickName = "C", Description = "Robot command", Optional = true },
-         new FrameParameter() { Name = "Frame", NickName = "F", Description = "Base frame", Optional = true },
-         new Param_String() { Name = "External", NickName = "E", Description = "External axis", Optional = true }
-};
-
-        bool _isCartesian = true;
-
         public override bool Write(GH_IWriter writer)
         {
             writer.SetBoolean("IsCartesian", _isCartesian);
@@ -256,7 +255,6 @@ namespace Robots.Grasshopper
         }
 
         // Menu items
-
         protected override void AppendAdditionalComponentMenuItems(System.Windows.Forms.ToolStripDropDown menu)
         {
             Menu_AppendItem(menu, "Target input", AddTarget, true, Params.Input.Any(x => x.Name == "Target"));
@@ -278,7 +276,6 @@ namespace Robots.Grasshopper
         }
 
         // Varible methods
-
         private void SwitchCartesian()
         {
             if (_isCartesian)
@@ -303,7 +300,7 @@ namespace Robots.Grasshopper
 
         private void AddParam(int index)
         {
-            IGH_Param parameter = parameters[index];
+            IGH_Param parameter = _parameters[index];
 
             if (Params.Input.Any(x => x.Name == parameter.Name))
             {
@@ -315,7 +312,7 @@ namespace Robots.Grasshopper
 
                 for (int i = 0; i < Params.Input.Count; i++)
                 {
-                    int otherIndex = Array.FindIndex(parameters, x => x.Name == Params.Input[i].Name);
+                    int otherIndex = Array.FindIndex(_parameters, x => x.Name == Params.Input[i].Name);
                     if (otherIndex > index)
                     {
                         insertIndex = i;
@@ -332,12 +329,11 @@ namespace Robots.Grasshopper
 
         private void AddTarget(object sender, EventArgs e) => AddParam(0);
         private void AddJoints(object sender, EventArgs e) => AddParam(1);
-
         private void AddPlane(object sender, EventArgs e) => AddParam(2);
         private void AddConfig(object sender, EventArgs e)
         {
             AddParam(3);
-            var parameter = parameters[3];
+            var parameter = _parameters[3];
 
             if (Params.Input.Any(x => x.Name == parameter.Name))
             {
@@ -359,7 +355,7 @@ namespace Robots.Grasshopper
         private void AddMotion(object sender, EventArgs e)
         {
             AddParam(4);
-            var parameter = parameters[4];
+            var parameter = _parameters[4];
 
             if (Params.Input.Any(x => x.Name == parameter.Name))
             {

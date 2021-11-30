@@ -9,6 +9,21 @@ namespace Robots.Grasshopper
 {
     public sealed class DeconstructTarget : GH_Component, IGH_VariableParameterComponent
     {
+        // Variable outputs
+        readonly IGH_Param[] _parameters = new IGH_Param[10]
+        {
+            new Param_String() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false },
+            new Param_Plane() { Name = "Plane", NickName = "P", Description = "Target plane", Optional = false },
+            new Param_Integer() { Name = "RobConf", NickName = "Cf", Description = "Robot configuration", Optional = true },
+            new Param_String() { Name = "Motion", NickName = "M", Description = "Type of motion", Optional = true },
+            new ToolParameter() { Name = "Tool", NickName = "T", Description = "Tool or end effector", Optional = true },
+            new SpeedParameter() { Name = "Speed", NickName = "S", Description = "Speed of robot in mm/s", Optional = true },
+            new ZoneParameter() { Name = "Zone", NickName = "Z", Description = "Approximation zone in mm", Optional = true },
+            new CommandParameter() { Name = "Command", NickName = "C", Description = "Robot command", Optional = true },
+            new FrameParameter() { Name = "Frame", NickName = "F", Description = "Base frame", Optional = true },
+            new Param_String() { Name = "External", NickName = "E", Description = "External axes", Optional = true }
+        };
+
         public DeconstructTarget() : base("Deconstruct target", "DeTarget", "Deconstructs a target. Right click for additional outputs", "Robots", "Components") { }
         public override GH_Exposure Exposure => GH_Exposure.secondary;
         public override Guid ComponentGuid => new Guid("{3252D880-59F9-4C9A-8A92-A6CD4C0BA591}");
@@ -21,7 +36,7 @@ namespace Robots.Grasshopper
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            Params.RegisterOutputParam(parameters[0]);
+            Params.RegisterOutputParam(_parameters[0]);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -61,26 +76,7 @@ namespace Robots.Grasshopper
             if (hasExternal) DA.SetData("External", new GH_String(string.Join(",", target.Value.External.Select(x => $"{x:0.000}"))));
         }
 
-        // Variable outputs
-
-        //bool isCartesian = false;
-
-        readonly IGH_Param[] parameters = new IGH_Param[10]
-{
-         new Param_String() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false },
-         new Param_Plane() { Name = "Plane", NickName = "P", Description = "Target plane", Optional = false },
-         new Param_Integer() { Name = "RobConf", NickName = "Cf", Description = "Robot configuration", Optional = true },
-         new Param_String() { Name = "Motion", NickName = "M", Description = "Type of motion", Optional = true },
-         new ToolParameter() { Name = "Tool", NickName = "T", Description = "Tool or end effector", Optional = true },
-         new SpeedParameter() { Name = "Speed", NickName = "S", Description = "Speed of robot in mm/s", Optional = true },
-         new ZoneParameter() { Name = "Zone", NickName = "Z", Description = "Approximation zone in mm", Optional = true },
-         new CommandParameter() { Name = "Command", NickName = "C", Description = "Robot command", Optional = true },
-         new FrameParameter() { Name = "Frame", NickName = "F", Description = "Base frame", Optional = true },
-         new Param_String() { Name = "External", NickName = "E", Description = "External axes", Optional = true }
-};
-
         // Menu items
-
         protected override void AppendAdditionalComponentMenuItems(System.Windows.Forms.ToolStripDropDown menu)
         {
             Menu_AppendItem(menu, "Joints output", AddJoints, true, Params.Output.Any(x => x.Name == "Joints"));
@@ -99,7 +95,7 @@ namespace Robots.Grasshopper
 
         private void AddParam(int index)
         {
-            IGH_Param parameter = parameters[index];
+            IGH_Param parameter = _parameters[index];
 
             if (Params.Output.Any(x => x.Name == parameter.Name))
             {
@@ -110,7 +106,7 @@ namespace Robots.Grasshopper
                 int insertIndex = Params.Output.Count;
                 for (int i = 0; i < Params.Output.Count; i++)
                 {
-                    int otherIndex = Array.FindIndex(parameters, x => x.Name == Params.Output[i].Name);
+                    int otherIndex = Array.FindIndex(_parameters, x => x.Name == Params.Output[i].Name);
                     if (otherIndex > index)
                     {
                         insertIndex = i;
