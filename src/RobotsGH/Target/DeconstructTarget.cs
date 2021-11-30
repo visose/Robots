@@ -58,7 +58,7 @@ namespace Robots.Grasshopper
             bool hasFrame = Params.Output.Any(x => x.Name == "Frame");
             bool hasExternal = Params.Output.Any(x => x.Name == "External");
 
-            if (hasJoints) DA.SetData("Joints", isCartesian ? null : new GH_String(string.Join(",", ((JointTarget)target.Value).Joints.Select(x => $"{x:0.000}"))));
+            if (hasJoints) DA.SetData("Joints", isCartesian ? null : new GH_String(string.Join(",", ((JointTarget)target.Value).Joints.Select(x => $"{x:0.#####}"))));
             if (hasPlane) DA.SetData("Plane", isCartesian ? new GH_Plane(((CartesianTarget)target.Value).Plane) : null);
             if (hasConfig && isCartesian)
             {
@@ -73,7 +73,7 @@ namespace Robots.Grasshopper
             if (hasZone && (target.Value.Zone != null)) DA.SetData("Zone", new GH_Zone(target.Value.Zone));
             if (hasCommand) DA.SetData("Command", new GH_Command(target.Value.Command));
             if (hasFrame) DA.SetData("Frame", new GH_Frame(target.Value.Frame));
-            if (hasExternal) DA.SetData("External", new GH_String(string.Join(",", target.Value.External.Select(x => $"{x:0.000}"))));
+            if (hasExternal) DA.SetData("External", new GH_String(string.Join(",", target.Value.External.Select(x => $"{x:0.#####}"))));
         }
 
         // Menu items

@@ -176,7 +176,7 @@ DEF {_program.Name}_{groupName}_{file:000}()
                             if (Abs(currentPercentSpeed - percentSpeed) > UnitTol)
                             {
                                 code.Add("BAS(#VEL_PTP, 100)");
-                                if (cellTarget.DeltaTime > UnitTol) code.Add($"$VEL_AXIS[{programTarget.LeadingJoint + 1}] = {percentSpeed * 100:0.000}");
+                                if (cellTarget.DeltaTime > UnitTol) code.Add($"$VEL_AXIS[{programTarget.LeadingJoint + 1}] = {percentSpeed * 100:0.###}");
                                 currentPercentSpeed = percentSpeed;
                             }
                         }

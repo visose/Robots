@@ -45,6 +45,6 @@ namespace Robots
             RotationExternal = rotationExternal;
         }
 
-        public override string ToString() => (Name != null) ? $"Speed ({Name})" : $"Speed ({TranslationSpeed:0.0} mm/s)";
+        public override string ToString() => (Name != null) ? $"Speed ({Name})" : $"Speed ({TranslationSpeed:0.#} mm/s)";
     }
 }
