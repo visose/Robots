@@ -35,15 +35,23 @@ class Commands
         Manifest.CreateAndSave(path);
 
         // Build package
+        string yak = GetYakPath();        
+        Run(yak, "build", PackageFolder);        
+    }
+
+    public static void Publish()
+    {
+        string packagePath = Directory.EnumerateFiles(PackageFolder)
+            .Single(f => Path.GetExtension(f) == ".yak");
+
+        string packageFile = Path.GetFileName(packagePath);
         string yak = GetYakPath();
-        var currentDir = Directory.GetCurrentDirectory();
-        Directory.SetCurrentDirectory(PackageFolder);
-        Run(yak, "build");
-        Directory.SetCurrentDirectory(currentDir);
+        Run(yak, $"push {packageFile}", PackageFolder);  
     }
 
     static string GetYakPath()
     {
+        // Download: http://files.mcneel.com/yak/tools/latest/yak.exe
         return "C:/Program Files/Rhino 7/System/Yak.exe";
     }
 }

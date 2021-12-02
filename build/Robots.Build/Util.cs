@@ -8,10 +8,15 @@ static class Util
     public static string BuildFolder => Path.Combine(ArtifactsFolder, "bin", "Robots.Grasshopper", "net48");
     public static string PackageFolder => Path.Combine(ArtifactsFolder, "package");
 
-    public static void Run(string file, string args)
+    public static void Run(string file, string args, string? setCurrentDir = null)
     {
+        var currentDir = Directory.GetCurrentDirectory();
+
+        if (setCurrentDir != null)
+            Directory.SetCurrentDirectory(setCurrentDir);
+
         var startInfo = new ProcessStartInfo(file, args)
-        {            
+        {
             CreateNoWindow = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true
@@ -28,6 +33,8 @@ static class Util
         process.BeginErrorReadLine();
         process.BeginOutputReadLine();
         process.WaitForExit();
+
+        Directory.SetCurrentDirectory(currentDir);
 
         if (process.ExitCode != 0)
         {

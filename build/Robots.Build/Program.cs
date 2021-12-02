@@ -4,6 +4,7 @@ var commandList = new Dictionary<string, Action>
 {
     { "build", Commands.Build },
     { "package", Commands.Package },
+    { "publish", Commands.Publish },
 };
 
 if (args.Length == 0)
