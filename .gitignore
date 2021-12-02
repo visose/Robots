@@ -14,8 +14,6 @@ nupkg/
 *.sln.docstates
 
 # Build results
-[Bb]in/
-[Oo]bj/
 artifacts/
 
 # Visual Studio 2015

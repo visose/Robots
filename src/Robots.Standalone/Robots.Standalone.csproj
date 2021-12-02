@@ -4,19 +4,13 @@
 		<TargetFramework>net6.0-windows</TargetFramework>
 		<OutputType>WinExe</OutputType>
 		<UseWPF>true</UseWPF>
-	</PropertyGroup>
-
-	<PropertyGroup>
-		<OutputPath>..\..\artifacts\bin</OutputPath>
+		<Nullable>disable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="HelixToolkit.SharpDX.Core.Wpf" Version="2.20.0" />
 		<PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<ProjectReference Include="..\Robots\Robots.csproj" />
-	</ItemGroup>
+	</ItemGroup>	
 
 </Project>

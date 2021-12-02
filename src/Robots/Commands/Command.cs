@@ -7,8 +7,8 @@ namespace Robots
     {
         public static Command Default { get; } = new Commands.Custom("DefaultCommand");
 
-        protected Dictionary<Manufacturers, Func<RobotSystem, string>> _declarations = new Dictionary<Manufacturers, Func<RobotSystem, string>>(4);
-        protected Dictionary<Manufacturers, Func<RobotSystem, Target, string>> _commands = new Dictionary<Manufacturers, Func<RobotSystem, Target, string>>(4);
+        protected Dictionary<Manufacturers, Func<RobotSystem, string>> _declarations = new(4);
+        protected Dictionary<Manufacturers, Func<RobotSystem, Target, string>> _commands = new(4);
         public bool RunBefore { get; set; } = false;
 
         protected virtual void ErrorChecking(RobotSystem robotSystem) { }
