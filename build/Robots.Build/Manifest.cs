@@ -28,7 +28,6 @@ class Manifest
 
     private Manifest()
     {
-
         var doc = XDocument.Load("Directory.Build.Props");
         XElement props = doc.Root?.Descendants().First() ??
             throw new NullReferenceException();
