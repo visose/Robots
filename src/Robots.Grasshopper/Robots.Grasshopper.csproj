@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	
+	<PropertyGroup>
+		<TargetFramework>net48</TargetFramework>
+		<GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+		<AssemblyTitle>Robots Grasshopper</AssemblyTitle>
+	</PropertyGroup>	
+
+	<ItemGroup>
+		<PackageReference Include="Grasshopper" Version="7.12.21313.6341" />
+		<PackageReference Include="System.Resources.Extensions" Version="6.0.0" />
+		<Reference Include="System.Windows.Forms" />
+		<ProjectReference Include="..\Robots\Robots.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="Properties\Resources.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Resources.resx</DependentUpon>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Update="Properties\Resources.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>Resources.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+	</ItemGroup>
+
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Exec Command="Copy &quot;$(TargetPath)&quot; &quot;$(TargetDir)Robots.gha&quot;&#xD;&#xA;Erase &quot;$(TargetPath)&quot;" />
+	</Target>
+	
+</Project>

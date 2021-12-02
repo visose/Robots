@@ -1,0 +1,24 @@
+<Project>
+	
+	<PropertyGroup>
+		<Product>Robots</Product>		
+		<Version>1.0.1</Version>
+		<Description>Create and simulate programs for ABB, KUKA, UR and Staubli robots.</Description>
+		<Copyright>Copyright (c) 2021</Copyright>
+		<Authors>Robots Authors</Authors>
+		<Url>https://github.com/visose/robots/discussions</Url>
+		<Tags>Robots;ABB;KUKA;UR;Staubli</Tags>
+		<IconUrl>https://github.com/visose/robots/raw/master/build/Assets/iconRobot.png</IconUrl>
+		<Company>$(Authors) - $(Url)</Company>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<ArtifactsDir>..\..\artifacts\</ArtifactsDir>
+		<OutputPath>$(ArtifactsDir)bin\$(MSBuildProjectName)</OutputPath>
+		<BaseIntermediateOutputPath>$(ArtifactsDir)obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+	</PropertyGroup>
+
+</Project>

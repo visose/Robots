@@ -5,9 +5,9 @@ VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robots", "src\Robots\Robots.csproj", "{3896FB4D-9007-48FB-B302-6B289B15E9BF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RobotsStandalone", "src\RobotsStandalone\RobotsStandalone.csproj", "{2556FB1C-3A8D-469B-8553-46C66BCF8BE4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Robots.Standalone", "src\Robots.Standalone\Robots.Standalone.csproj", "{2556FB1C-3A8D-469B-8553-46C66BCF8BE4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RobotsGH", "src\RobotsGH\RobotsGH.csproj", "{3E69607D-A2A9-4061-86E8-2EA7CCB79601}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robots.Grasshopper", "src\Robots.Grasshopper\Robots.Grasshopper.csproj", "{3E69607D-A2A9-4061-86E8-2EA7CCB79601}"
 	ProjectSection(ProjectDependencies) = postProject
 		{3896FB4D-9007-48FB-B302-6B289B15E9BF} = {3896FB4D-9007-48FB-B302-6B289B15E9BF}
 	EndProjectSection
@@ -15,12 +15,15 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{101C8522-302F-4233-A875-F76C3758F693}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		Directory.Build.Props = Directory.Build.Props
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Robots.Tests", "tests\Robots.Tests\Robots.Tests.csproj", "{16C2E987-7825-42F8-A2C7-8695F7964335}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robots.Tests", "tests\Robots.Tests\Robots.Tests.csproj", "{16C2E987-7825-42F8-A2C7-8695F7964335}"
 	ProjectSection(ProjectDependencies) = postProject
 		{3896FB4D-9007-48FB-B302-6B289B15E9BF} = {3896FB4D-9007-48FB-B302-6B289B15E9BF}
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robots.Build", "build\Robots.Build\Robots.Build.csproj", "{12BB4BF3-E673-4D12-B5FC-145141099C56}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,6 +47,10 @@ Global
 		{16C2E987-7825-42F8-A2C7-8695F7964335}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{16C2E987-7825-42F8-A2C7-8695F7964335}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{16C2E987-7825-42F8-A2C7-8695F7964335}.Release|Any CPU.Build.0 = Release|Any CPU
+		{12BB4BF3-E673-4D12-B5FC-145141099C56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12BB4BF3-E673-4D12-B5FC-145141099C56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12BB4BF3-E673-4D12-B5FC-145141099C56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12BB4BF3-E673-4D12-B5FC-145141099C56}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

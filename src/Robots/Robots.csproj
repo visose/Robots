@@ -1,10 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0;net48</TargetFrameworks>		
-		<LangVersion>8.0</LangVersion>
-		<Nullable>enable</Nullable>
-		<OutputPath>..\..\artifacts\bin</OutputPath>
+		<TargetFrameworks>netstandard2.0;net48</TargetFrameworks>
+		<AssemblyTitle>Robots Core</AssemblyTitle>
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
@@ -12,7 +9,6 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-		<PackageReference Include="Costura.Fody" Version="4.1.0" />
 		<PackageReference Include="RhinoCommon" Version="7.12.21313.6341" />
 	</ItemGroup>
 
@@ -36,11 +32,4 @@
 			<LastGenOutput>Resources.Designer.cs</LastGenOutput>
 		</EmbeddedResource>
 	</ItemGroup>
-
-	<!--<Target Name="PreventCopyLocal" AfterTargets="ResolveReferences">
-    <ItemGroup>
-      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' == 'RhinoCommon'" />
-    </ItemGroup>
-  </Target>-->
-
 </Project>

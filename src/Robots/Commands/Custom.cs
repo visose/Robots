@@ -4,8 +4,8 @@ namespace Robots.Commands
 {
     public class Custom : Command
     {
-        readonly Dictionary<Manufacturers, string> _customCommands = new Dictionary<Manufacturers, string>();
-        readonly Dictionary<Manufacturers, string> _customDeclarations = new Dictionary<Manufacturers, string>();
+        readonly Dictionary<Manufacturers, string> _customCommands = new();
+        readonly Dictionary<Manufacturers, string> _customDeclarations = new();
 
         public Custom(string name = "Custom command", Manufacturers manufacturer = Manufacturers.All, string? command = null, string? declaration = null)
         {

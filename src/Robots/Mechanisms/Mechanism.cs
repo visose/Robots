@@ -144,7 +144,7 @@ namespace Robots
                 string text = jointElement.Attribute(XName.Get("minrange")).Value;
                 double minRange = XmlConvert.ToDouble(text);
                 double maxRange = XmlConvert.ToDouble(jointElement.Attribute(XName.Get("maxrange")).Value);
-                Interval range = new Interval(minRange, maxRange);
+                var range = new Interval(minRange, maxRange);
                 double maxSpeed = XmlConvert.ToDouble(jointElement.Attribute(XName.Get("maxspeed")).Value);
                 Mesh? mesh = meshes?[i + 1].DuplicateMesh();
                 int number = XmlConvert.ToInt32(jointElement.Attribute(XName.Get("number")).Value) - 1;
