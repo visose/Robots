@@ -1,10 +1,10 @@
 
-![Home](https://github.com/visose/Robots/blob/master/Documentation/Images/title.png)
+![Home](https://github.com/visose/robots/blob/master/docs/images/title.png)
 
-Grasshopper plugin for programming ABB, KUKA, UR and Staubli robots
+Create and simulate programs for ABB, KUKA, UR and Staubli robots.
 
-* Download the binary from the [latest release](https://github.com/visose/Robots/releases).
-* Download a [robot library](https://github.com/visose/Robots/wiki/Robot-libraries).
-* Download the [example files](https://github.com/visose/Robots/tree/master/Documentation/Examples) (they work with the Bartlett robot library).
-* Read the [Wiki](https://github.com/visose/Robots/wiki).
-
+* Install in Rhino 7 using the _PackageManager command, search for `Robots`.
+> If you have an older version, delete `Robots.gha` and `Robots.dll` from the `Grasshopper Components` folder.
+* Download a [robot library](https://github.com/visose/robots/tree/master/libraries).
+* Download the [example files](https://github.com/visose/robots/tree/master/examples) (they work with the Bartlett robot library).
+* Read the [Wiki](https://github.com/visose/robots/wiki).
