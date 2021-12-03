@@ -43,9 +43,12 @@ public class MechanicalGroup
     {
         int index = 0;
         var groupAttribute = element.Attribute(XName.Get("group"));
-        if (groupAttribute != null) index = XmlConvert.ToInt32(groupAttribute.Value);
+
+        if (groupAttribute is not null) 
+            index = XmlConvert.ToInt32(groupAttribute.Value);
 
         var mechanisms = new List<Mechanism>();
+
         foreach (var mechanismElement in element.Elements())
             mechanisms.Add(Mechanism.Create(mechanismElement, loadMeshes));
 
@@ -56,18 +59,16 @@ public class MechanicalGroup
 
     public double DegreeToRadian(double degree, int i)
     {
-        if (i < 6)
-            return Robot.DegreeToRadian(degree, i);
-        else
-            return Externals.First(x => x.Joints.Contains(Joints.First(y => y.Number == i))).DegreeToRadian(degree, i);
+        return i < 6
+            ? Robot.DegreeToRadian(degree, i)
+            : Externals.First(x => x.Joints.Contains(Joints.First(y => y.Number == i))).DegreeToRadian(degree, i);
     }
 
     public double RadianToDegree(double radian, int i)
     {
-        if (i < 6)
-            return Robot.RadianToDegree(radian, i);
-        else
-            return Externals.First(x => x.Joints.Contains(Joints.First(y => y.Number == i))).RadianToDegree(radian, i);
+        return i < 6
+            ? Robot.RadianToDegree(radian, i)
+            : Externals.First(x => x.Joints.Contains(Joints.First(y => y.Number == i))).RadianToDegree(radian, i);
     }
 
     public double[] RadiansToDegreesExternal(Target target)

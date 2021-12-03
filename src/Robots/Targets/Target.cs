@@ -23,7 +23,7 @@ public abstract class Target : IToolpath
         Zone = zone ?? Zone.Default;
         Frame = frame ?? Frame.Default;
         Command = command ?? Command.Default;
-        External = (external != null) ? external.ToArray() : new double[0];
+        External = (external is not null) ? external.ToArray() : new double[0];
     }
 
     public void AppendCommand(Command command)

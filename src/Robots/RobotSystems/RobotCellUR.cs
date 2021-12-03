@@ -196,7 +196,7 @@ public class RobotCellUR : RobotSystem
 
 
         // Tool
-        if (target.Tool != null)
+        if (target.Tool is not null)
         {
             Plane toolPlane = target.Tool.Tcp;
             toolPlane.Transform(planes[planes.Count - 1].ToTransform());

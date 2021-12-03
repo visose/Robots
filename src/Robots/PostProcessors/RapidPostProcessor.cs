@@ -58,7 +58,7 @@ class RapidPostProcessor
             foreach (var command in _program.Attributes.OfType<Command>())
             {
                 string declaration = command.Declaration(_program);
-                if (declaration != null)
+                if (declaration is not null)
                     code.Add(declaration);
             }
         }

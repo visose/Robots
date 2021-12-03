@@ -17,7 +17,7 @@ class PositionerKinematics : MechanismKinematics
                 Joints[i] = target.External[externalNum];
         }
 
-        if (prevJoints != null)
+        if (prevJoints is not null)
             Joints = JointTarget.GetAbsoluteJoints(Joints, prevJoints);
     }
 

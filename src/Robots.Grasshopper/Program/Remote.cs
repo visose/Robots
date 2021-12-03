@@ -33,8 +33,11 @@ public class Remote : GH_Component
         if (!DA.GetData(0, ref program) || program is null) { return; }
 
         var remote = program.Value.RobotSystem.Remote;
-        if (remote == null) throw new Exception(" No remote functionality for this robot.");
-        if (DA.GetData(1, ref ip) && ip != null)
+
+        if (remote is null)
+            throw new Exception(" No remote functionality for this robot.");
+
+        if (DA.GetData(1, ref ip) && ip is not null)
             remote.IP = ip.Value;
 
         bool upload = false, play = false, pause = false;

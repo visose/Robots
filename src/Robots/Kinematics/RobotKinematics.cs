@@ -27,7 +27,7 @@ abstract class RobotKinematics : MechanismKinematics
 
             List<string> errors;
 
-            if (cartesianTarget.Configuration != null || prevJoints is null)
+            if (cartesianTarget.Configuration is not null || prevJoints is null)
             {
                 Configuration = cartesianTarget.Configuration ?? RobotConfigurations.None;
                 joints = InverseKinematics(transform, Configuration, out errors);
@@ -38,7 +38,7 @@ abstract class RobotKinematics : MechanismKinematics
                 Configuration = configuration;
             }
 
-            if (prevJoints != null)
+            if (prevJoints is not null)
                 Joints = JointTarget.GetAbsoluteJoints(joints, prevJoints);
             else
                 Joints = joints;

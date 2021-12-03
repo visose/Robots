@@ -58,7 +58,7 @@ public class CheckCollisions : GH_Component
         var collision = p.CheckCollisions(first.Select(x => x.Value), second.Select(x => x.Value), environment?.Value, environmentPlane, linearStep, angularStep);
         DA.SetData(0, collision.HasCollision);
 
-        if (collision.CollisionTarget != null)
+        if (collision.CollisionTarget is not null)
         {
             DA.SetData(1, collision.CollisionTarget.Index);
             DA.SetDataList(2, collision.Meshes);

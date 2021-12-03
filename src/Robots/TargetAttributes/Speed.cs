@@ -45,5 +45,5 @@ public class Speed : TargetAttribute
         RotationExternal = rotationExternal;
     }
 
-    public override string ToString() => (Name != null) ? $"Speed ({Name})" : $"Speed ({TranslationSpeed:0.#} mm/s)";
+    public override string ToString() => (Name is not null) ? $"Speed ({Name})" : $"Speed ({TranslationSpeed:0.#} mm/s)";
 }

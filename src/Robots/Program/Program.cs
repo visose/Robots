@@ -48,10 +48,10 @@ public class Program : IProgram
         Name = name;
         RobotSystem = robotSystem;
 
-        if (initCommands != null)
+        if (initCommands is not null)
             InitCommands.AddRange(initCommands.Flatten());
 
-        if (multiFileIndices != null && multiFileIndices.Count() > 0)
+        if (multiFileIndices is not null && multiFileIndices.Count() > 0)
         {
             multiFileIndices = multiFileIndices.Where(x => x < targetCount);
             MultiFileIndices = multiFileIndices.ToList();
@@ -69,8 +69,9 @@ public class Program : IProgram
         {
             var programTargets = subTargets.Select((x, i) =>
             {
-                if (x is null) throw new NullReferenceException($" Target {targetIndex} in robot {i} is null or invalid.");
-                return new ProgramTarget(x, i);
+                return x is not null
+                    ? new ProgramTarget(x, i)
+                    : throw new NullReferenceException($" Target {targetIndex} in robot {i} is null or invalid.");
             });
 
             var cellTarget = new CellTarget(programTargets, targetIndex);

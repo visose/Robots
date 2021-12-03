@@ -47,7 +47,7 @@ public class Kinematics : GH_Component
 
             foreach (var text in prevJointsText)
             {
-                if (text != null)
+                if (text is not null)
                 {
                     string[] jointsText = text.Value.Split(',');
                     var prevJoint = new double[jointsText.Length];

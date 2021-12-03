@@ -18,7 +18,7 @@ abstract class MechanismKinematics : KinematicSolution
         // Base plane
         Planes[0] = mechanism.BasePlane;
 
-        if (basePlane != null)
+        if (basePlane is not null)
         {
             Planes[0].Transform(Transform.PlaneToPlane(Plane.WorldXY, (Plane)basePlane));
         }

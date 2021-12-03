@@ -69,7 +69,7 @@ public class CreateProgram : GH_Component
 
         DA.SetData(0, new GH_Program(program));
 
-        if (program.Code != null)
+        if (program.Code is not null)
         {
             var path = DA.ParameterTargetPath(2);
             var structure = new GH_Structure<GH_String>();

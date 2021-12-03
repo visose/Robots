@@ -38,7 +38,7 @@ class MechanicalGroupKinematics : KinematicSolution
 
             if (external.MovesRobot)
             {
-                //Plane plane = (robotBase != null) ? robotBase.Value : Plane.WorldXY;
+                //Plane plane = (robotBase is not null) ? robotBase.Value : Plane.WorldXY;
                 Plane externalPlane = externalKinematics.Planes[externalKinematics.Planes.Length - 1];
 
                 //plane.Transform(externalPlane.ToTransform());
@@ -48,7 +48,7 @@ class MechanicalGroupKinematics : KinematicSolution
         }
 
         // Coupling
-        if (coupledPlane != null)
+        if (coupledPlane is not null)
         {
             var coupledFrame = target.Frame.ShallowClone();
             var plane = coupledFrame.Plane;
@@ -60,7 +60,7 @@ class MechanicalGroupKinematics : KinematicSolution
         // Robot
         var robot = group.Robot;
 
-        if (robot != null)
+        if (robot is not null)
         {
             var robotPrevJoints = prevJoints?.Subset(robot.Joints.Select(x => x.Number).ToArray());
             var robotKinematics = robot.Kinematics(target, robotPrevJoints, robotBase);

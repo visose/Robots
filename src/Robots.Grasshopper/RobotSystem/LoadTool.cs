@@ -31,7 +31,7 @@ public class LoadTool : GH_Component
         if (_parameter is null)
             throw new NullReferenceException(nameof(_parameter));
 
-        if (_valueList != null)
+        if (_valueList is not null)
             return;
 
         _valueList = _parameter.Sources.FirstOrDefault(s => s is GH_ValueList) as GH_ValueList ?? new GH_ValueList();

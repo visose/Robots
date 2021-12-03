@@ -27,12 +27,12 @@ public class CartesianTarget : Target
     {
         string type = $"Cartesian ({Plane.OriginX:0.##},{Plane.OriginY:0.##},{Plane.OriginZ:0.##})";
         string motion = $", {Motion}";
-        string configuration = Configuration != null ? $", \"{Configuration}\"" : "";
+        string configuration = Configuration is not null ? $", \"{Configuration}\"" : "";
         string frame = $", Frame ({Frame.Plane.OriginX:0.##},{Frame.Plane.OriginY:0.##},{Frame.Plane.OriginZ:0.##})";
         string tool = $", {Tool}";
         string speed = $", {Speed}";
         string zone = $", {Zone}";
-        string commands = Command != null ? ", Contains commands" : "";
+        string commands = Command is not null ? ", Contains commands" : "";
         string external = External.Length > 0 ? $", {External.Length.ToString():0} external axes" : "";
         return $"Target ({type}{motion}{configuration}{frame}{tool}{speed}{zone}{commands}{external})";
     }

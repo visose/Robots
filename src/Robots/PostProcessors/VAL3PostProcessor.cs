@@ -187,7 +187,7 @@ class VAL3PostProcessor
         foreach (var command in attributes.OfType<Command>())
         {
             string declaration = command.Declaration(_program);
-            if (declaration != null)
+            if (declaration is not null)
                 codes.Add(declaration);
         }
 
@@ -212,7 +212,7 @@ class VAL3PostProcessor
 
         void AddIO(string name, string type, string[] ios)
         {
-            if (ios != null)
+            if (ios is not null)
             {
                 var iosData = ios.Where(d => !string.IsNullOrEmpty(d)).Select(d => $@"link=""{d}""").ToArray();
                 if (iosData.Length > 0)

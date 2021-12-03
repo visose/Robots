@@ -62,7 +62,7 @@ public class Tool : TargetAttribute
                 XElement data = XElement.Load(file);
                 if (data.Name.LocalName != "RobotTools") continue;
                 element = data.Elements().FirstOrDefault(x => name == $"{x.Attribute(XName.Get("name")).Value}");
-                if (element != null) break;
+                if (element is not null) break;
             }
         }
 
@@ -111,7 +111,7 @@ public class Tool : TargetAttribute
                 Rhino.FileIO.File3dm geometry = Rhino.FileIO.File3dm.Read(file);
                 layer = geometry.AllLayers.FirstOrDefault(x => x.Name == model);
 
-                if (layer != null)
+                if (layer is not null)
                 {
                     var meshes = geometry.Objects.Where(x => x.Attributes.LayerIndex == layer.Index).Select(x => x.Geometry as Mesh);
 

@@ -11,7 +11,7 @@ public class RemoteAbb : IRemote
 
     public string? IP { get; set; }
     public List<string> Log { get; } = new List<string>();
-    public bool Connected => _controller != null && _controller.Connected;
+    public bool Connected => _controller is not null && _controller.Connected;
 
     internal RemoteAbb(RobotCellAbb cell)
     {
@@ -34,7 +34,7 @@ public class RemoteAbb : IRemote
         scanner.Scan();
 
         var controllerInfo =
-                 (IP != null) ?
+                 (IP is not null) ?
                  scanner.Controllers.FirstOrDefault(c => c.IPAddress.ToString() == IP) :
                  scanner.Controllers.FirstOrDefault();
 
@@ -65,7 +65,7 @@ public class RemoteAbb : IRemote
 
     public void Disconnect()
     {
-        if (_controller != null)
+        if (_controller is not null)
         {
             // AddLog("Disconnecting from controller.");
             // var task = _controller.Rapid.GetTasks().First();

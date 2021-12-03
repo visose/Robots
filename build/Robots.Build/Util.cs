@@ -12,7 +12,7 @@ static class Util
     {
         var currentDir = Directory.GetCurrentDirectory();
 
-        if (setCurrentDir != null)
+        if (setCurrentDir is not null)
             Directory.SetCurrentDirectory(setCurrentDir);
 
         var startInfo = new ProcessStartInfo(file, args)
@@ -43,4 +43,3 @@ static class Util
         }
     }
 }
-
