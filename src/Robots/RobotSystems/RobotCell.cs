@@ -13,7 +13,7 @@ public abstract class RobotCell : RobotSystem
         {
             var movesRobot = group.Externals.Find(m => m.MovesRobot);
             var robotDisplay = group.Robot.DisplayMesh;
-            if (movesRobot != null)
+            if (movesRobot is not null)
             {
                 var movableBase = movesRobot.Joints.Last().Plane;
                 movableBase.Transform(movesRobot.BasePlane.ToTransform());

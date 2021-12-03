@@ -10,8 +10,11 @@ class RobotCellKinematics
     {
         Solutions = new List<KinematicSolution>(new KinematicSolution[cell.MechanicalGroups.Count]);
 
-        if (targets.Count() != cell.MechanicalGroups.Count) throw new Exception(" Incorrect number of targets.");
-        if (prevJoints != null && prevJoints.Count() != cell.MechanicalGroups.Count) throw new Exception(" Incorrect number of previous joint values.");
+        if (targets.Count() != cell.MechanicalGroups.Count)
+            throw new ArgumentException(" Incorrect number of targets.");
+
+        if (prevJoints is not null && prevJoints.Count() != cell.MechanicalGroups.Count)
+            throw new ArgumentException(" Incorrect number of previous joint values.");
 
         var groups = cell.MechanicalGroups.ToList();
 
@@ -38,7 +41,9 @@ class RobotCellKinematics
 
             if (coupledGroup != -1 && target.Frame.CoupledMechanism == -1)
             {
-                if (coupledGroup == i) throw new Exception(" Can't couple a robot with itself.");
+                if (coupledGroup == i)
+                    throw new ArgumentException(" Can't couple a robot with itself.");
+
                 coupledPlane = Solutions[coupledGroup].Planes[Solutions[coupledGroup].Planes.Length - 2] as Plane?;
             }
             else

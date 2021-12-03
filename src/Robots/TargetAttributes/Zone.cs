@@ -45,5 +45,5 @@ public class Zone : TargetAttribute
             RotationExternal = Rotation;
     }
 
-    public override string ToString() => (Name != null) ? $"Zone ({Name})" : IsFlyBy ? $"Zone ({Distance:0.##} mm)" : $"Zone (Stop point)";
+    public override string ToString() => (Name is not null) ? $"Zone ({Name})" : IsFlyBy ? $"Zone ({Distance:0.##} mm)" : $"Zone (Stop point)";
 }

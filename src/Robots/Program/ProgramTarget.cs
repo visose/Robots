@@ -46,7 +46,7 @@ public class ProgramTarget
         get
         {
             //   var cartesian = Target as CartesianTarget;
-            //   if (cartesian != null) return cartesian.Plane;
+            //   if (cartesian is not null) return cartesian.Plane;
 
             Plane plane = WorldPlane;
             Plane framePlane = Target.Frame.Plane;
@@ -70,7 +70,7 @@ public class ProgramTarget
             if (IsJointTarget)
                 return false;
 
-            return ((CartesianTarget)Target).Configuration != null;
+            return ((CartesianTarget)Target).Configuration is not null;
         }
     }
 
@@ -82,7 +82,7 @@ public class ProgramTarget
 
         var commands = new List<Command>();
 
-        if (target.Command != null)
+        if (target.Command is not null)
         {
             if (target.Command is Commands.Group g)
                 commands.AddRange(g.Flatten());
@@ -90,7 +90,7 @@ public class ProgramTarget
                 commands.Add(target.Command);
         }
 
-        Commands = new Commands.Group(commands.Where(c => c != null && c != Command.Default));
+        Commands = new Commands.Group(commands.Where(c => c is not null && c != Command.Default));
     }
 
     public ProgramTarget ShallowClone(CellTarget cellTarget)
@@ -174,7 +174,7 @@ public class ProgramTarget
             errors.AddRange(kinematics.Errors);
         }
 
-        if (warnings != null && prevTarget != null && prevTarget.Kinematics.Configuration != kinematics.Configuration)
+        if (warnings is not null && prevTarget is not null && prevTarget.Kinematics.Configuration != kinematics.Configuration)
         {
             ChangesConfiguration = true;
             warnings.Add($"Configuration changed to \"{kinematics.Configuration}\" on target {Index} of robot {Group}");

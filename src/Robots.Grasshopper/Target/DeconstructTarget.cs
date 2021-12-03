@@ -62,13 +62,13 @@ public sealed class DeconstructTarget : GH_Component, IGH_VariableParameterCompo
         {
             var targetConfig = ((CartesianTarget)target.Value).Configuration;
 
-            if (targetConfig != null)
+            if (targetConfig is not null)
                 DA.SetData("RobConf", new GH_Integer((int)targetConfig));
         }
         if (hasMotion) DA.SetData("Motion", isCartesian ? new GH_String(((CartesianTarget)target.Value).Motion.ToString()) : null);
-        if (hasTool && (target.Value.Tool != null)) DA.SetData("Tool", new GH_Tool(target.Value.Tool));
-        if (hasSpeed && (target.Value.Speed != null)) DA.SetData("Speed", new GH_Speed(target.Value.Speed));
-        if (hasZone && (target.Value.Zone != null)) DA.SetData("Zone", new GH_Zone(target.Value.Zone));
+        if (hasTool && (target.Value.Tool is not null)) DA.SetData("Tool", new GH_Tool(target.Value.Tool));
+        if (hasSpeed && (target.Value.Speed is not null)) DA.SetData("Speed", new GH_Speed(target.Value.Speed));
+        if (hasZone && (target.Value.Zone is not null)) DA.SetData("Zone", new GH_Zone(target.Value.Zone));
         if (hasCommand) DA.SetData("Command", new GH_Command(target.Value.Command));
         if (hasFrame) DA.SetData("Frame", new GH_Frame(target.Value.Frame));
         if (hasExternal) DA.SetData("External", new GH_String(string.Join(",", target.Value.External.Select(x => $"{x:0.#####}"))));

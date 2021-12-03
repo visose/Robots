@@ -61,7 +61,7 @@ class URScriptPostProcessor
         foreach (var command in _program.Attributes.OfType<Command>())
         {
             string declaration = command.Declaration(_program);
-            if (declaration != null && declaration.Length > 0)
+            if (declaration is not null && declaration.Length > 0)
             {
                 declaration = indent + declaration;
                 //  declaration = indent + declaration.Replace("\n", "\n" + indent);

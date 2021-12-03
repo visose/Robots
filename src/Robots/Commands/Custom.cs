@@ -13,10 +13,10 @@ public class Custom : Command
 
     public void AddCommand(Manufacturers manufacturer, string? command, string? declaration)
     {
-        if (command != null)
+        if (command is not null)
             _customCommands.Add(manufacturer, command);
 
-        if (declaration != null)
+        if (declaration is not null)
             _customDeclarations.Add(manufacturer, declaration);
     }
 

@@ -27,5 +27,3 @@ foreach (var arg in args)
 
 Console.WriteLine("Finished with no errors.");
 return 0;
-
-

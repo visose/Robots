@@ -58,7 +58,7 @@ DEFDAT {_program.Name}_{groupName} PUBLIC
         foreach (var command in _program.Attributes.OfType<Command>())
         {
             string declaration = command.Declaration(_program);
-            if (declaration != null) code.Add(declaration);
+            if (declaration is not null) code.Add(declaration);
         }
 
         code.Add("ENDDAT");
@@ -250,7 +250,7 @@ DEF {_program.Name}_{groupName}_{file:000}()
                         }
 
                     default:
-                        throw new NotImplementedException($"Motion {cartesian.Motion} not implemented.");
+                        throw new NotImplementedException($" Motion {cartesian.Motion} not implemented.");
                 }
             }
 

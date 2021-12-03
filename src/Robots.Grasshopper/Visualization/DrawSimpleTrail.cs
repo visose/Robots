@@ -48,7 +48,7 @@ public class DrawSimpleTrail : GH_Component
             _trail = new SimpleTrail(_program, length, mechanicalGroup);
         }
 
-        if (_trail != null)
+        if (_trail is not null)
         {
             _trail.Length = length;
             _trail.Update();

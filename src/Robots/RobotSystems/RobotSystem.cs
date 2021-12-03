@@ -116,7 +116,7 @@ public abstract class RobotSystem
                 XElement data = XElement.Load(file);
                 if (data.Name.LocalName != "RobotSystems") continue;
                 element = data.Elements().FirstOrDefault(x => name == $"{x.Attribute(XName.Get("name")).Value}");
-                if (element != null)
+                if (element is not null)
                     break;
             }
         }
@@ -153,7 +153,7 @@ public abstract class RobotSystem
         IO io;
         XElement ioElement = element.Element(XName.Get("IO"));
 
-        if (ioElement != null)
+        if (ioElement is not null)
         {
             string[]? doNames = null, diNames = null, aoNames = null, aiNames = null;
 
@@ -162,10 +162,10 @@ public abstract class RobotSystem
             var aoElement = ioElement.Element(XName.Get("AO"));
             var aiElement = ioElement.Element(XName.Get("AI"));
 
-            if (doElement != null) doNames = doElement.Attribute(XName.Get("names")).Value.Split(',');
-            if (diElement != null) diNames = diElement.Attribute(XName.Get("names")).Value.Split(',');
-            if (aoElement != null) aoNames = aoElement.Attribute(XName.Get("names")).Value.Split(',');
-            if (aiElement != null) aiNames = aiElement.Attribute(XName.Get("names")).Value.Split(',');
+            if (doElement is not null) doNames = doElement.Attribute(XName.Get("names")).Value.Split(',');
+            if (diElement is not null) diNames = diElement.Attribute(XName.Get("names")).Value.Split(',');
+            if (aoElement is not null) aoNames = aoElement.Attribute(XName.Get("names")).Value.Split(',');
+            if (aiElement is not null) aiNames = aiElement.Attribute(XName.Get("names")).Value.Split(',');
 
             io = new IO(doNames, diNames, aoNames, aiNames);
         }

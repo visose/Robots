@@ -46,7 +46,7 @@ public class CustomCode : GH_Component
         }
 
         var programCode = program.Value.Code;
-        if (programCode != null && programCode.Count > 0)
+        if (programCode is not null && programCode.Count > 0)
         {
             //var copyCode = programCode.ToList();
 

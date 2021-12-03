@@ -80,7 +80,7 @@ public abstract class Mechanism
                 Rhino.FileIO.File3dm geometry = Rhino.FileIO.File3dm.Read(file);
                 var layer = geometry.AllLayers.FirstOrDefault(x => x.Name == model);
 
-                if (layer != null)
+                if (layer is not null)
                 {
                     int i = 0;
                     while (true)
@@ -112,7 +112,7 @@ public abstract class Mechanism
 
         bool movesRobot = false;
         var movesRobotAttribute = element.Attribute(XName.Get("movesRobot"));
-        if (movesRobotAttribute != null) movesRobot = XmlConvert.ToBoolean(movesRobotAttribute.Value);
+        if (movesRobotAttribute is not null) movesRobot = XmlConvert.ToBoolean(movesRobotAttribute.Value);
 
         double payload = Convert.ToDouble(element.Attribute(XName.Get("payload")).Value);
 

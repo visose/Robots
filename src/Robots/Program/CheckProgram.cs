@@ -75,7 +75,7 @@ class CheckProgram
             }
         }
 
-        if (resizeTarget != null)
+        if (resizeTarget is not null)
         {
             _program.Warnings.Add($"{resizeCount} targets had wrong number of external axes configured, the first one being target {resizeTarget.Index} of robot {resizeTarget.Group}.");
         }
@@ -96,7 +96,7 @@ class CheckProgram
             _program.Warnings.Add($" {defaultSpeeds.Count} targets have their speed set to default, the first one being target {first.Index} in robot {first.Group}");
         }
 
-        var linearForced = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target is CartesianTarget cartesian && cartesian.Motion == Motions.Linear && cartesian.Configuration != null).ToList();
+        var linearForced = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target is CartesianTarget cartesian && cartesian.Motion == Motions.Linear && cartesian.Configuration is not null).ToList();
         if (linearForced.Count > 0)
         {
             var first = linearForced[0];

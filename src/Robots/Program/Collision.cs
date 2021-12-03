@@ -32,7 +32,7 @@ public class Collision
 
     public Mesh[]? Meshes { get; private set; }
     public CellTarget? CollisionTarget { get; private set; }
-    public bool HasCollision => CollisionTarget != null;
+    public bool HasCollision => CollisionTarget is not null;
 
     internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh? environment, int environmentPlane, double linearStep, double angularStep)
     {
@@ -95,7 +95,7 @@ public class Collision
                 var robotMeshes = PoseMeshes(_program.RobotSystem, kinematics, tools);
                 meshes.AddRange(robotMeshes);
 
-                if (_environment != null)
+                if (_environment is not null)
                 {
                     if (_environmentPlane != -1)
                     {
