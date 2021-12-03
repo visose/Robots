@@ -6,6 +6,7 @@ namespace Robots.Grasshopper;
 
 public class GH_RobotSystem : GH_Goo<RobotSystem>, IGH_PreviewData
 {
+    public GH_RobotSystem() { }
     public GH_RobotSystem(GH_RobotSystem goo) { Value = goo.Value; }
     public GH_RobotSystem(RobotSystem native) { Value = native; }
     public override IGH_Goo Duplicate() => new GH_RobotSystem(this);

@@ -4,6 +4,7 @@ namespace Robots.Grasshopper;
 
 public class GH_Program : GH_Goo<IProgram>
 {
+    public GH_Program() { }
     public GH_Program(GH_Program goo) { Value = goo.Value; }
     public GH_Program(IProgram native) { Value = native; }
     public override IGH_Goo Duplicate() => new GH_Program(this);
