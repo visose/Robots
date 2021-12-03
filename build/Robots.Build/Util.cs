@@ -8,7 +8,7 @@ static class Util
     public static string BuildFolder => Path.Combine(ArtifactsFolder, "bin", "Robots.Grasshopper", "net48");
     public static string PackageFolder => Path.Combine(ArtifactsFolder, "package");
 
-    public static void Run(string file, string args, string? setCurrentDir = null)
+    public static int Run(string file, string args, string? setCurrentDir = null)
     {
         var currentDir = Directory.GetCurrentDirectory();
 
@@ -35,11 +35,6 @@ static class Util
         process.WaitForExit();
 
         Directory.SetCurrentDirectory(currentDir);
-
-        if (process.ExitCode != 0)
-        {
-            Console.WriteLine("Premature exit.");
-            Environment.Exit(process.ExitCode);
-        }
+        return process.ExitCode;
     }
 }

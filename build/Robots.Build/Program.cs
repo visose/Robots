@@ -1,7 +1,8 @@
 ﻿using Robots.Build;
 
-var commandList = new Dictionary<string, Action>
+var commandList = new Dictionary<string, Func<int>>
 {
+    { "test", Commands.Test },
     { "build", Commands.Build },
     { "package", Commands.Package },
     { "publish", Commands.Publish },
@@ -22,7 +23,13 @@ foreach (var arg in args)
     }
 
     Console.WriteLine($"Starting {arg}...");
-    action();
+    int result = action();
+
+    if (result != 0)
+    {
+        Console.WriteLine("Premature exit.");
+        return result;
+    }
 }
 
 Console.WriteLine("Finished with no errors.");

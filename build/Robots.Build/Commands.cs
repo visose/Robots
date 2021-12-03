@@ -4,12 +4,17 @@ namespace Robots.Build;
 
 class Commands
 {
-    public static void Build()
+    public static int Test()
     {
-        Run("dotnet", "build src/Robots.Grasshopper/Robots.Grasshopper.csproj -c Release");
+        return Run("dotnet", "test tests/Robots.Tests/Robots.Tests.csproj");
     }
 
-    public static void Package()
+    public static int Build()
+    {
+        return Run("dotnet", "build src/Robots.Grasshopper/Robots.Grasshopper.csproj -c Release");
+    }
+
+    public static int Package()
     {
         // Pacakge folder        
         if (Directory.Exists(PackageFolder))
@@ -36,17 +41,17 @@ class Commands
 
         // Build package
         string yak = GetYakPath();
-        Run(yak, "build", PackageFolder);
+        return Run(yak, "build", PackageFolder);
     }
 
-    public static void Publish()
+    public static int Publish()
     {
         string packagePath = Directory.EnumerateFiles(PackageFolder)
             .Single(f => Path.GetExtension(f) == ".yak");
 
         string packageFile = Path.GetFileName(packagePath);
         string yak = GetYakPath();
-        Run(yak, $"push {packageFile}", PackageFolder);
+        return Run(yak, $"push {packageFile}", PackageFolder);
     }
 
     static string GetYakPath()
