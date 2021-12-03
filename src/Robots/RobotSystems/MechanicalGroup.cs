@@ -41,12 +41,7 @@ public class MechanicalGroup
 
     internal static MechanicalGroup Create(XElement element, bool loadMeshes)
     {
-        int index = 0;
-        var groupAttribute = element.Attribute(XName.Get("group"));
-
-        if (groupAttribute is not null) 
-            index = XmlConvert.ToInt32(groupAttribute.Value);
-
+        var index = element.GetIntAttributeOrDefault("group");
         var mechanisms = new List<Mechanism>();
 
         foreach (var mechanismElement in element.Elements())

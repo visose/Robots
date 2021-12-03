@@ -75,7 +75,6 @@ public abstract class RobotSystem
     {
         var names = new List<string>();
         var elements = new List<XElement>();
-        //string folder = $@"{AssemblyDirectory}\robots";
         string folder = LibraryPath;
 
         if (Directory.Exists(folder))
@@ -93,10 +92,8 @@ public abstract class RobotSystem
             throw new DirectoryNotFoundException($" Folder '{folder}' not found");
         }
 
-        //  elements.AddRange(XElement.Parse(Properties.Resources.robotsData).Elements());
-
         foreach (var element in elements)
-            names.Add($"{element.Attribute(XName.Get("name")).Value}");
+            names.Add($"{element.GetAttribute("name")}");
 
         return names;
     }
@@ -104,7 +101,6 @@ public abstract class RobotSystem
     public static RobotSystem Load(string name, Plane basePlane, bool loadMeshes = true)
     {
         XElement? element = null;
-        //string folder = $@"{AssemblyDirectory}\robots";
         string folder = LibraryPath;
 
         if (Directory.Exists(folder))
@@ -114,8 +110,12 @@ public abstract class RobotSystem
             foreach (var file in files)
             {
                 XElement data = XElement.Load(file);
-                if (data.Name.LocalName != "RobotSystems") continue;
-                element = data.Elements().FirstOrDefault(x => name == $"{x.Attribute(XName.Get("name")).Value}");
+
+                if (data.Name.LocalName != "RobotSystems") 
+                    continue;
+
+                element = data.Elements().FirstOrDefault(x => name == $"{x.GetAttribute("name")}");
+
                 if (element is not null)
                     break;
             }
@@ -140,40 +140,18 @@ public abstract class RobotSystem
     private static RobotSystem Create(XElement element, Plane basePlane, bool loadMeshes)
     {
         var type = element.Name.LocalName;
-        var name = element.Attribute(XName.Get("name")).Value;
-        var manufacturer = (Manufacturers)Enum.Parse(typeof(Manufacturers), element.Attribute(XName.Get("manufacturer")).Value);
-        //var mechanisms = new List<Mechanism>();
+        var name = element.GetAttribute("name");        
+        var manufacturerAttribute = element.GetAttribute("manufacturer");
+        
+        if (!Enum.TryParse<Manufacturers>(manufacturerAttribute, out var manufacturer))
+            throw new ArgumentException($" Manufacturer '{manufacturerAttribute}' not valid.");
 
         var mechanicalGroups = new List<MechanicalGroup>();
+        
         foreach (var mechanicalGroup in element.Elements(XName.Get("Mechanisms")))
-        {
             mechanicalGroups.Add(MechanicalGroup.Create(mechanicalGroup, loadMeshes));
-        }
 
-        IO io;
-        XElement ioElement = element.Element(XName.Get("IO"));
-
-        if (ioElement is not null)
-        {
-            string[]? doNames = null, diNames = null, aoNames = null, aiNames = null;
-
-            var doElement = ioElement.Element(XName.Get("DO"));
-            var diElement = ioElement.Element(XName.Get("DI"));
-            var aoElement = ioElement.Element(XName.Get("AO"));
-            var aiElement = ioElement.Element(XName.Get("AI"));
-
-            if (doElement is not null) doNames = doElement.Attribute(XName.Get("names")).Value.Split(',');
-            if (diElement is not null) diNames = diElement.Attribute(XName.Get("names")).Value.Split(',');
-            if (aoElement is not null) aoNames = aoElement.Attribute(XName.Get("names")).Value.Split(',');
-            if (aiElement is not null) aiNames = aiElement.Attribute(XName.Get("names")).Value.Split(',');
-
-            io = new IO(doNames, diNames, aoNames, aiNames);
-        }
-        else
-        {
-            io = new IO();
-        }
-
+        var io = new IO(element.GetElementOrDefault("IO"));
         Mesh? environment = null;
 
         if (type == "RobotCell")

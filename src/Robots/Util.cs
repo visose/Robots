@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Xml;
+using System.Xml.Linq;
 using Rhino.Geometry;
 using static System.Math;
 
@@ -6,6 +7,8 @@ namespace Robots;
 
 static class Util
 {
+    // Constants
+
     public const double DistanceTol = 0.001;
     public const double AngleTol = 0.001;
     public const double TimeTol = 0.00001;
@@ -13,57 +16,56 @@ static class Util
     public const double SingularityTol = 0.0001;
     public const double HalfPI = PI * 0.5;
 
-    internal static Transform ToTransform(this double[,] matrix)
+    // Serialization
+
+    public static XElement GetElement(this XElement element, string name)
     {
-        var transform = new Transform();
-
-        for (int i = 0; i < 4; i++)
-            for (int j = 0; j < 4; j++)
-                transform[i, j] = matrix[i, j];
-
-        return transform;
+        return element.Element(XName.Get(name))
+            ??  throw new ArgumentException($" XML tag '{element.Name} is missing '{name} tag.");
     }
 
-    internal static Plane ToPlane(this Transform transform)
+    public static XElement? GetElementOrDefault(this XElement element, string name)
     {
-        Plane plane = Plane.WorldXY;
-        plane.Transform(transform);
-        return plane;
+        return element.Element(XName.Get(name));
     }
 
-    internal static Transform ToTransform(this Plane plane)
+    public static string GetAttribute(this XElement element, string name)
     {
-        return Transform.PlaneToPlane(Plane.WorldXY, plane);
+        var attribute = element.Attribute(XName.Get(name))
+            ?? throw new ArgumentException($" XML tag '{element.Name} is missing '{name} attribute.");
+        
+        return attribute.Value;
     }
 
-    internal static string AssemblyDirectory
+    public static bool GetBoolAttributeOrDefault(this XElement element, string name)
     {
-        get
-        {
-            string codeBase = Assembly.GetExecutingAssembly().CodeBase;
-            var uri = new UriBuilder(codeBase);
-            string path = Uri.UnescapeDataString(uri.Path);
-            return Path.GetDirectoryName(path);
-        }
+        string? s = element.Element(XName.Get(name))?.Value;
+        return s is not null && XmlConvert.ToBoolean(s);
     }
 
-    internal static string LibraryPath
+    public static double GetDoubleAttribute(this XElement element, string name)
     {
-        get
-        {
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Robots");
-        }
+        var s = element.GetAttribute(name);
+        return XmlConvert.ToDouble(s);
     }
 
-    internal static double ToRadians(this double value)
+    public static int GetIntAttribute(this XElement element, string name)
     {
-        return value * (PI / 180);
+        var s = element.GetAttribute(name);
+        return XmlConvert.ToInt32(s);
     }
 
-    internal static double ToDegrees(this double value)
+    public static int GetIntAttributeOrDefault(this XElement element, string name)
     {
-        return value * (180 / PI);
+        string? s = element.Element(XName.Get(name))?.Value;
+        return s is null ? 0 : XmlConvert.ToInt32(s);
     }
+
+    // File
+
+    public static string LibraryPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Robots");
+
+    // Collection
 
     public static T[] Subset<T>(this T[] array, int[] indices)
     {
@@ -99,6 +101,41 @@ static class Util
         }
     }
 
+    // Geometry
+
+    public static Transform ToTransform(this double[,] matrix)
+    {
+        var transform = new Transform();
+
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++)
+                transform[i, j] = matrix[i, j];
+
+        return transform;
+    }
+
+    public static Plane ToPlane(this Transform transform)
+    {
+        Plane plane = Plane.WorldXY;
+        plane.Transform(transform);
+        return plane;
+    }
+
+    public static Transform ToTransform(this Plane plane)
+    {
+        return Transform.PlaneToPlane(Plane.WorldXY, plane);
+    }
+
+    public static double ToRadians(this double value)
+    {
+        return value * (PI / 180.0);
+    }
+
+    public static double ToDegrees(this double value)
+    {
+        return value * (180.0 / PI);
+    }
+
     // adapted from System.Numerics.Vectors
     public static Quaternion GetRotation(Plane plane)
     {
@@ -107,11 +144,11 @@ static class Util
 
         var q = new Quaternion();
 
-        if (trace > 0.0f)
+        if (trace > 0.0)
         {
-            double s = Sqrt(trace + 1.0f);
-            q.A = s * 0.5f;
-            s = 0.5f / s;
+            double s = Sqrt(trace + 1.0);
+            q.A = s * 0.5;
+            s = 0.5 / s;
             q.B = (matrix.M12 - matrix.M21) * s;
             q.C = (matrix.M20 - matrix.M02) * s;
             q.D = (matrix.M01 - matrix.M10) * s;
@@ -120,29 +157,29 @@ static class Util
         {
             if (matrix.M00 >= matrix.M11 && matrix.M00 >= matrix.M22)
             {
-                double s = Sqrt(1.0f + matrix.M00 - matrix.M11 - matrix.M22);
-                double invS = 0.5f / s;
-                q.B = 0.5f * s;
+                double s = Sqrt(1.0 + matrix.M00 - matrix.M11 - matrix.M22);
+                double invS = 0.5 / s;
+                q.B = 0.5 * s;
                 q.C = (matrix.M01 + matrix.M10) * invS;
                 q.D = (matrix.M02 + matrix.M20) * invS;
                 q.A = (matrix.M12 - matrix.M21) * invS;
             }
             else if (matrix.M11 > matrix.M22)
             {
-                double s = Sqrt(1.0f + matrix.M11 - matrix.M00 - matrix.M22);
-                double invS = 0.5f / s;
+                double s = Sqrt(1.0 + matrix.M11 - matrix.M00 - matrix.M22);
+                double invS = 0.5 / s;
                 q.B = (matrix.M10 + matrix.M01) * invS;
-                q.C = 0.5f * s;
+                q.C = 0.5 * s;
                 q.D = (matrix.M21 + matrix.M12) * invS;
                 q.A = (matrix.M20 - matrix.M02) * invS;
             }
             else
             {
-                double s = Sqrt(1.0f + matrix.M22 - matrix.M00 - matrix.M11);
-                double invS = 0.5f / s;
+                double s = Sqrt(1.0 + matrix.M22 - matrix.M00 - matrix.M11);
+                double invS = 0.5 / s;
                 q.B = (matrix.M20 + matrix.M02) * invS;
                 q.C = (matrix.M21 + matrix.M12) * invS;
-                q.D = 0.5f * s;
+                q.D = 0.5 * s;
                 q.A = (matrix.M01 - matrix.M10) * invS;
             }
         }

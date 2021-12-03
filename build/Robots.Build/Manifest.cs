@@ -41,7 +41,7 @@ class Manifest
         IconUrl = GetItem("IconUrl");
 
         string GetItem(string name) =>
-            props.Element(XName.Get(name))?.Value ?? throw new NullReferenceException($"Element '{name}' not found.");
+            props.Element(XName.Get(name))?.Value ?? throw new NullReferenceException($"Tag '{name}' not found.");
 
         string[] GetList(string name) =>
             GetItem(name).Split(';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);

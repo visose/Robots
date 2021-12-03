@@ -58,17 +58,6 @@ public abstract class Mechanism
     static List<Mesh> GetMeshes(string model)
     {
         var meshes = new List<Mesh>();
-
-        /*
-        using (var stream = new MemoryStream(Properties.Resources.Meshes))
-        {
-            var formatter = new BinaryFormatter();
-            JointMeshes jointMeshes = formatter.Deserialize(stream) as JointMeshes;
-            index = jointMeshes.Names.FindIndex(x => x == model);
-            if (index != -1) meshes = jointMeshes.Meshes[index];
-        }
-        */
-
         string folder = LibraryPath;
 
         if (Directory.Exists(folder))
@@ -87,7 +76,10 @@ public abstract class Mechanism
                     {
                         string name = $"{i++}";
                         var jointLayer = geometry.AllLayers.FirstOrDefault(x => (x.Name == name) && (x.ParentLayerId == layer.Id));
-                        if (jointLayer is null) break;
+
+                        if (jointLayer is null) 
+                            break;
+
                         var mesh = geometry.Objects.FirstOrDefault(x => x.Attributes.LayerIndex == jointLayer.Index)?.Geometry as Mesh ?? new Mesh();
                         meshes.Add(mesh);
                     }
@@ -106,27 +98,25 @@ public abstract class Mechanism
 
     internal static Mechanism Create(XElement element, bool loadMeshes)
     {
-        var modelName = element.Attribute(XName.Get("model")).Value;
-        var manufacturer = (Manufacturers)Enum.Parse(typeof(Manufacturers), element.Attribute(XName.Get("manufacturer")).Value);
+        var modelName = element.GetAttribute("model");
+        var manufacturer = (Manufacturers)Enum.Parse(typeof(Manufacturers), element.GetAttribute("manufacturer"));
         string fullName = $"{element.Name.LocalName}.{manufacturer}.{modelName}";
 
-        bool movesRobot = false;
-        var movesRobotAttribute = element.Attribute(XName.Get("movesRobot"));
-        if (movesRobotAttribute is not null) movesRobot = XmlConvert.ToBoolean(movesRobotAttribute.Value);
+        bool movesRobot = element.GetBoolAttributeOrDefault("movesRobot");
+        double payload = element.GetDoubleAttribute("payload");
 
-        double payload = Convert.ToDouble(element.Attribute(XName.Get("payload")).Value);
+        var baseElement = element.GetElement("Base");
+        double x = baseElement.GetDoubleAttribute("x");
+        double y = baseElement.GetDoubleAttribute("y");
+        double z = baseElement.GetDoubleAttribute("z");
+        double q1 = baseElement.GetDoubleAttribute("q1");
+        double q2 = baseElement.GetDoubleAttribute("q2");
+        double q3 = baseElement.GetDoubleAttribute("q3");
+        double q4 = baseElement.GetDoubleAttribute("q4");
 
-        XElement baseElement = element.Element(XName.Get("Base"));
-        double x = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("x")).Value);
-        double y = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("y")).Value);
-        double z = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("z")).Value);
-        double q1 = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("q1")).Value);
-        double q2 = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("q2")).Value);
-        double q3 = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("q3")).Value);
-        double q4 = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("q4")).Value);
         var basePlane = RobotCellAbb.QuaternionToPlane(x, y, z, q1, q2, q3, q4);
 
-        var jointElements = element.Element(XName.Get("Joints")).Descendants().ToArray();
+        var jointElements = element.GetElement("Joints").Descendants().ToArray();
         Joint[] joints = new Joint[jointElements.Length];
 
         var meshes = loadMeshes ? GetMeshes(fullName) : null;
@@ -135,20 +125,21 @@ public abstract class Mechanism
         for (int i = 0; i < jointElements.Length; i++)
         {
             var jointElement = jointElements[i];
-            double a = XmlConvert.ToDouble(jointElement.Attribute(XName.Get("a")).Value);
-            double d = XmlConvert.ToDouble(jointElement.Attribute(XName.Get("d")).Value);
-            string text = jointElement.Attribute(XName.Get("minrange")).Value;
-            double minRange = XmlConvert.ToDouble(text);
-            double maxRange = XmlConvert.ToDouble(jointElement.Attribute(XName.Get("maxrange")).Value);
+            double a = jointElement.GetDoubleAttribute("a");
+            double d = jointElement.GetDoubleAttribute("d");
+
+            double minRange = jointElement.GetDoubleAttribute("minrange");
+            double maxRange = jointElement.GetDoubleAttribute("maxrange");
             var range = new Interval(minRange, maxRange);
-            double maxSpeed = XmlConvert.ToDouble(jointElement.Attribute(XName.Get("maxspeed")).Value);
-            Mesh? mesh = meshes?[i + 1].DuplicateMesh();
-            int number = XmlConvert.ToInt32(jointElement.Attribute(XName.Get("number")).Value) - 1;
+            
+            double maxSpeed = jointElement.GetDoubleAttribute("maxspeed");
+            Mesh? mesh = meshes?[i + 1].DuplicateMesh();            
+            int number = jointElement.GetIntAttribute("number") - 1;
 
             if (jointElement.Name == "Revolute")
-                joints[i] = new RevoluteJoint() { Index = i, Number = number, A = a, D = d, Range = range, MaxSpeed = maxSpeed.ToRadians(), Mesh = mesh };
+                joints[i] = new RevoluteJoint { Index = i, Number = number, A = a, D = d, Range = range, MaxSpeed = maxSpeed.ToRadians(), Mesh = mesh };
             else if (jointElement.Name == "Prismatic")
-                joints[i] = new PrismaticJoint() { Index = i, Number = number, A = a, D = d, Range = range, MaxSpeed = maxSpeed, Mesh = mesh };
+                joints[i] = new PrismaticJoint { Index = i, Number = number, A = a, D = d, Range = range, MaxSpeed = maxSpeed, Mesh = mesh };
         }
 
         return element.Name.ToString() switch
@@ -168,39 +159,6 @@ public abstract class Mechanism
             _ => throw new ArgumentException($" Unknown mechanism type '{element.Name}'.")
         };
     }
-
-    /*
-    public static void WriteMeshes()
-    {
-        Rhino.FileIO.File3dm robotsGeometry = Rhino.FileIO.File3dm.Read($@"{ResourcesFolder}\robotsGeometry.3dm");
-        var jointmeshes = new JointMeshes();
-
-        foreach (var layer in robotsGeometry.Layers)
-        {
-            if (layer.Name == "Default" || layer.ParentLayerId != Guid.Empty) continue;
-            jointmeshes.Names.Add(layer.Name);
-            var meshes = new List<Mesh>();
-            meshes.Add(robotsGeometry.Objects.First(x => x.Attributes.LayerIndex == layer.LayerIndex).Geometry as Mesh);
-
-            int i = 0;
-            while (true)
-            {
-                string name = $"{i++ + 1}";
-                var jointLayer = robotsGeometry.Layers.FirstOrDefault(x => (x.Name == name) && (x.ParentLayerId == layer.Id));
-                if (jointLayer is null) break;
-                meshes.Add(robotsGeometry.Objects.First(x => x.Attributes.LayerIndex == jointLayer.LayerIndex).Geometry as Mesh);
-            }
-            jointmeshes.Meshes.Add(meshes);
-        }
-
-        using (var stream = new MemoryStream())
-        {
-            var formatter = new BinaryFormatter();
-            formatter.Serialize(stream, jointmeshes);
-            File.WriteAllBytes($@"{ResourcesFolder}\Meshes.rob", stream.ToArray());
-        }
-    }
-    */
 
     public abstract KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? basePlane = null);
 
