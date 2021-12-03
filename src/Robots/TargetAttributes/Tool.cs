@@ -44,7 +44,7 @@ public class Tool : TargetAttribute
         }
 
         foreach (var element in elements)
-            names.Add($"{element.Attribute(XName.Get("name")).Value}");
+            names.Add($"{element.GetAttribute("name")}");
 
         return names;
     }
@@ -60,9 +60,14 @@ public class Tool : TargetAttribute
             foreach (var file in files)
             {
                 XElement data = XElement.Load(file);
-                if (data.Name.LocalName != "RobotTools") continue;
-                element = data.Elements().FirstOrDefault(x => name == $"{x.Attribute(XName.Get("name")).Value}");
-                if (element is not null) break;
+
+                if (data.Name.LocalName != "RobotTools")
+                    continue;
+
+                element = data.Elements().FirstOrDefault(x => name == $"{x.GetAttribute("name")}");
+
+                if (element is not null) 
+                    break;
             }
         }
 
@@ -74,24 +79,23 @@ public class Tool : TargetAttribute
 
     private static Tool Create(XElement element)
     {
-        var name = element.Attribute(XName.Get("name")).Value;
+        var name = element.GetAttribute("name");
 
-        XElement baseElement = element.Element(XName.Get("TCP"));
-        double x = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("x")).Value);
-        double y = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("y")).Value);
-        double z = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("z")).Value);
-        double q1 = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("q1")).Value);
-        double q2 = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("q2")).Value);
-        double q3 = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("q3")).Value);
-        double q4 = XmlConvert.ToDouble(baseElement.Attribute(XName.Get("q4")).Value);
+        var baseElement = element.GetElement("TCP");
+        double x = baseElement.GetDoubleAttribute("x");
+        double y = baseElement.GetDoubleAttribute("y");
+        double z = baseElement.GetDoubleAttribute("z");
+        double q1 = baseElement.GetDoubleAttribute("q1");
+        double q2 = baseElement.GetDoubleAttribute("q2");
+        double q3 = baseElement.GetDoubleAttribute("q3");
+        double q4 = baseElement.GetDoubleAttribute("q4");
 
         var q = new Quaternion(q1, q2, q3, q4);
         var p = new Point3d(x, y, z);
         q.GetRotation(out Plane plane);
         plane.Origin = p;
 
-        baseElement = element.Element(XName.Get("Weight"));
-        double weight = XmlConvert.ToDouble(baseElement.Value);
+        double weight = element.GetDoubleAttribute("Weight");
         Mesh mesh = GetMeshes(name);
         var tool = new Tool(plane, name, weight, null, mesh);
         return tool;
@@ -135,11 +139,13 @@ public class Tool : TargetAttribute
     {
         var calibrate = new Geometry.CircumcentreSolver(a.Origin, b.Origin, c.Origin, d.Origin);
         Point3d tcpOrigin = Point3d.Origin;
+
         foreach (Plane plane in new Plane[] { a, b, c, d })
         {
             plane.RemapToPlaneSpace(calibrate.Center, out Point3d remappedPoint);
             tcpOrigin += remappedPoint;
         }
+
         tcpOrigin /= 4;
         Tcp = new Plane(tcpOrigin, Tcp.XAxis, Tcp.YAxis);
     }

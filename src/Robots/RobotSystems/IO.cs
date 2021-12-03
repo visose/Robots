@@ -1,4 +1,6 @@
-﻿namespace Robots;
+﻿using System.Xml.Linq;
+
+namespace Robots;
 
 public class IO
 {
@@ -7,11 +9,21 @@ public class IO
     public string[] AO { get; }
     public string[] AI { get; }
 
-    public IO(string[]? @do = null, string[]? di = null, string[]? ao = null, string[]? ai = null)
+    public IO(XElement? element)
     {
-        DO = @do ?? new string[0];
-        DI = di ?? new string[0];
-        AO = ao ?? new string[0];
-        AI = ai ?? new string[0];
+        DO = GetNames(element, "DO");
+        DI = GetNames(element, "DI");
+        AO = GetNames(element, "AO");
+        AI = GetNames(element, "AI");
+    }
+
+    string[] GetNames(XElement? ioElement, string element)
+    {
+        var e = ioElement?.GetElementOrDefault(element);
+
+        if (e is null)
+            return new string[0];
+
+        return e.GetAttribute("names").Split(',');
     }
 }
