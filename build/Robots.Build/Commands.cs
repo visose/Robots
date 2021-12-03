@@ -35,8 +35,8 @@ class Commands
         Manifest.CreateAndSave(path);
 
         // Build package
-        string yak = GetYakPath();        
-        Run(yak, "build", PackageFolder);        
+        string yak = GetYakPath();
+        Run(yak, "build", PackageFolder);
     }
 
     public static void Publish()
@@ -46,7 +46,7 @@ class Commands
 
         string packageFile = Path.GetFileName(packagePath);
         string yak = GetYakPath();
-        Run(yak, $"push {packageFile}", PackageFolder);  
+        Run(yak, $"push {packageFile}", PackageFolder);
     }
 
     static string GetYakPath()

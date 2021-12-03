@@ -1,33 +1,32 @@
 ﻿using Rhino.Geometry;
 using static Robots.Util;
 
-namespace Robots
+namespace Robots;
+
+public class RobotStaubli : RobotArm
 {
-    public class RobotStaubli : RobotArm
+    internal RobotStaubli(string model, double payload, Plane basePlane, Mesh? baseMesh, Joint[] joints) : base(model, Manufacturers.Staubli, payload, basePlane, baseMesh, joints) { }
+
+    protected override JointTarget GetStartPose() => new(new double[] { 0, HalfPI, HalfPI, 0, 0, 0 });
+
+    public override KinematicSolution Kinematics(Target target, double[]? prevJoints, Plane? basePlane = null) => new SphericalWristKinematics(this, target, prevJoints, basePlane);
+
+    public override double DegreeToRadian(double degree, int i)
     {
-        internal RobotStaubli(string model, double payload, Plane basePlane, Mesh? baseMesh, Joint[] joints) : base(model, Manufacturers.Staubli, payload, basePlane, baseMesh, joints) { }
+        double radian = degree.ToRadians();
+        if (i == 1) radian = -radian + HalfPI;
+        if (i == 2) radian *= -1;
+        if (i == 2) radian += HalfPI;
+        if (i == 4) radian *= -1;
+        return radian;
+    }
 
-        protected override JointTarget GetStartPose() => new JointTarget(new double[] { 0, HalfPI, HalfPI, 0, 0, 0 });
-
-        public override KinematicSolution Kinematics(Target target, double[]? prevJoints, Plane? basePlane = null) => new SphericalWristKinematics(this, target, prevJoints, basePlane);
-
-        public override double DegreeToRadian(double degree, int i)
-        {
-            double radian = degree.ToRadians();
-            if (i == 1) radian = -radian + HalfPI;
-            if (i == 2) radian *= -1;
-            if (i == 2) radian += HalfPI;
-            if (i == 4) radian *= -1;
-            return radian;
-        }
-
-        public override double RadianToDegree(double radian, int i)
-        {
-            if (i == 1) { radian -= HalfPI; radian = -radian; }
-            if (i == 2) radian -= HalfPI;
-            if (i == 2) radian *= -1;
-            if (i == 4) radian *= -1;
-            return radian.ToDegrees();
-        }
+    public override double RadianToDegree(double radian, int i)
+    {
+        if (i == 1) { radian -= HalfPI; radian = -radian; }
+        if (i == 2) radian -= HalfPI;
+        if (i == 2) radian *= -1;
+        if (i == 4) radian *= -1;
+        return radian.ToDegrees();
     }
 }
