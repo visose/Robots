@@ -16,6 +16,11 @@ class URScriptPostProcessor
         _program = program;
         var groupCode = new List<List<string>> { Program() };
         Code = new List<List<List<string>>> { groupCode };
+
+        // MultiFile warning
+        if (program.MultiFileIndices.Count > 1)
+            program.Warnings.Add("Multi-file input not supported on UR robots");
+
     }
 
     List<string> Program()
