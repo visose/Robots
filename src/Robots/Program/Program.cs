@@ -51,15 +51,21 @@ public class Program : IProgram
         if (initCommands is not null)
             InitCommands.AddRange(initCommands.Flatten());
 
-        if (multiFileIndices is not null && multiFileIndices.Count() > 0)
+        MultiFileIndices = multiFileIndices?.ToList() ?? new List<int> { 0 };
+
+        if (MultiFileIndices.Count > 0)
         {
-            multiFileIndices = multiFileIndices.Where(x => x < targetCount);
-            MultiFileIndices = multiFileIndices.ToList();
+            int startCount = MultiFileIndices.Count;
+            MultiFileIndices = MultiFileIndices.Where(x => x < targetCount).ToList();            
+
+            if (startCount > MultiFileIndices.Count)
+                Warnings.Add("Multi-file index was higher than the number of targets.");
+
             MultiFileIndices.Sort();
-            if (MultiFileIndices.Count == 0 || MultiFileIndices[0] != 0) MultiFileIndices.Insert(0, 0);
+
+            if (MultiFileIndices.Count == 0 || MultiFileIndices[0] != 0) 
+                MultiFileIndices.Insert(0, 0);
         }
-        else
-            MultiFileIndices = new int[1].ToList();
 
         var cellTargets = new List<CellTarget>(targetCount);
 
@@ -81,7 +87,10 @@ public class Program : IProgram
 
         var checkProgram = new CheckProgram(this, cellTargets, stepSize);
         int indexError = checkProgram.IndexError;
-        if (indexError != -1) cellTargets = cellTargets.GetRange(0, indexError + 1).ToList();
+
+        if (indexError != -1)
+            cellTargets = cellTargets.GetRange(0, indexError + 1).ToList();
+
         Targets = cellTargets;
 
         _simulation = new Simulation(this, checkProgram.Keyframes);

@@ -86,21 +86,21 @@ class CheckProgram
         if (defaultTools.Count > 0)
         {
             var first = defaultTools[0];
-            _program.Warnings.Add($" {defaultTools.Count} targets have their tool set to default, the first one being target {first.Index} in robot {first.Group}");
+            _program.Warnings.Add($"{defaultTools.Count} targets have their tool set to default, the first one being target {first.Index} in robot {first.Group}");
         }
 
         var defaultSpeeds = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target.Speed == Speed.Default).ToList();
         if (defaultSpeeds.Count > 0)
         {
             var first = defaultSpeeds[0];
-            _program.Warnings.Add($" {defaultSpeeds.Count} targets have their speed set to default, the first one being target {first.Index} in robot {first.Group}");
+            _program.Warnings.Add($"{defaultSpeeds.Count} targets have their speed set to default, the first one being target {first.Index} in robot {first.Group}");
         }
 
         var linearForced = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target is CartesianTarget cartesian && cartesian.Motion == Motions.Linear && cartesian.Configuration is not null).ToList();
         if (linearForced.Count > 0)
         {
             var first = linearForced[0];
-            _program.Warnings.Add($" {linearForced.Count} targets are set to linear with a forced configuration, the first one being target {first.Index} in robot {first.Group}. Configuration setting is ignored for linear motions.");
+            _program.Warnings.Add($"{linearForced.Count} targets are set to linear with a forced configuration, the first one being target {first.Index} in robot {first.Group}. Configuration setting is ignored for linear motions.");
         }
 
         foreach (var target in linearForced)

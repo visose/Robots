@@ -299,7 +299,7 @@ class VAL3PostProcessor
     {
         if (frame.IsCoupled)
         {
-            _program.Warnings.Add(" Frame coupling not supported with Staubli robots.");
+            _program.Warnings.Add("Frame coupling not supported with Staubli robots.");
         }
 
         Plane plane = frame.Plane;
@@ -445,7 +445,7 @@ putln(""Program '{name}' stopped."")";
 
                     default:
                         {
-                            _program.Warnings.Add($" Movement type '{cartesian.Motion} not supported.");
+                            _program.Warnings.Add($"Movement type '{cartesian.Motion} not supported.");
                             continue;
                         }
                 }
