@@ -15,7 +15,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{101C8522-302F-4233-A875-F76C3758F693}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
-		Directory.Build.Props = Directory.Build.Props
+		Directory.Build.props = Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robots.Tests", "tests\Robots.Tests\Robots.Tests.csproj", "{16C2E987-7825-42F8-A2C7-8695F7964335}"
