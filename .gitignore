@@ -1,5 +1,9 @@
 .DS_Store
 nupkg/
+secrets*
+
+# Build results
+artifacts/
 
 # Visual Studio Code
 .vscode
@@ -7,14 +11,11 @@ nupkg/
 # Rider
 .idea
 
+# Visual Studio
+.vs/
+
 # User-specific files
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
-
-# Build results
-artifacts/
-
-# Visual Studio 2015
-.vs/

@@ -1,0 +1,19 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0.x'
+      - run: /home/runner/.dotnet/dotnet build "build/Robots.Build/Robots.Build.csproj"
+      - run: sudo /home/runner/.dotnet/dotnet run --no-build --project "build/Robots.Build/Robots.Build.csproj" test build package publish release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          YAK_TOKEN: ${{ secrets.YAK_TOKEN }}

@@ -14,7 +14,7 @@
 
 	<ItemGroup>
 		<Reference Include="ABB.Robotics.Controllers.PC">
-			<HintPath>C:\Program Files (x86)\ABB\SDK\PCSDK 2021\ABB.Robotics.Controllers.PC.dll</HintPath>
+			<HintPath>..\..\lib\ABB.Robotics.Controllers.PC.dll</HintPath>
 		</Reference>
 	</ItemGroup>
 

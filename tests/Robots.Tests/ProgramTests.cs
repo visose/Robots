@@ -29,7 +29,7 @@ public class ProgramTests
     public void BasicProgramCorrectDuration()
     {
         const double expected = 1.6432545251573487;
-        Assert.AreEqual(_program.Duration, expected);
+        Assert.AreEqual(_program.Duration, expected, 1e-14);
     }
 
     [Test]
@@ -49,7 +49,7 @@ public class ProgramTests
 
         for (int i = 0; i < 6; i++)
         {
-            Assert.AreEqual(actual[i], expected[i]);
+            Assert.AreEqual(actual[i], expected[i], 1e-14);
         }
     }
 
