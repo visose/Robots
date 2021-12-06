@@ -1,4 +1,5 @@
-﻿using Octokit;
+﻿using System.Runtime.InteropServices;
+using Octokit;
 using static Robots.Build.Util;
 
 namespace Robots.Build;
@@ -107,7 +108,9 @@ class Commands
         await using var fs = File.Create(yakPath);
         ms.Seek(0, SeekOrigin.Begin);
         ms.CopyTo(fs);
-        Run("chmod", $"+x {yakPath}");
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            Run("chmod", $"+x {yakPath}");
 
         return yakPath;
     }
