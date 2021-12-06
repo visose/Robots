@@ -16,31 +16,32 @@ static class Util
 
     public static int Run(string file, string args, string? setCurrentDir = null)
     {
-        var currentDir = Directory.GetCurrentDirectory();
-
-        if (setCurrentDir is not null)
-            Directory.SetCurrentDirectory(setCurrentDir);
+        var currentDir = setCurrentDir ?? Directory.GetCurrentDirectory();
 
         var startInfo = new ProcessStartInfo(file, args)
         {
-            CreateNoWindow = true,
+            FileName = file,
+            Arguments = args,
+            WorkingDirectory = currentDir,
+            RedirectStandardInput = true,
             RedirectStandardOutput = true,
-            RedirectStandardError = true
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
         };
 
         using var process = new Process
         {
             StartInfo = startInfo
         };
-
+        
         process.OutputDataReceived += (o, e) => Log(e.Data);
         process.ErrorDataReceived += (o, e) => Log(e.Data);
-        process.Start();
+        process.Start();        
         process.BeginErrorReadLine();
         process.BeginOutputReadLine();
         process.WaitForExit();
 
-        Directory.SetCurrentDirectory(currentDir);
         return process.ExitCode;
     }
 

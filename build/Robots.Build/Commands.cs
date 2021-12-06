@@ -89,22 +89,26 @@ class Commands
 
     static async Task<string> GetYakPathAsync()
     {
-        const string yak = "Yak.exe";            
+        const string yak = "Yak.exe";
         const string rhino = "C:/Program Files/Rhino 7/System/Yak.exe";
 
         if (File.Exists(rhino))
-            return rhino;        
+            return rhino;
 
-        if (File.Exists(yak))
-            return Path.GetFullPath(yak);
+        string yakPath = Path.GetFullPath(yak);
+
+        if (File.Exists(yakPath))
+            return yakPath;
 
         var http = new HttpClient();
         var response = await http.GetAsync($"http://files.mcneel.com/yak/tools/latest/yak.exe");
         response.EnsureSuccessStatusCode();
         await using var ms = await response.Content.ReadAsStreamAsync();
-        await using var fs = File.Create(yak);
+        await using var fs = File.Create(yakPath);
         ms.Seek(0, SeekOrigin.Begin);
         ms.CopyTo(fs);
-        return Path.GetFullPath(yak);
+        Run("chmod", $"+x {yakPath}");
+
+        return yakPath;
     }
 }
