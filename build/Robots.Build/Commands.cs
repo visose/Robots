@@ -1,4 +1,5 @@
-﻿using static Robots.Build.Util;
+﻿using Octokit;
+using static Robots.Build.Util;
 
 namespace Robots.Build;
 
@@ -14,7 +15,7 @@ class Commands
         return Run("dotnet", "build src/Robots.Grasshopper/Robots.Grasshopper.csproj -c Release");
     }
 
-    public static int Package()
+    public static async Task<int> PackageAsync()
     {
         // Pacakge folder        
         if (Directory.Exists(PackageFolder))
@@ -40,23 +41,74 @@ class Commands
         Manifest.CreateAndSave(path);
 
         // Build package
-        string yak = GetYakPath();
+        string yak = await GetYakPathAsync();
         return Run(yak, "build", PackageFolder);
     }
 
-    public static int Publish()
+    public static async Task<int> PublishAsync()
     {
         string packagePath = Directory.EnumerateFiles(PackageFolder)
             .Single(f => Path.GetExtension(f) == ".yak");
 
         string packageFile = Path.GetFileName(packagePath);
-        string yak = GetYakPath();
+        string yak = await GetYakPathAsync();
         return Run(yak, $"push {packageFile}", PackageFolder);
     }
 
-    static string GetYakPath()
+    public static async Task<int> ReleaseAsync()
     {
-        // Download: http://files.mcneel.com/yak/tools/latest/yak.exe
-        return "C:/Program Files/Rhino 7/System/Yak.exe";
+        string version = Manifest.GetVersion();
+
+        var client = new GitHubClient(new ProductHeaderValue("visose"))
+        {
+            Credentials = new Credentials(GetSecret("GITHUB_TOKEN"))
+        };
+
+        var latest = await client.Repository.Release.GetLatest("visose", "Robots");
+
+        if (latest.TagName == version)
+        {
+            Log($"Error: Release {version} already exists.");
+            return 1;
+        }
+
+        const string body = @"This **release** can only be installed through the package manager in **Rhino 7** using the `_PackageManager` command.
+   > Check the [readme](../../blob/master/.github/README.md) for more details.";
+
+        var release = new NewRelease(version)
+        {
+            Name = version,
+            Body = body,
+            Prerelease = false
+        };
+
+        var result = await client.Repository.Release.Create("visose", "Robots", release);
+        Log($"Created release id: {result.Id}");
+        return 0;
+    }
+
+    static async Task<string> GetYakPathAsync()
+    {
+        const string yak = "Yak.exe";
+        const string rhino = "C:/Program Files/Rhino 7/System/Yak.exe";
+
+        if (File.Exists(rhino))
+            return rhino;
+
+        string yakPath = Path.GetFullPath(yak);
+
+        if (File.Exists(yakPath))
+            return yakPath;
+
+        var http = new HttpClient();
+        var response = await http.GetAsync($"http://files.mcneel.com/yak/tools/latest/yak.exe");
+        response.EnsureSuccessStatusCode();
+        await using var ms = await response.Content.ReadAsStreamAsync();
+        await using var fs = File.Create(yakPath);
+        ms.Seek(0, SeekOrigin.Begin);
+        ms.CopyTo(fs);
+        Run("chmod", $"+x {yakPath}");
+
+        return yakPath;
     }
 }

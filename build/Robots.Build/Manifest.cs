@@ -13,6 +13,10 @@ class Manifest
         var text = manifest.ToYaml();
         File.WriteAllText(fileName, text);
     }
+    public static string GetVersion()
+    {
+        return new Manifest().Version;
+    }
 
     public string Name { get; private set; }
     public string Version { get; private set; }
@@ -28,7 +32,7 @@ class Manifest
 
     private Manifest()
     {
-        var doc = XDocument.Load("Directory.Build.Props");
+        var doc = XDocument.Load("Directory.Build.props");
         XElement props = doc.Root?.Descendants().First() ??
             throw new NullReferenceException();
 

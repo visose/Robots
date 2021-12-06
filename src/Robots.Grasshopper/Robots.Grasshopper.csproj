@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	
+
 	<PropertyGroup>
 		<TargetFramework>net48</TargetFramework>
 		<GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
 		<AssemblyTitle>Robots Grasshopper</AssemblyTitle>
-	</PropertyGroup>	
+	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Grasshopper" Version="7.12.21313.6341" />
@@ -28,8 +28,8 @@
 		</EmbeddedResource>
 	</ItemGroup>
 
-	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<Exec Command="Copy &quot;$(TargetPath)&quot; &quot;$(TargetDir)Robots.gha&quot;&#xD;&#xA;Erase &quot;$(TargetPath)&quot;" />
+	<Target Name="Rename" AfterTargets="AfterBuild">
+		<Move SourceFiles="$(TargetPath)" DestinationFiles="$(TargetDir)Robots.gha" />
 	</Target>
-	
+
 </Project>

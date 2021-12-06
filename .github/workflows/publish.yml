@@ -1,0 +1,20 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      commands:
+        description: 'Commands'
+        required: true
+        default: 'test build package publish release'
+
+jobs:
+  publish:
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v2
+      - run: dotnet run --project "build/Robots.Build/Robots.Build.csproj" ${{ github.event.inputs.commands }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          YAK_TOKEN: ${{ secrets.YAK_TOKEN }}
