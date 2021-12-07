@@ -4,6 +4,7 @@ using static Robots.Build.Util;
 var commandList = new Dictionary<string, Delegate>
 {
     { "test", Commands.Test },
+    { "check", Commands.CheckVersionAsync },
     { "build", Commands.Build },
     { "package", Commands.PackageAsync },
     { "publish", Commands.PublishAsync },
@@ -26,7 +27,7 @@ foreach (var arg in args)
 
     Log($"Starting {arg}...");
 
-    var result = action.DynamicInvoke() ?? throw new NullReferenceException();
+    var result = action.DynamicInvoke().NotNull();
 
     int code = action.Method.ReturnType == typeof(int)
         ? (int)result
@@ -34,8 +35,8 @@ foreach (var arg in args)
 
     if (code != 0)
     {
-        Log("Premature exit.");
-        return code;
+        Log($"Stopped at step: {arg}");
+        return Math.Max(code, 0);
     }
 }
 
