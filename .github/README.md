@@ -7,6 +7,7 @@
 [![Version](https://img.shields.io/github/v/release/visose/robots?style=flat-square)](../../../releases)
 [![Repo stars](https://img.shields.io/github/stars/visose/robots?style=flat-square)](../../../)
 [![Discussions](https://img.shields.io/github/discussions/visose/robots?style=flat-square)](../../../discussions)
+[![Sponsor](https://img.shields.io/badge/sponsor-gray?style=flat-square&logo=GitHub-Sponsors)](https://github.com/sponsors/visose)
 
 **[About](#about) •
 [Install](#install) •
