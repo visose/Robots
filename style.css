@@ -1,0 +1,27 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg: #fff;
+    --color: #000;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #000;
+        --color: #fff;
+    }
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--color);
+    font-family: system-ui;
+    text-align: center;
+}
+h1 {
+    font-weight: 100;
+    font-size: 60vmin;
+}
