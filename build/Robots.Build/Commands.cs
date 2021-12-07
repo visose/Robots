@@ -1,14 +1,36 @@
-﻿using System.Runtime.InteropServices;
-using Octokit;
+﻿using Octokit;
 using static Robots.Build.Util;
 
 namespace Robots.Build;
 
 class Commands
 {
+    const string _owner = "visose";
+    const string _repo = "Robots";
+
     public static int Test()
     {
         return Run("dotnet", "test tests/Robots.Tests/Robots.Tests.csproj");
+    }
+
+    public static async Task<int> CheckVersionAsync()
+    {
+        string version = Manifest.GetVersion();
+
+        var client = new GitHubClient(new ProductHeaderValue(_owner))
+        {
+            Credentials = new Credentials(GetSecret("GITHUB_TOKEN"))
+        };
+
+        var latest = await client.Repository.Release.GetLatest(_owner, _repo);
+
+        if (latest.TagName == version)
+        {
+            Log($"Version number {version} not updated, nothing else to do.");
+            return -1;
+        }
+
+        return 0;
     }
 
     public static int Build()
@@ -60,18 +82,10 @@ class Commands
     {
         string version = Manifest.GetVersion();
 
-        var client = new GitHubClient(new ProductHeaderValue("visose"))
+        var client = new GitHubClient(new ProductHeaderValue(_owner))
         {
             Credentials = new Credentials(GetSecret("GITHUB_TOKEN"))
         };
-
-        var latest = await client.Repository.Release.GetLatest("visose", "Robots");
-
-        if (latest.TagName == version)
-        {
-            Log($"Error: Release {version} already exists.");
-            return 1;
-        }
 
         const string body = @"This **release** can only be installed through the package manager in **Rhino 7** using the `_PackageManager` command.
    > Check the [readme](../../blob/master/.github/README.md) for more details.";
@@ -83,35 +97,8 @@ class Commands
             Prerelease = false
         };
 
-        var result = await client.Repository.Release.Create("visose", "Robots", release);
+        var result = await client.Repository.Release.Create(_owner, _repo, release);
         Log($"Created release id: {result.Id}");
         return 0;
-    }
-
-    static async Task<string> GetYakPathAsync()
-    {
-        const string yak = "Yak.exe";
-        const string rhino = "C:/Program Files/Rhino 7/System/Yak.exe";
-
-        if (File.Exists(rhino))
-            return rhino;
-
-        string yakPath = Path.GetFullPath(yak);
-
-        if (File.Exists(yakPath))
-            return yakPath;
-
-        var http = new HttpClient();
-        var response = await http.GetAsync($"http://files.mcneel.com/yak/tools/latest/yak.exe");
-        response.EnsureSuccessStatusCode();
-        await using var ms = await response.Content.ReadAsStreamAsync();
-        await using var fs = File.Create(yakPath);
-        ms.Seek(0, SeekOrigin.Begin);
-        ms.CopyTo(fs);
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            Run("chmod", $"+x {yakPath}");
-
-        return yakPath;
     }
 }

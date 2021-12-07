@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Xml.Linq;
 
 namespace Robots.Build;
 
@@ -18,7 +20,7 @@ static class Util
     {
         var currentDir = setCurrentDir ?? Directory.GetCurrentDirectory();
 
-        var startInfo = new ProcessStartInfo(file, args)
+        var startInfo = new ProcessStartInfo
         {
             FileName = file,
             Arguments = args,
@@ -34,10 +36,10 @@ static class Util
         {
             StartInfo = startInfo
         };
-        
+
         process.OutputDataReceived += (o, e) => Log(e.Data);
         process.ErrorDataReceived += (o, e) => Log(e.Data);
-        process.Start();        
+        process.Start();
         process.BeginErrorReadLine();
         process.BeginOutputReadLine();
         process.WaitForExit();
@@ -55,6 +57,44 @@ static class Util
         var json = File.ReadAllText("build/Robots.Build/secrets.json");
         var doc = JsonDocument.Parse(json);
         var prop = doc.RootElement.GetProperty(key);
-        return prop.GetString() ?? throw new NullReferenceException($"Secret {key} not found.");
+        return prop.GetString().NotNull($"Secret {key} not found.");
+    }
+
+    public static async Task<string> GetYakPathAsync()
+    {
+        const string yak = "Yak.exe";
+        const string rhino = "C:/Program Files/Rhino 7/System/Yak.exe";
+
+        if (File.Exists(rhino))
+            return rhino;
+
+        string yakPath = Path.GetFullPath(yak);
+
+        if (File.Exists(yakPath))
+            return yakPath;
+
+        var http = new HttpClient();
+        var response = await http.GetAsync($"http://files.mcneel.com/yak/tools/latest/yak.exe");
+        response.EnsureSuccessStatusCode();
+        await using var ms = await response.Content.ReadAsStreamAsync();
+        await using var fs = File.Create(yakPath);
+        ms.Seek(0, SeekOrigin.Begin);
+        ms.CopyTo(fs);
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            Run("chmod", $"+x {yakPath}");
+
+        return yakPath;
+    }
+
+    public static string GetItem(this XElement element, string name) =>
+        (element.Element(XName.Get(name))?.Value).NotNull();
+
+    public static string[] GetList(this XElement element, string name) =>
+        element.GetItem(name).Split(';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+    public static T NotNull<T>(this T? value, string? text = null)
+    {
+        return value ?? throw new ArgumentNullException(text ?? nameof(value));
     }
 }

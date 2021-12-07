@@ -6,7 +6,7 @@ on:
       commands:
         description: 'Commands'
         required: true
-        default: 'test build package publish release'
+        default: 'test check build package publish release'
 
 jobs:
   publish:

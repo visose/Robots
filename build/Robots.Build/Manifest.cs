@@ -13,9 +13,18 @@ class Manifest
         var text = manifest.ToYaml();
         File.WriteAllText(fileName, text);
     }
+
     public static string GetVersion()
     {
-        return new Manifest().Version;
+        var props = GetPropsElement();
+        return props.GetItem("Version");
+    }
+
+    static XElement GetPropsElement()
+    {
+        var doc = XDocument.Load("Directory.Build.props");
+        XElement props = (doc.Root?.Descendants().First()).NotNull();
+        return props;
     }
 
     public string Name { get; private set; }
@@ -32,23 +41,15 @@ class Manifest
 
     private Manifest()
     {
-        var doc = XDocument.Load("Directory.Build.props");
-        XElement props = doc.Root?.Descendants().First() ??
-            throw new NullReferenceException();
+        var props = GetPropsElement();
 
-        Name = GetItem("Product");
-        Version = GetItem("Version");
-        Authors = GetList("Authors");
-        Description = GetItem("Description");
-        Url = GetItem("Url");
-        Keywords = GetList("Tags");
-        IconUrl = GetItem("IconUrl");
-
-        string GetItem(string name) =>
-            props.Element(XName.Get(name))?.Value ?? throw new NullReferenceException($"Tag '{name}' not found.");
-
-        string[] GetList(string name) =>
-            GetItem(name).Split(';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        Name = props.GetItem("Product");
+        Version = GetVersion();
+        Authors = props.GetList("Authors");
+        Description = props.GetItem("Description");
+        Url = props.GetItem("Url");
+        Keywords = props.GetList("Tags");
+        IconUrl = props.GetItem("IconUrl");
     }
 
     string ToYaml()
