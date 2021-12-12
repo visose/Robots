@@ -37,20 +37,44 @@ public class LoadRobotSystem : GH_Component
         if (_valueList is not null)
             return;
 
-        _valueList = _parameter.Sources.FirstOrDefault(s => s is GH_ValueList) as GH_ValueList ?? new GH_ValueList();
+        var inputValueList = _parameter.Sources.FirstOrDefault(s => s is GH_ValueList) as GH_ValueList;
+        _valueList = inputValueList ?? new GH_ValueList();
 
-        _valueList.CreateAttributes();
-        _valueList.Attributes.Pivot = new PointF(Attributes.Pivot.X - 180, Attributes.Pivot.Y - 31);
-        _valueList.ListItems.Clear();
+        if (inputValueList is null)
+        {
+            _valueList.CreateAttributes();
+            _valueList.Attributes.Pivot = new PointF(Attributes.Pivot.X - 180, Attributes.Pivot.Y - 31);
+            AddRobotsToValueList(_valueList);
+            Instances.ActiveCanvas.Document.AddObject(_valueList, false);
+            _parameter.AddSource(_valueList);
+            _parameter.CollectData();
+        }
+        else
+        {
+            AddRobotsToValueList(_valueList);
+        }
+    }
 
+    void AddRobotsToValueList(GH_ValueList valueList)
+    {
+        var selected = valueList.FirstSelectedItem;
         var robotSystems = RobotSystem.ListRobotSystems();
 
-        foreach (string robotSystemName in robotSystems)
-            _valueList.ListItems.Add(new GH_ValueListItem(robotSystemName, $"\"{robotSystemName}\""));
+        if (robotSystems.SequenceEqual(valueList.ListItems.Select(i => i.Name)))
+            return;
 
-        Instances.ActiveCanvas.Document.AddObject(_valueList, false);
-        _parameter.AddSource(_valueList);
-        _parameter.CollectData();
+        valueList.ListItems.Clear();
+
+        foreach (string robotSystemName in robotSystems)
+            valueList.ListItems.Add(new GH_ValueListItem(robotSystemName, $"\"{robotSystemName}\""));
+
+        if (selected is null)
+            return;
+
+        var selectedIndex = valueList.ListItems.FindIndex(s => s.Name == selected.Name);
+
+        if (selectedIndex != -1)
+            valueList.SelectItem(selectedIndex);
     }
 
     protected override void SolveInstance(IGH_DataAccess DA)
