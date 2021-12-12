@@ -35,7 +35,10 @@ public class Remote : GH_Component
         var remote = program.Value.RobotSystem.Remote;
 
         if (remote is null)
-            throw new Exception(" No remote functionality for this robot.");
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $" No remote functionality for this robot.");
+            return;
+        }
 
         if (DA.GetData(1, ref ip) && ip is not null)
             remote.IP = ip.Value;
