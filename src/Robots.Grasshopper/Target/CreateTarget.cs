@@ -229,7 +229,7 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
         else
         {
             if (joints is null)
-                throw new NullReferenceException(" Joints shouldn't be null.");
+                throw new ArgumentNullException(" Joints shouldn't be null.");
 
             target = new JointTarget(joints, tool, speed, zone, command, frame, external);
         }

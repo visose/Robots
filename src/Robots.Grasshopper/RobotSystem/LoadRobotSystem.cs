@@ -32,7 +32,7 @@ public class LoadRobotSystem : GH_Component
     protected override void BeforeSolveInstance()
     {
         if (_parameter is null)
-            throw new NullReferenceException(nameof(_parameter));
+            throw new ArgumentNullException(nameof(_parameter));
 
         if (_valueList is not null)
             return;

@@ -66,7 +66,7 @@ public class RobotCellStaubli : RobotCell
             throw new DirectoryNotFoundException($" Folder \"{folder}\" not found");
 
         if (program.Code is null)
-            throw new NullReferenceException(" Program code not generated");
+            throw new ArgumentNullException(" Program code not generated");
 
         var programDir = Path.Combine(folder, program.Name);
         Directory.CreateDirectory(programDir);

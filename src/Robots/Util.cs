@@ -31,9 +31,7 @@ static class Util
 
     public static string GetAttribute(this XElement element, string name)
     {
-        var attribute = element.Attribute(XName.Get(name))
-            ?? throw new ArgumentException($" XML tag '{element.Name} is missing '{name} attribute.");
-        
+        var attribute = element.Attribute(XName.Get(name)).NotNull($" XML tag '{element.Name} is missing '{name} attribute.");        
         return attribute.Value;
     }
 
@@ -64,6 +62,13 @@ static class Util
     // File
 
     public static string LibraryPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Robots");
+
+    // Exceptions
+
+    public static T NotNull<T>(this T? value, string? text = null)
+    {
+        return value ?? throw new ArgumentNullException(text ?? nameof(value));
+    }
 
     // Collection
 

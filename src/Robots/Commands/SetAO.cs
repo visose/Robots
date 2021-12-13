@@ -47,7 +47,7 @@ public class SetAO : Command
 
     string DeclarationStaubli(RobotSystem robotSystem)
     {
-        return VAL3Syntax.NumData(Name ?? throw new NullReferenceException(nameof(Name)), Value);
+        return VAL3Syntax.NumData(Name.NotNull(), Value);
     }
 
     string CodeAbb(RobotSystem robotSystem, Target target)

@@ -30,13 +30,12 @@ public class MechanicalGroup
 
         if (Robot.BaseMesh is not null)
         {
+            string t = " Mesh shouldn't be null.";
             DefaultMeshes = mechanisms
-                 .Select(m => m.Joints.Select(j => j.Mesh ?? throw NullEx()).Prepend(m.BaseMesh ?? throw NullEx())).SelectMany(p => p)
-                 .Append(Robot.BaseMesh ?? throw NullEx()).Concat(Robot.Joints.Select(j => j.Mesh ?? throw NullEx()))
+                 .Select(m => m.Joints.Select(j => j.Mesh.NotNull(t)).Prepend(m.BaseMesh.NotNull(t))).SelectMany(p => p)
+                 .Append(Robot.BaseMesh.NotNull(t)).Concat(Robot.Joints.Select(j => j.Mesh.NotNull(t)))
                  .ToList();
         }
-
-        static Exception NullEx() => new NullReferenceException(" Mesh shouldn't be null.");
     }
 
     internal static MechanicalGroup Create(XElement element, bool loadMeshes)

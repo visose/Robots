@@ -40,7 +40,7 @@ public class RobotCellAbb : RobotCell
             throw new DirectoryNotFoundException($" Folder \"{folder}\" not found");
 
         if (program.Code is null)
-            throw new NullReferenceException(" Program code not generated");
+            throw new ArgumentNullException(" Program code not generated");
 
         Directory.CreateDirectory(Path.Combine(folder, program.Name));
         bool multiProgram = program.MultiFileIndices.Count > 1;

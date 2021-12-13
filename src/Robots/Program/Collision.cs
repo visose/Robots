@@ -168,7 +168,7 @@ public class Collision
         planes.Add(planes[count - 1]);
 
         var defaultPlanes = arm.Joints.Select(m => m.Plane).Prepend(arm.BasePlane).Append(Plane.WorldXY).ToList();
-        var defaultMeshes = arm.Joints.Select(m => m.Mesh ?? throw new NullReferenceException("Joint mesh shouldn't be null.")).Prepend(arm.BaseMesh).Append(tool);
+        var defaultMeshes = arm.Joints.Select(m => m.Mesh.NotNull("Joint mesh shouldn't be null.")).Prepend(arm.BaseMesh).Append(tool);
         var outMeshes = defaultMeshes.Select(m => m.DuplicateMesh()).ToList();
 
         for (int i = 0; i < defaultPlanes.Count; i++)

@@ -20,13 +20,13 @@ public class ProgramTarget
 
     public KinematicSolution Kinematics
     {
-        get => _kinematics ?? throw new NullReferenceException(" Kinematics shouldn't be null.");
+        get => _kinematics.NotNull(" Kinematics shouldn't be null.");
         internal set => _kinematics = value;
     }
 
     internal CellTarget CellTarget
     {
-        get => _cellTarget ?? throw new NullReferenceException(" CellTarget shouldn't be null.");
+        get => _cellTarget.NotNull(" CellTarget shouldn't be null.");
         set => _cellTarget = value;
     }
 

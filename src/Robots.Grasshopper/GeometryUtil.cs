@@ -44,7 +44,7 @@ static class GeometryUtil
 
         var defaultPlanes = arm.Joints.Select(m => m.Plane).Prepend(arm.BasePlane).Append(Plane.WorldXY).ToList();
         var defaultMeshes = arm.Joints.Select(m => m.Mesh).Prepend(arm.BaseMesh).Append(tool);
-        var outMeshes = defaultMeshes.Select(m => (m ?? throw new NullReferenceException("Mesh shoudn't be null.")).DuplicateMesh()).ToList();
+        var outMeshes = defaultMeshes.Select(m => (m ?? throw new ArgumentNullException("Mesh shoudn't be null.")).DuplicateMesh()).ToList();
 
         for (int i = 0; i < defaultPlanes.Count; i++)
         {
