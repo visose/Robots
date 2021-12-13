@@ -124,7 +124,7 @@ class RapidPostProcessor
             var programTarget = _program.Targets[j].ProgramTargets[group];
             var target = programTarget.Target;
             string moveText;
-            string zone = (target.Zone.IsFlyBy ? target.Zone.Name : "fine") ?? throw new ArgumentException(" Zone name can't be null.");
+            string zone = (target.Zone.IsFlyBy ? target.Zone.Name : "fine").NotNull(" Zone name can't be null.");
             string id = (_cell.MechanicalGroups.Count > 1) ? id = $@"\ID:={programTarget.Index}" : "";
             string external = "extj";
 

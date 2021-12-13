@@ -39,7 +39,7 @@ public class Wait : Command
 
     string DeclarationStaubli(RobotSystem robotSystem)
     {
-        return VAL3Syntax.NumData(Name ?? throw new NullReferenceException(nameof(Name)), Seconds);
+        return VAL3Syntax.NumData(Name.NotNull(), Seconds);
     }
 
     string CodeAbb(RobotSystem robotSystem, Target target)

@@ -77,7 +77,7 @@ public class Program : IProgram
             {
                 return x is not null
                     ? new ProgramTarget(x, i)
-                    : throw new NullReferenceException($" Target {targetIndex} in robot {i} is null or invalid.");
+                    : throw new ArgumentNullException($" Target {targetIndex} in robot {i} is null or invalid.");
             });
 
             var cellTarget = new CellTarget(programTargets, targetIndex);

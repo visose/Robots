@@ -105,7 +105,7 @@ class VAL3PostProcessor
             if (attribute is Tool)
                 maxLength = 14;
 
-            string name = attribute.Name ?? throw new NullReferenceException(nameof(attribute.Name));
+            string name = attribute.Name.NotNull();
 
             if (name.Length >= maxLength)
             {
@@ -287,7 +287,7 @@ class VAL3PostProcessor
         if (centroid.DistanceTo(Point3d.Origin) < 0.001)
             centroid = new Point3d(0, 0, 0.001);
 
-        string toolName = tool.Name ?? throw new NullReferenceException(nameof(tool.Name));
+        string toolName = tool.Name.NotNull();
         string toolText = VAL3Syntax.Data(toolName, "tool", $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}"" fatherId=""flange[0]""");
         string centroidText = VAL3Syntax.Data($"{toolName}_C", "trsf", $@"x=""{centroid.X:0.###}"" y=""{centroid.Y:0.###}"" z=""{centroid.Z:0.###}""");
         string weightText = VAL3Syntax.NumData($"{toolName}_W", weight);
@@ -306,7 +306,7 @@ class VAL3PostProcessor
         plane.Transform(Transform.PlaneToPlane(_cell.BasePlane, Plane.WorldXY));
         var values = _cell.PlaneToNumbers(plane);
 
-        string frameName = frame.Name ?? throw new NullReferenceException(nameof(frame.Name));
+        string frameName = frame.Name.NotNull()
         string code = VAL3Syntax.Data(frameName, "frame", $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}"" fatherId=""world[0]""");
         return code;
     }
