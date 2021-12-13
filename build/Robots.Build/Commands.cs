@@ -1,4 +1,5 @@
 ﻿using Octokit;
+using System.Text;
 using static Robots.Build.Util;
 
 namespace Robots.Build;
@@ -87,13 +88,26 @@ class Commands
             Credentials = new Credentials(GetSecret("GITHUB_TOKEN"))
         };
 
-        const string body = @"This **release** can only be installed through the package manager in **Rhino 7** using the `_PackageManager` command.
-   > Check the [readme](../../blob/master/.github/README.md) for more details.";
+        var body = new StringBuilder();
+
+        var notes = Release.GetReleaseNotes()
+            .FirstOrDefault(n => n.Version == version);
+
+        if(notes is not null)
+        {
+            foreach (var change in notes.Changes)
+                body.AppendLine($"- {change}");
+
+            body.AppendLine();
+        }
+
+        body.AppendLine(@"> This **release** can only be installed through the package manager in **Rhino 7** using the `_PackageManager` command.
+> Check the [readme](../../blob/master/.github/README.md) for more details.");
 
         var release = new NewRelease(version)
         {
             Name = version,
-            Body = body,
+            Body = body.ToString(),
             Prerelease = false
         };
 
