@@ -1,4 +1,5 @@
-﻿using System.Xml.Linq;
+﻿using System.Text;
+using System.Xml.Linq;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -46,10 +47,29 @@ class Manifest
         Name = props.GetItem("Product");
         Version = GetVersion();
         Authors = props.GetList("Authors");
-        Description = props.GetItem("Description");
+        Description = GetDescription(props, Version);
         Url = props.GetItem("Url");
         Keywords = props.GetList("Tags");
         IconUrl = props.GetItem("IconUrl");
+    }
+
+    string GetDescription(XElement props, string version)
+    {
+        var description = new StringBuilder();
+        description.AppendLine(props.GetItem("Description"));
+        var notes = Release.GetReleaseNotes()
+            .FirstOrDefault(n => n.Version == version);
+
+        if (notes is null)
+            return description.ToString();
+
+        description.AppendLine();
+        description.AppendLine($"Changes in {version}:");
+
+        foreach (var change in notes.Changes)
+            description.AppendLine($" - {change}");
+
+        return description.ToString();
     }
 
     string ToYaml()

@@ -1,0 +1,19 @@
+- version: 1.0.3
+  changes:
+  - Fixed robot system value list will not remember its selection.
+  - Fixed deprecated warnings from ABB SDK.
+
+- version: 1.0.2
+  changes:
+  - Add warning when multifile input is used with UR.
+  - Fixed robot system value list didn't update if robot library changed.
+  - Fixed some custom parameters would show an error when hovering the input.
+  - Additional cleanup.
+
+- version: 1.0.1
+  changes:
+  - This and newer versions will be available only through Yak package manager. 
+  - Large refactor and project restructure, some bugs might have creeped in.
+  - Robot system can be loaded without meshes if not needed for improved performance (API only).
+  - Fixed rounding PulseDO value to 3 decimal places. 
+  - Fixed unnecessary trailing zeros in generated programs.
