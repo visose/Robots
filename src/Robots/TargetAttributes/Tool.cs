@@ -9,7 +9,8 @@ public class Tool : TargetAttribute
 {
     public static Tool Default { get; } = new Tool(Plane.WorldXY, "DefaultTool");
 
-    public Plane Tcp { get; set; }
+    Plane _tcp;
+    public ref Plane Tcp => ref _tcp;
     public double Weight { get; set; }
     public Point3d Centroid { get; set; }
     public Mesh Mesh { get; set; }

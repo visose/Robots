@@ -1,5 +1,6 @@
 ﻿using Rhino.Geometry;
 using static System.Math;
+using static Robots.Util;
 
 namespace Robots;
 
@@ -91,7 +92,7 @@ public class Collision
 
                 // TODO: Meshes not a property of KinematicSolution anymore
                 // meshes.AddRange(kinematics.SelectMany(x => x.Meshes)); 
-                var tools = cellTarget.ProgramTargets.Select(p => p.Target.Tool.Mesh).ToList();
+                var tools = cellTarget.ProgramTargets.MapToList(p => p.Target.Tool.Mesh);
                 var robotMeshes = PoseMeshes(_program.RobotSystem, kinematics, tools);
                 meshes.AddRange(robotMeshes);
 
@@ -100,7 +101,8 @@ public class Collision
                     if (_environmentPlane != -1)
                     {
                         Mesh currentEnvironment = _environment.DuplicateMesh();
-                        currentEnvironment.Transform(Transform.PlaneToPlane(Plane.WorldXY, kinematics.SelectMany(x => x.Planes).ToList()[_environmentPlane]));
+                        var plane = kinematics.SelectMany(x => x.Planes).ToList()[_environmentPlane];
+                        currentEnvironment.Transform(plane.ToTransform());
                         meshes.Add(currentEnvironment);
                     }
                     else
@@ -141,6 +143,9 @@ public class Collision
 
     static List<Mesh> PoseMeshes(MechanicalGroup group, IList<Plane> planes, Mesh tool)
     {
+        if (group.DefaultMeshes is null)
+            return new List<Mesh>(0);
+
         planes = planes.ToList();
         var count = planes.Count - 1;
         planes.RemoveAt(count);

@@ -41,7 +41,7 @@ class CheckProgram
                     _program.Errors.AddRange(kinematic.Errors);
                 }
 
-                programTarget.Target = new JointTarget(kinematic.Joints, programTarget.Target);
+                programTarget.Target = new JointTarget(kinematic.Joints.RangeSubset(0, 6), programTarget.Target);
                 _program.Warnings.Add($"First target in robot {programTarget.Group} changed to a joint motion using axis rotations");
             }
         }
@@ -211,7 +211,9 @@ class CheckProgram
                 cellTargets[0].SetTargetKinematics(firstKinematics, _program.Errors, _program.Warnings);
                 CheckUndefined(cellTarget, cellTargets);
                 Keyframes.Add(cellTargets[0].ShallowClone());
-                if (_program.Errors.Count > 0) { errorIndex = i; }
+
+                if (_program.Errors.Count > 0)
+                    errorIndex = i;
             }
             else
             {
@@ -220,7 +222,7 @@ class CheckProgram
 
                 // no interpolation
                 {
-                    var kineTargets = cellTarget.ProgramTargets.Select(x => x.Target.ShallowClone()).ToList();
+                    var kineTargets = cellTarget.ProgramTargets.MapToList(x => x.Target.ShallowClone());
 
                     for (int j = 0; j < kineTargets.Count; j++)
                     {
@@ -278,7 +280,7 @@ class CheckProgram
                         target.LeadingJoint = speeds.Item3;
                     }
 
-                    if ((j > 1) && (Abs(slowestDelta - lastDeltaTime) > 1E-09))
+                    if ((j > 1) && (Abs(slowestDelta - lastDeltaTime) > 1e-09))
                     {
                         Keyframes.Add(prevInterTarget.ShallowClone());
                         deltaTimeSinceLast = 0;
@@ -299,7 +301,8 @@ class CheckProgram
                     prevInterTarget = interTarget;
                 }
 
-                if (_program.Errors.Count > 0) { errorIndex = i; }
+                if (_program.Errors.Count > 0)
+                    errorIndex = i;
 
                 Keyframes.Add(prevInterTarget.ShallowClone());
 
@@ -404,7 +407,7 @@ class CheckProgram
     (double, double, int) GetSpeeds(ProgramTarget target, ProgramTarget prevTarget)
     {
         Plane prevPlane = target.GetPrevPlane(prevTarget);
-        var joints = _robotSystem.GetJoints(target.Group).ToArray();
+        var joints = _robotSystem.GetJoints(target.Group);
         double deltaTime = 0;
 
         // Axis
@@ -455,10 +458,12 @@ class CheckProgram
             double deltaRotationTime = angle / target.Target.Speed.RotationSpeed;
 
             // Get slowest
-            double[] deltaTimes = new double[] { deltaLinearTime, deltaRotationTime, deltaAxisTime, deltaExternalTime };
+            //double[] deltaTimes = new double[] { deltaLinearTime, deltaRotationTime, deltaAxisTime, deltaExternalTime };
+            var deltaTimes = new Vector6d(deltaLinearTime, deltaRotationTime, deltaAxisTime, deltaExternalTime, 0, 0);
+
             int deltaIndex = -1;
 
-            for (int i = 0; i < deltaTimes.Length; i++)
+            for (int i = 0; i < 4; i++)
             {
                 if (deltaTimes[i] > deltaTime)
                 {
@@ -467,27 +472,25 @@ class CheckProgram
                 }
             }
 
+            if (deltaTime < TimeTol)
             {
-                if (deltaTime < TimeTol)
-                {
-                    _program.Warnings.Add($"Position and orientation don't change for {target.Index}");
-                }
-                else if (deltaIndex == 1)
-                {
-                    if (target.Index != _lastIndex) _program.Warnings.Add($"Rotation speed limit reached in target {target.Index}");
-                    _lastIndex = target.Index;
-                }
-                else if (deltaIndex == 2)
-                {
-                    if (target.Index != _lastIndex) _program.Warnings.Add($"Axis {leadingJoint + 1} speed limit reached in target {target.Index}");
-                    _lastIndex = target.Index;
-                }
-                else if (deltaIndex == 3)
-                {
-                    if (target.Index != _lastIndex) _program.Warnings.Add($"External axis {externalLeadingJoint + 1} speed limit reached in target {target.Index}");
-                    leadingJoint = externalLeadingJoint;
-                    _lastIndex = target.Index;
-                }
+                _program.Warnings.Add($"Position and orientation don't change for {target.Index}");
+            }
+            else if (deltaIndex == 1)
+            {
+                if (target.Index != _lastIndex) _program.Warnings.Add($"Rotation speed limit reached in target {target.Index}");
+                _lastIndex = target.Index;
+            }
+            else if (deltaIndex == 2)
+            {
+                if (target.Index != _lastIndex) _program.Warnings.Add($"Axis {leadingJoint + 1} speed limit reached in target {target.Index}");
+                _lastIndex = target.Index;
+            }
+            else if (deltaIndex == 3)
+            {
+                if (target.Index != _lastIndex) _program.Warnings.Add($"External axis {externalLeadingJoint + 1} speed limit reached in target {target.Index}");
+                leadingJoint = externalLeadingJoint;
+                _lastIndex = target.Index;
             }
         }
         else

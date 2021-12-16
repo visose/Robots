@@ -16,7 +16,7 @@ public abstract class RobotCell : RobotSystem
             if (movesRobot is not null)
             {
                 var movableBase = movesRobot.Joints.Last().Plane;
-                movableBase.Transform(movesRobot.BasePlane.ToTransform());
+                movableBase.Orient(ref movesRobot.BasePlane);
                 robotDisplay.Transform(movableBase.ToTransform());
             }
 

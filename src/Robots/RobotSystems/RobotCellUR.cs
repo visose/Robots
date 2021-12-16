@@ -23,15 +23,10 @@ public class RobotCellUR : RobotSystem
     /// <param name="plane"></param>
     /// <param name="originPlane"></param>
     /// <returns></returns>
-    public static double[] PlaneToAxisAngle(Plane plane, Plane originPlane)
+    public static double[] PlaneToAxisAngle(ref Plane plane)
     {
         Vector3d vector;
-        Transform matrix = Transform.PlaneToPlane(originPlane, plane);
-
-        double[][] m = new double[3][];
-        m[0] = new double[] { matrix[0, 0], matrix[0, 1], matrix[0, 2] };
-        m[1] = new double[] { matrix[1, 0], matrix[1, 1], matrix[1, 2] };
-        m[2] = new double[] { matrix[2, 0], matrix[2, 1], matrix[2, 2] };
+        var t = plane.ToTransform();
 
         double angle, x, y, z; // variables for result
         double epsilon = 0.01; // margin to allow for rounding errors
@@ -39,31 +34,31 @@ public class RobotCellUR : RobotSystem
                                // optional check that input is pure rotation, 'isRotationMatrix' is defined at:
                                // http://www.euclideanspace.com/maths/algebra/matrix/orthogonal/rotation/
                                // assert isRotationMatrix(m) : "not valid rotation matrix";// for debugging
-        if ((Abs(m[0][1] - m[1][0]) < epsilon)
-          && (Abs(m[0][2] - m[2][0]) < epsilon)
-        && (Abs(m[1][2] - m[2][1]) < epsilon))
+        if ((Abs(t.M01 - t.M10) < epsilon)
+          && (Abs(t.M02 - t.M20) < epsilon)
+        && (Abs(t.M12 - t.M21) < epsilon))
         {
             // singularity found
             // first check for identity matrix which must have +1 for all terms
             //  in leading diagonal and zero in other terms
-            if ((Abs(m[0][1] + m[1][0]) < epsilon2)
-              && (Abs(m[0][2] + m[2][0]) < epsilon2)
-              && (Abs(m[1][2] + m[2][1]) < epsilon2)
-            && (Abs(m[0][0] + m[1][1] + m[2][2] - 3) < epsilon2))
+            if ((Abs(t.M01 + t.M10) < epsilon2)
+              && (Abs(t.M02 + t.M20) < epsilon2)
+              && (Abs(t.M12 + t.M21) < epsilon2)
+            && (Abs(t.M00 + t.M11 + t.M22 - 3) < epsilon2))
             {
                 // this singularity is identity matrix so angle = 0
                 return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, 0, 0, 0 }; // zero angle, arbitrary axis
             }
             // otherwise this singularity is angle = 180
             angle = PI;
-            double xx = (m[0][0] + 1) / 2;
-            double yy = (m[1][1] + 1) / 2;
-            double zz = (m[2][2] + 1) / 2;
-            double xy = (m[0][1] + m[1][0]) / 4;
-            double xz = (m[0][2] + m[2][0]) / 4;
-            double yz = (m[1][2] + m[2][1]) / 4;
+            double xx = (t.M00 + 1) / 2;
+            double yy = (t.M11 + 1) / 2;
+            double zz = (t.M22 + 1) / 2;
+            double xy = (t.M01 + t.M10) / 4;
+            double xz = (t.M02 + t.M20) / 4;
+            double yz = (t.M12 + t.M21) / 4;
             if ((xx > yy) && (xx > zz))
-            { // m[0][0] is the largest diagonal term
+            { // m.M00 is the largest diagonal term
                 if (xx < epsilon)
                 {
                     x = 0;
@@ -78,7 +73,7 @@ public class RobotCellUR : RobotSystem
                 }
             }
             else if (yy > zz)
-            { // m[1][1] is the largest diagonal term
+            { // m.M11 is the largest diagonal term
                 if (yy < epsilon)
                 {
                     x = 0.7071;
@@ -93,7 +88,7 @@ public class RobotCellUR : RobotSystem
                 }
             }
             else
-            { // m[2][2] is the largest diagonal term so base result on this
+            { // m.M22 is the largest diagonal term so base result on this
                 if (zz < epsilon)
                 {
                     x = 0.7071;
@@ -113,16 +108,16 @@ public class RobotCellUR : RobotSystem
             return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, vector.X, vector.Y, vector.Z }; // return 180 deg rotation
         }
         // as we have reached here there are no singularities so we can handle normally
-        double s = Sqrt((m[2][1] - m[1][2]) * (m[2][1] - m[1][2])
-          + (m[0][2] - m[2][0]) * (m[0][2] - m[2][0])
-          + (m[1][0] - m[0][1]) * (m[1][0] - m[0][1])); // used to normalise
+        double s = Sqrt((t.M21 - t.M12) * (t.M21 - t.M12)
+          + (t.M02 - t.M20) * (t.M02 - t.M20)
+          + (t.M10 - t.M01) * (t.M10 - t.M01)); // used to normalise
         if (Abs(s) < 0.001) s = 1;
         // prevent divide by zero, should not happen if matrix is orthogonal and should be
         // caught by singularity test above, but I've left it in just in case
-        angle = Acos((m[0][0] + m[1][1] + m[2][2] - 1) / 2);
-        x = (m[2][1] - m[1][2]) / s;
-        y = (m[0][2] - m[2][0]) / s;
-        z = (m[1][0] - m[0][1]) / s;
+        angle = Acos((t.M00 + t.M11 + t.M22 - 1) / 2);
+        x = (t.M21 - t.M12) / s;
+        y = (t.M02 - t.M20) / s;
+        z = (t.M10 - t.M01) / s;
         vector = new Vector3d(x, y, z);
         vector.Unitize();
         vector *= angle;
@@ -156,20 +151,18 @@ public class RobotCellUR : RobotSystem
         matrix.M21 = tmp1 + tmp2;
         matrix.M12 = tmp1 - tmp2;
 
-        Plane plane = Plane.WorldXY;
-        plane.Transform(matrix);
+        //Plane plane = Plane.WorldXY;
+        //plane.Transform(matrix);
+        var plane = matrix.ToPlane();
         plane.Origin = new Point3d(x, y, z);
         return plane;
     }
 
     public override double[] PlaneToNumbers(Plane plane)
     {
-        // Plane originPlane = new Plane(Point3d.Origin, Vector3d.YAxis, -Vector3d.XAxis);
-        Plane originPlane = Plane.WorldXY;
-        plane.Transform(Transform.PlaneToPlane(Plane.WorldXY, originPlane));
-        Point3d point = plane.Origin / 1000;
+        Point3d point = plane.Origin / 1000.0;
         plane.Origin = point;
-        double[] axisAngle = PlaneToAxisAngle(plane, Plane.WorldXY);
+        double[] axisAngle = PlaneToAxisAngle(ref plane);
         return axisAngle;
     }
 
@@ -199,7 +192,7 @@ public class RobotCellUR : RobotSystem
         if (target.Tool is not null)
         {
             Plane toolPlane = target.Tool.Tcp;
-            toolPlane.Transform(kinematic.Planes[planes.Count - 1].ToTransform());
+            toolPlane.Orient(ref kinematic.Planes[planes.Count - 1]);
             planes.Add(toolPlane);
         }
         else
@@ -217,7 +210,7 @@ public class RobotCellUR : RobotSystem
 
     internal override Joint[] GetJoints(int group)
     {
-        return Robot.Joints.ToArray();
+        return Robot.Joints;
     }
 
     internal override List<List<List<string>>> Code(Program program) => new URScriptPostProcessor(this, program).Code;

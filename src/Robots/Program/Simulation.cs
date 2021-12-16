@@ -30,10 +30,10 @@ class Simulation
     int _currentTarget = 0;
     internal SimulationPose CurrentSimulationPose;
 
-    public Simulation(Program program, List<CellTarget> targets)
+    public Simulation(Program program, List<CellTarget> keyframes)
     {
         _program = program;
-        _keyframes = targets;
+        _keyframes = keyframes;
         _duration = program.Duration;
 
         var firstTarget = program.Targets[0];

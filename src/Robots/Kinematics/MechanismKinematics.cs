@@ -20,7 +20,8 @@ abstract class MechanismKinematics : KinematicSolution
 
         if (basePlane is not null)
         {
-            Planes[0].Transform(Transform.PlaneToPlane(Plane.WorldXY, (Plane)basePlane));
+            var plane = (Plane)basePlane;
+            Planes[0].Orient(ref plane);
         }
 
         SetJoints(target, prevJoints);

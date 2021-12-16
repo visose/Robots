@@ -30,7 +30,7 @@ public class CellTarget
         if (index != -1)
             cellTarget.Index = index;
 
-        cellTarget.ProgramTargets = cellTarget.ProgramTargets.Select(x => x.ShallowClone(cellTarget)).ToList();
+        cellTarget.ProgramTargets = cellTarget.ProgramTargets.MapToList(x => x.ShallowClone(cellTarget));
         return cellTarget;
     }
 

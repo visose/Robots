@@ -158,7 +158,7 @@ class RapidPostProcessor
             {
                 var jointTarget = (JointTarget)programTarget.Target;
                 double[] joints = jointTarget.Joints;
-                joints = joints.Select((x, i) => _cell.MechanicalGroups[group].RadianToDegree(x, i)).ToArray();
+                joints = joints.Map((x, i) => _cell.MechanicalGroups[group].RadianToDegree(x, i));
                 moveText = $"MoveAbsJ [[{joints[0]:0.####},{joints[1]:0.####},{joints[2]:0.####},{joints[3]:0.####},{joints[4]:0.####},{joints[5]:0.####}],{external}]{id},{target.Speed.Name},{zone},{target.Tool.Name};";
             }
             else
@@ -255,7 +255,7 @@ class RapidPostProcessor
     string Frame(Frame frame)
     {
         Plane plane = frame.Plane;
-        plane.Transform(Transform.PlaneToPlane(_cell.BasePlane, Plane.WorldXY));
+        plane.InverseOrient(ref _cell.BasePlane);
         Quaternion quaternion = plane.ToQuaternion();
         string pos = $"[{plane.OriginX:0.###},{plane.OriginY:0.###},{plane.OriginZ:0.###}]";
         string orient = $"[{quaternion.A:0.#####},{quaternion.B:0.#####},{quaternion.C:0.#####},{quaternion.D:0.#####}]";

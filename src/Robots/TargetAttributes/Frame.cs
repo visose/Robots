@@ -9,7 +9,9 @@ public class Frame : TargetAttribute
     /// <summary>
     /// Reference frame of plane for a target
     /// </summary>
-    public Plane Plane { get; internal set; }
+
+    Plane _plane;
+    public ref Plane Plane => ref _plane;
     public int CoupledMechanism { get; }
     public int CoupledMechanicalGroup { get; }
     internal int CoupledPlaneIndex { get; set; }

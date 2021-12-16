@@ -54,7 +54,7 @@ public class RobotCellAbb : RobotCell
 
             {
                 string file = Path.Combine(folder, program.Name, $"{program.Name}_{group}.mod");
-                var code = program.Code[i][0].ToList();
+                var code = program.Code[i][0];
                 if (!multiProgram) code.AddRange(program.Code[i][1]);
                 var joinedCode = string.Join("\r\n", code);
                 File.WriteAllText(file, joinedCode);

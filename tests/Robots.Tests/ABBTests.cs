@@ -3,11 +3,11 @@ using Rhino.Geometry;
 
 namespace Robots.Tests;
 
-public class ProgramTests
+public class ABBTests
 {
     readonly Program _program;
 
-    public ProgramTests()
+    public ABBTests()
     {
         const string xml = "<RobotCell name=\"IRB120\" manufacturer=\"ABB\"><Mechanisms><RobotArm model=\"IRB120\" manufacturer=\"ABB\" payload=\"3\"><Base x=\"0.000\" y=\"0.000\" z=\"0.000\" q1=\"1.000\" q2=\"0.000\" q3=\"0.000\" q4=\"0.000\"/><Joints><Revolute number=\"1\" a =\"0\" d =\"290\" minrange = \"-165\" maxrange =\"165\" maxspeed =\"250\"/><Revolute number=\"2\" a =\"270\" d =\"0\" minrange = \"-110\" maxrange =\"110\" maxspeed =\"250\"/><Revolute number=\"3\" a =\"70\" d =\"0\" minrange = \"-110\" maxrange =\"70\" maxspeed =\"250\"/><Revolute number=\"4\" a =\"0\" d =\"302\" minrange = \"-160\" maxrange =\"160\" maxspeed =\"320\"/><Revolute number=\"5\" a =\"0\" d =\"0\" minrange = \"-120\" maxrange =\"120\" maxspeed =\"320\"/><Revolute number=\"6\" a =\"0\" d =\"72\" minrange = \"-400\" maxrange =\"400\" maxspeed =\"420\"/></Joints></RobotArm></Mechanisms><IO><DO names=\"DO10_1,DO10_2\"/><DI names=\"DI10_1,DI10_2\"/></IO></RobotCell>";
         var robot = RobotSystem.Parse(xml, Plane.WorldXY);
@@ -25,14 +25,14 @@ public class ProgramTests
     }
 
     [Test]
-    public void BasicProgramCorrectDuration()
+    public void AbbCorrectDuration()
     {
         const double expected = 1.6432545251573487;
         Assert.AreEqual(expected, _program.Duration, 1e-14);
     }
 
     [Test]
-    public void BasicProgramCorrectJoints()
+    public void AbbCorrectJoints()
     {
         double[] expected =
         {
@@ -51,7 +51,7 @@ public class ProgramTests
     }
 
     [Test]
-    public void BasicProgramCorrectPlanes()
+    public void AbbCorrectPlanes()
     {
         double[] expected =
         {
@@ -64,5 +64,27 @@ public class ProgramTests
 
         foreach(var (e, a) in expected.Zip(actual))
             Assert.AreEqual(e, a, 1e-14);
+    }
+
+    [Test]
+    public void AbbCorrectCode()
+    {
+        const string expected  = @"MODULE TestProgram_T_ROB1
+VAR extjoint extj := [9E9,9E9,9E9,9E9,9E9,9E9];
+VAR confdata conf := [0,0,0,0];
+PERS tooldata DefaultTool:=[TRUE,[[0,0,0],[1,0,0,0]],[0.001,[0,0,0.001],[1,0,0,0],0,0,0]];
+TASK PERS wobjdata DefaultFrame:=[FALSE,TRUE,"""",[[0,0,0],[1,0,0,0]],[[0,0,0],[1,0,0,0]]];
+TASK PERS speeddata DefaultSpeed:=[100,180,5000,1080];
+TASK PERS speeddata Speed000:=[300,180,5000,1080];
+PROC Main()
+ConfL \Off;
+MoveAbsJ [[41.257,-0.5638,4.3298,85.7179,-41.3979,5.7002],extj],DefaultSpeed,fine,DefaultTool;
+MoveL [[300,-200,610],[0.5,0.5,0.5,0.5],conf,extj],Speed000,fine,DefaultTool \WObj:=DefaultFrame;
+ENDPROC
+ENDMODULE";
+
+        var code = _program.Code ?? throw new ArgumentNullException("Code not generated.");
+        var actual = string.Join(Environment.NewLine, code[0].SelectMany(c => c));
+        Assert.AreEqual(expected, actual);
     }
 }

@@ -41,10 +41,10 @@ public class ProgramTarget
             {
                 var planes = CellTarget.Planes;
                 Plane coupledPlane = planes[Target.Frame.CoupledPlaneIndex];
-                framePlane.Transform(Transform.PlaneToPlane(Plane.WorldXY, coupledPlane));
+                framePlane.Orient(ref coupledPlane);
             }
 
-            plane.Transform(Transform.PlaneToPlane(framePlane, Plane.WorldXY));
+            plane.InverseOrient(ref framePlane);
             return plane;
         }
     }
@@ -94,7 +94,8 @@ public class ProgramTarget
         if (prevTarget.Target.Tool != Target.Tool)
         {
             var toolPlane = Target.Tool.Tcp;
-            toolPlane.Transform(Transform.PlaneToPlane(prevTarget.Target.Tool.Tcp, prevPlane));
+            var trans = Transform.PlaneToPlane(prevTarget.Target.Tool.Tcp, prevPlane);
+            toolPlane.Transform(trans);
             prevPlane = toolPlane;
         }
 
@@ -103,11 +104,10 @@ public class ProgramTarget
         if (Target.Frame.IsCoupled)
         {
             var planes = prevTarget.CellTarget.Planes;
-            Plane prevCoupledPlane = planes[Target.Frame.CoupledPlaneIndex];
-            framePlane.Transform(Transform.PlaneToPlane(Plane.WorldXY, prevCoupledPlane));
+            framePlane.Orient(ref planes[Target.Frame.CoupledPlaneIndex]);
         }
 
-        prevPlane.Transform(Transform.PlaneToPlane(framePlane, Plane.WorldXY));
+        prevPlane.InverseOrient(ref framePlane);
         return prevPlane;
     }
 

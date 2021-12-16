@@ -237,7 +237,7 @@ class VAL3PostProcessor
             if (programTarget.IsJointTarget)
             {
                 var jointTarget = (JointTarget)programTarget.Target;
-                var js = jointTarget.Joints.Select((x, j) => _cell.MechanicalGroups[group].RadianToDegree(x, j)).ToList();
+                var js = jointTarget.Joints.Map((x, j) => _cell.MechanicalGroups[group].RadianToDegree(x, j));
 
                 var value = $@"j1=""{js[0]:0.####}"" j2=""{js[1]:0.####}"" j3=""{js[2]:0.####}"" j4=""{js[3]:0.####}"" j5=""{js[4]:0.####}"" j6=""{js[5]:0.####}""";
 
@@ -303,7 +303,7 @@ class VAL3PostProcessor
         }
 
         Plane plane = frame.Plane;
-        plane.Transform(Transform.PlaneToPlane(_cell.BasePlane, Plane.WorldXY));
+        plane.InverseOrient(ref _cell.BasePlane);
         var values = _cell.PlaneToNumbers(plane);
 
         string frameName = frame.Name.NotNull();

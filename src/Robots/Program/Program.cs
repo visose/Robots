@@ -71,10 +71,10 @@ public class Program : IProgram
 
         foreach (var subTargets in targets.Transpose())
         {
-            var programTargets = subTargets.Select((x, i) =>
+            var programTargets = subTargets.Select((t, i) =>
             {
-                return x is not null
-                    ? new ProgramTarget(x, i)
+                return t is not null
+                    ? new ProgramTarget(t, i)
                     : throw new ArgumentNullException($" Target {targetIndex} in robot {i} is null or invalid.");
             });
 
@@ -87,7 +87,7 @@ public class Program : IProgram
         int indexError = checkProgram.IndexError;
 
         if (indexError != -1)
-            cellTargets = cellTargets.GetRange(0, indexError + 1).ToList();
+            cellTargets = cellTargets.GetRange(0, indexError + 1);
 
         Targets = cellTargets;
 

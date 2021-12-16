@@ -1,7 +1,7 @@
 ﻿
 namespace Robots;
 
-public struct Vector6
+public struct Vector6d
 {
     public double A1;
     public double A2;
@@ -10,7 +10,7 @@ public struct Vector6
     public double A5;
     public double A6;
 
-    public Vector6(double a1, double a2, double a3, double a4, double a5, double a6)
+    public Vector6d(double a1, double a2, double a3, double a4, double a5, double a6)
     {
         A1 = a1;
         A2 = a2;
@@ -20,7 +20,7 @@ public struct Vector6
         A6 = a6;
     }
 
-    public Vector6(double[] joints)
+    public Vector6d(double[] joints)
     {
         if (joints.Length != 6)
             throw new ArgumentOutOfRangeException("Array length should be 6.");
@@ -33,15 +33,15 @@ public struct Vector6
         A6 = joints[5];
     }
 
-    public static Vector6 Map<T>(T[] array, Func<T, double> projection)
+    public static Vector6d Map<T>(T[] array, Func<T, double> projection)
     {
         if (array.Length != 6)
             throw new ArgumentOutOfRangeException("Array lenght should be 6.");
 
-        Vector6 result = default;
+        Vector6d result = default;
 
-        for (int i = 0; i < 6; i++)        
-            result[i] = projection(array[i]);        
+        for (int i = 0; i < 6; i++)
+            result[i] = projection(array[i]);
 
         return result;
     }

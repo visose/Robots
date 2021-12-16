@@ -37,13 +37,13 @@ class URScriptPostProcessor
         {
             Plane tcp = tool.Tcp;
             var originPlane = new Plane(Point3d.Origin, Vector3d.YAxis, -Vector3d.XAxis);
-            tcp.Transform(Transform.PlaneToPlane(Plane.WorldXY, originPlane));
+            tcp.Orient(ref originPlane);
             Point3d tcpPoint = tcp.Origin / 1000;
             tcp.Origin = tcpPoint;
-            double[] axisAngle = RobotCellUR.PlaneToAxisAngle(tcp, Plane.WorldXY);
+            double[] axisAngle = RobotCellUR.PlaneToAxisAngle(ref tcp);
 
             Point3d cog = tool.Centroid;
-            cog.Transform(Transform.PlaneToPlane(Plane.WorldXY, originPlane));
+            cog.Transform(originPlane.ToTransform());
             cog /= 1000;
 
             code.Add(indent + $"{tool.Name}Tcp = p[{axisAngle[0]:0.#####}, {axisAngle[1]:0.#####}, {axisAngle[2]:0.#####}, {axisAngle[3]:0.#####}, {axisAngle[4]:0.#####}, {axisAngle[5]:0.#####}]");
@@ -117,8 +117,8 @@ class URScriptPostProcessor
             {
                 var cartesian = (CartesianTarget)target;
                 var plane = cartesian.Plane;
-                plane.Transform(Transform.PlaneToPlane(Plane.WorldXY, target.Frame.Plane));
-                plane.Transform(Transform.PlaneToPlane(_cell.BasePlane, Plane.WorldXY));
+                plane.Orient(ref target.Frame.Plane);
+                plane.InverseOrient(ref _cell.BasePlane);
                 var axisAngle = _cell.PlaneToNumbers(plane);
 
                 switch (cartesian.Motion)
@@ -180,23 +180,6 @@ class URScriptPostProcessor
     {
         string pos = $"  set_tcp({tool.Name}Tcp)";
         string mass = $"  set_payload({tool.Name}Weight, {tool.Name}Cog)";
-
-        /*
-        Plane tcp = tool.Tcp;
-        Plane originPlane = new Plane(Point3d.Origin, Vector3d.YAxis, -Vector3d.XAxis);
-        tcp.Transform(Transform.PlaneToPlane(Plane.WorldXY, originPlane));
-        Point3d tcpPoint = tcp.Origin / 1000;
-        double[] axisAngle = AxisAngle(tcp, Plane.WorldXY);
-
-        Point3d cog = tool.Centroid;
-        cog.Transform(Transform.PlaneToPlane(Plane.WorldXY, originPlane));
-        cog /= 1000;
-
-        string tcpString = $"p[{tcpPoint.X:0.00000}, {tcpPoint.Y:0.00000}, {tcpPoint.Z:0.00000}, {axisAngle[0]:0.0000}, {axisAngle[1]:0.0000}, {axisAngle[2]:0.0000}]";
-        string cogString = $"[{cog.X:0.00000}, {cog.Y:0.00000}, {cog.Z:0.00000}]";
-        string pos = $"  set_tcp({tcpString})";
-        string mass = $"  set_payload({tool.Weight:0.000}, {cogString})";
-        */
         return $"{pos}\n{mass}";
     }
 }
