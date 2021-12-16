@@ -63,12 +63,14 @@ public sealed class Simulation : GH_Component, IDisposable
         if (!_form.Visible) _time = _sliderTime;
 
         p.Animate(_time, false);
-        var currentTarget = p.CurrentSimulationTarget;
+        var currentPose = p.CurrentSimulationPose;
+        var currentKinematics = currentPose.Kinematics;
 
-        var errors = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Errors);
-        var joints = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Joints);
-        var planes = currentTarget.ProgramTargets.SelectMany(x => x.Kinematics.Planes).ToList();
-        var meshes = GeometryUtil.PoseMeshes(p.RobotSystem, currentTarget.ProgramTargets.Select(p => p.Kinematics).ToList(), currentTarget.ProgramTargets.Select(p => p.Target.Tool.Mesh).ToList());
+        var errors = currentKinematics.SelectMany(x => x.Errors);
+        var joints = currentKinematics.SelectMany(x => x.Joints);
+        var planes = currentKinematics.SelectMany(x => x.Planes).ToList();
+        var meshTools = p.Targets[p.CurrentSimulationPose.TargetIndex].ProgramTargets.Select(t => t.Target.Tool.Mesh).ToList();
+        var meshes = GeometryUtil.PoseMeshes(p.RobotSystem, currentKinematics, meshTools);
 
         if (errors.Count() > 0)
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in solution");
@@ -76,8 +78,8 @@ public sealed class Simulation : GH_Component, IDisposable
         DA.SetDataList(0, meshes);
         DA.SetDataList(1, joints);
         DA.SetDataList(2, planes.Select(x => new GH_Plane(x)));
-        DA.SetData(3, currentTarget.Index);
-        DA.SetData(4, p.CurrentSimulationTime);
+        DA.SetData(3, currentPose.TargetIndex);
+        DA.SetData(4, p.CurrentSimulationPose.CurrentTime);
         DA.SetData(5, new GH_Program(p));
         DA.SetDataList(6, errors);
 

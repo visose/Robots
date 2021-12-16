@@ -15,18 +15,19 @@ public class SimpleTrail
     {
         _program = program;
         _mechanicalGroup = mechanicalGroup;
-        _time = program.CurrentSimulationTime;
+        _time = program.CurrentSimulationPose.CurrentTime;
         Length = maxLength;
         Polyline = new Polyline();
     }
 
     public void Update()
     {
-        if (_program.CurrentSimulationTime < _time)
+        var currentTime = _program.CurrentSimulationPose.CurrentTime;
+        if (currentTime < _time)
             Polyline.Clear();
 
-        _time = _program.CurrentSimulationTime;
-        Polyline.Add(_program.CurrentSimulationTarget.ProgramTargets[_mechanicalGroup].WorldPlane.Origin);
+        _time = currentTime;
+        Polyline.Add(_program.CurrentSimulationPose.GetLastPlane(_mechanicalGroup).Origin);
 
         while (Polyline.Length > Length)
             Polyline.RemoveAt(0);

@@ -9,10 +9,11 @@ public enum Manufacturers { ABB, KUKA, UR, FANUC, Staubli, Other, All };
 
 public abstract class RobotSystem
 {
+    Plane _basePlane;
     public string Name { get; }
     public Manufacturers Manufacturer { get; }
     public IO IO { get; }
-    public Plane BasePlane { get; }
+    public ref Plane BasePlane => ref _basePlane;
     public Mesh? Environment { get; }
     public Mesh DisplayMesh { get; } = new Mesh();
     public IRemote? Remote { get; protected set; }
@@ -47,19 +48,16 @@ public abstract class RobotSystem
         if (double.IsNaN(t)) t = 0;
         var newOrigin = a.Origin * (1 - t) + b.Origin * t;
 
-        //  Quaternion q = Quaternion.Rotation(a, b);
-        // var q = Quaternion.Identity.Rotate(a).Rotate(b);
+        var qa = a.ToQuaternion();
+        var qb = b.ToQuaternion();
+        var q = Slerp(ref qa, ref qb, t);
 
-        var q = Slerp(GetRotation(a), GetRotation(b), t);
+        //var transform = q.ToTransform();
+        //var result = transform.ToPlane();
+        //result.Origin = newOrigin;
+        var result = q.ToPlane(newOrigin);
 
-        //  q.GetRotation(out var angle, out var axis);
-        // angle = (angle > PI) ? angle - 2 * PI : angle;
-        //  a.Rotate(t * angle, axis, a.Origin);
-
-        a = TransformFromQuaternion(q).ToPlane();
-
-        a.Origin = newOrigin;
-        return a;
+        return result;
     }
 
     internal abstract void SaveCode(IProgram program, string folder);

@@ -30,24 +30,10 @@ public class ProgramTarget
         set => _cellTarget = value;
     }
 
-    /*
-    internal bool ChangesConfiguration
-    {
-        get
-        {
-            if (Index == 0) return false;
-            return Configuration != allTargets[Group][Index - 1].Configuration;
-        }
-    }
-    */
-
     public Plane Plane
     {
         get
         {
-            //   var cartesian = Target as CartesianTarget;
-            //   if (cartesian is not null) return cartesian.Plane;
-
             Plane plane = WorldPlane;
             Plane framePlane = Target.Frame.Plane;
 
@@ -155,11 +141,8 @@ public class ProgramTarget
         {
             Plane prevPlane = GetPrevPlane(prevTarget);
             Plane plane = robot.CartesianLerp(prevPlane, Plane, t, start, end);
-            //   Plane plane = CartesianTarget.Lerp(prevTarget.WorldPlane, WorldPlane, t, start, end);
-            //  Target.RobotConfigurations? configuration = (Abs(prevTarget.cellTarget.TotalTime - t) < TimeTol) ? prevTarget.Kinematics.Configuration : Kinematics.Configuration;
-
             var target = new CartesianTarget(plane, Target, prevTarget.Kinematics.Configuration, Motions.Linear, external);
-            // target.Frame = Frame.Default;
+
             return target;
         }
     }

@@ -1,5 +1,4 @@
 ﻿using System.Xml.Linq;
-using System.Xml;
 using Rhino.Geometry;
 using static Robots.Util;
 
@@ -8,10 +7,11 @@ namespace Robots;
 public abstract class Mechanism
 {
     readonly string _model;
+    Plane _basePlane;
 
     public Manufacturers Manufacturer { get; }
     public double Payload { get; }
-    public Plane BasePlane { get; set; }
+    public ref Plane BasePlane => ref _basePlane;
     public Mesh? BaseMesh { get; }
     public Joint[] Joints { get; }
     public bool MovesRobot { get; }
@@ -77,7 +77,7 @@ public abstract class Mechanism
                         string name = $"{i++}";
                         var jointLayer = geometry.AllLayers.FirstOrDefault(x => (x.Name == name) && (x.ParentLayerId == layer.Id));
 
-                        if (jointLayer is null) 
+                        if (jointLayer is null)
                             break;
 
                         var mesh = geometry.Objects.FirstOrDefault(x => x.Attributes.LayerIndex == jointLayer.Index)?.Geometry as Mesh ?? new Mesh();
@@ -131,9 +131,9 @@ public abstract class Mechanism
             double minRange = jointElement.GetDoubleAttribute("minrange");
             double maxRange = jointElement.GetDoubleAttribute("maxrange");
             var range = new Interval(minRange, maxRange);
-            
+
             double maxSpeed = jointElement.GetDoubleAttribute("maxspeed");
-            Mesh? mesh = meshes?[i + 1].DuplicateMesh();            
+            Mesh? mesh = meshes?[i + 1].DuplicateMesh();
             int number = jointElement.GetIntAttribute("number") - 1;
 
             if (jointElement.Name == "Revolute")

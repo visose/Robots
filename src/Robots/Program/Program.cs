@@ -26,12 +26,10 @@ public class Program : IProgram
     public List<string> Errors { get; } = new List<string>();
     public List<List<List<string>>>? Code { get; }
     public double Duration { get; internal set; }
-    public CellTarget CurrentSimulationTarget => _simulation.CurrentSimulationTarget;
-    public double CurrentSimulationTime => _simulation.CurrentTime;
+    public SimulationPose CurrentSimulationPose => _simulation.CurrentSimulationPose;
 
     public Program(string name, RobotSystem robotSystem, IEnumerable<IToolpath> toolpaths, Commands.Group? initCommands = null, IEnumerable<int>? multiFileIndices = null, double stepSize = 1.0)
     {
-        // IEnumerable<IEnumerable<Target>> targets
         var targets = toolpaths.Select(t => t.Targets);
 
         if (!targets.SelectMany(x => x).Any())
@@ -42,7 +40,7 @@ public class Program : IProgram
         foreach (var subTargets in targets)
         {
             if (subTargets.Count() != targetCount)
-                throw new Exception(" All sub programs have to contain the same number of targets.");
+                throw new ArgumentException(" All sub programs have to contain the same number of targets.");
         }
 
         Name = name;
@@ -56,14 +54,14 @@ public class Program : IProgram
         if (MultiFileIndices.Count > 0)
         {
             int startCount = MultiFileIndices.Count;
-            MultiFileIndices = MultiFileIndices.Where(x => x < targetCount).ToList();            
+            MultiFileIndices = MultiFileIndices.Where(x => x < targetCount).ToList();
 
             if (startCount > MultiFileIndices.Count)
                 Warnings.Add("Multi-file index was higher than the number of targets.");
 
             MultiFileIndices.Sort();
 
-            if (MultiFileIndices.Count == 0 || MultiFileIndices[0] != 0) 
+            if (MultiFileIndices.Count == 0 || MultiFileIndices[0] != 0)
                 MultiFileIndices.Insert(0, 0);
         }
 

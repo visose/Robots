@@ -1,8 +1,23 @@
-﻿using ABB.Robotics.Controllers;
+﻿namespace Robots;
+
+#if NETSTANDARD2_0
+public class RemoteAbb : IRemote
+{
+    public string? IP { get; set; }
+    public List<string> Log { get; } = new List<string>();
+    public void Play() => throw NotImplemented();
+    public void Pause() => throw NotImplemented();
+    public void Upload(IProgram p) => throw NotImplemented();
+
+    internal RemoteAbb(RobotCellAbb cell) { }
+
+    Exception NotImplemented() => new NotImplementedException(" ABB SDK not supported in .NET Standard.");
+}
+
+#elif NET48
+using ABB.Robotics.Controllers;
 using ABB.Robotics.Controllers.RapidDomain;
 using ABB.Robotics.Controllers.Discovery;
-
-namespace Robots;
 
 public class RemoteAbb : IRemote
 {
@@ -182,3 +197,4 @@ public class RemoteAbb : IRemote
         return target;
     }
 }
+#endif

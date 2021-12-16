@@ -1,4 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+	
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net48</TargetFrameworks>
 		<AssemblyTitle>Robots Core</AssemblyTitle>
@@ -10,12 +11,13 @@
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
 		<PackageReference Include="RhinoCommon" Version="7.12.21313.6341" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<Reference Include="ABB.Robotics.Controllers.PC">
 			<HintPath>..\..\lib\ABB.Robotics.Controllers.PC.dll</HintPath>
 		</Reference>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="System.Buffers" Version="4.5.1" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -32,4 +34,5 @@
 			<LastGenOutput>Resources.Designer.cs</LastGenOutput>
 		</EmbeddedResource>
 	</ItemGroup>
+	
 </Project>

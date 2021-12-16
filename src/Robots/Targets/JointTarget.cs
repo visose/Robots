@@ -1,4 +1,5 @@
 ﻿using static System.Math;
+using static Robots.Util;
 
 namespace Robots;
 
@@ -28,8 +29,7 @@ public class JointTarget : Target
     }
 
     public static double GetAbsoluteJoint(double joint)
-    {
-        double PI2 = PI * 2;
+    {       
         double absJoint = Abs(joint);
         double result = absJoint - Floor(absJoint / PI2) * PI2;
         if (result > PI) result -= PI2;
@@ -43,7 +43,6 @@ public class JointTarget : Target
 
         for (int i = 0; i < joints.Length; i++)
         {
-            double PI2 = PI * 2;
             double prevJoint = GetAbsoluteJoint(prevJoints[i]);
             double joint = GetAbsoluteJoint(joints[i]);
             double difference = joint - prevJoint;
