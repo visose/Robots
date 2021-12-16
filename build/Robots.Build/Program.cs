@@ -13,8 +13,7 @@ var commandList = new Dictionary<string, Delegate>
 
 if (args.Length == 0)
 {
-    Log($"Specify a command: {string.Join(", ", commandList.Keys)}");
-    return 1;
+    args = commandList.Keys.ToArray();
 }
 
 foreach (var arg in args)

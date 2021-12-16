@@ -2,7 +2,7 @@
 	
 	<PropertyGroup>
 		<Product>Robots</Product>		
-		<Version>1.0.2</Version>
+		<Version>1.0.3</Version>
 		<Description>Create and simulate ABB, KUKA, UR and Staubli robot programs.</Description>
 		<Copyright>Copyright (c) 2021</Copyright>
 		<Authors>Robots Authors</Authors>
