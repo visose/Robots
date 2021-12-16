@@ -1,7 +1,9 @@
 - version: 1.0.3
   changes:
-  - Fixed robot system value list will not remember its selection.
+  - Fixed robot system value list not remembering its selection.
   - Fixed deprecated warnings from ABB SDK.
+  - Fixed some xml attributes not read.
+  - Some performance improvements.
 
 - version: 1.0.2
   changes:

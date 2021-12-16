@@ -50,7 +50,11 @@ class Commands
         // Copy bin files
         var files = new[]
         {
-            "Robots.dll", "Robots.gha", "ABB.Robotics.Controllers.PC.dll"
+            "Robots.dll",
+            "Robots.gha",
+            "ABB.Robotics.Controllers.PC.dll",
+            "RobotStudio.Services.RobApi.Desktop.dll",
+            "RobotStudio.Services.RobApi.dll",
         };
 
         foreach (var file in files)
