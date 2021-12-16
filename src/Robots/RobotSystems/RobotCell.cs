@@ -23,6 +23,7 @@ public abstract class RobotCell : RobotSystem
             DisplayMesh.Append(robotDisplay);
             foreach (var external in group.Externals) DisplayMesh.Append(external.DisplayMesh);
         }
+
         DisplayMesh.Transform(BasePlane.ToTransform());
     }
 

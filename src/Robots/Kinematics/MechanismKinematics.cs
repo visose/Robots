@@ -30,6 +30,7 @@ abstract class MechanismKinematics : KinematicSolution
 
         // Move planes to base
         var transform = Planes[0].ToTransform();
+
         for (int i = 1; i < jointCount + 1; i++)
             Planes[i].Transform(transform);
     }

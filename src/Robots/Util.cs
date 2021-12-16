@@ -15,13 +15,14 @@ static class Util
     public const double UnitTol = 0.000001;
     public const double SingularityTol = 0.0001;
     public const double HalfPI = PI * 0.5;
+    public const double PI2 = PI * 2.0;
 
     // Serialization
 
     public static XElement GetElement(this XElement element, string name)
     {
         return element.Element(XName.Get(name))
-            ??  throw new ArgumentException($" XML tag '{element.Name} is missing '{name} tag.");
+            ?? throw new ArgumentException($" XML tag '{element.Name} is missing '{name} tag.");
     }
 
     public static XElement? GetElementOrDefault(this XElement element, string name)
@@ -31,7 +32,7 @@ static class Util
 
     public static string GetAttribute(this XElement element, string name)
     {
-        var attribute = element.Attribute(XName.Get(name)).NotNull($" XML tag '{element.Name} is missing '{name} attribute.");        
+        var attribute = element.Attribute(XName.Get(name)).NotNull($" XML tag '{element.Name} is missing '{name} attribute.");
         return attribute.Value;
     }
 
@@ -72,6 +73,26 @@ static class Util
 
     // Collection
 
+    public static List<K> MapToList<T, K>(this IList<T> array, Func<T, K> projection)
+    {
+        var result = new List<K>(array.Count);
+
+        for (int i = 0; i < array.Count; i++)
+            result.Add(projection(array[i]));
+
+        return result;
+    }
+
+    public static K[] Map<T, K>(this IList<T> array, Func<T, K> projection)
+    {
+        var result = new K[array.Count];
+
+        for (int i = 0; i < array.Count; i++)
+            result[i] = projection(array[i]);
+
+        return result;
+    }
+
     public static T[] Subset<T>(this T[] array, int[] indices)
     {
         T[] subset = new T[indices.Length];
@@ -108,6 +129,16 @@ static class Util
 
     // Geometry
 
+    public static double ToRadians(this double value)
+    {
+        return value * (PI / 180.0);
+    }
+
+    public static double ToDegrees(this double value)
+    {
+        return value * (180.0 / PI);
+    }
+
     public static Transform ToTransform(this double[,] matrix)
     {
         var transform = new Transform();
@@ -119,44 +150,91 @@ static class Util
         return transform;
     }
 
-    public static Plane ToPlane(this Transform transform)
+    // Transform
+
+    public static void SetTransform(this ref Transform t, double m00, double m01, double m02, double m03, double m10, double m11, double m12, double m13, double m20, double m21, double m22, double m23)
     {
-        Plane plane = Plane.WorldXY;
-        plane.Transform(transform);
-        return plane;
+        t.M00 = m00; t.M01 = m01; t.M02 = m02; t.M03 = m03;
+        t.M10 = m10; t.M11 = m11; t.M12 = m12; t.M13 = m13;
+        t.M20 = m20; t.M21 = m21; t.M22 = m22; t.M23 = m23;
+        t.M33 = 1;
     }
 
-    public static Transform ToTransform(this Plane plane)
+    public static void SetMultiply(this ref Transform t, ref Transform a, ref Transform b)
     {
-        return Transform.PlaneToPlane(Plane.WorldXY, plane);
+        t.M00 = a.M00 * b.M00 + a.M01 * b.M10 + a.M02 * b.M20 + a.M03 * b.M30;
+        t.M01 = a.M00 * b.M01 + a.M01 * b.M11 + a.M02 * b.M21 + a.M03 * b.M31;
+        t.M02 = a.M00 * b.M02 + a.M01 * b.M12 + a.M02 * b.M22 + a.M03 * b.M32;
+        t.M03 = a.M00 * b.M03 + a.M01 * b.M13 + a.M02 * b.M23 + a.M03 * b.M33;
+        t.M10 = a.M10 * b.M00 + a.M11 * b.M10 + a.M12 * b.M20 + a.M13 * b.M30;
+        t.M11 = a.M10 * b.M01 + a.M11 * b.M11 + a.M12 * b.M21 + a.M13 * b.M31;
+        t.M12 = a.M10 * b.M02 + a.M11 * b.M12 + a.M12 * b.M22 + a.M13 * b.M32;
+        t.M13 = a.M10 * b.M03 + a.M11 * b.M13 + a.M12 * b.M23 + a.M13 * b.M33;
+        t.M20 = a.M20 * b.M00 + a.M21 * b.M10 + a.M22 * b.M20 + a.M23 * b.M30;
+        t.M21 = a.M20 * b.M01 + a.M21 * b.M11 + a.M22 * b.M21 + a.M23 * b.M31;
+        t.M22 = a.M20 * b.M02 + a.M21 * b.M12 + a.M22 * b.M22 + a.M23 * b.M32;
+        t.M23 = a.M20 * b.M03 + a.M21 * b.M13 + a.M22 * b.M23 + a.M23 * b.M33;
+        t.M30 = a.M30 * b.M00 + a.M31 * b.M10 + a.M32 * b.M20 + a.M33 * b.M30;
+        t.M31 = a.M30 * b.M01 + a.M31 * b.M11 + a.M32 * b.M21 + a.M33 * b.M31;
+        t.M32 = a.M30 * b.M02 + a.M31 * b.M12 + a.M32 * b.M22 + a.M33 * b.M32;
+        t.M33 = a.M30 * b.M03 + a.M31 * b.M13 + a.M32 * b.M23 + a.M33 * b.M33;
     }
 
-    public static double ToRadians(this double value)
+    public static Transform Multiply(ref Transform a, ref Transform b)
     {
-        return value * (PI / 180.0);
+        Transform t = default;
+        t.SetMultiply(ref a, ref b);
+        return t;
     }
 
-    public static double ToDegrees(this double value)
+    public static Plane ToPlane(this ref Transform t)
     {
-        return value * (180.0 / PI);
+        var vx = new Vector3d(t.M00, t.M10, t.M20);
+        var vy = new Vector3d(t.M01, t.M11, t.M21);
+        var p = new Point3d(t.M03, t.M13, t.M23);
+        return new Plane(p, vx, vy);
+    }
+
+    // Plane
+
+    public static Transform ToTransform(this ref Plane plane)
+    {
+        Transform t = default;
+        var vx = plane.XAxis;
+        var vy = plane.YAxis;
+        var vz = plane.ZAxis;
+        t.M00 = vx.X;
+        t.M01 = vy.X;
+        t.M02 = vz.X;
+        t.M03 = plane.OriginX;
+        t.M10 = vx.Y;
+        t.M11 = vy.Y;
+        t.M12 = vz.Y;
+        t.M13 = plane.OriginY;
+        t.M20 = vx.Z;
+        t.M21 = vy.Z;
+        t.M22 = vz.Z;
+        t.M23 = plane.OriginZ;
+        t.M33 = 1;
+        return t;
     }
 
     // adapted from System.Numerics.Vectors
-    public static Quaternion GetRotation(Plane plane)
+    public static Quaternion ToQuaternion(this ref Plane plane)
     {
-        var matrix = plane.ToTransform().Transpose();
+        var matrix = plane.ToTransform();
         double trace = matrix.M00 + matrix.M11 + matrix.M22;
 
-        var q = new Quaternion();
+        Quaternion q = default;
 
         if (trace > 0.0)
         {
             double s = Sqrt(trace + 1.0);
             q.A = s * 0.5;
             s = 0.5 / s;
-            q.B = (matrix.M12 - matrix.M21) * s;
-            q.C = (matrix.M20 - matrix.M02) * s;
-            q.D = (matrix.M01 - matrix.M10) * s;
+            q.B = (matrix.M21 - matrix.M12) * s;
+            q.C = (matrix.M02 - matrix.M20) * s;
+            q.D = (matrix.M10 - matrix.M01) * s;
         }
         else
         {
@@ -165,59 +243,41 @@ static class Util
                 double s = Sqrt(1.0 + matrix.M00 - matrix.M11 - matrix.M22);
                 double invS = 0.5 / s;
                 q.B = 0.5 * s;
-                q.C = (matrix.M01 + matrix.M10) * invS;
-                q.D = (matrix.M02 + matrix.M20) * invS;
-                q.A = (matrix.M12 - matrix.M21) * invS;
+                q.C = (matrix.M10 + matrix.M01) * invS;
+                q.D = (matrix.M20 + matrix.M02) * invS;
+                q.A = (matrix.M21 - matrix.M12) * invS;
             }
             else if (matrix.M11 > matrix.M22)
             {
                 double s = Sqrt(1.0 + matrix.M11 - matrix.M00 - matrix.M22);
                 double invS = 0.5 / s;
-                q.B = (matrix.M10 + matrix.M01) * invS;
+                q.B = (matrix.M01 + matrix.M10) * invS;
                 q.C = 0.5 * s;
-                q.D = (matrix.M21 + matrix.M12) * invS;
-                q.A = (matrix.M20 - matrix.M02) * invS;
+                q.D = (matrix.M12 + matrix.M21) * invS;
+                q.A = (matrix.M02 - matrix.M20) * invS;
             }
             else
             {
                 double s = Sqrt(1.0 + matrix.M22 - matrix.M00 - matrix.M11);
                 double invS = 0.5 / s;
-                q.B = (matrix.M20 + matrix.M02) * invS;
-                q.C = (matrix.M21 + matrix.M12) * invS;
+                q.B = (matrix.M02 + matrix.M20) * invS;
+                q.C = (matrix.M12 + matrix.M21) * invS;
                 q.D = 0.5 * s;
-                q.A = (matrix.M01 - matrix.M10) * invS;
+                q.A = (matrix.M10 - matrix.M01) * invS;
             }
         }
 
         return q;
     }
 
-    public static double Normalize(this Quaternion q, float epsilon = 0)
-    {
-        double length = q.Scalar;
-        if (length > epsilon)
-        {
-            double invLength = 1.0 / length;
-            q.A *= invLength;
-            q.B *= invLength;
-            q.C *= invLength;
-            q.D *= invLength;
-        }
-        else
-        {
-            length = 0;
-            q.A = q.B = q.C = q.D = 0;
-        }
-        return length;
-    }
+    // Quaternion
 
     // adapted from System.Numerics.Vectors
-    public static Quaternion Slerp(Quaternion q1, Quaternion q2, double t)
+    public static Quaternion Slerp(ref Quaternion q1, ref Quaternion q2, double t)
     {
         const double epsilon = 1e-6;
 
-        double cosOmega = q1.B * q2.B + q1.C * q2.C +
-                         q1.D * q2.D + q1.A * q2.A;
+        double cosOmega = q1.B * q2.B + q1.C * q2.C + q1.D * q2.D + q1.A * q2.A;
 
         bool flip = false;
 
@@ -238,7 +298,7 @@ static class Util
         else
         {
             double omega = Acos(cosOmega);
-            double invSinOmega = 1 / Sin(omega);
+            double invSinOmega = 1.0 / Sin(omega);
 
             s1 = Sin((1.0 - t) * omega) * invSinOmega;
             s2 = (flip)
@@ -246,7 +306,7 @@ static class Util
                 : Sin(t * omega) * invSinOmega;
         }
 
-        Quaternion ans = Quaternion.Identity;
+        Quaternion ans = default;
 
         ans.B = s1 * q1.B + s2 * q2.B;
         ans.C = s1 * q1.C + s2 * q2.C;
@@ -256,15 +316,17 @@ static class Util
         return ans;
     }
 
-    public static void GetRotation(this Quaternion q, out Plane plane)
+    public static Plane ToPlane(this ref Quaternion quaternion, Point3d point)
     {
-        plane = TransformFromQuaternion(q).ToPlane();
+        quaternion.GetRotation(out Plane plane);
+        plane.Origin = point;
+        return plane;
     }
 
     // adapted from System.Numerics.Vectors
-    public static Transform TransformFromQuaternion(Quaternion q)
-    {
-        var result = new Transform();
+    public static Transform ToTransform(this ref Quaternion q)
+    {        
+        Transform result = default;
 
         double xx = q.B * q.B;
         double yy = q.C * q.C;
@@ -278,23 +340,21 @@ static class Util
         double wx = q.B * q.A;
 
         result.M00 = 1.0 - 2.0 * (yy + zz);
-        result.M01 = 2.0 * (xy + wz);
-        result.M02 = 2.0 * (xz - wy);
-        result.M03 = 0.0;
-        result.M10 = 2.0 * (xy - wz);
+        result.M01 = 2.0 * (xy - wz);
+        result.M02 = 2.0 * (xz + wy);
+        //result.M03 = 0.0;
+        result.M10 = 2.0 * (xy + wz);
         result.M11 = 1.0 - 2.0 * (zz + xx);
-        result.M12 = 2.0 * (yz + wx);
-        result.M13 = 0.0;
-        result.M20 = 2.0 * (xz + wy);
-        result.M21 = 2.0 * (yz - wx);
+        result.M12 = 2.0 * (yz - wx);
+        //result.M13 = 0.0;
+        result.M20 = 2.0 * (xz - wy);
+        result.M21 = 2.0 * (yz + wx);
         result.M22 = 1.0 - 2.0 * (yy + xx);
-        result.M23 = 0.0;
-        result.M30 = 0.0;
-        result.M31 = 0.0;
-        result.M32 = 0.0;
+        //result.M23 = 0.0;
+        //result.M30 = 0.0;
+        //result.M31 = 0.0;
+        //result.M32 = 0.0;
         result.M33 = 1.0;
-
-        result = result.Transpose();
 
         return result;
     }

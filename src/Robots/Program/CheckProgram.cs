@@ -392,7 +392,7 @@ class CheckProgram
 
             foreach (var target in targets)
             {
-                var group = target.Commands.NotNull()
+                var group = target.Commands.NotNull();
 
                 for (int i = 0; i < group.Count; i++)
                     if (group[i] == attribute as Command)

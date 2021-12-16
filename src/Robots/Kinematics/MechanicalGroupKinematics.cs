@@ -8,7 +8,7 @@ class MechanicalGroupKinematics : KinematicSolution
     {
         var jointCount = group.Joints.Count;
         Joints = new double[jointCount];
-        var planes = new List<Plane>();
+        var planes = new List<Plane>(jointCount + 2);
         var errors = new List<string>();
 
         Plane? robotBase = basePlane;
@@ -24,7 +24,7 @@ class MechanicalGroupKinematics : KinematicSolution
         // Externals
         foreach (var external in group.Externals)
         {
-            var externalPrevJoints = prevJoints?.Subset(external.Joints.Select(x => x.Number).ToArray());
+            var externalPrevJoints = prevJoints?.Subset(external.Joints.Map(x => x.Number));
             var externalKinematics = external.Kinematics(target, externalPrevJoints, basePlane);
 
             for (int i = 0; i < external.Joints.Length; i++)
@@ -62,7 +62,7 @@ class MechanicalGroupKinematics : KinematicSolution
 
         if (robot is not null)
         {
-            var robotPrevJoints = prevJoints?.Subset(robot.Joints.Select(x => x.Number).ToArray());
+            var robotPrevJoints = prevJoints?.Subset(robot.Joints.Map(x => x.Number));
             var robotKinematics = robot.Kinematics(target, robotPrevJoints, robotBase);
 
             for (int j = 0; j < robot.Joints.Length; j++)
@@ -71,22 +71,16 @@ class MechanicalGroupKinematics : KinematicSolution
             planes.AddRange(robotKinematics.Planes);
             Configuration = robotKinematics.Configuration;
 
-            if (robotKinematics.Errors.Count > 0)
-            {
-                errors.AddRange(robotKinematics.Errors);
-            }
+            errors.AddRange(robotKinematics.Errors);
         }
 
         // Tool
         Plane toolPlane = target.Tool.Tcp;
-        toolPlane.Transform(planes[planes.Count - 1].ToTransform());
+        var lastPlane = planes[planes.Count - 1];
+        toolPlane.Transform(lastPlane.ToTransform());
         planes.Add(toolPlane);
 
         Planes = planes.ToArray();
-
-        if (errors.Count > 0)
-        {
-            Errors.AddRange(errors);
-        }
+        Errors.AddRange(errors);
     }
 }

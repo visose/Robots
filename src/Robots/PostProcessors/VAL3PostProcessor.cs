@@ -306,7 +306,7 @@ class VAL3PostProcessor
         plane.Transform(Transform.PlaneToPlane(_cell.BasePlane, Plane.WorldXY));
         var values = _cell.PlaneToNumbers(plane);
 
-        string frameName = frame.Name.NotNull()
+        string frameName = frame.Name.NotNull();
         string code = VAL3Syntax.Data(frameName, "frame", $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}"" fatherId=""world[0]""");
         return code;
     }

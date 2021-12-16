@@ -166,7 +166,7 @@ class RapidPostProcessor
                 var cartesian = (CartesianTarget)programTarget.Target;
                 var plane = cartesian.Plane;
                 // var quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
-                Quaternion quaternion = GetRotation(plane);
+                Quaternion quaternion = plane.ToQuaternion();
 
                 switch (cartesian.Motion)
                 {
@@ -238,8 +238,8 @@ class RapidPostProcessor
 
     string Tool(Tool tool)
     {
-        // Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, tool.Tcp);
-        Quaternion quaternion = GetRotation(tool.Tcp);
+        var tcp = tool.Tcp;
+        Quaternion quaternion = tcp.ToQuaternion();
         double weight = (tool.Weight > 0.001) ? tool.Weight : 0.001;
 
         Point3d centroid = tool.Centroid;
@@ -256,8 +256,7 @@ class RapidPostProcessor
     {
         Plane plane = frame.Plane;
         plane.Transform(Transform.PlaneToPlane(_cell.BasePlane, Plane.WorldXY));
-        //Quaternion quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
-        Quaternion quaternion = GetRotation(plane);
+        Quaternion quaternion = plane.ToQuaternion();
         string pos = $"[{plane.OriginX:0.###},{plane.OriginY:0.###},{plane.OriginZ:0.###}]";
         string orient = $"[{quaternion.A:0.#####},{quaternion.B:0.#####},{quaternion.C:0.#####},{quaternion.D:0.#####}]";
         string coupledMech = "";
