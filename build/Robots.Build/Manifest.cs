@@ -31,6 +31,8 @@ class Manifest
     public string Name { get; private set; }
     public string Version { get; private set; }
     public string[] Authors { get; private set; }
+
+    [YamlMember(ScalarStyle = ScalarStyle.Literal)]
     public string Description { get; private set; }
 
     [YamlMember(ScalarStyle = ScalarStyle.DoubleQuoted)]
@@ -69,14 +71,15 @@ class Manifest
         foreach (var change in notes.Changes)
             description.AppendLine($" - {change}");
 
-        return description.ToString();
+        var text = description.ToString();
+        return text;
     }
 
     string ToYaml()
     {
         var serializer = new SerializerBuilder()
             .WithNamingConvention(UnderscoredNamingConvention.Instance)
-            .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
+            .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)            
             .Build();
 
         return serializer.Serialize(this);
