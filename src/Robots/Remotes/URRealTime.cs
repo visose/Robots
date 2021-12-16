@@ -72,7 +72,10 @@ public class URRealTime
 
         client.Close();
 
-        return byteStream.Take(size).ToArray();
+        var result = new byte[size];
+        Array.Copy(byteStream, result, size);
+        //return byteStream.Take(size).ToArray();
+        return result;
     }
 
     double[]? ReadDataType(FeedbackType type, byte[] byteStream)

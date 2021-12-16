@@ -19,34 +19,35 @@ public class RobotCellKuka : RobotCell
         double sb = Sin(b);
         double cc = Cos(c);
         double sc = Sin(c);
-        var tt = new Transform(1);
-        tt[0, 0] = ca * cb; tt[0, 1] = sa * cc + ca * sb * sc; tt[0, 2] = sa * sc - ca * sb * cc;
-        tt[1, 0] = -sa * cb; tt[1, 1] = ca * cc - sa * sb * sc; tt[1, 2] = ca * sc + sa * sb * cc;
-        tt[2, 0] = sb; tt[2, 1] = -cb * sc; tt[2, 2] = cb * cc;
+        Transform t = default;
+        t.M00 = ca * cb; t.M01 = sa * cc + ca * sb * sc; t.M02 = sa * sc - ca * sb * cc;
+        t.M10 = -sa * cb; t.M11 = ca * cc - sa * sb * sc; t.M12 = ca * sc + sa * sb * cc;
+        t.M20 = sb; t.M21 = -cb * sc; t.M22 = cb * cc;
+        t.M33 = 1;
 
-        var plane = tt.ToPlane();
+        var plane = t.ToPlane();
         plane.Origin = new Point3d(x, y, z);
         return plane;
     }
 
     public static double[] PlaneToEuler(Plane plane)
     {
-        Transform matrix = Transform.PlaneToPlane(Plane.WorldXY, plane);
-        double a = Atan2(-matrix.M10, matrix.M00);
-        double mult = 1.0 - matrix.M20 * matrix.M20;
+        Transform t = plane.ToTransform();
+        double a = Atan2(-t.M10, t.M00);
+        double mult = 1.0 - t.M20 * t.M20;
         if (Abs(mult) < UnitTol) mult = 0.0;
-        double b = Atan2(matrix.M20, Sqrt(mult));
-        double c = Atan2(-matrix.M21, matrix.M22);
+        double b = Atan2(t.M20, Sqrt(mult));
+        double c = Atan2(-t.M21, t.M22);
 
-        if (matrix.M20 < (-1.0 + UnitTol))
+        if (t.M20 < (-1.0 + UnitTol))
         {
-            a = Atan2(matrix.M01, matrix.M11);
+            a = Atan2(t.M01, t.M11);
             b = -PI / 2;
             c = 0;
         }
-        else if (matrix.M20 > (1.0 - UnitTol))
+        else if (t.M20 > (1.0 - UnitTol))
         {
-            a = Atan2(matrix.M01, matrix.M11);
+            a = Atan2(t.M01, t.M11);
             b = PI / 2;
             c = 0;
         }
@@ -64,8 +65,8 @@ public class RobotCellKuka : RobotCell
         t = (t - min) / (max - min);
         if (double.IsNaN(t)) t = 0;
 
-        var matrixA = a.ToTransform();
-        var matrixB = b.ToTransform();
+        var ta = a.ToTransform();
+        var tb = b.ToTransform();
 
         var result = Transform.Identity;
 
@@ -73,7 +74,7 @@ public class RobotCellKuka : RobotCell
         {
             for (int j = 0; j < 4; j++)
             {
-                result[i, j] = matrixA[i, j] * (1.0 - t) + matrixB[i, j] * t;
+                result[i, j] = ta[i, j] * (1.0 - t) + tb[i, j] * t;
             }
         }
 

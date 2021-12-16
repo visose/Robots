@@ -22,34 +22,36 @@ public class RobotCellStaubli : RobotCell
         double sb = Sin(b);
         double cc = Cos(c);
         double sc = Sin(c);
-        var tt = new Transform(1);
-        tt[0, 0] = cb * cc; tt[0, 1] = ca * sc + sa * sb * cc; tt[0, 2] = sa * sc - ca * sb * cc;
-        tt[1, 0] = -cb * sc; tt[1, 1] = ca * cc - sa * sb * sc; tt[1, 2] = sa * cc + ca * sb * sc;
-        tt[2, 0] = sb; tt[2, 1] = -sa * cb; tt[2, 2] = ca * cb;
+        
+        Transform t = default;
+        t.M00 = cb * cc; t.M01 = ca * sc + sa * sb * cc; t.M02 = sa * sc - ca * sb * cc;
+        t.M10 = -cb * sc; t.M11 = ca * cc - sa * sb * sc; t.M12 = sa * cc + ca * sb * sc;
+        t.M20 = sb; t.M21 = -sa * cb; t.M22 = ca * cb;
+        t.M33 = 1;
 
-        var plane = tt.ToPlane();
+        var plane = t.ToPlane();
         plane.Origin = new Point3d(x, y, z);
         return plane;
     }
 
     public static double[] PlaneToEuler(Plane plane)
     {
-        Transform matrix = Transform.PlaneToPlane(Plane.WorldXY, plane);
-        double a = Atan2(-matrix.M12, matrix.M22);
-        double mult = 1.0 - matrix.M02 * matrix.M02;
+        Transform t = plane.ToTransform();
+        double a = Atan2(-t.M12, t.M22);
+        double mult = 1.0 - t.M02 * t.M02;
         if (Abs(mult) < UnitTol) mult = 0.0;
-        double b = Atan2(matrix.M02, Sqrt(mult));
-        double c = Atan2(-matrix.M01, matrix.M00);
+        double b = Atan2(t.M02, Sqrt(mult));
+        double c = Atan2(-t.M01, t.M00);
 
-        if (matrix.M02 < (-1.0 + UnitTol))
+        if (t.M02 < (-1.0 + UnitTol))
         {
-            a = Atan2(matrix.M21, matrix.M11);
+            a = Atan2(t.M21, t.M11);
             b = -PI / 2;
             c = 0;
         }
-        else if (matrix.M02 > (1.0 - UnitTol))
+        else if (t.M02 > (1.0 - UnitTol))
         {
-            a = Atan2(matrix.M21, matrix.M11);
+            a = Atan2(t.M21, t.M11);
             b = PI / 2;
             c = 0;
         }

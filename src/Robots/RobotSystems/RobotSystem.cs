@@ -52,12 +52,7 @@ public abstract class RobotSystem
         var qb = b.ToQuaternion();
         var q = Slerp(ref qa, ref qb, t);
 
-        //var transform = q.ToTransform();
-        //var result = transform.ToPlane();
-        //result.Origin = newOrigin;
-        var result = q.ToPlane(newOrigin);
-
-        return result;
+        return q.ToPlane(newOrigin);
     }
 
     internal abstract void SaveCode(IProgram program, string folder);

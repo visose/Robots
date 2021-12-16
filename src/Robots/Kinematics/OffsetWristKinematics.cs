@@ -1,5 +1,6 @@
 ﻿using Rhino.Geometry;
 using static System.Math;
+using static Robots.Util;
 
 namespace Robots;
 
@@ -26,15 +27,15 @@ class OffsetWristKinematics : RobotKinematics
         double[] joints = new double[6];
         bool isUnreachable = false;
 
-        transform *= Transform.Rotation(PI / 2, Point3d.Origin);
+        transform *= Transform.Rotation(HalfPI, Point3d.Origin);
 
-        double[] a = _mechanism.Joints.Select(joint => joint.A).ToArray();
-        double[] d = _mechanism.Joints.Select(joint => joint.D).ToArray();
+        var a = Vector6d.Map(_mechanism.Joints, j => j.A);
+        var d = Vector6d.Map(_mechanism.Joints, j => j.D);
 
         // shoulder
         {
-            double A = d[5] * transform[1, 2] - transform[1, 3];
-            double B = d[5] * transform[0, 2] - transform[0, 3];
+            double A = d[5] * transform.M12 - transform.M13;
+            double B = d[5] * transform.M02 - transform.M03;
             double R = A * A + B * B;
 
             double arccos = Acos(d[3] / Sqrt(R));
@@ -54,7 +55,7 @@ class OffsetWristKinematics : RobotKinematics
 
         // wrist 2
         {
-            double numer = (transform[0, 3] * Sin(joints[0]) - transform[1, 3] * Cos(joints[0]) - d[3]);
+            double numer = (transform.M03 * Sin(joints[0]) - transform.M13 * Cos(joints[0]) - d[3]);
             double div = numer / d[5];
 
             double arccos = Acos(div);
@@ -78,13 +79,13 @@ class OffsetWristKinematics : RobotKinematics
             double c5 = Cos(joints[4]);
             double s5 = Sin(joints[4]);
 
-            joints[5] = Atan2(Sign(s5) * -(transform[0, 1] * s1 - transform[1, 1] * c1), Sign(s5) * (transform[0, 0] * s1 - transform[1, 0] * c1));
+            joints[5] = Atan2(Sign(s5) * -(transform.M01 * s1 - transform.M11 * c1), Sign(s5) * (transform.M00 * s1 - transform.M10 * c1));
 
             double c6 = Cos(joints[5]), s6 = Sin(joints[5]);
-            double x04x = -s5 * (transform[0, 2] * c1 + transform[1, 2] * s1) - c5 * (s6 * (transform[0, 1] * c1 + transform[1, 1] * s1) - c6 * (transform[0, 0] * c1 + transform[1, 0] * s1));
-            double x04y = c5 * (transform[2, 0] * c6 - transform[2, 1] * s6) - transform[2, 2] * s5;
-            double p13x = d[4] * (s6 * (transform[0, 0] * c1 + transform[1, 0] * s1) + c6 * (transform[0, 1] * c1 + transform[1, 1] * s1)) - d[5] * (transform[0, 2] * c1 + transform[1, 2] * s1) + transform[0, 3] * c1 + transform[1, 3] * s1;
-            double p13y = transform[2, 3] - d[0] - d[5] * transform[2, 2] + d[4] * (transform[2, 1] * c6 + transform[2, 0] * s6);
+            double x04x = -s5 * (transform.M02 * c1 + transform.M12 * s1) - c5 * (s6 * (transform.M01 * c1 + transform.M11 * s1) - c6 * (transform.M00 * c1 + transform.M10 * s1));
+            double x04y = c5 * (transform.M20 * c6 - transform.M21 * s6) - transform.M22 * s5;
+            double p13x = d[4] * (s6 * (transform.M00 * c1 + transform.M10 * s1) + c6 * (transform.M01 * c1 + transform.M11 * s1)) - d[5] * (transform.M02 * c1 + transform.M12 * s1) + transform.M03 * c1 + transform.M13 * s1;
+            double p13y = transform.M23 - d[0] - d[5] * transform.M22 + d[4] * (transform.M21 * c6 + transform.M20 * s6);
             double c3 = (p13x * p13x + p13y * p13y - a[1] * a[1] - a[2] * a[2]) / (2.0 * a[1] * a[2]);
 
             double arccos = Acos(c3);
@@ -97,7 +98,7 @@ class OffsetWristKinematics : RobotKinematics
             if (!elbow)
                 joints[2] = arccos;
             else
-                joints[2] = 2.0 * PI - arccos;
+                joints[2] = PI2 - arccos;
 
             double denom = a[1] * a[1] + a[2] * a[2] + 2 * a[1] * a[2] * c3;
             double s3 = Sin(arccos);
@@ -122,8 +123,8 @@ class OffsetWristKinematics : RobotKinematics
 
         for (int i = 0; i < 6; i++)
         {
-            if (joints[i] > PI) joints[i] -= 2.0 * PI;
-            if (joints[i] < -PI) joints[i] += 2.0 * PI;
+            if (joints[i] > PI) joints[i] -= PI2;
+            if (joints[i] < -PI) joints[i] += PI2;
         }
 
         return joints;
@@ -132,23 +133,26 @@ class OffsetWristKinematics : RobotKinematics
     override protected Transform[] ForwardKinematics(double[] joints)
     {
         var transforms = new Transform[6];
-        double[] c = joints.Select(x => Cos(x)).ToArray();
-        double[] s = joints.Select(x => Sin(x)).ToArray();
-        double[] a = _mechanism.Joints.Select(joint => joint.A).ToArray();
-        double[] d = _mechanism.Joints.Select(joint => joint.D).ToArray();
+
+        var c = Vector6d.Map(joints, j => Cos(j));
+        var s = Vector6d.Map(joints, j => Sin(j));
+
+        var a = Vector6d.Map(_mechanism.Joints, j => j.A);
+        var d = Vector6d.Map(_mechanism.Joints, j => j.D);
+
         double s23 = Sin(joints[1] + joints[2]);
         double c23 = Cos(joints[1] + joints[2]);
         double s234 = Sin(joints[1] + joints[2] + joints[3]);
         double c234 = Cos(joints[1] + joints[2] + joints[3]);
 
-        transforms[0] = new double[4, 4] { { c[0], 0, s[0], 0 }, { s[0], 0, -c[0], 0 }, { 0, 1, 0, d[0] }, { 0, 0, 0, 1 } }.ToTransform();
-        transforms[1] = new double[4, 4] { { c[0] * c[1], -c[0] * s[1], s[0], a[1] * c[0] * c[1] }, { c[1] * s[0], -s[0] * s[1], -c[0], a[1] * c[1] * s[0] }, { s[1], c[1], 0, d[0] + a[1] * s[1] }, { 0, 0, 0, 1 } }.ToTransform();
-        transforms[2] = new double[4, 4] { { c23 * c[0], -s23 * c[0], s[0], c[0] * (a[2] * c23 + a[1] * c[1]) }, { c23 * s[0], -s23 * s[0], -c[0], s[0] * (a[2] * c23 + a[1] * c[1]) }, { s23, c23, 0, d[0] + a[2] * s23 + a[1] * s[1] }, { 0, 0, 0, 1 } }.ToTransform();
-        transforms[3] = new double[4, 4] { { c234 * c[0], s[0], s234 * c[0], c[0] * (a[2] * c23 + a[1] * c[1]) + d[3] * s[0] }, { c234 * s[0], -c[0], s234 * s[0], s[0] * (a[2] * c23 + a[1] * c[1]) - d[3] * c[0] }, { s234, 0, -c234, d[0] + a[2] * s23 + a[1] * s[1] }, { 0, 0, 0, 1 } }.ToTransform();
-        transforms[4] = new double[4, 4] { { s[0] * s[4] + c234 * c[0] * c[4], -s234 * c[0], c[4] * s[0] - c234 * c[0] * s[4], c[0] * (a[2] * c23 + a[1] * c[1]) + d[3] * s[0] + d[4] * s234 * c[0] }, { c234 * c[4] * s[0] - c[0] * s[4], -s234 * s[0], -c[0] * c[4] - c234 * s[0] * s[4], s[0] * (a[2] * c23 + a[1] * c[1]) - d[3] * c[0] + d[4] * s234 * s[0] }, { s234 * c[4], c234, -s234 * s[4], d[0] + a[2] * s23 + a[1] * s[1] - d[4] * c234 }, { 0, 0, 0, 1 } }.ToTransform();
-        transforms[5] = new double[4, 4] { { c[5] * (s[0] * s[4] + c234 * c[0] * c[4]) - s234 * c[0] * s[5], -s[5] * (s[0] * s[4] + c234 * c[0] * c[4]) - s234 * c[0] * c[5], c[4] * s[0] - c234 * c[0] * s[4], d[5] * (c[4] * s[0] - c234 * c[0] * s[4]) + c[0] * (a[2] * c23 + a[1] * c[1]) + d[3] * s[0] + d[4] * s234 * c[0] }, { -c[5] * (c[0] * s[4] - c234 * c[4] * s[0]) - s234 * s[0] * s[5], s[5] * (c[0] * s[4] - c234 * c[4] * s[0]) - s234 * c[5] * s[0], -c[0] * c[4] - c234 * s[0] * s[4], s[0] * (a[2] * c23 + a[1] * c[1]) - d[3] * c[0] - d[5] * (c[0] * c[4] + c234 * s[0] * s[4]) + d[4] * s234 * s[0] }, { c234 * s[5] + s234 * c[4] * c[5], c234 * c[5] - s234 * c[4] * s[5], -s234 * s[4], d[0] + a[2] * s23 + a[1] * s[1] - d[4] * c234 - d[5] * s234 * s[4] }, { 0, 0, 0, 1 } }.ToTransform();
+        transforms[0].SetTransform(c[0], 0, s[0], 0, s[0], 0, -c[0], 0, 0, 1, 0, d[0]);
+        transforms[1].SetTransform(c[0] * c[1], -c[0] * s[1], s[0], a[1] * c[0] * c[1], c[1] * s[0], -s[0] * s[1], -c[0], a[1] * c[1] * s[0], s[1], c[1], 0, d[0] + a[1] * s[1]);
+        transforms[2].SetTransform(c23 * c[0], -s23 * c[0], s[0], c[0] * (a[2] * c23 + a[1] * c[1]), c23 * s[0], -s23 * s[0], -c[0], s[0] * (a[2] * c23 + a[1] * c[1]), s23, c23, 0, d[0] + a[2] * s23 + a[1] * s[1]);
+        transforms[3].SetTransform(c234 * c[0], s[0], s234 * c[0], c[0] * (a[2] * c23 + a[1] * c[1]) + d[3] * s[0], c234 * s[0], -c[0], s234 * s[0], s[0] * (a[2] * c23 + a[1] * c[1]) - d[3] * c[0], s234, 0, -c234, d[0] + a[2] * s23 + a[1] * s[1]);
+        transforms[4].SetTransform(s[0] * s[4] + c234 * c[0] * c[4], -s234 * c[0], c[4] * s[0] - c234 * c[0] * s[4], c[0] * (a[2] * c23 + a[1] * c[1]) + d[3] * s[0] + d[4] * s234 * c[0], c234 * c[4] * s[0] - c[0] * s[4], -s234 * s[0], -c[0] * c[4] - c234 * s[0] * s[4], s[0] * (a[2] * c23 + a[1] * c[1]) - d[3] * c[0] + d[4] * s234 * s[0], s234 * c[4], c234, -s234 * s[4], d[0] + a[2] * s23 + a[1] * s[1] - d[4] * c234);
+        transforms[5].SetTransform(c[5] * (s[0] * s[4] + c234 * c[0] * c[4]) - s234 * c[0] * s[5], -s[5] * (s[0] * s[4] + c234 * c[0] * c[4]) - s234 * c[0] * c[5], c[4] * s[0] - c234 * c[0] * s[4], d[5] * (c[4] * s[0] - c234 * c[0] * s[4]) + c[0] * (a[2] * c23 + a[1] * c[1]) + d[3] * s[0] + d[4] * s234 * c[0], -c[5] * (c[0] * s[4] - c234 * c[4] * s[0]) - s234 * s[0] * s[5], s[5] * (c[0] * s[4] - c234 * c[4] * s[0]) - s234 * c[5] * s[0], -c[0] * c[4] - c234 * s[0] * s[4], s[0] * (a[2] * c23 + a[1] * c[1]) - d[3] * c[0] - d[5] * (c[0] * c[4] + c234 * s[0] * s[4]) + d[4] * s234 * s[0], c234 * s[5] + s234 * c[4] * c[5], c234 * c[5] - s234 * c[4] * s[5], -s234 * s[4], d[0] + a[2] * s23 + a[1] * s[1] - d[4] * c234 - d[5] * s234 * s[4]);
 
-        transforms[5] *= Transform.Rotation(-PI / 2, Point3d.Origin);
+        transforms[5] *= Transform.Rotation(-HalfPI, Point3d.Origin);
 
         return transforms;
     }

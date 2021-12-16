@@ -38,21 +38,18 @@ class MechanicalGroupKinematics : KinematicSolution
 
             if (external.MovesRobot)
             {
-                //Plane plane = (robotBase is not null) ? robotBase.Value : Plane.WorldXY;
                 Plane externalPlane = externalKinematics.Planes[externalKinematics.Planes.Length - 1];
-
-                //plane.Transform(externalPlane.ToTransform());
-                //robotBase = plane;
                 robotBase = externalPlane;
             }
         }
 
         // Coupling
         if (coupledPlane is not null)
-        {
+        {            
             var coupledFrame = target.Frame.ShallowClone();
             var plane = coupledFrame.Plane;
-            plane.Transform(Transform.PlaneToPlane(Plane.WorldXY, (Plane)coupledPlane));
+            var cPlane = (Plane)coupledPlane;
+            plane.Orient(ref cPlane);
             coupledFrame.Plane = plane;
             target.Frame = coupledFrame;
         }
@@ -77,7 +74,7 @@ class MechanicalGroupKinematics : KinematicSolution
         // Tool
         Plane toolPlane = target.Tool.Tcp;
         var lastPlane = planes[planes.Count - 1];
-        toolPlane.Transform(lastPlane.ToTransform());
+        toolPlane.Orient(ref lastPlane);
         planes.Add(toolPlane);
 
         Planes = planes.ToArray();

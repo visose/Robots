@@ -20,10 +20,9 @@ abstract class RobotKinematics : MechanismKinematics
             tcp.Rotate(PI, Vector3d.ZAxis, Point3d.Origin);
 
             Plane targetPlane = cartesianTarget.Plane;
-            var plane = target.Frame.Plane;
-            targetPlane.Transform(plane.ToTransform());
+            targetPlane.Orient(ref target.Frame.Plane);
 
-            var transform = Transform.PlaneToPlane(Planes[0], Plane.WorldXY) * Transform.PlaneToPlane(tcp, targetPlane);
+           var transform = Planes[0].ToInverseTransform() * Transform.PlaneToPlane(tcp, targetPlane);
 
             List<string> errors;
             double[] joints;

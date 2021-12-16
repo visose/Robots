@@ -12,7 +12,7 @@ public abstract class RobotArm : Mechanism
         for (int i = 0; i < Joints.Length; i++)
         {
             Plane plane = kinematics.Planes[i + 1];
-            plane.Transform(Transform.PlaneToPlane(BasePlane, Plane.WorldXY));
+            plane.InverseOrient(ref BasePlane);
             Joints[i].Plane = plane;
         }
     }

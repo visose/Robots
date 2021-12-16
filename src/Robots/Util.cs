@@ -38,7 +38,12 @@ static class Util
 
     public static bool GetBoolAttributeOrDefault(this XElement element, string name)
     {
-        string? s = element.Element(XName.Get(name))?.Value;
+        if(name == "movesRobot")
+        {
+            Console.Write("");
+        }
+
+        string? s = element.Attribute(XName.Get(name))?.Value;
         return s is not null && XmlConvert.ToBoolean(s);
     }
 
@@ -56,7 +61,7 @@ static class Util
 
     public static int GetIntAttributeOrDefault(this XElement element, string name)
     {
-        string? s = element.Element(XName.Get(name))?.Value;
+        string? s = element.Attribute(XName.Get(name))?.Value;
         return s is null ? 0 : XmlConvert.ToInt32(s);
     }
 
@@ -72,6 +77,16 @@ static class Util
     }
 
     // Collection
+
+    public static IList<T> TryCastIList<T>(this IEnumerable<T> list)
+    {
+        return list as IList<T> ?? list.ToList();
+    }
+
+    public static T[] TryCastArray<T>(this IEnumerable<T> list)
+    {
+        return list as T[] ?? list.ToArray();
+    }
 
     public static List<K> MapToList<T, K>(this IList<T> array, Func<T, K> projection)
     {
@@ -92,14 +107,23 @@ static class Util
 
         return result;
     }
+    public static K[] Map<T, K>(this IList<T> array, Func<T, int, K> projection)
+    {
+        var result = new K[array.Count];
+
+        for (int i = 0; i < array.Count; i++)
+            result[i] = projection(array[i], i);
+
+        return result;
+    }
 
     public static T[] Subset<T>(this T[] array, int[] indices)
     {
         T[] subset = new T[indices.Length];
+
         for (int i = 0; i < indices.Length; i++)
-        {
             subset[i] = array[indices[i]];
-        }
+
         return subset;
     }
 
@@ -139,17 +163,6 @@ static class Util
         return value * (180.0 / PI);
     }
 
-    public static Transform ToTransform(this double[,] matrix)
-    {
-        var transform = new Transform();
-
-        for (int i = 0; i < 4; i++)
-            for (int j = 0; j < 4; j++)
-                transform[i, j] = matrix[i, j];
-
-        return transform;
-    }
-
     // Transform
 
     public static void SetTransform(this ref Transform t, double m00, double m01, double m02, double m03, double m10, double m11, double m12, double m13, double m20, double m21, double m22, double m23)
@@ -160,42 +173,52 @@ static class Util
         t.M33 = 1;
     }
 
-    public static void SetMultiply(this ref Transform t, ref Transform a, ref Transform b)
-    {
-        t.M00 = a.M00 * b.M00 + a.M01 * b.M10 + a.M02 * b.M20 + a.M03 * b.M30;
-        t.M01 = a.M00 * b.M01 + a.M01 * b.M11 + a.M02 * b.M21 + a.M03 * b.M31;
-        t.M02 = a.M00 * b.M02 + a.M01 * b.M12 + a.M02 * b.M22 + a.M03 * b.M32;
-        t.M03 = a.M00 * b.M03 + a.M01 * b.M13 + a.M02 * b.M23 + a.M03 * b.M33;
-        t.M10 = a.M10 * b.M00 + a.M11 * b.M10 + a.M12 * b.M20 + a.M13 * b.M30;
-        t.M11 = a.M10 * b.M01 + a.M11 * b.M11 + a.M12 * b.M21 + a.M13 * b.M31;
-        t.M12 = a.M10 * b.M02 + a.M11 * b.M12 + a.M12 * b.M22 + a.M13 * b.M32;
-        t.M13 = a.M10 * b.M03 + a.M11 * b.M13 + a.M12 * b.M23 + a.M13 * b.M33;
-        t.M20 = a.M20 * b.M00 + a.M21 * b.M10 + a.M22 * b.M20 + a.M23 * b.M30;
-        t.M21 = a.M20 * b.M01 + a.M21 * b.M11 + a.M22 * b.M21 + a.M23 * b.M31;
-        t.M22 = a.M20 * b.M02 + a.M21 * b.M12 + a.M22 * b.M22 + a.M23 * b.M32;
-        t.M23 = a.M20 * b.M03 + a.M21 * b.M13 + a.M22 * b.M23 + a.M23 * b.M33;
-        t.M30 = a.M30 * b.M00 + a.M31 * b.M10 + a.M32 * b.M20 + a.M33 * b.M30;
-        t.M31 = a.M30 * b.M01 + a.M31 * b.M11 + a.M32 * b.M21 + a.M33 * b.M31;
-        t.M32 = a.M30 * b.M02 + a.M31 * b.M12 + a.M32 * b.M22 + a.M33 * b.M32;
-        t.M33 = a.M30 * b.M03 + a.M31 * b.M13 + a.M32 * b.M23 + a.M33 * b.M33;
-    }
-
-    public static Transform Multiply(ref Transform a, ref Transform b)
-    {
-        Transform t = default;
-        t.SetMultiply(ref a, ref b);
-        return t;
-    }
-
     public static Plane ToPlane(this ref Transform t)
     {
+        var p = new Point3d(t.M03, t.M13, t.M23);
         var vx = new Vector3d(t.M00, t.M10, t.M20);
         var vy = new Vector3d(t.M01, t.M11, t.M21);
-        var p = new Point3d(t.M03, t.M13, t.M23);
-        return new Plane(p, vx, vy);
+
+        var vz = Vector3d.CrossProduct(vx, vy);
+        vy = Vector3d.CrossProduct(vz, vx);
+        vx.Normalize();
+        vy.Normalize();
+        vz.Normalize();
+
+        Plane result = default;
+        result.Origin = p;
+        result.XAxis = vx;
+        result.YAxis = vy;
+        result.ZAxis = vz;
+
+        return result;
+    }
+
+    // Vector3d
+
+    public static void Normalize(this ref Vector3d v)
+    {
+        double x = v.X;
+        double y = v.Y;
+        double z = v.Z;
+        double lengthSq = x * x + y * y + z * z;
+        double length = Math.Sqrt(lengthSq);
+        v.X = x / length;
+        v.Y = y / length;
+        v.Z = z / length;
     }
 
     // Plane
+
+    public static void InverseOrient(this ref Plane a, ref Plane b)
+    {
+        a.Transform(b.ToInverseTransform());
+    }
+
+    public static void Orient(this ref Plane a, ref Plane b)
+    {
+        a.Transform(b.ToTransform());
+    }
 
     public static Transform ToTransform(this ref Plane plane)
     {
@@ -215,6 +238,29 @@ static class Util
         t.M21 = vy.Z;
         t.M22 = vz.Z;
         t.M23 = plane.OriginZ;
+        t.M33 = 1;
+        return t;
+    }
+
+    public static Transform ToInverseTransform(this ref Plane plane)
+    {
+        Transform t = default;
+        var vx = plane.XAxis;
+        var vy = plane.YAxis;
+        var vz = plane.ZAxis;
+        var p = -(Vector3d)plane.Origin;
+        t.M00 = vx.X;
+        t.M01 = vx.Y;
+        t.M02 = vx.Z;
+        t.M03 = p * vx;
+        t.M10 = vy.X;
+        t.M11 = vy.Y;
+        t.M12 = vy.Z;
+        t.M13 = p * vy;
+        t.M20 = vz.X;
+        t.M21 = vz.Y;
+        t.M22 = vz.Z;
+        t.M23 = p * vz;
         t.M33 = 1;
         return t;
     }
@@ -325,7 +371,7 @@ static class Util
 
     // adapted from System.Numerics.Vectors
     public static Transform ToTransform(this ref Quaternion q)
-    {        
+    {
         Transform result = default;
 
         double xx = q.B * q.B;

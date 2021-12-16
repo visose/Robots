@@ -199,7 +199,7 @@ DEF {_program.Name}_{groupName}_{file:000}()
             if (programTarget.IsJointTarget)
             {
                 var jointTarget = (JointTarget)target;
-                double[] jointDegrees = jointTarget.Joints.Select((x, i) => _cell.MechanicalGroups[group].Robot.RadianToDegree(x, i)).ToArray();
+                double[] jointDegrees = jointTarget.Joints.Map((x, i) => _cell.MechanicalGroups[group].Robot.RadianToDegree(x, i));
 
                 moveText = $"PTP {{A1 {jointDegrees[0]:0.####},A2 {jointDegrees[1]:0.####},A3 {jointDegrees[2]:0.####},A4 {jointDegrees[3]:0.####},A5 {jointDegrees[4]:0.####},A6 {jointDegrees[5]:0.####}{external}}}";
                 if (target.Zone.IsFlyBy) moveText += " C_PTP";
@@ -217,7 +217,7 @@ DEF {_program.Name}_{groupName}_{file:000}()
                             string bits = string.Empty;
                             //  if (target.ChangesConfiguration)
                             {
-                                double[] jointDegrees = programTarget.Kinematics.Joints.Select((x, i) => _cell.MechanicalGroups[group].Robot.RadianToDegree(x, i)).ToArray();
+                                double[] jointDegrees = programTarget.Kinematics.Joints.Map((x, i) => _cell.MechanicalGroups[group].Robot.RadianToDegree(x, i));
                                 int turnNum = 0;
                                 for (int i = 0; i < 6; i++) if (jointDegrees[i] < 0) turnNum += (int)Pow(2, i);
 
@@ -306,7 +306,7 @@ DEF {_program.Name}_{groupName}_{file:000}()
     string Frame(Frame frame)
     {
         Plane plane = frame.Plane;
-        plane.Transform(Transform.PlaneToPlane(_cell.BasePlane, Plane.WorldXY));
+        plane.InverseOrient(ref _cell.BasePlane);
 
         double[] euler = RobotCellKuka.PlaneToEuler(plane);
         return $"DECL GLOBAL FRAME {frame.Name}={{FRAME: X {euler[0]:0.###},Y {euler[1]:0.###},Z {euler[2]:0.###},A {euler[3]:0.####},B {euler[4]:0.####},C {euler[5]:0.####}}}";

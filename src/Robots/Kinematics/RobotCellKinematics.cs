@@ -27,8 +27,8 @@ class RobotCellKinematics
             groups.Insert(0, group);
         }
 
-        var targetsArray = targets.ToArray();
-        var prevJointsArray = prevJoints?.ToArray();
+        var targetsArray = targets.TryCastIList();
+        var prevJointsArray = prevJoints?.TryCastIList();
 
         foreach (var group in groups)
         {

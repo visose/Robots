@@ -25,16 +25,14 @@ public abstract class Mechanism
         Payload = payload;
         BasePlane = basePlane;
         BaseMesh = baseMesh;
-        Joints = joints.ToArray();
+        Joints = joints.TryCastArray();
         MovesRobot = movesRobot;
 
         DisplayMesh = CreateDisplayMesh();
 
         // Joints to radians
         for (int i = 0; i < Joints.Length; i++)
-        {
             Joints[i].Range = new Interval(DegreeToRadian(Joints[i].Range.T0, i), DegreeToRadian(Joints[i].Range.T1, i));
-        }
 
         SetStartPlanes();
     }
@@ -116,13 +114,13 @@ public abstract class Mechanism
 
         var basePlane = RobotCellAbb.QuaternionToPlane(x, y, z, q1, q2, q3, q4);
 
-        var jointElements = element.GetElement("Joints").Descendants().ToArray();
-        Joint[] joints = new Joint[jointElements.Length];
+        var jointElements = element.GetElement("Joints").Descendants().ToList();
+        Joint[] joints = new Joint[jointElements.Count];
 
         var meshes = loadMeshes ? GetMeshes(fullName) : null;
         Mesh? baseMesh = meshes?[0].DuplicateMesh();
 
-        for (int i = 0; i < jointElements.Length; i++)
+        for (int i = 0; i < jointElements.Count; i++)
         {
             var jointElement = jointElements[i];
             double a = jointElement.GetDoubleAttribute("a");
