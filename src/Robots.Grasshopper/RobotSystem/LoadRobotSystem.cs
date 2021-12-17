@@ -12,14 +12,14 @@ public class LoadRobotSystem : GH_Component
     GH_ValueList? _valueList = null;
     IGH_Param? _parameter = null;
 
-    public LoadRobotSystem() : base("Load robot system", "Load robot", "Loads a robot system either from the library or from a custom file", "Robots", "Components") { }
+    public LoadRobotSystem() : base("Load robot system", "LoadRobot", "Loads a robot system from the library.", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.primary;
     public override Guid ComponentGuid => new("{7722D7E3-98DE-49B5-9B1D-E0D1B938B4A7}");
     protected override Bitmap Icon => Properties.Resources.iconRobot;
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddTextParameter("Name", "N", "Name of the Robot system", GH_ParamAccess.item);
+        pManager.AddTextParameter("Name", "N", "Name of the robot system", GH_ParamAccess.item);
         pManager.AddPlaneParameter("Base", "P", "Base plane", GH_ParamAccess.item, Plane.WorldXY);
         _parameter = pManager[0];
     }
@@ -58,7 +58,7 @@ public class LoadRobotSystem : GH_Component
     void AddRobotsToValueList(GH_ValueList valueList)
     {
         var selected = valueList.FirstSelectedItem;
-        var robotSystems = RobotSystem.ListRobotSystems();
+        var robotSystems = FileIO.ListRobotSystems();
 
         if (robotSystems.SequenceEqual(valueList.ListItems.Select(i => i.Name)))
             return;
@@ -85,7 +85,7 @@ public class LoadRobotSystem : GH_Component
         if (!DA.GetData(0, ref name) || name is null) { return; }
         if (!DA.GetData(1, ref basePlane) || basePlane is null) { return; }
 
-        var robotSystem = RobotSystem.Load(name, basePlane.Value);
+        var robotSystem = FileIO.LoadRobotSystem(name, basePlane.Value);
         DA.SetData(0, new GH_RobotSystem(robotSystem));
     }
 }

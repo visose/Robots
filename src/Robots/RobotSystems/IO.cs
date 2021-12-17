@@ -1,5 +1,4 @@
-﻿using System.Xml.Linq;
-
+﻿
 namespace Robots;
 
 public class IO
@@ -9,21 +8,11 @@ public class IO
     public string[] AO { get; }
     public string[] AI { get; }
 
-    public IO(XElement? element)
+    public IO(string[] @do, string[] di, string[] ao, string[] ai)
     {
-        DO = GetNames(element, "DO");
-        DI = GetNames(element, "DI");
-        AO = GetNames(element, "AO");
-        AI = GetNames(element, "AI");
-    }
-
-    string[] GetNames(XElement? ioElement, string element)
-    {
-        var e = ioElement?.GetElementOrDefault(element);
-
-        if (e is null)
-            return new string[0];
-
-        return e.GetAttribute("names").Split(',');
+        DO = @do;
+        DI = di;
+        AO = ao;
+        AI = ai;
     }
 }

@@ -7,7 +7,7 @@ namespace Robots.Grasshopper;
 public class CustomCode : GH_Component
 {
     public CustomCode() : base("Custom code", "Custom", "Creates a program using manufacturer specific custom code. This program cannot be simulated", "Robots", "Components") { }
-    public override GH_Exposure Exposure => GH_Exposure.tertiary;
+    public override GH_Exposure Exposure => GH_Exposure.quarternary;
     public override Guid ComponentGuid => new("{FF997511-4A84-4426-AB62-AF94D19FF58F}");
     protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCustomCode;
 

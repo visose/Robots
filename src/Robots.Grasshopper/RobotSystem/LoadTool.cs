@@ -10,14 +10,14 @@ public class LoadTool : GH_Component
     GH_ValueList? _valueList = null;
     IGH_Param? _parameter = null;
 
-    public LoadTool() : base("Load robot tool", "Load tool", "Loads a tool either from the library or from a custom file", "Robots", "Components") { }
+    public LoadTool() : base("Load tool", "LoadTool", "Loads a tool from the library.", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.primary;
     public override Guid ComponentGuid => new("{542aa5fd-4f02-4ee5-a2a0-02b0fac8777f}");
     protected override Bitmap Icon => Properties.Resources.iconTool;
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddTextParameter("Name", "N", "Name of the Tool", GH_ParamAccess.item);
+        pManager.AddTextParameter("Name", "N", "Name of the tool", GH_ParamAccess.item);
         _parameter = pManager[0];
     }
 
@@ -55,7 +55,7 @@ public class LoadTool : GH_Component
     void AddToolsToValueList(GH_ValueList valueList)
     {
         var selected = valueList.FirstSelectedItem;
-        var tools = Tool.ListTools();
+        var tools = FileIO.ListTools();
 
         if (tools.SequenceEqual(valueList.ListItems.Select(i => i.Name)))
             return;
@@ -80,7 +80,7 @@ public class LoadTool : GH_Component
 
         if (!DA.GetData(0, ref name) || name is null) { return; }
 
-        var tool = Tool.Load(name);
+        var tool = FileIO.LoadTool(name);
         DA.SetData(0, new GH_Tool(tool));
     }
 }

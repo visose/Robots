@@ -7,7 +7,7 @@ namespace Robots.Grasshopper;
 public class CreateSpeed : GH_Component
 {
     public CreateSpeed() : base("Create speed", "Speed", "Creates a target speed.", "Robots", "Components") { }
-    public override GH_Exposure Exposure => GH_Exposure.secondary;
+    public override GH_Exposure Exposure => GH_Exposure.tertiary;
     public override Guid ComponentGuid => new("{BD11418C-74E1-4B13-BE1A-AF105906E1BC}");
     protected override Bitmap Icon => Properties.Resources.iconSpeed;
 

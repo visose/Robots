@@ -1,3 +1,12 @@
+- version: 1.0.4
+  changes:
+  - Tweaked placement of components and parameters in toolbar.
+  - RobotCell and Tool elements can now be placed in the same xml file.
+  - Tool can optionally specify a centroid in the xml.
+  - Fixed robot meshes sometimes loaded from the wrong 3dm file if name was the same.
+  - Fixed load tool not reading the weight parameter.
+  - Some performance improvements in loading robot systems from disk.
+
 - version: 1.0.3
   changes:
   - Fixed robot system value list not remembering its selection.
@@ -15,7 +24,7 @@
 - version: 1.0.1
   changes:
   - This and newer versions will be available only through Yak package manager. 
-  - Large refactor and project restructure, some bugs might have creeped in.
+  - Large refactor and project restructure, some bugs might have crept in.
   - Robot system can be loaded without meshes if not needed for improved performance (API only).
   - Fixed rounding PulseDO value to 3 decimal places. 
   - Fixed unnecessary trailing zeros in generated programs.

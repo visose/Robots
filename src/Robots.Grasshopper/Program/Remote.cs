@@ -5,8 +5,8 @@ namespace Robots.Grasshopper;
 
 public class Remote : GH_Component
 {
-    public Remote() : base("Remote Connection", "Remote", "Interop with UR or ABB controllers through a network. For ABB controllers you must install the 'ABB Robot Communication Runtime'.", "Robots", "Components") { }
-    public override GH_Exposure Exposure => GH_Exposure.quinary;
+    public Remote() : base("Remote connection", "Remote", "Upload and run programs to UR or ABB controllers through a network. For ABB controllers you must install the 'ABB Robot Communication Runtime'.", "Robots", "Components") { }
+    public override GH_Exposure Exposure => GH_Exposure.senary;
     public override Guid ComponentGuid => new("{19A5E3A3-E2BC-4798-8C54-13873FD2973A}");
     protected override System.Drawing.Bitmap Icon => Properties.Resources.iconURRemote;
 

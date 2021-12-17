@@ -71,15 +71,14 @@ class Manifest
         foreach (var change in notes.Changes)
             description.AppendLine($" - {change}");
 
-        var text = description.ToString();
-        return text;
+        return description.ToString();
     }
 
     string ToYaml()
     {
         var serializer = new SerializerBuilder()
             .WithNamingConvention(UnderscoredNamingConvention.Instance)
-            .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)            
+            .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
             .Build();
 
         return serializer.Serialize(this);
