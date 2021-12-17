@@ -1,6 +1,4 @@
-﻿using System.Xml;
-using System.Xml.Linq;
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 
 namespace Robots;
 
@@ -36,17 +34,6 @@ public class MechanicalGroup
                  .Append(Robot.BaseMesh.NotNull(t)).Concat(Robot.Joints.Select(j => j.Mesh.NotNull(t)))
                  .ToList();
         }
-    }
-
-    internal static MechanicalGroup Create(XElement element, bool loadMeshes)
-    {
-        var index = element.GetIntAttributeOrDefault("group");
-        var mechanisms = new List<Mechanism>();
-
-        foreach (var mechanismElement in element.Elements())
-            mechanisms.Add(Mechanism.Create(mechanismElement, loadMeshes));
-
-        return new MechanicalGroup(index, mechanisms);
     }
 
     public KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? coupledPlane = null, Plane? basePlane = null) => new MechanicalGroupKinematics(this, target, prevJoints, coupledPlane, basePlane);

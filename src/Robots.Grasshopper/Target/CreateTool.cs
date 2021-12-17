@@ -8,7 +8,7 @@ namespace Robots.Grasshopper;
 public class CreateTool : GH_Component
 {
     public CreateTool() : base("Create tool", "Tool", "Creates a tool or end effector.", "Robots", "Components") { }
-    public override GH_Exposure Exposure => GH_Exposure.primary;
+    public override GH_Exposure Exposure => GH_Exposure.tertiary;
     public override Guid ComponentGuid => new("{E59E634B-7AD5-4682-B2C1-F18B73AE05C6}");
     protected override Bitmap Icon => Properties.Resources.iconTool;
 

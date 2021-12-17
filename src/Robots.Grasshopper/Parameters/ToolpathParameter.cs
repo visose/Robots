@@ -4,8 +4,8 @@ namespace Robots.Grasshopper;
 
 public class ToolpathParameter : GH_PersistentParam<GH_Toolpath>
 {
-    public ToolpathParameter() : base("Toolpath", "Toolpath", "This is a robot toolpath.", "Robots", "Parameters") { }
-    public override GH_Exposure Exposure => GH_Exposure.tertiary;
+    public ToolpathParameter() : base("Toolpath", "Toolpath", "This is a robot toolpath", "Robots", "Parameters") { }
+    public override GH_Exposure Exposure => GH_Exposure.secondary;
     protected override System.Drawing.Bitmap Icon => Properties.Resources.iconProgramParam;
     public override Guid ComponentGuid => new("{715AEDCE-14E8-400B-A226-9806FC3CB7B3}");
 

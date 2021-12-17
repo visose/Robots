@@ -1,6 +1,4 @@
-﻿using System.Xml;
-using System.Xml.Linq;
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 using static System.Math;
 
 namespace Robots;
@@ -15,55 +13,7 @@ static class Util
     public const double UnitTol = 0.000001;
     public const double SingularityTol = 0.0001;
     public const double HalfPI = PI * 0.5;
-    public const double PI2 = PI * 2.0;
-
-    // Serialization
-
-    public static XElement GetElement(this XElement element, string name)
-    {
-        return element.Element(XName.Get(name))
-            ?? throw new ArgumentException($" XML tag '{element.Name} is missing '{name} tag.");
-    }
-
-    public static XElement? GetElementOrDefault(this XElement element, string name)
-    {
-        return element.Element(XName.Get(name));
-    }
-
-    public static string GetAttribute(this XElement element, string name)
-    {
-        var attribute = element.Attribute(XName.Get(name)).NotNull($" XML tag '{element.Name} is missing '{name} attribute.");
-        return attribute.Value;
-    }
-
-    public static bool GetBoolAttributeOrDefault(this XElement element, string name)
-    {
-        if(name == "movesRobot")
-        {
-            Console.Write("");
-        }
-
-        string? s = element.Attribute(XName.Get(name))?.Value;
-        return s is not null && XmlConvert.ToBoolean(s);
-    }
-
-    public static double GetDoubleAttribute(this XElement element, string name)
-    {
-        var s = element.GetAttribute(name);
-        return XmlConvert.ToDouble(s);
-    }
-
-    public static int GetIntAttribute(this XElement element, string name)
-    {
-        var s = element.GetAttribute(name);
-        return XmlConvert.ToInt32(s);
-    }
-
-    public static int GetIntAttributeOrDefault(this XElement element, string name)
-    {
-        string? s = element.Attribute(XName.Get(name))?.Value;
-        return s is null ? 0 : XmlConvert.ToInt32(s);
-    }
+    public const double PI2 = PI * 2.0;    
 
     // File
 
