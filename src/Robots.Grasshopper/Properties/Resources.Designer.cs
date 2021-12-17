@@ -143,6 +143,16 @@ namespace Robots.Grasshopper.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap iconCreateTool {
+            get {
+                object obj = ResourceManager.GetObject("iconCreateTool", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap iconCustomCode {
             get {
                 object obj = ResourceManager.GetObject("iconCustomCode", resourceCulture);
@@ -236,16 +246,6 @@ namespace Robots.Grasshopper.Properties {
         internal static System.Drawing.Bitmap iconKinematics {
             get {
                 object obj = ResourceManager.GetObject("iconKinematics", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap iconLine_To_Aligned_Plane {
-            get {
-                object obj = ResourceManager.GetObject("iconLine_To_Aligned_Plane", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
