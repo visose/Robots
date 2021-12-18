@@ -10,7 +10,7 @@ public class MechanicalGroup
     public List<Mechanism> Externals { get; }
     public List<Joint> Joints { get; }
     public List<Plane> DefaultPlanes { get; }
-    public List<Mesh>? DefaultMeshes { get; }
+    public List<Mesh> DefaultMeshes { get; }
 
     internal MechanicalGroup(int index, List<Mechanism> mechanisms)
     {
@@ -21,19 +21,8 @@ public class MechanicalGroup
         mechanisms.Remove(Robot);
         Externals = mechanisms;
 
-        DefaultPlanes = mechanisms
-            .Select(m => m.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY)).SelectMany(p => p)
-            .Append(Plane.WorldXY).Concat(Robot.Joints.Select(j => j.Plane).Append(Plane.WorldXY))
-            .ToList();
-
-        if (Robot.BaseMesh is not null)
-        {
-            string t = " Mesh shouldn't be null.";
-            DefaultMeshes = mechanisms
-                 .Select(m => m.Joints.Select(j => j.Mesh.NotNull(t)).Prepend(m.BaseMesh.NotNull(t))).SelectMany(p => p)
-                 .Append(Robot.BaseMesh.NotNull(t)).Concat(Robot.Joints.Select(j => j.Mesh.NotNull(t)))
-                 .ToList();
-        }
+        DefaultPlanes = Externals.SelectMany(m => m.DefaultPlanes).Concat(Robot.DefaultPlanes).ToList();
+        DefaultMeshes = Externals.SelectMany(m => m.DefaultMeshes).Concat(Robot.DefaultMeshes).ToList();
     }
 
     public KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? coupledPlane = null, Plane? basePlane = null) => new MechanicalGroupKinematics(this, target, prevJoints, coupledPlane, basePlane);

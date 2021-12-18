@@ -30,12 +30,12 @@ public class Kinematics : GH_Component
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         GH_RobotSystem? robotSystem = null;
-        var targets = new List<GH_Target>();
+        var ghTargets = new List<GH_Target>();
         var prevJointsText = new List<GH_String>();
         bool drawMeshes = false;
 
         if (!DA.GetData(0, ref robotSystem) || robotSystem is null) { return; }
-        if (!DA.GetDataList(1, targets)) { return; }
+        if (!DA.GetDataList(1, ghTargets)) { return; }
         DA.GetDataList(2, prevJointsText);
         if (!DA.GetData(3, ref drawMeshes)) { return; }
 
@@ -61,10 +61,11 @@ public class Kinematics : GH_Component
             }
         }
 
-        var kinematics = robotSystem.Value.Kinematics(targets.Select(x => x.Value), prevJoints);
-
+        var targets = ghTargets.Select(x => x.Value).ToList();
+        var kinematics = robotSystem.Value.Kinematics(targets, prevJoints);
         var errors = kinematics.SelectMany(x => x.Errors);
-        if (errors.Count() > 0)
+
+        if (errors.Any())
         {
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in solution");
         }
@@ -76,7 +77,7 @@ public class Kinematics : GH_Component
 
         if (drawMeshes)
         {
-            var meshes = GeometryUtil.PoseMeshes(robotSystem.Value, kinematics, targets.Select(t => t.Value.Tool.Mesh).ToList());
+            var meshes = MeshPoser.Default.Pose(robotSystem.Value, kinematics, targets);
             DA.SetDataList(0, meshes.Select(x => new GH_Mesh(x)));
         }
 
