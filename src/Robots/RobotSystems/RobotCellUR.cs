@@ -5,8 +5,7 @@ namespace Robots;
 
 public class RobotCellUR : RobotSystem
 {
-    public RobotUR Robot { get; }
-    // public RemoteConnection Remote { get; } = new RemoteConnection();
+    public RobotUR Robot { get; }    
     // public URRealTime URRealTime { get; set; }
 
     internal RobotCellUR(string name, RobotUR robot, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.UR, io, basePlane, environment)

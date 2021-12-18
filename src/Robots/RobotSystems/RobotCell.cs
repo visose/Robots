@@ -13,6 +13,7 @@ public abstract class RobotCell : RobotSystem
         {
             var movesRobot = group.Externals.Find(m => m.MovesRobot);
             var robotDisplay = group.Robot.DisplayMesh;
+
             if (movesRobot is not null)
             {
                 var movableBase = movesRobot.Joints.Last().Plane;
@@ -21,7 +22,9 @@ public abstract class RobotCell : RobotSystem
             }
 
             DisplayMesh.Append(robotDisplay);
-            foreach (var external in group.Externals) DisplayMesh.Append(external.DisplayMesh);
+
+            foreach (var external in group.Externals)
+                DisplayMesh.Append(external.DisplayMesh);
         }
 
         DisplayMesh.Transform(BasePlane.ToTransform());

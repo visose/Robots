@@ -9,6 +9,7 @@ public abstract class RobotArm : Mechanism
     protected override void SetStartPlanes()
     {
         var kinematics = Kinematics(GetStartPose());
+
         for (int i = 0; i < Joints.Length; i++)
         {
             Plane plane = kinematics.Planes[i + 1];

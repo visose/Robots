@@ -1,6 +1,5 @@
 ﻿using Rhino.Geometry;
 using static System.Math;
-using static Robots.Util;
 
 namespace Robots;
 
@@ -90,10 +89,7 @@ public class Collision
 
                 meshes.Clear();
 
-                // TODO: Meshes not a property of KinematicSolution anymore
-                // meshes.AddRange(kinematics.SelectMany(x => x.Meshes)); 
-                var tools = cellTarget.ProgramTargets.MapToList(p => p.Target.Tool.Mesh);
-                var robotMeshes = PoseMeshes(_program.RobotSystem, kinematics, tools);
+                var robotMeshes = MeshPoser.Default.Pose(_program.RobotSystem, kinematics, cellTarget);
                 meshes.AddRange(robotMeshes);
 
                 if (_environment is not null)
@@ -124,65 +120,6 @@ public class Collision
                 }
             }
         });
-    }
-
-    static List<Mesh> PoseMeshes(RobotSystem robot, List<KinematicSolution> solutions, List<Mesh> tools)
-    {
-        if (robot is RobotCell cell)
-        {
-            var meshes = solutions.SelectMany((_, i) => PoseMeshes(cell.MechanicalGroups[i], solutions[i].Planes, tools[i])).ToList();
-            return meshes;
-        }
-        else
-        {
-            var ur = (RobotCellUR)robot;
-            var meshes = PoseMeshesRobot(ur.Robot, solutions[0].Planes, tools[0]);
-            return meshes;
-        }
-    }
-
-    static List<Mesh> PoseMeshes(MechanicalGroup group, IList<Plane> planes, Mesh tool)
-    {
-        if (group.DefaultMeshes is null)
-            return new List<Mesh>(0);
-
-        planes = planes.ToList();
-        var count = planes.Count - 1;
-        planes.RemoveAt(count);
-        planes.Add(planes[count - 1]);
-
-        var outMeshes = group.DefaultMeshes.Select(m => m.DuplicateMesh()).Append(tool.DuplicateMesh()).ToList();
-
-        for (int i = 0; i < group.DefaultPlanes.Count; i++)
-        {
-            var s = Transform.PlaneToPlane(group.DefaultPlanes[i], planes[i]);
-            outMeshes[i].Transform(s);
-        }
-
-        return outMeshes;
-    }
-
-    static List<Mesh> PoseMeshesRobot(RobotArm arm, IList<Plane> planes, Mesh tool)
-    {
-        if (arm.BaseMesh is null)
-            return new List<Mesh>(0);
-
-        planes = planes.ToList();
-        var count = planes.Count - 1;
-        planes.RemoveAt(count);
-        planes.Add(planes[count - 1]);
-
-        var defaultPlanes = arm.Joints.Select(m => m.Plane).Prepend(arm.BasePlane).Append(Plane.WorldXY).ToList();
-        var defaultMeshes = arm.Joints.Select(m => m.Mesh.NotNull("Joint mesh shouldn't be null.")).Prepend(arm.BaseMesh).Append(tool);
-        var outMeshes = defaultMeshes.Select(m => m.DuplicateMesh()).ToList();
-
-        for (int i = 0; i < defaultPlanes.Count; i++)
-        {
-            var s = Transform.PlaneToPlane(defaultPlanes[i], planes[i]);
-            outMeshes[i].Transform(s);
-        }
-
-        return outMeshes;
     }
 }
 
