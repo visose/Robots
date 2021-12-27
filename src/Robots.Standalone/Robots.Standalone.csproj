@@ -4,7 +4,6 @@
 		<TargetFramework>net6.0-windows</TargetFramework>
 		<OutputType>WinExe</OutputType>
 		<UseWPF>true</UseWPF>
-		<Nullable>disable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup>
