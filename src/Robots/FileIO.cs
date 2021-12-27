@@ -62,7 +62,8 @@ public static class FileIO
         foreach (var file in files)
         {
             XElement root = XElement.Load(file);
-            var element = root.Elements(XName.Get(type))?.FirstOrDefault(e => e.GetAttribute("name") == name);
+            var element = root.Elements(XName.Get(type))
+                ?.FirstOrDefault(e => e.GetAttribute("name") == name);
 
             if (element is not null)
                 return element;

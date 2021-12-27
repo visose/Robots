@@ -1,18 +1,20 @@
-﻿namespace RobotsStandalone
+﻿namespace Robots.Standalone;
+
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
+public abstract class ObservableObject : INotifyPropertyChanged
 {
-    using System.ComponentModel;
-    using System.Runtime.CompilerServices;
+    public event PropertyChangedEventHandler? PropertyChanged;
 
-    public abstract class ObservableObject : INotifyPropertyChanged
+    protected void OnPropertyChanged([CallerMemberName] string property = "")
     {
-        public event PropertyChangedEventHandler PropertyChanged;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
+    }
 
-        protected void OnPropertyChanged([CallerMemberName]string info = "")
-        {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(info));
-            }
-        }
+    protected void SetField<T>(ref T field, T value, [CallerMemberName] string property = "")
+    {
+        field = value;
+        OnPropertyChanged(property);
     }
 }
