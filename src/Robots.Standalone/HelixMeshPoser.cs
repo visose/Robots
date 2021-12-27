@@ -4,11 +4,10 @@ using Rhino.Geometry;
 
 namespace Robots.Standalone;
 
-class HelixMeshPoser : IMeshPoser<object>
+class HelixMeshPoser : IMeshPoser
 {
     readonly List<Plane> _defaultPlanes;
     readonly ObservableElement3DCollection _robotModels;
-    readonly List<object> _return = new(0);
 
     public HelixMeshPoser(RobotCell cell, PBRMaterial material, ObservableElement3DCollection robotModels)
     {
@@ -31,7 +30,7 @@ class HelixMeshPoser : IMeshPoser<object>
         }
     }
 
-    public List<object> Pose(RobotSystem robot, List<KinematicSolution> solutions, Tool[] tools)
+    public void Pose(List<KinematicSolution> solutions, Tool[] tools)
     {
         var planes = solutions[0].Planes;
 
@@ -42,7 +41,5 @@ class HelixMeshPoser : IMeshPoser<object>
             var model = _robotModels[i];
             model.SceneNode.ModelMatrix = matrix;
         }
-
-        return _return;
     }
 }

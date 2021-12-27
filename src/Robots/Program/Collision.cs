@@ -77,7 +77,7 @@ public class Collision
                 if (tempDivisions > divisions) divisions = tempDivisions;
             }
 
-            var meshes = new List<Mesh>();
+            var meshPoser = new RhinoMeshPoser(_program.RobotSystem);
 
             int j = (cellTarget.Index == 1) ? 0 : 1;
 
@@ -87,10 +87,8 @@ public class Collision
                 var kineTargets = cellTarget.Lerp(prevcellTarget, _robotSystem, t, 0.0, 1.0);
                 var kinematics = _program.RobotSystem.Kinematics(kineTargets);
 
-                meshes.Clear();
-
-                var robotMeshes = MeshPoser.Default.Pose(_program.RobotSystem, kinematics, cellTarget);
-                meshes.AddRange(robotMeshes);
+                meshPoser.Pose(kinematics, cellTarget);
+                var meshes = meshPoser.Meshes.NotNull();
 
                 if (_environment is not null)
                 {

@@ -5,11 +5,11 @@ namespace Robots;
 class URScriptPostProcessor
 {
     readonly RobotUR _robot;
-    readonly RobotCellUR _cell;
+    readonly RobotSystemUR _cell;
     readonly Program _program;
     internal List<List<List<string>>> Code { get; }
 
-    internal URScriptPostProcessor(RobotCellUR robotCell, Program program)
+    internal URScriptPostProcessor(RobotSystemUR robotCell, Program program)
     {
         _cell = robotCell;
         _robot = _cell.Robot;
@@ -40,7 +40,7 @@ class URScriptPostProcessor
             tcp.Orient(ref originPlane);
             Point3d tcpPoint = tcp.Origin / 1000;
             tcp.Origin = tcpPoint;
-            double[] axisAngle = RobotCellUR.PlaneToAxisAngle(ref tcp);
+            double[] axisAngle = RobotSystemUR.PlaneToAxisAngle(ref tcp);
 
             Point3d cog = tool.Centroid;
             cog.Transform(originPlane.ToTransform());

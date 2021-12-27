@@ -77,7 +77,7 @@ public class Kinematics : GH_Component
 
         if (drawMeshes)
         {
-            var meshes = MeshPoser.Default.Pose(robotSystem.Value, kinematics, targets);
+            var meshes = RhinoMeshPoser.Pose(robotSystem.Value, kinematics, targets);
             DA.SetDataList(0, meshes.Select(x => new GH_Mesh(x)));
         }
 

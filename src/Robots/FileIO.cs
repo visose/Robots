@@ -97,7 +97,7 @@ public static class FileIO
         {
             Manufacturers.ABB => new RobotCellAbb(name, mechanicalGroups, io, basePlane, environment),
             Manufacturers.KUKA => new RobotCellKuka(name, mechanicalGroups, io, basePlane, environment),
-            Manufacturers.UR => new RobotCellUR(name, (RobotUR)mechanicalGroups[0].Robot, io, basePlane, environment),
+            Manufacturers.UR => new RobotSystemUR(name, (RobotUR)mechanicalGroups[0].Robot, io, basePlane, environment),
             Manufacturers.FANUC => new RobotCellFanuc(name, mechanicalGroups, io, basePlane, environment),
             Manufacturers.Staubli => new RobotCellStaubli(name, mechanicalGroups, io, basePlane, environment),
             _ => throw new ArgumentException($" Manufacturer '{manufacturer} is not supported.")
@@ -152,7 +152,7 @@ public static class FileIO
             {
                 "Revolute" => new RevoluteJoint { Index = i, Number = number, A = a, D = d, Range = range, MaxSpeed = maxSpeed.ToRadians(), Mesh = mesh },
                 "Prismatic" => new PrismaticJoint { Index = i, Number = number, A = a, D = d, Range = range, MaxSpeed = maxSpeed, Mesh = mesh },
-                _ => throw new ArgumentException("Invalid joint type.")
+                _ => throw new ArgumentException(" Invalid joint type.")
             };
         }
 
