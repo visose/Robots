@@ -27,6 +27,7 @@ public class Program : IProgram
     public List<List<List<string>>>? Code { get; }
     public double Duration { get; internal set; }
     public SimulationPose CurrentSimulationPose => _simulation.CurrentSimulationPose;
+    public IMeshPoser? MeshPoser { get; set; }
 
     public Program(string name, RobotSystem robotSystem, IEnumerable<IToolpath> toolpaths, Commands.Group? initCommands = null, IEnumerable<int>? multiFileIndices = null, double stepSize = 1.0)
     {
@@ -102,6 +103,15 @@ public class Program : IProgram
     public void Animate(double time, bool isNormalized = true)
     {
         _simulation.Step(time, isNormalized);
+
+        if (MeshPoser is null)
+            return;
+
+        var current = _simulation.CurrentSimulationPose;
+        var cellTarget = Targets[current.TargetIndex];
+        var tools = cellTarget.ProgramTargets.Map(t => t.Target.Tool);
+
+        MeshPoser.Pose(current.Kinematics, tools);
     }
 
     public Collision CheckCollisions(IEnumerable<int>? first = null, IEnumerable<int>? second = null, Mesh? environment = null, int environmentPlane = 0, double linearStep = 100, double angularStep = PI / 4.0)

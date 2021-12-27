@@ -10,7 +10,6 @@ public class MainViewModel : ObservableObject
     bool _isPlaying;
 
     readonly Timer _timer;
-    readonly HelixMeshPoser _poser;
     DateTime _last;
     double _dir = 1.0;
 
@@ -29,7 +28,7 @@ public class MainViewModel : ObservableObject
         set
         {
             SetField(ref _time, value);
-            Animate(_time);
+            Program.Animate(_time / 100.0);
         }
     }
 
@@ -67,18 +66,10 @@ public class MainViewModel : ObservableObject
         // robot program
         Program = TestProgram.Create();
         Log = Program.Errors.Count == 0 ? Program.RobotSystem.Name : string.Join(" ", Program.Errors);
-        _poser = new HelixMeshPoser((RobotCell)Program.RobotSystem, material, RobotModels);
+        Program.MeshPoser = new HelixMeshPoser((RobotCell)Program.RobotSystem, material, RobotModels);
 
         // timer
         _timer = new Timer(Tick, null, Timeout.Infinite, 0);
-    }
-
-    void Animate(double time)
-    {
-        Program.Animate(time / 100.0);
-        var current = Program.CurrentSimulationPose;
-        var target = Program.Targets[current.TargetIndex];
-        _poser.Pose(Program.RobotSystem, current.Kinematics, target);
     }
 
     void Tick(object? o)

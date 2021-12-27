@@ -3,12 +3,12 @@ using static System.Math;
 
 namespace Robots;
 
-public class RobotCellUR : RobotSystem
+public class RobotSystemUR : RobotSystem
 {
-    public RobotUR Robot { get; }    
+    public RobotUR Robot { get; }
     // public URRealTime URRealTime { get; set; }
 
-    internal RobotCellUR(string name, RobotUR robot, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.UR, io, basePlane, environment)
+    internal RobotSystemUR(string name, RobotUR robot, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.UR, io, basePlane, environment)
     {
         Remote = new RemoteUR();
         Robot = robot;
@@ -150,8 +150,6 @@ public class RobotCellUR : RobotSystem
         matrix.M21 = tmp1 + tmp2;
         matrix.M12 = tmp1 - tmp2;
 
-        //Plane plane = Plane.WorldXY;
-        //plane.Transform(matrix);
         var plane = matrix.ToPlane();
         plane.Origin = new Point3d(x, y, z);
         return plane;
