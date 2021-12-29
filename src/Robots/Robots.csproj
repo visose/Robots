@@ -10,7 +10,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-		<PackageReference Include="RhinoCommon" Version="7.12.21313.6341" />
+		<PackageReference Include="RhinoCommon" Version="7.13.21348.13001" />
 		<Reference Include="ABB.Robotics.Controllers.PC">
 			<HintPath>..\..\lib\ABB.Robotics.Controllers.PC.dll</HintPath>
 		</Reference>
