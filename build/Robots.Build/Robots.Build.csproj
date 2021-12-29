@@ -6,8 +6,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="YamlDotNet" Version="11.2.1" />
-		<PackageReference Include="Octokit" Version="0.50.0" />
+		<ProjectReference Include="..\..\..\RhinoPackager\src\RhinoPackager.csproj" />
 	</ItemGroup>
 
 </Project>

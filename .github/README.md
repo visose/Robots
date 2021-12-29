@@ -30,3 +30,5 @@
 1. Restart **Rhino** and open **Grasshopper**. There should be a new tab in **Grasshopper** named `Robots`.
 1. The robots from the library should appear in a **value list** when you place a `Load Robot System` component.
 1. Read the [docs](../../../wiki) for more info.
+1. Check the [samples](../samples/).
+   > When opening a sample file, a dialog box might pop up with an assembly not found message. You can close this without fixing the path, it will automatically get fixed after the sample file is loaded.

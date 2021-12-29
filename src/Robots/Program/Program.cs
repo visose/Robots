@@ -61,10 +61,10 @@ public class Program : IProgram
                 Warnings.Add("Multi-file index was higher than the number of targets.");
 
             MultiFileIndices.Sort();
-
-            if (MultiFileIndices.Count == 0 || MultiFileIndices[0] != 0)
-                MultiFileIndices.Insert(0, 0);
         }
+
+        if (MultiFileIndices.Count == 0 || MultiFileIndices[0] != 0)
+            MultiFileIndices.Insert(0, 0);
 
         var cellTargets = new List<CellTarget>(targetCount);
 

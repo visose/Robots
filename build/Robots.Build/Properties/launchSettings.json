@@ -2,7 +2,7 @@
   "profiles": {
     "Robots.Build": {
       "commandName": "Project",
-      "commandLineArgs": "package",
+      "commandLineArgs": "test build package",
       "workingDirectory": "../../"
     }
   }

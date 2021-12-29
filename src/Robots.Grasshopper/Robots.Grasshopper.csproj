@@ -7,8 +7,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Grasshopper" Version="7.12.21313.6341" />
+		<PackageReference Include="Grasshopper" Version="7.13.21348.13001" />
 		<PackageReference Include="System.Resources.Extensions" Version="6.0.0" />
+		<Reference Include="Microsoft.CSharp" />
 		<Reference Include="System.Windows.Forms" />
 		<ProjectReference Include="..\Robots\Robots.csproj" />
 	</ItemGroup>

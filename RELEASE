@@ -4,6 +4,8 @@
   - Tweaked placement of components and parameters in toolbar.
   - RobotCell and Tool elements can now be placed in the same xml file.
   - Tool can optionally specify a centroid in the xml.
+  - Fixed regression caused by multifile refactor.
+  - Fixed sample files.
   - Fixed robot meshes sometimes loaded from the wrong 3dm file if name was the same.
   - Fixed load tool not reading the weight parameter.
   - Some performance improvements in loading robots and tools from disk.
