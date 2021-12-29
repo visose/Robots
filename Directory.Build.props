@@ -6,10 +6,10 @@
 		<Description>Create and simulate ABB, KUKA, UR and Staubli robot programs.</Description>
 		<Copyright>Copyright (c) 2021</Copyright>
 		<Authors>Robots Authors</Authors>
-		<Url>https://github.com/visose/robots</Url>
-		<Tags>Robots;ABB;KUKA;UR;Staubli</Tags>
+		<PackageProjectUrl>https://github.com/visose/robots</PackageProjectUrl>
+		<PackageTags>Robots;ABB;KUKA;UR;Staubli</PackageTags>
 		<IconUrl>https://github.com/visose/robots/raw/master/build/Assets/iconRobot.png</IconUrl>
-		<Company>$(Authors) - $(Url)</Company>
+		<Company>$(Authors) - $(PackageProjectUrl)</Company>
 	</PropertyGroup>
 
 	<PropertyGroup>

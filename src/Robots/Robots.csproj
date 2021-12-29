@@ -2,7 +2,7 @@
 	
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net48</TargetFrameworks>
-		<AssemblyTitle>Robots Core</AssemblyTitle>
+		<AssemblyTitle>$(Product) Core</AssemblyTitle>
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">

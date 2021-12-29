@@ -6,7 +6,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\..\RhinoPackager\src\RhinoPackager.csproj" />
+		<PackageReference Include="RhinoPackager" Version="1.0.0" />
 	</ItemGroup>
 
 </Project>

@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>net48</TargetFramework>
 		<GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
-		<AssemblyTitle>Robots Grasshopper</AssemblyTitle>
+		<AssemblyTitle>$(Product) Grasshopper</AssemblyTitle>
 	</PropertyGroup>
 
 	<ItemGroup>
