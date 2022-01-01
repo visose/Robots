@@ -7,7 +7,7 @@ public class Group : GH_Component
     public Group() : base("Group command", "GroupCmd", "Group of commands", "Robots", "Commands") { }
     public override GH_Exposure Exposure => GH_Exposure.primary;
     public override Guid ComponentGuid => new("{17485955-818B-4D0E-9986-26264E1F86DC}");
-    protected override System.Drawing.Bitmap Icon => Properties.Resources.iconGroupCommand;
+    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconGroupCommand");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

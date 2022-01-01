@@ -15,7 +15,7 @@ public class LoadRobotSystem : GH_Component
     public LoadRobotSystem() : base("Load robot system", "LoadRobot", "Loads a robot system from the library.", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.primary;
     public override Guid ComponentGuid => new("{7722D7E3-98DE-49B5-9B1D-E0D1B938B4A7}");
-    protected override Bitmap Icon => Properties.Resources.iconRobot;
+    protected override Bitmap Icon => Util.GetIcon("iconRobot");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

@@ -7,7 +7,7 @@ public class PulseDO : GH_Component
     public PulseDO() : base("Pulse DO", "PulseDO", "Send a pulse to a digital output", "Robots", "Commands") { }
     public override GH_Exposure Exposure => GH_Exposure.secondary;
     public override Guid ComponentGuid => new("{3CBDCD59-9621-4A0F-86BF-F4CC876E360D}");
-    protected override System.Drawing.Bitmap Icon => Properties.Resources.iconPulseDO;
+    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconPulseDO");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

@@ -10,7 +10,7 @@ public class DeconstructProgramTargets : GH_Component
     public DeconstructProgramTargets() : base("Deconstruct program targets", "DecProgTarg", "Exposes the calculated simulation data for all targets.", "Robots", "Util") { }
     public override GH_Exposure Exposure => GH_Exposure.secondary;
     public override Guid ComponentGuid => new("{B78BF8E5-D5F2-4DE6-8589-26E069BA3D5B}");
-    protected override Bitmap Icon => Properties.Resources.iconDeconstructProgramTarget;
+    protected override Bitmap Icon => Util.GetIcon("iconDeconstructProgramTarget");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

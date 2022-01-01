@@ -21,7 +21,7 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
             new Param_String() { Name = "Motion", NickName = "M", Description = "Type of motion", Optional = true },
             new ToolParameter() { Name = "Tool", NickName = "T", Description = "Tool or end effector", Optional = true },
             new SpeedParameter() { Name = "Speed", NickName = "S", Description = "Speed of robot in mm/s", Optional = true },
-            new ZoneParameter() { Name = "Zone", NickName = "Z", Description = "Aproximation zone in mm", Optional = true },
+            new ZoneParameter() { Name = "Zone", NickName = "Z", Description = "Approximation zone in mm", Optional = true },
             new CommandParameter() { Name = "Command", NickName = "C", Description = "Robot command", Optional = true },
             new FrameParameter() { Name = "Frame", NickName = "F", Description = "Base frame", Optional = true },
             new Param_String() { Name = "External", NickName = "E", Description = "External axis", Optional = true }
@@ -32,7 +32,7 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
     public CreateTarget() : base("Create target", "Target", "Creates or modifies a target. Right click for additional inputs", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.secondary;
     public override Guid ComponentGuid => new("{BC68DC2C-EED6-4717-9F49-80A2B21B75B6}");
-    protected override Bitmap Icon => Properties.Resources.iconCreateTarget;
+    protected override Bitmap Icon => Util.GetIcon("iconCreateTarget");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
@@ -59,6 +59,7 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
         bool hasExternal = Params.Input.Any(x => x.Name == "External");
 
         GH_Target? sourceTarget = null;
+
         if (hasTarget)
         {
             if (!DA.GetData("Target", ref sourceTarget) || sourceTarget is null)

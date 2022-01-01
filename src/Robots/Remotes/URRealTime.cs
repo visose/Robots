@@ -21,10 +21,14 @@ public class URRealTime
 
     void MakeDataTypes()
     {
-        var lines = Properties.Resources.URRealTime.Split(new string[] { "\r\n" }, StringSplitOptions.None);
+        var resource = "Robots.Remote.URRealTime.txt";
+        var assembly = GetType().Assembly;
+        using var stream = assembly.GetManifestResourceStream(resource);
+        using var reader = new StreamReader(stream);
         int start = 0;
 
-        foreach (var line in lines)
+        string line;
+        while ((line = reader.ReadLine()) is not null)
         {
             var data = line.Split(',');
             int length = Convert.ToInt32(data[2]);
@@ -74,7 +78,6 @@ public class URRealTime
 
         var result = new byte[size];
         Array.Copy(byteStream, result, size);
-        //return byteStream.Take(size).ToArray();
         return result;
     }
 
@@ -135,11 +138,11 @@ public class URRealTime
 
 public class FeedbackType
 {
-    public string Meaning { get; set; } = null!;
-    public string Notes { get; set; } = null!;
-    internal string Type { get; set; } = null!;
+    public string Meaning { get; set; } = default!;
+    public string Notes { get; set; } = default!;
+    internal string Type { get; set; } = default!;
     internal int Length { get; set; }
     internal int Size { get; set; }
     internal int Start { get; set; }
-    public double[] Value { get; set; } = null!;
+    public double[] Value { get; set; } = default!;
 }

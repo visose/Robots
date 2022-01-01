@@ -6,7 +6,7 @@ public class ToolpathParameter : GH_PersistentParam<GH_Toolpath>
 {
     public ToolpathParameter() : base("Toolpath", "Toolpath", "This is a robot toolpath", "Robots", "Parameters") { }
     public override GH_Exposure Exposure => GH_Exposure.secondary;
-    protected override System.Drawing.Bitmap Icon => Properties.Resources.iconProgramParam;
+    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconProgramParam");
     public override Guid ComponentGuid => new("{715AEDCE-14E8-400B-A226-9806FC3CB7B3}");
 
     protected override GH_GetterResult Prompt_Singular(ref GH_Toolpath value)

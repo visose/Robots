@@ -9,7 +9,7 @@ public class Custom : GH_Component
     public override GH_Exposure Exposure => GH_Exposure.hidden;
     public override bool Obsolete => true;
     public override Guid ComponentGuid => new("{D15B1F9D-B3B9-4105-A365-234C1329B092}");
-    protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCustomCommand;
+    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconCustomCommand");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

@@ -7,7 +7,7 @@ public class CustomCommand : GH_Component
     public CustomCommand() : base("Custom command", "CustomCmd", "Custom command written in the manufacturer specific language", "Robots", "Commands") { }
     public override GH_Exposure Exposure => GH_Exposure.primary;
     public override Guid ComponentGuid => new("{713A6DF0-6C73-477F-8CA5-2FE18F3DE7C4}");
-    protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCustomCommand;
+    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconCustomCommand");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

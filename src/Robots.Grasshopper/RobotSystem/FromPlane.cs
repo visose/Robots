@@ -8,7 +8,7 @@ public class FromPlane : GH_Component
     public FromPlane() : base("From plane", "FromPlane", "Returns a list of numbers from a plane. The first 3 numbers are the x, y and z coordinates of the origin. The last 3 or 4 values correspond to euler angles in degrees or quaternion values respectively.", "Robots", "Util") { }
     public override GH_Exposure Exposure => GH_Exposure.primary;
     public override Guid ComponentGuid => new("{03353E74-E816-4E0A-AF9A-8AFB4C111D0B}");
-    protected override System.Drawing.Bitmap Icon => Properties.Resources.iconToPlane;
+    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconToPlane");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

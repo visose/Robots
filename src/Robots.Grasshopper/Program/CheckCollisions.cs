@@ -9,7 +9,7 @@ public class CheckCollisions : GH_Component
     public CheckCollisions() : base("Check collisions", "Collisions", "Checks for possible collisions. Will test if any object from group A collide with any objects from group B.", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.quarternary;
     public override Guid ComponentGuid => new("{2848F557-8DF4-415A-800B-261E782E92F8}");
-    protected override System.Drawing.Bitmap Icon => Properties.Resources.iconCheckCollisions;
+    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconCheckCollisions");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
