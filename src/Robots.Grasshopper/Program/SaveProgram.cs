@@ -7,7 +7,7 @@ public class SaveProgram : GH_Component
     public SaveProgram() : base("Save program", "SaveProg", "Saves a program to a text file", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.senary;
     public override Guid ComponentGuid => new("{1DE69EAA-AA4C-44F2-8748-F19B041F8F58}");
-    protected override System.Drawing.Bitmap Icon => Properties.Resources.iconSave;
+    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconSave");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

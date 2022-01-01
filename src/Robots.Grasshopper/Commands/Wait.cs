@@ -7,7 +7,7 @@ public class Wait : GH_Component
     public Wait() : base("Wait", "Wait", "Stops the program for a specific amount of time", "Robots", "Commands") { }
     public override GH_Exposure Exposure => GH_Exposure.secondary;
     public override Guid ComponentGuid => new("{5E7BA355-7EAC-4A5D-B736-286043AB0A45}");
-    protected override System.Drawing.Bitmap Icon => Properties.Resources.iconWait;
+    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconWait");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

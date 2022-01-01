@@ -16,7 +16,7 @@ public class RobotsInfo : GH_AssemblyInfo
 
     public override string Name => GetInfo<AssemblyProductAttribute>().Product;
     public override string AssemblyVersion => GetInfo<AssemblyInformationalVersionAttribute>().InformationalVersion;
-    public override Bitmap Icon => Properties.Resources.iconRobot;
+    public override Bitmap Icon => Util.GetIcon("iconRobot");
     public override string Description => GetInfo<AssemblyDescriptionAttribute>().Description;
     public override GH_LibraryLicense License => GH_LibraryLicense.opensource;
     public override string AuthorName => GetCompany()[0];

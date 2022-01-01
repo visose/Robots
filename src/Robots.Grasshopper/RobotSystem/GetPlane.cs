@@ -9,7 +9,7 @@ public class GetPlane : GH_Component
     public GetPlane() : base("Get plane", "GetPlane", "Get a plane from a point in space and a 3D rotation. The input has to be a list of 6 or 7 numbers. ", "Robots", "Util") { }
     public override GH_Exposure Exposure => GH_Exposure.primary;
     public override Guid ComponentGuid => new("{F271BD0B-7249-4647-B273-577D8EA6328F}");
-    protected override Bitmap Icon => Properties.Resources.iconGetPlane;
+    protected override Bitmap Icon => Util.GetIcon("iconGetPlane");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

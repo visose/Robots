@@ -7,7 +7,7 @@ public class SetDO : GH_Component
     public SetDO() : base("Set DO", "SetDO", "Set digital output", "Robots", "Commands") { }
     public override GH_Exposure Exposure => GH_Exposure.secondary;
     public override Guid ComponentGuid => new("{C2F263E3-BF97-4E48-B2CB-42D3A5FE6190}");
-    protected override System.Drawing.Bitmap Icon => Properties.Resources.iconSetDO;
+    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconSetDO");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

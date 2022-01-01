@@ -7,7 +7,7 @@ public class DegreesToRadians : GH_Component
     public DegreesToRadians() : base("Degrees to radians", "DegToRad", "Manufacturer dependent degrees to radians conversion.", "Robots", "Util") { }
     public override GH_Exposure Exposure => GH_Exposure.primary;
     public override Guid ComponentGuid => new("{C10B3A17-5C19-4805-ACCF-839B85C4D21C}");
-    protected override System.Drawing.Bitmap Icon => Properties.Resources.iconAngles;
+    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconAngles");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

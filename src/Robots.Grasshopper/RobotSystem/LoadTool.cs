@@ -13,7 +13,7 @@ public class LoadTool : GH_Component
     public LoadTool() : base("Load tool", "LoadTool", "Loads a tool from the library.", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.primary;
     public override Guid ComponentGuid => new("{542aa5fd-4f02-4ee5-a2a0-02b0fac8777f}");
-    protected override Bitmap Icon => Properties.Resources.iconTool;
+    protected override Bitmap Icon => Util.GetIcon("iconTool");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

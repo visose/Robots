@@ -7,7 +7,7 @@ public class Message : GH_Component
     public Message() : base("Message", "Message", "Sends a text message to the teach pendant", "Robots", "Commands") { }
     public override GH_Exposure Exposure => GH_Exposure.secondary;
     public override Guid ComponentGuid => new("{CFAABB24-CAEE-49FC-850F-BE9F70F070CA}");
-    protected override System.Drawing.Bitmap Icon => Properties.Resources.iconMessage;
+    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconMessage");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

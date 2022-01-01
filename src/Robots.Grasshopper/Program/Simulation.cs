@@ -24,7 +24,7 @@ public sealed class Simulation : GH_Component, IDisposable
 
     public override GH_Exposure Exposure => GH_Exposure.quinary;
     public override Guid ComponentGuid => new("{6CE35140-A625-4686-B8B3-B734D9A36CFC}");
-    protected override System.Drawing.Bitmap Icon => Properties.Resources.iconSimulation;
+    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconSimulation");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
