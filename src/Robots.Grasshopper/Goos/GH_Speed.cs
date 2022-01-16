@@ -13,7 +13,6 @@ public class GH_Speed : GH_Goo<Speed>
     public override string TypeName => "Speed";
     public override string TypeDescription => "Speed";
     public override string ToString() => Value.ToString();
-    public override object ScriptVariable() => Value;
 
     public override bool CastFrom(object source)
     {

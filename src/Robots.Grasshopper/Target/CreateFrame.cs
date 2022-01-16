@@ -38,7 +38,14 @@ public class CreateFrame : GH_Component
         if (!DA.GetData(2, ref coupledMechanism)) { return; }
         DA.GetData(3, ref name);
 
-        var frame = new Frame(plane.Value, coupledMechanism, coupledGroup, name);
-        DA.SetData(0, new GH_Frame(frame));
+        try
+        {
+            var frame = new Frame(plane.Value, coupledMechanism, coupledGroup, name);
+            DA.SetData(0, new GH_Frame(frame));
+        }
+        catch (ArgumentException e)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, e.Message);
+        }
     }
 }

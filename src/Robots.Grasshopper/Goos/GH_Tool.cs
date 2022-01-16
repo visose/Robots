@@ -12,7 +12,6 @@ public class GH_Tool : GH_Goo<Tool>
     public override string TypeName => "Tool";
     public override string TypeDescription => "Tool";
     public override string ToString() => Value.ToString();
-    public override object ScriptVariable() => Value;
     public override bool CastFrom(object source)
     {
         switch (source)

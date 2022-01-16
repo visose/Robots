@@ -6,13 +6,10 @@ public class Group : Command, IList<Command>
 {
     readonly List<Command> _commandList = new();
 
-    public Group()
-    {
-    }
+    public Group() { }
 
-    public Group(IEnumerable<Command> commands)
+    public Group(IEnumerable<Command> commands) : base("GroupCommand")
     {
-        Name = "Group command";
         _commandList.AddRange(commands);
     }
 

@@ -7,6 +7,8 @@ public abstract class Command : TargetAttribute
     protected Dictionary<Manufacturers, Func<RobotSystem, string>> _declarations = new(4);
     protected Dictionary<Manufacturers, Func<RobotSystem, Target, string>> _commands = new(4);
 
+    protected Command(string? name = null) : base(name) { }
+
     protected virtual void ErrorChecking(RobotSystem robotSystem) { }
     protected virtual void Populate() { }
     public bool RunBefore { get; set; } = false;

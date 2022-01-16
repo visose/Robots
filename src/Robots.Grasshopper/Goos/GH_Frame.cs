@@ -13,7 +13,6 @@ public class GH_Frame : GH_Goo<Frame>
     public override string TypeName => "Frame";
     public override string TypeDescription => "Frame";
     public override string ToString() => Value.ToString();
-    public override object ScriptVariable() => Value;
 
     public override bool CastFrom(object source)
     {

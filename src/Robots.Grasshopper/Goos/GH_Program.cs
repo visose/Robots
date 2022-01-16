@@ -12,7 +12,6 @@ public class GH_Program : GH_Goo<IProgram>
     public override string TypeName => "Program";
     public override string TypeDescription => "Program";
     public override string ToString() => Value.ToString();
-    public override object? ScriptVariable() => Value;
 
     public override bool CastFrom(object source)
     {

@@ -2,10 +2,30 @@
 
 public abstract class TargetAttribute
 {
+    string? _name;
+
+    protected TargetAttribute(string? name)
+    {
+        if (name is not null)
+            Name = name;
+    }
+
     /// <summary>
     /// Name of the attribute
     /// </summary>
-    public string? Name { get; internal set; }
+    public string Name
+    {
+        get => _name.NotNull();
+        private set
+        {
+            if (!value.IsValidName(out var error))
+                throw new ArgumentException($" {GetType().Name} {error}");
+
+            _name = value;
+        }
+    }
+
+    public bool HasName => _name is not null;
 
     public T CloneWithName<T>(string name) where T : TargetAttribute
     {

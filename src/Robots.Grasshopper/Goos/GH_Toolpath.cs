@@ -19,7 +19,6 @@ public class GH_Toolpath : GH_Goo<IToolpath>
             _ => "Toolpath",
         };
     }
-    public override object ScriptVariable() => Value;
 
     public override bool CastFrom(object source)
     {

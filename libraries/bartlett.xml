@@ -3,78 +3,78 @@
   <RobotCell name="Bartlett-IRB120" manufacturer="ABB">
     <Mechanisms>
       <RobotArm model="IRB120" manufacturer="ABB" payload="3">
-        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
         <Joints>
-          <Revolute number="1" a ="0" d ="290" minrange = "-165" maxrange ="165" maxspeed ="250"/>
-          <Revolute number="2" a ="270" d ="0" minrange = "-110" maxrange ="110" maxspeed ="250"/>
-          <Revolute number="3" a ="70" d ="0" minrange = "-110" maxrange ="70" maxspeed ="250"/>
-          <Revolute number="4" a ="0" d ="302" minrange = "-160" maxrange ="160" maxspeed ="320"/>
-          <Revolute number="5" a ="0" d ="0" minrange = "-120" maxrange ="120" maxspeed ="320"/>
-          <Revolute number="6" a ="0" d ="72" minrange = "-400" maxrange ="400" maxspeed ="420"/>
+          <Revolute number="1" a="0" d="290" minrange="-165" maxrange="165" maxspeed="250" />
+          <Revolute number="2" a="270" d="0" minrange="-110" maxrange="110" maxspeed="250" />
+          <Revolute number="3" a="70" d="0" minrange="-110" maxrange="70" maxspeed="250" />
+          <Revolute number="4" a="0" d="302" minrange="-160" maxrange="160" maxspeed="320" />
+          <Revolute number="5" a="0" d="0" minrange="-120" maxrange="120" maxspeed="320" />
+          <Revolute number="6" a="0" d="72" minrange="-400" maxrange="400" maxspeed="420" />
         </Joints>
       </RobotArm>
     </Mechanisms>
     <IO>
-      <DO names="DO10_1,DO10_2,DO10_3,DO10_4,DO10_5,DO10_6,DO10_7,DO10_8,DO10_9,DO10_10,DO10_11,DO10_12,DO10_13,DO10_14,DO10_15,DO10_16"/>
-      <DI names="DI10_1,DI10_2,DI10_3,DI10_4,DI10_5,DI10_6,DI10_7,DI10_8,DI10_9,DI10_10,DI10_11,DI10_12,DI10_13,DI10_14,DI10_15,DO10_16"/>
+      <DO names="DO10_1,DO10_2,DO10_3,DO10_4,DO10_5,DO10_6,DO10_7,DO10_8,DO10_9,DO10_10,DO10_11,DO10_12,DO10_13,DO10_14,DO10_15,DO10_16" />
+      <DI names="DI10_1,DI10_2,DI10_3,DI10_4,DI10_5,DI10_6,DI10_7,DI10_8,DI10_9,DI10_10,DI10_11,DI10_12,DI10_13,DI10_14,DI10_15,DO10_16" />
     </IO>
   </RobotCell>
 
   <RobotCell name="Bartlett-IRB1600" manufacturer="ABB">
     <Mechanisms>
       <RobotArm model="IRB1600-145" manufacturer="ABB" payload="10">
-        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
         <Joints>
-          <Revolute number="1" a ="150" d ="486.5" minrange = "-180" maxrange ="180" maxspeed ="180"/>
-          <Revolute number="2" a ="700" d ="0" minrange = "-90" maxrange ="150" maxspeed ="180"/>
-          <Revolute number="3" a ="0" d ="0" minrange = "-245" maxrange ="65" maxspeed ="185"/>
-          <Revolute number="4" a ="0" d ="600" minrange = "-200" maxrange ="200" maxspeed ="385"/>
-          <Revolute number="5" a ="0" d ="0" minrange = "-115" maxrange ="115" maxspeed ="400"/>
-          <Revolute number="6" a ="0" d ="65" minrange = "-400" maxrange ="400" maxspeed ="460"/>
+          <Revolute number="1" a="150" d="486.5" minrange="-180" maxrange="180" maxspeed="180" />
+          <Revolute number="2" a="700" d="0" minrange="-90" maxrange="150" maxspeed="180" />
+          <Revolute number="3" a="0" d="0" minrange="-245" maxrange="65" maxspeed="185" />
+          <Revolute number="4" a="0" d="600" minrange="-200" maxrange="200" maxspeed="385" />
+          <Revolute number="5" a="0" d="0" minrange="-115" maxrange="115" maxspeed="400" />
+          <Revolute number="6" a="0" d="65" minrange="-400" maxrange="400" maxspeed="460" />
         </Joints>
       </RobotArm>
     </Mechanisms>
     <IO>
-      <DO names="DO10_1,DO10_2,DO10_3,DO10_4,DO10_5,DO10_6,DO10_7,DO10_8,DO10_9,DO10_10,DO10_11,DO10_12,DO10_13,DO10_14,DO10_15,DO10_16"/>
-      <DI names="DI10_1,DI10_2,DI10_3,DI10_4,DI10_5,DI10_6,DI10_7,DI10_8,DI10_9,DI10_10,DI10_11,DI10_12,DI10_13,DI10_14,DI10_15,DO10_16"/>
-      <AO names="AO10_1,AO10_2"/>
-      <AI names="AI10_1,AI10_2"/>
+      <DO names="DO10_1,DO10_2,DO10_3,DO10_4,DO10_5,DO10_6,DO10_7,DO10_8,DO10_9,DO10_10,DO10_11,DO10_12,DO10_13,DO10_14,DO10_15,DO10_16" />
+      <DI names="DI10_1,DI10_2,DI10_3,DI10_4,DI10_5,DI10_6,DI10_7,DI10_8,DI10_9,DI10_10,DI10_11,DI10_12,DI10_13,DI10_14,DI10_15,DO10_16" />
+      <AO names="AO10_1,AO10_2" />
+      <AI names="AI10_1,AI10_2" />
     </IO>
   </RobotCell>
 
   <RobotCell name="Bartlett-KR6" manufacturer="KUKA">
     <Mechanisms>
       <RobotArm model="KR6-R900" manufacturer="KUKA" payload="6">
-        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
         <Joints>
-          <Revolute number="1" a ="25" d ="400" minrange = "-170" maxrange ="170" maxspeed ="360"/>
-          <Revolute number="2" a ="455" d ="0" minrange = "-190" maxrange ="45" maxspeed ="300"/>
-          <Revolute number="3" a ="35" d ="0" minrange = "-120" maxrange ="156" maxspeed ="360"/>
-          <Revolute number="4" a ="0" d ="420" minrange = "-185" maxrange ="185" maxspeed ="381"/>
-          <Revolute number="5" a ="0" d ="0" minrange = "-120" maxrange ="120" maxspeed ="388"/>
-          <Revolute number="6" a ="0" d ="80" minrange = "-350" maxrange ="350" maxspeed ="615"/>
+          <Revolute number="1" a="25" d="400" minrange="-170" maxrange="170" maxspeed="360" />
+          <Revolute number="2" a="455" d="0" minrange="-190" maxrange="45" maxspeed="300" />
+          <Revolute number="3" a="35" d="0" minrange="-120" maxrange="156" maxspeed="360" />
+          <Revolute number="4" a="0" d="420" minrange="-185" maxrange="185" maxspeed="381" />
+          <Revolute number="5" a="0" d="0" minrange="-120" maxrange="120" maxspeed="388" />
+          <Revolute number="6" a="0" d="80" minrange="-350" maxrange="350" maxspeed="615" />
         </Joints>
       </RobotArm>
     </Mechanisms>
     <IO>
-      <DO names="11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27"/>
-      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-      <AO names="1,2"/>
-      <AI names="1,2"/>
+      <DO names="11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27" />
+      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <AO names="1,2" />
+      <AI names="1,2" />
     </IO>
   </RobotCell>
 
   <RobotCell name="Bartlett-KR60-A" manufacturer="KUKA">
     <Mechanisms group="0">
       <RobotArm model="KR60-HA" manufacturer="KUKA" payload="60">
-        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
         <Joints>
-          <Revolute number="1" a ="350" d ="815" minrange = "-185" maxrange ="185" maxspeed ="128"/>
-          <Revolute number="2" a ="850" d ="0" minrange = "-135" maxrange ="35" maxspeed ="120"/>
-          <Revolute number="3" a ="145" d ="0" minrange = "-120" maxrange ="158" maxspeed ="128"/>
-          <Revolute number="4" a ="0" d ="820" minrange = "-350" maxrange ="350" maxspeed ="260"/>
-          <Revolute number="5" a ="0" d ="0" minrange = "-119" maxrange ="119" maxspeed ="245"/>
-          <Revolute number="6" a ="0" d ="170" minrange = "-350" maxrange ="350" maxspeed ="322"/>
+          <Revolute number="1" a="350" d="815" minrange="-185" maxrange="185" maxspeed="128" />
+          <Revolute number="2" a="850" d="0" minrange="-135" maxrange="35" maxspeed="120" />
+          <Revolute number="3" a="145" d="0" minrange="-120" maxrange="158" maxspeed="128" />
+          <Revolute number="4" a="0" d="820" minrange="-350" maxrange="350" maxspeed="260" />
+          <Revolute number="5" a="0" d="0" minrange="-119" maxrange="119" maxspeed="245" />
+          <Revolute number="6" a="0" d="170" minrange="-350" maxrange="350" maxspeed="322" />
         </Joints>
       </RobotArm>
       <!--
@@ -86,32 +86,32 @@
       </Track>
       -->
       <Positioner model="DKP-400" manufacturer="KUKA" payload="400">
-        <Base x="789.188" y="1456.846" z="-41.69" q1="0.856803" q2="-0.003908" q3="0.002313" q4="0.515623"/>
+        <Base x="789.188" y="1456.846" z="-41.69" q1="0.856803" q2="-0.003908" q3="0.002313" q4="0.515623" />
         <Joints>
-          <Revolute number="7" a ="0" d ="510" minrange = "-90" maxrange ="90" maxspeed ="94.5"/>
-          <Revolute number="8" a ="0" d ="347" minrange = "-INF" maxrange ="INF" maxspeed ="126"/>
+          <Revolute number="7" a="0" d="510" minrange="-90" maxrange="90" maxspeed="94.5" />
+          <Revolute number="8" a="0" d="347" minrange="-INF" maxrange="INF" maxspeed="126" />
         </Joints>
       </Positioner>
     </Mechanisms>
     <IO>
-      <DO names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-      <AO names="1,2,3,4"/>
-      <AI names="1,2,3,4"/>
+      <DO names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <AO names="1,2,3,4" />
+      <AI names="1,2,3,4" />
     </IO>
   </RobotCell>
 
   <RobotCell name="Bartlett-KR60-B" manufacturer="KUKA">
     <Mechanisms group="0">
       <RobotArm model="KR60-HA" manufacturer="KUKA" payload="60">
-        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
         <Joints>
-          <Revolute number="1" a ="350" d ="815" minrange = "-185" maxrange ="185" maxspeed ="128"/>
-          <Revolute number="2" a ="850" d ="0" minrange = "-135" maxrange ="35" maxspeed ="120"/>
-          <Revolute number="3" a ="145" d ="0" minrange = "-120" maxrange ="158" maxspeed ="128"/>
-          <Revolute number="4" a ="0" d ="820" minrange = "-350" maxrange ="350" maxspeed ="260"/>
-          <Revolute number="5" a ="0" d ="0" minrange = "-119" maxrange ="119" maxspeed ="245"/>
-          <Revolute number="6" a ="0" d ="170" minrange = "-350" maxrange ="350" maxspeed ="322"/>
+          <Revolute number="1" a="350" d="815" minrange="-185" maxrange="185" maxspeed="128" />
+          <Revolute number="2" a="850" d="0" minrange="-135" maxrange="35" maxspeed="120" />
+          <Revolute number="3" a="145" d="0" minrange="-120" maxrange="158" maxspeed="128" />
+          <Revolute number="4" a="0" d="820" minrange="-350" maxrange="350" maxspeed="260" />
+          <Revolute number="5" a="0" d="0" minrange="-119" maxrange="119" maxspeed="245" />
+          <Revolute number="6" a="0" d="170" minrange="-350" maxrange="350" maxspeed="322" />
         </Joints>
       </RobotArm>
       <!--
@@ -123,92 +123,92 @@
       </Track>
       -->
       <Positioner model="DKP-400" manufacturer="KUKA" payload="400">
-        <Base x="1352.107" y="1245.797" z="-30.673" q1="0.922504" q2="-0.001842" q3="0.001802" q4="0.385979"/>
+        <Base x="1352.107" y="1245.797" z="-30.673" q1="0.922504" q2="-0.001842" q3="0.001802" q4="0.385979" />
         <Joints>
-          <Revolute number="7" a ="0" d ="510" minrange = "-90" maxrange ="90" maxspeed ="94.5"/>
-          <Revolute number="8" a ="0" d ="347" minrange = "-INF" maxrange ="INF" maxspeed ="126"/>
+          <Revolute number="7" a="0" d="510" minrange="-90" maxrange="90" maxspeed="94.5" />
+          <Revolute number="8" a="0" d="347" minrange="-INF" maxrange="INF" maxspeed="126" />
         </Joints>
       </Positioner>
     </Mechanisms>
     <IO>
-      <DO names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-      <AO names="1,2,3,4"/>
-      <AI names="1,2,3,4"/>
+      <DO names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <AO names="1,2,3,4" />
+      <AI names="1,2,3,4" />
     </IO>
   </RobotCell>
 
   <RobotCell name="Bartlett-KR500" manufacturer="KUKA">
     <Mechanisms group="0">
       <RobotArm model="KR500-2" manufacturer="KUKA" payload="500">
-        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
         <Joints>
-          <Revolute number="1" a ="500" d ="1045" minrange = "-185" maxrange ="185" maxspeed ="69"/>
-          <Revolute number="2" a ="1300" d ="0" minrange = "-130" maxrange ="20" maxspeed ="69"/>
-          <Revolute number="3" a ="55" d ="0" minrange = "-94" maxrange ="150" maxspeed ="69"/>
-          <Revolute number="4" a ="0" d ="1025" minrange = "-350" maxrange ="350" maxspeed ="77"/>
-          <Revolute number="5" a ="0" d ="0" minrange = "-118" maxrange ="118" maxspeed ="76"/>
-          <Revolute number="6" a ="0" d ="250" minrange = "-350" maxrange ="350" maxspeed ="120"/>
+          <Revolute number="1" a="500" d="1045" minrange="-185" maxrange="185" maxspeed="69" />
+          <Revolute number="2" a="1300" d="0" minrange="-130" maxrange="20" maxspeed="69" />
+          <Revolute number="3" a="55" d="0" minrange="-94" maxrange="150" maxspeed="69" />
+          <Revolute number="4" a="0" d="1025" minrange="-350" maxrange="350" maxspeed="77" />
+          <Revolute number="5" a="0" d="0" minrange="-118" maxrange="118" maxspeed="76" />
+          <Revolute number="6" a="0" d="250" minrange="-350" maxrange="350" maxspeed="120" />
         </Joints>
       </RobotArm>
     </Mechanisms>
     <IO>
-      <DO names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-      <AO names="1,2,3,4"/>
-      <AI names="1,2,3,4"/>
+      <DO names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <AO names="1,2,3,4" />
+      <AI names="1,2,3,4" />
     </IO>
   </RobotCell>
 
   <RobotCell name="Bartlett-KR60 on track" manufacturer="KUKA">
     <Mechanisms group="0">
       <RobotArm model="KR60-HA" manufacturer="KUKA" payload="60">
-        <Base x="0.000" y="0.000" z="0.000" q1="-0.707107" q2="0.000" q3="0.000" q4="0.707107"/>
+        <Base x="0.000" y="0.000" z="0.000" q1="-0.707107" q2="0.000" q3="0.000" q4="0.707107" />
         <Joints>
-          <Revolute number="1" a ="350" d ="815" minrange = "-185" maxrange ="185" maxspeed ="128"/>
-          <Revolute number="2" a ="850" d ="0" minrange = "-135" maxrange ="35" maxspeed ="120"/>
-          <Revolute number="3" a ="145" d ="0" minrange = "-120" maxrange ="158" maxspeed ="128"/>
-          <Revolute number="4" a ="0" d ="820" minrange = "-350" maxrange ="350" maxspeed ="260"/>
-          <Revolute number="5" a ="0" d ="0" minrange = "-119" maxrange ="119" maxspeed ="245"/>
-          <Revolute number="6" a ="0" d ="170" minrange = "-350" maxrange ="350" maxspeed ="322"/>
+          <Revolute number="1" a="350" d="815" minrange="-185" maxrange="185" maxspeed="128" />
+          <Revolute number="2" a="850" d="0" minrange="-135" maxrange="35" maxspeed="120" />
+          <Revolute number="3" a="145" d="0" minrange="-120" maxrange="158" maxspeed="128" />
+          <Revolute number="4" a="0" d="820" minrange="-350" maxrange="350" maxspeed="260" />
+          <Revolute number="5" a="0" d="0" minrange="-119" maxrange="119" maxspeed="245" />
+          <Revolute number="6" a="0" d="170" minrange="-350" maxrange="350" maxspeed="322" />
         </Joints>
       </RobotArm>
 
       <Track model="KL1000-2" manufacturer="KUKA" payload="1000" movesRobot="true">
-        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
         <Joints>
-          <Prismatic number="7" a ="881.6" d ="480" minrange = "0" maxrange ="10000" maxspeed ="1890"/>
+          <Prismatic number="7" a="881.6" d="480" minrange="0" maxrange="10000" maxspeed="1890" />
         </Joints>
       </Track>
 
     </Mechanisms>
     <IO>
-      <DO names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-      <AO names="1,2,3,4"/>
-      <AI names="1,2,3,4"/>
+      <DO names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <AO names="1,2,3,4" />
+      <AI names="1,2,3,4" />
     </IO>
   </RobotCell>
 
   <RobotCell name="Bartlett-UR10" manufacturer="UR">
     <Mechanisms>
       <RobotArm model="UR10" manufacturer="UR" payload="10">
-        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
         <Joints>
-          <Revolute number="1" a ="0" d ="127.3" minrange = "-360" maxrange ="360" maxspeed ="120"/>
-          <Revolute number="2" a ="-612" d ="0" minrange = "-360" maxrange ="360" maxspeed ="120"/>
-          <Revolute number="3" a ="-572.3" d ="0" minrange = "-360" maxrange ="360" maxspeed ="180"/>
-          <Revolute number="4" a ="0" d ="163.941" minrange = "-360" maxrange ="360" maxspeed ="180"/>
-          <Revolute number="5" a ="0" d ="115.7" minrange = "-360" maxrange ="360" maxspeed ="180"/>
-          <Revolute number="6" a ="0" d ="92.2" minrange = "-360" maxrange ="360" maxspeed ="180"/>
+          <Revolute number="1" a="0" d="127.3" minrange="-360" maxrange="360" maxspeed="120" />
+          <Revolute number="2" a="-612" d="0" minrange="-360" maxrange="360" maxspeed="120" />
+          <Revolute number="3" a="-572.3" d="0" minrange="-360" maxrange="360" maxspeed="180" />
+          <Revolute number="4" a="0" d="163.941" minrange="-360" maxrange="360" maxspeed="180" />
+          <Revolute number="5" a="0" d="115.7" minrange="-360" maxrange="360" maxspeed="180" />
+          <Revolute number="6" a="0" d="92.2" minrange="-360" maxrange="360" maxspeed="180" />
         </Joints>
       </RobotArm>
     </Mechanisms>
     <IO>
-      <DO names="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-      <DI names="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-      <AO names="0,1"/>
-      <AI names="0,1"/>
+      <DO names="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <DI names="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <AO names="0,1" />
+      <AI names="0,1" />
     </IO>
   </RobotCell>
 
@@ -216,110 +216,110 @@
   <RobotCell name="Bartlett-KR60" manufacturer="KUKA">
     <Mechanisms group="0">
       <RobotArm model="KR60-HA" manufacturer="KUKA" payload="60">
-        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
         <Joints>
-          <Revolute number="1" a ="350" d ="815" minrange = "-185" maxrange ="185" maxspeed ="128"/>
-          <Revolute number="2" a ="850" d ="0" minrange = "-135" maxrange ="35" maxspeed ="120"/>
-          <Revolute number="3" a ="145" d ="0" minrange = "-120" maxrange ="158" maxspeed ="128"/>
-          <Revolute number="4" a ="0" d ="820" minrange = "-350" maxrange ="350" maxspeed ="260"/>
-          <Revolute number="5" a ="0" d ="0" minrange = "-119" maxrange ="119" maxspeed ="245"/>
-          <Revolute number="6" a ="0" d ="170" minrange = "-350" maxrange ="350" maxspeed ="322"/>
+          <Revolute number="1" a="350" d="815" minrange="-185" maxrange="185" maxspeed="128" />
+          <Revolute number="2" a="850" d="0" minrange="-135" maxrange="35" maxspeed="120" />
+          <Revolute number="3" a="145" d="0" minrange="-120" maxrange="158" maxspeed="128" />
+          <Revolute number="4" a="0" d="820" minrange="-350" maxrange="350" maxspeed="260" />
+          <Revolute number="5" a="0" d="0" minrange="-119" maxrange="119" maxspeed="245" />
+          <Revolute number="6" a="0" d="170" minrange="-350" maxrange="350" maxspeed="322" />
         </Joints>
       </RobotArm>
 
       <Positioner model="DKP-400" manufacturer="KUKA" payload="400">
-        <Base x="1600" y="0" z="0" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Base x="1600" y="0" z="0" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
         <Joints>
-          <Revolute number="7" a ="0" d ="510" minrange = "-90" maxrange ="90" maxspeed ="94.5"/>
-          <Revolute number="8" a ="0" d ="347" minrange = "-INF" maxrange ="INF" maxspeed ="126"/>
+          <Revolute number="7" a="0" d="510" minrange="-90" maxrange="90" maxspeed="94.5" />
+          <Revolute number="8" a="0" d="347" minrange="-INF" maxrange="INF" maxspeed="126" />
         </Joints>
       </Positioner>
     </Mechanisms>
     <IO>
-      <DO names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-      <AO names="1,2,3,4"/>
-      <AI names="1,2,3,4"/>
+      <DO names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <AO names="1,2,3,4" />
+      <AI names="1,2,3,4" />
     </IO>
   </RobotCell>
 
   <RobotCell name="Bartlett-TX200" manufacturer="Staubli">
     <Mechanisms group="0">
       <RobotArm model="TX200" manufacturer="Staubli" payload="100">
-        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
         <Joints>
-          <Revolute number="1" a ="250" d ="0" minrange = "-180" maxrange ="180" maxspeed ="160"/>
-          <Revolute number="2" a ="950" d ="0" minrange = "-115" maxrange ="120" maxspeed ="160"/>
-          <Revolute number="3" a ="0" d ="0" minrange = "-140" maxrange ="145" maxspeed ="160"/>
-          <Revolute number="4" a ="0" d ="800" minrange = "-270" maxrange ="270" maxspeed ="260"/>
-          <Revolute number="5" a ="0" d ="0" minrange = "-120" maxrange ="120" maxspeed ="260"/>
-          <Revolute number="6" a ="0" d ="194" minrange = "-270" maxrange ="270" maxspeed ="400"/>
+          <Revolute number="1" a="250" d="0" minrange="-180" maxrange="180" maxspeed="160" />
+          <Revolute number="2" a="950" d="0" minrange="-115" maxrange="120" maxspeed="160" />
+          <Revolute number="3" a="0" d="0" minrange="-140" maxrange="145" maxspeed="160" />
+          <Revolute number="4" a="0" d="800" minrange="-270" maxrange="270" maxspeed="260" />
+          <Revolute number="5" a="0" d="0" minrange="-120" maxrange="120" maxspeed="260" />
+          <Revolute number="6" a="0" d="194" minrange="-270" maxrange="270" maxspeed="400" />
         </Joints>
       </RobotArm>
     </Mechanisms>
     <IO>
-      <DO names="BasicIO-1\%Q0,BasicIO-1\%Q1,BasicIO-1\%Q2"/>
-      <DI names="BasicIO-1\%I0,BasicIO-1\%I1,BasicIO-1\%I2"/>
+      <DO names="BasicIO-1\%Q0,BasicIO-1\%Q1,BasicIO-1\%Q2" />
+      <DI names="BasicIO-1\%I0,BasicIO-1\%I1,BasicIO-1\%I2" />
     </IO>
   </RobotCell>
 
   <RobotCell name="Bartlett-TX200L" manufacturer="Staubli">
     <Mechanisms group="0">
       <RobotArm model="TX200L" manufacturer="Staubli" payload="100">
-        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
         <Joints>
-          <Revolute number="1" a ="250" d ="0" minrange = "-180" maxrange ="180" maxspeed ="160"/>
-          <Revolute number="2" a ="950" d ="0" minrange = "-115" maxrange ="120" maxspeed ="160"/>
-          <Revolute number="3" a ="0" d ="0" minrange = "-140" maxrange ="145" maxspeed ="160"/>
-          <Revolute number="4" a ="0" d ="1200" minrange = "-270" maxrange ="270" maxspeed ="260"/>
-          <Revolute number="5" a ="0" d ="0" minrange = "-120" maxrange ="120" maxspeed ="260"/>
-          <Revolute number="6" a ="0" d ="194" minrange = "-270" maxrange ="270" maxspeed ="400"/>
+          <Revolute number="1" a="250" d="0" minrange="-180" maxrange="180" maxspeed="160" />
+          <Revolute number="2" a="950" d="0" minrange="-115" maxrange="120" maxspeed="160" />
+          <Revolute number="3" a="0" d="0" minrange="-140" maxrange="145" maxspeed="160" />
+          <Revolute number="4" a="0" d="1200" minrange="-270" maxrange="270" maxspeed="260" />
+          <Revolute number="5" a="0" d="0" minrange="-120" maxrange="120" maxspeed="260" />
+          <Revolute number="6" a="0" d="194" minrange="-270" maxrange="270" maxspeed="400" />
         </Joints>
       </RobotArm>
     </Mechanisms>
     <IO>
-      <DO names="BasicIO-1\%Q0,BasicIO-1\%Q1,BasicIO-1\%Q2"/>
-      <DI names="BasicIO-1\%I0,BasicIO-1\%I1,BasicIO-1\%I2"/>
+      <DO names="BasicIO-1\%Q0,BasicIO-1\%Q1,BasicIO-1\%Q2" />
+      <DI names="BasicIO-1\%I0,BasicIO-1\%I1,BasicIO-1\%I2" />
     </IO>
   </RobotCell>
 
   <RobotCell name="Bartlett-RX160" manufacturer="Staubli">
     <Mechanisms group="0">
       <RobotArm model="RX160" manufacturer="Staubli" payload="30">
-        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
         <Joints>
-          <Revolute number="1" a ="150" d ="0" minrange = "-160" maxrange ="160" maxspeed ="200"/>
-          <Revolute number="2" a ="825" d ="0" minrange = "-137.5" maxrange ="137.5" maxspeed ="200"/>
-          <Revolute number="3" a ="0" d ="0" minrange = "-150" maxrange ="150" maxspeed ="255"/>
-          <Revolute number="4" a ="0" d ="625" minrange = "-270" maxrange ="270" maxspeed ="315"/>
-          <Revolute number="5" a ="0" d ="0" minrange = "-105" maxrange ="120" maxspeed ="360"/>
-          <Revolute number="6" a ="0" d ="110" minrange = "-270" maxrange ="270" maxspeed ="870"/>
+          <Revolute number="1" a="150" d="0" minrange="-160" maxrange="160" maxspeed="200" />
+          <Revolute number="2" a="825" d="0" minrange="-137.5" maxrange="137.5" maxspeed="200" />
+          <Revolute number="3" a="0" d="0" minrange="-150" maxrange="150" maxspeed="255" />
+          <Revolute number="4" a="0" d="625" minrange="-270" maxrange="270" maxspeed="315" />
+          <Revolute number="5" a="0" d="0" minrange="-105" maxrange="120" maxspeed="360" />
+          <Revolute number="6" a="0" d="110" minrange="-270" maxrange="270" maxspeed="870" />
         </Joints>
       </RobotArm>
     </Mechanisms>
     <IO>
-      <DO names="BasicIO-1\%Q0,BasicIO-1\%Q1,BasicIO-1\%Q2"/>
-      <DI names="BasicIO-1\%I0,BasicIO-1\%I1,BasicIO-1\%I2"/>
+      <DO names="BasicIO-1\%Q0,BasicIO-1\%Q1,BasicIO-1\%Q2" />
+      <DI names="BasicIO-1\%I0,BasicIO-1\%I1,BasicIO-1\%I2" />
     </IO>
   </RobotCell>
 
   <RobotCell name="Bartlett-RX160L" manufacturer="Staubli">
     <Mechanisms group="0">
       <RobotArm model="RX160L" manufacturer="Staubli" payload="28">
-        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
         <Joints>
-          <Revolute number="1" a ="150" d ="0" minrange = "-160" maxrange ="160" maxspeed ="200"/>
-          <Revolute number="2" a ="825" d ="0" minrange = "-137.5" maxrange ="137.5" maxspeed ="200"/>
-          <Revolute number="3" a ="0" d ="0" minrange = "-150" maxrange ="150" maxspeed ="255"/>
-          <Revolute number="4" a ="0" d ="925" minrange = "-270" maxrange ="270" maxspeed ="315"/>
-          <Revolute number="5" a ="0" d ="0" minrange = "-105" maxrange ="120" maxspeed ="360"/>
-          <Revolute number="6" a ="0" d ="110" minrange = "-270" maxrange ="270" maxspeed ="870"/>
+          <Revolute number="1" a="150" d="0" minrange="-160" maxrange="160" maxspeed="200" />
+          <Revolute number="2" a="825" d="0" minrange="-137.5" maxrange="137.5" maxspeed="200" />
+          <Revolute number="3" a="0" d="0" minrange="-150" maxrange="150" maxspeed="255" />
+          <Revolute number="4" a="0" d="925" minrange="-270" maxrange="270" maxspeed="315" />
+          <Revolute number="5" a="0" d="0" minrange="-105" maxrange="120" maxspeed="360" />
+          <Revolute number="6" a="0" d="110" minrange="-270" maxrange="270" maxspeed="870" />
         </Joints>
       </RobotArm>
     </Mechanisms>
     <IO>
-      <DO names="BasicIO-1\%Q0,BasicIO-1\%Q1,BasicIO-1\%Q2"/>
-      <DI names="BasicIO-1\%I0,BasicIO-1\%I1,BasicIO-1\%I2"/>
+      <DO names="BasicIO-1\%Q0,BasicIO-1\%Q1,BasicIO-1\%Q2" />
+      <DI names="BasicIO-1\%I0,BasicIO-1\%I1,BasicIO-1\%I2" />
     </IO>
   </RobotCell>
 

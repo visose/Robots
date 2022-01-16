@@ -14,7 +14,6 @@ public class GH_RobotSystem : GH_Goo<RobotSystem>, IGH_PreviewData
     public override string TypeName => "RobotSystem";
     public override string TypeDescription => "RobotSystem";
     public override string ToString() => Value.ToString();
-    public override object ScriptVariable() => Value;
 
     public override bool CastFrom(object source)
     {

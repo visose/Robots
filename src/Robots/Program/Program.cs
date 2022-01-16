@@ -34,7 +34,7 @@ public class Program : IProgram
         var targets = toolpaths.Select(t => t.Targets);
 
         if (!targets.SelectMany(x => x).Any())
-            throw new Exception(" The program has to contain at least 1 target.");
+            throw new ArgumentException(" The program has to contain at least 1 target.");
 
         int targetCount = targets.First().Count();
 

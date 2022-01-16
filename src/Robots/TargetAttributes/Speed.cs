@@ -36,9 +36,8 @@ public class Speed : TargetAttribute
     /// </summary>
     public double Time { get; set; } = 0;
 
-    public Speed(double translation = 100, double rotationSpeed = PI, double translationExternal = 5000, double rotationExternal = PI * 6, string? name = null)
+    public Speed(double translation = 100, double rotationSpeed = PI, double translationExternal = 5000, double rotationExternal = PI * 6, string? name = null) : base(name)
     {
-        Name = name;
         TranslationSpeed = translation;
         RotationSpeed = rotationSpeed;
         TranslationExternal = translationExternal;

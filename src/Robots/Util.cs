@@ -13,7 +13,7 @@ static class Util
     public const double UnitTol = 0.000001;
     public const double SingularityTol = 0.0001;
     public const double HalfPI = PI * 0.5;
-    public const double PI2 = PI * 2.0;    
+    public const double PI2 = PI * 2.0;
 
     // File
 
@@ -82,6 +82,28 @@ static class Util
         T[] subset = new T[length];
         Array.Copy(array, startIndex, subset, 0, length);
         return subset;
+    }
+
+    public static T MaxBy<T, K>(this IEnumerable<T> list, Func<T, K> comparable) where K : IComparable<K>
+    {
+        if (!list.Any())
+            throw new ArgumentException("List can't be empty.");
+
+        T maxItem = list.First();
+        K maxValue = comparable(maxItem);
+
+        foreach (var item in list.Skip(1))
+        {
+            var val = comparable(item);
+
+            if (val.CompareTo(maxValue) > 0)
+            {
+                maxValue = val;
+                maxItem = item;
+            }
+        }
+
+        return maxItem;
     }
 
     public static IEnumerable<List<T>> Transpose<T>(this IEnumerable<IEnumerable<T>> source)
