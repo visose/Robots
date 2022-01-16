@@ -12,7 +12,6 @@ public class GH_Command : GH_Goo<Command>
     public override string TypeName => "Command";
     public override string TypeDescription => "Command";
     public override string ToString() => Value.ToString();
-    public override object ScriptVariable() => Value;
 
     public override bool CastFrom(object source)
     {

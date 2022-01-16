@@ -17,9 +17,8 @@ public class Frame : TargetAttribute
     internal int CoupledPlaneIndex { get; set; }
     public bool IsCoupled => (CoupledMechanicalGroup != -1);
 
-    public Frame(Plane plane, int coupledMechanism = -1, int coupledMechanicalGroup = -1, string? name = null)
+    public Frame(Plane plane, int coupledMechanism = -1, int coupledMechanicalGroup = -1, string? name = null) : base(name)
     {
-        Name = name;
         Plane = plane;
         CoupledMechanism = coupledMechanism;
         CoupledMechanicalGroup = coupledMechanicalGroup;

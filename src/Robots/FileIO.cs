@@ -1,4 +1,5 @@
-﻿using System.Xml;
+﻿using System.Text.RegularExpressions;
+using System.Xml;
 using System.Xml.Linq;
 using Rhino.FileIO;
 using Rhino.Geometry;
@@ -321,6 +322,38 @@ public static class FileIO
     }
 
     // Extensions
+
+    public static bool IsValidName(this string name, out string error)
+    {
+        if (name.Length == 0)
+        {
+            error = "name is empty.";
+            return false;
+        }
+
+        var excess = name.Length - 32;
+
+        if (excess > 0)
+        {
+            error = $"name is {excess} character(s) too long.";
+            return false;
+        }
+
+        if (!char.IsLetter(name[0]))
+        {
+            error = "name must start with a letter.";
+            return false;
+        }
+
+        if (!Regex.IsMatch(name, @"^[A-Z0-9_]+$", RegexOptions.IgnoreCase))
+        {
+            error = "name can only contain letters, digits, and underscores (_).";
+            return false;
+        }
+
+        error = "";
+        return true;
+    }
 
     static XElement GetElement(this XElement element, string name)
     {

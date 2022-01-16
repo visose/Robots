@@ -38,7 +38,7 @@ public class CreateTool : GH_Component
         double weight = 0;
         GH_Mesh? mesh = null;
         GH_Point? centroid = null;
-        var planes = new List<GH_Plane>();
+        var planes = new List<Plane>();
 
         if (!DA.GetData(0, ref name) || name is null) { return; }
         if (!DA.GetData(1, ref tcp) || tcp is null) { return; }
@@ -47,17 +47,16 @@ public class CreateTool : GH_Component
         DA.GetData(4, ref centroid);
         DA.GetData(5, ref mesh);
 
-        var tool = new Tool(tcp.Value, name, weight, centroid?.Value, mesh?.Value);
-
-        if (planes.Count > 0)
+        try
         {
-            if (planes.Count != 4)
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " Calibration input must be 4 planes");
-            else
-                tool.FourPointCalibration(planes[0].Value, planes[1].Value, planes[2].Value, planes[3].Value);
-        }
+            var tool = new Tool(tcp.Value, name, weight, centroid?.Value, mesh?.Value, planes);
 
-        DA.SetData(0, new GH_Tool(tool));
-        DA.SetData(1, tool.Tcp);
+            DA.SetData(0, new GH_Tool(tool));
+            DA.SetData(1, tool.Tcp);
+        }
+        catch (ArgumentException e)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, e.Message);
+        }
     }
 }

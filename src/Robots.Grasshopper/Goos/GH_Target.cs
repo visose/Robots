@@ -14,7 +14,6 @@ public class GH_Target : GH_Goo<Target>
     public override string TypeName => "Target";
     public override string TypeDescription => "Target";
     public override string ToString() => Value.ToString();
-    public override object ScriptVariable() => Value;
 
     public override bool CastFrom(object source)
     {

@@ -13,7 +13,6 @@ public class GH_Zone : GH_Goo<Zone>
     public override string TypeName => "Zone";
     public override string TypeDescription => "Zone";
     public override string ToString() => Value.ToString();
-    public override object ScriptVariable() => Value;
 
     public override bool CastFrom(object source)
     {

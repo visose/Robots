@@ -5,9 +5,8 @@ public class Custom : Command
     readonly Dictionary<Manufacturers, string> _customCommands = new();
     readonly Dictionary<Manufacturers, string> _customDeclarations = new();
 
-    public Custom(string name = "Custom command", Manufacturers manufacturer = Manufacturers.All, string? command = null, string? declaration = null)
+    public Custom(string name = "CustomCommand", Manufacturers manufacturer = Manufacturers.All, string? command = null, string? declaration = null) : base(name)
     {
-        Name = name;
         AddCommand(manufacturer, command, declaration);
     }
 

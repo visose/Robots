@@ -17,11 +17,33 @@ class CheckProgram
     {
         _robotSystem = program.RobotSystem;
         _program = program;
-        // groupCount = cellTargets[0].ProgramTargets.Count;
 
+        CheckName();
         FixFirstTarget(cellTargets[0]);
         FixTargetAttributes(cellTargets);
         IndexError = FixTargetMotions(cellTargets, stepSize);
+    }
+
+    void CheckName()
+    {
+        var name = _program.Name;
+
+        if (_robotSystem is RobotCell cell)
+        {
+            var group = cell.MechanicalGroups.MaxBy(g => g.Name.Length).Name;
+            name = $"{name}_{group}_{000}";
+        }
+
+        if (!name.IsValidName(out var error))
+            _program.Errors.Add("Program " + error);
+
+        if (_robotSystem is RobotCellKuka)
+        {
+            var excess = name.Length - 24;
+
+            if (excess > 0)
+                _program.Warnings.Add($"If using an older KRC2 or KRC3 controller, make the program name {excess} character(s) shorter.");
+        }
     }
 
     void FixFirstTarget(CellTarget firstTarget)
@@ -133,9 +155,10 @@ class CheckProgram
         // Name attributes with no name
         {
             var types = new List<Type>();
+
             foreach (var attribute in _program.Attributes.ToList())
             {
-                if (attribute.Name is null)
+                if (!attribute.HasName)
                 {
                     var type = attribute.GetType();
                     types.Add(type);
@@ -148,11 +171,16 @@ class CheckProgram
 
         // Rename attributes with duplicate names
         {
-            var duplicates = _program.Attributes.GroupBy(x => x.Name).Where(x => x.Count() > 1);
+            var duplicates = _program.Attributes.GroupBy(a => a.Name);
+
             foreach (var group in duplicates)
             {
+                if (!group.Skip(1).Any())
+                    continue;
+
                 _program.Warnings.Add($"Multiple target attributes named \"{group.Key}\" found");
                 int i = 0;
+
                 foreach (var attribute in group)
                 {
                     string name = $"{attribute.Name}{i++:000}";

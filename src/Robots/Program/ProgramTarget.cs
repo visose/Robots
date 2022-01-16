@@ -165,5 +165,4 @@ public class ProgramTarget
         else
             ChangesConfiguration = false;
     }
-
 }

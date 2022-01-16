@@ -29,9 +29,8 @@ public class Zone : TargetAttribute
     //    RotationExternal = Rotation;
     //}
 
-    public Zone(double distance, double? rotation = null, double? rotationExternal = null, string? name = null)
+    public Zone(double distance, double? rotation = null, double? rotationExternal = null, string? name = null) : base(name)
     {
-        Name = name;
         Distance = distance;
 
         if (rotation.HasValue)
