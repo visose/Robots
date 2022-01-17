@@ -22,8 +22,8 @@ body:
   - type: dropdown
     id: rhinoVersion
     attributes:
-      label: Version
-      description: What Rhino version are you using? Only Rhino 7 for Windows and MacOS are supported.
+      label: What Rhino version are you using?
+      description: Only Rhino 7 for Windows and MacOS are supported.
       options:
         - Rhino 7 on Windows
         - Rhino 7 on MacOS

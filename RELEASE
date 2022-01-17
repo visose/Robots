@@ -1,3 +1,7 @@
+- version: 1.0.5
+  changes:
+  - Added validation to names of target attributes and programs.
+
 - version: 1.0.4
   changes:
   - Added icon for create tool component.
