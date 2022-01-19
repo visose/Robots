@@ -1,9 +1,7 @@
-﻿using System.Text.RegularExpressions;
-using System.Xml;
+﻿using System.Xml;
 using System.Xml.Linq;
 using Rhino.FileIO;
 using Rhino.Geometry;
-using static Robots.Util;
 
 namespace Robots;
 
@@ -30,17 +28,67 @@ public static class FileIO
         return CreateTool(element);
     }
 
+    // library files
+
+    /// <summary>
+    /// Win: C:\Users\userName\Documents\Robots
+    /// Mac: /Users/userName/Robots
+    /// </summary>
+    public static string LocalLibraryPath =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Robots");
+
+    /// <summary>
+    /// Win: C:\Users\userName\AppData\Roaming\McNeel\Rhinoceros\packages\7.0\Robots\libraries
+    /// Mac: /Users/userName/.config/McNeel/Rhinoceros/packages/7.0/Robots/libraries
+    /// Lib: {appData}\Robots\libraries
+    /// </summary>
+    public static string OnlineLibraryPath
+    {
+        get
+        {
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.DoNotVerify);
+#if (NET48 || DEBUG)
+            return Path.Combine(appData, "McNeel", "Rhinoceros", "packages", "7.0", "Robots", "libraries");
+#elif NETSTANDARD2_0
+            return Path.Combine(appData, "Robots", "libraries");
+#endif
+        }
+    }
+
+    static IEnumerable<string> GetLibraryPaths()
+    {
+        yield return LocalLibraryPath;
+        yield return OnlineLibraryPath;
+    }
+
+    static IEnumerable<string> GetLibraries()
+    {
+        var previous = new HashSet<string>();
+
+        foreach (var path in GetLibraryPaths())
+        {
+            if (!Directory.Exists(path))
+                continue;
+
+            var files = Directory.EnumerateFiles(path, "*.xml");
+
+            foreach (var file in files)
+            {
+                var name = Path.GetFileNameWithoutExtension(file);
+
+                if (!previous.Add(name))
+                    continue;
+
+                yield return file;
+            }
+        }
+    }
+
     static List<string> List(string type)
     {
-        string folder = LibraryPath;
-
-        if (!Directory.Exists(folder))
-            throw new DirectoryNotFoundException($" Folder '{folder}' not found.");
-
         var names = new List<string>();
-        var files = Directory.GetFiles(folder, "*.xml");
 
-        foreach (var file in files)
+        foreach (var file in GetLibraries())
         {
             var root = XElement.Load(file);
 
@@ -53,16 +101,9 @@ public static class FileIO
 
     static XElement LoadElement(string name, string type)
     {
-        string folder = LibraryPath;
-
-        if (!Directory.Exists(folder))
-            throw new DirectoryNotFoundException($" Folder '{folder}' not found");
-
-        var files = Directory.GetFiles(folder, "*.xml");
-
-        foreach (var file in files)
+        foreach (var file in GetLibraries())
         {
-            XElement root = XElement.Load(file);
+            var root = XElement.Load(file);
             var element = root.Elements(XName.Get(type))
                 ?.FirstOrDefault(e => e.GetAttribute("name") == name);
 
@@ -246,27 +287,18 @@ public static class FileIO
 
     static File3dm GetRhinoDoc(string name, string type)
     {
-        string folder = LibraryPath;
-
-        if (!Directory.Exists(folder))
-            throw new DirectoryNotFoundException($" Folder '{folder}' not found");
-
-        var files = Directory.GetFiles(folder, "*.xml");
-
-        foreach (var file in files)
+        foreach (var file in GetLibraries())
         {
-            XElement root = XElement.Load(file);
+            var root = XElement.Load(file);
             var element = root.Elements(XName.Get(type))?.FirstOrDefault(e => e.GetAttribute("name") == name);
 
             if (element is null)
                 continue;
 
-            var dir = Path.GetDirectoryName(file);
-            var file3dm = $"{Path.GetFileNameWithoutExtension(file)}.3dm";
-            var path3dm = Path.Combine(dir, file3dm);
+            var path3dm = Path.ChangeExtension(file, ".3dm");
 
             if (!File.Exists(path3dm))
-                throw new FileNotFoundException($" File '{file3dm}' not found");
+                throw new FileNotFoundException($" File '{Path.GetFileName(path3dm)}' not found");
 
             return File3dm.Read(path3dm);
         }
@@ -322,38 +354,6 @@ public static class FileIO
     }
 
     // Extensions
-
-    public static bool IsValidName(this string name, out string error)
-    {
-        if (name.Length == 0)
-        {
-            error = "name is empty.";
-            return false;
-        }
-
-        var excess = name.Length - 32;
-
-        if (excess > 0)
-        {
-            error = $"name is {excess} character(s) too long.";
-            return false;
-        }
-
-        if (!char.IsLetter(name[0]))
-        {
-            error = "name must start with a letter.";
-            return false;
-        }
-
-        if (!Regex.IsMatch(name, @"^[A-Z0-9_]+$", RegexOptions.IgnoreCase))
-        {
-            error = "name can only contain letters, digits, and underscores (_).";
-            return false;
-        }
-
-        error = "";
-        return true;
-    }
 
     static XElement GetElement(this XElement element, string name)
     {

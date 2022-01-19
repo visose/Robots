@@ -1,4 +1,5 @@
 ﻿using Rhino.Geometry;
+using System.Text.RegularExpressions;
 using static System.Math;
 
 namespace Robots;
@@ -14,6 +15,41 @@ public interface IProgram
 
 public class Program : IProgram
 {
+    // static 
+    public static bool IsValidIdentifier(string name, out string error)
+    {
+        if (name.Length == 0)
+        {            
+            error = "name is empty.";
+            return false;
+        }
+
+        var excess = name.Length - 32;
+
+        if (excess > 0)
+        {
+            error = $"name is {excess} character(s) too long.";
+            return false;
+        }
+
+        if (!char.IsLetter(name[0]))
+        {
+            error = "name must start with a letter.";
+            return false;
+        }
+
+        if (!Regex.IsMatch(name, @"^[A-Z0-9_]+$", RegexOptions.IgnoreCase))
+        {
+            error = "name can only contain letters, digits, and underscores (_).";
+            return false;
+        }
+
+        error = "";
+        return true;
+    }
+
+    // instance
+
     readonly Simulation _simulation;
 
     public string Name { get; }

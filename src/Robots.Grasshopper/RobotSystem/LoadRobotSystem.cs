@@ -1,5 +1,4 @@
-﻿using System.Drawing;
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
@@ -9,13 +8,14 @@ namespace Robots.Grasshopper;
 
 public class LoadRobotSystem : GH_Component
 {
+    LibrariesForm? _form;
     GH_ValueList? _valueList = null;
     IGH_Param? _parameter = null;
 
     public LoadRobotSystem() : base("Load robot system", "LoadRobot", "Loads a robot system from the library.", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.primary;
     public override Guid ComponentGuid => new("{7722D7E3-98DE-49B5-9B1D-E0D1B938B4A7}");
-    protected override Bitmap Icon => Util.GetIcon("iconRobot");
+    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconRobot");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
@@ -43,7 +43,7 @@ public class LoadRobotSystem : GH_Component
         if (inputValueList is null)
         {
             _valueList.CreateAttributes();
-            _valueList.Attributes.Pivot = new PointF(Attributes.Pivot.X - 180, Attributes.Pivot.Y - 31);
+            _valueList.Attributes.Pivot = new System.Drawing.PointF(Attributes.Pivot.X - 180, Attributes.Pivot.Y - 31);
             AddRobotsToValueList(_valueList);
             Instances.ActiveCanvas.Document.AddObject(_valueList, false);
             _parameter.AddSource(_valueList);
@@ -87,5 +87,26 @@ public class LoadRobotSystem : GH_Component
 
         var robotSystem = FileIO.LoadRobotSystem(name, basePlane.Value);
         DA.SetData(0, new GH_RobotSystem(robotSystem));
+    }
+
+    // form
+
+    public override void CreateAttributes()
+    {
+        m_attributes = new ComponentButton(this, "Libraries", ToggleForm);
+    }
+
+    public override void RemovedFromDocument(GH_Document document)
+    {
+        base.RemovedFromDocument(document);
+
+        if (_form is not null)
+            _form.Visible = false;
+    }
+
+    void ToggleForm()
+    {
+        _form ??= new LibrariesForm();
+        _form.Visible = !_form.Visible;
     }
 }

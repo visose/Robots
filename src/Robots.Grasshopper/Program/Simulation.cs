@@ -1,26 +1,18 @@
-﻿using System.ComponentModel;
-using Grasshopper.Kernel;
+﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
-using Eto.Drawing;
-using Eto.Forms;
 
 namespace Robots.Grasshopper;
 
-public sealed class Simulation : GH_Component, IDisposable
+public sealed class Simulation : GH_Component
 {
-    readonly AnimForm _form;
-    double _speed = 1;
-    DateTime _lastTime;
+    SimulationForm? _form;
+    DateTime? _lastTime;
     double _time = 0;
-    double _sliderTime = 0;
+    double _lastInputTime = 0;
 
-    public Simulation() : base("Program simulation", "Sim", "Rough simulation of the robot program, right click for playback controls", "Robots", "Components")
-    {
-        _form = new AnimForm(this)
-        {
-            Owner = Rhino.UI.RhinoEtoApp.MainWindow
-        };
-    }
+    internal double Speed = 1;
+
+    public Simulation() : base("Program simulation", "Sim", "Rough simulation of the robot program, right click for playback controls", "Robots", "Components") { }
 
     public override GH_Exposure Exposure => GH_Exposure.quinary;
     public override Guid ComponentGuid => new("{6CE35140-A625-4686-B8B3-B734D9A36CFC}");
@@ -47,10 +39,11 @@ public sealed class Simulation : GH_Component, IDisposable
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         GH_Program? program = null;
-        GH_Number? sliderTimeGH = null;
+        GH_Number? inputTimeGh = null;
         GH_Boolean? isNormalized = null;
+
         if (!DA.GetData(0, ref program) || program is null) { return; }
-        if (!DA.GetData(1, ref sliderTimeGH) || sliderTimeGH is null) { return; }
+        if (!DA.GetData(1, ref inputTimeGh) || inputTimeGh is null) { return; }
         if (!DA.GetData(2, ref isNormalized) || isNormalized is null) { return; }
 
         if (program?.Value is not Program p)
@@ -59,12 +52,27 @@ public sealed class Simulation : GH_Component, IDisposable
             return;
         }
 
+        var inputTime = inputTimeGh.Value;
+        inputTime = (isNormalized.Value) ? inputTime * p.Duration : inputTime;
+
+        if (_lastInputTime != inputTime)
+        {
+            if (_lastTime is not null)
+                Pause();
+
+            _time = inputTime;
+            _lastInputTime = inputTime;
+        }
+
+        if (_time < 0 || _time > p.Duration)
+        {
+            _time = Rhino.RhinoMath.Clamp(_time, 0, p.Duration);
+            Pause();
+        }
+
         p.MeshPoser ??= new RhinoMeshPoser(p.RobotSystem);
-
-        _sliderTime = (isNormalized.Value) ? sliderTimeGH.Value * p.Duration : sliderTimeGH.Value;
-        if (!_form.Visible) _time = _sliderTime;
-
         p.Animate(_time, false);
+
         var currentPose = p.CurrentSimulationPose;
         var currentKinematics = currentPose.Kinematics;
         var currentCellTarget = p.Targets[currentPose.TargetIndex];
@@ -74,7 +82,7 @@ public sealed class Simulation : GH_Component, IDisposable
         var planes = currentKinematics.SelectMany(x => x.Planes).ToList();
         var meshes = ((RhinoMeshPoser)p.MeshPoser).Meshes;
 
-        if (errors.Count() > 0)
+        if (errors.Any())
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in solution");
 
         DA.SetDataList(0, meshes);
@@ -85,143 +93,70 @@ public sealed class Simulation : GH_Component, IDisposable
         DA.SetData(5, program);
         DA.SetDataList(6, errors);
 
-        var isChecked = _form.Play.Checked.HasValue && _form.Play.Checked.Value;
+        Update();
+    }
 
-        if (_form.Visible && isChecked)
+    internal void TogglePlay()
+    {
+        if (_lastTime is null)
         {
-            var currentTime = DateTime.Now;
-            TimeSpan delta = currentTime - _lastTime;
-            _time += delta.TotalSeconds * _speed;
-            _lastTime = currentTime;
+            _lastTime = DateTime.Now;
             ExpireSolution(true);
-        }
-    }
-
-    // Form
-    protected override void AppendAdditionalComponentMenuItems(System.Windows.Forms.ToolStripDropDown menu)
-    {
-        Menu_AppendItem(menu, "Open controls", OpenForm, true, _form.Visible);
-    }
-
-    void OpenForm(object sender, EventArgs e)
-    {
-        if (_form.Visible)
-        {
-            _form.Play.Checked = false;
-            _form.Visible = false;
         }
         else
         {
-            var mousePos = Mouse.Position;
-            int x = (int)mousePos.X + 20;
-            int y = (int)mousePos.Y - 160;
-
-            _form.Location = new Point(x, y);
-            _form.Show();
+            Pause();
         }
     }
 
-    void ClickPlay(object sender, EventArgs e)
+    internal void Stop()
     {
-        _lastTime = DateTime.Now;
+        Pause();
+        _time = _lastInputTime;
         ExpireSolution(true);
     }
 
-    void ClickStop(object sender, EventArgs e)
+    void Pause()
     {
-        _form.Play.Checked = false;
-        _time = _sliderTime;
+        if (_form is not null)
+            _form.Play.Checked = false;
+
+        _lastTime = null;
+    }
+
+    void Update()
+    {
+        if (_lastTime is null)
+            return;
+
+        var currentTime = DateTime.Now;
+        TimeSpan delta = currentTime - _lastTime.Value;
+        _lastTime = currentTime;
+        _time += delta.TotalSeconds * Speed;
         ExpireSolution(true);
     }
 
-    void ClickScroll(object sender, EventArgs e)
+    // form
+
+    public override void CreateAttributes()
     {
-        _speed = (double)_form.Slider.Value / 100.0;
+        m_attributes = new ComponentButton(this, "Playback", ToggleForm);
     }
 
-    public void Dispose()
+    public override void RemovedFromDocument(GH_Document document)
     {
-        _form.Dispose();
+        base.RemovedFromDocument(document);
+
+        if (_form is not null)
+            _form.Visible = false;
     }
 
-    class AnimForm : Form
+    void ToggleForm()
     {
-        readonly Simulation _component;
+        _form ??= new SimulationForm(this);
+        _form.Visible = !_form.Visible;
 
-        internal CheckBox Play;
-        internal Slider Slider;
-
-        public AnimForm(Simulation component)
-        {
-            _component = component;
-
-            Maximizable = false;
-            Minimizable = false;
-            Padding = new Padding(5);
-            Resizable = false;
-            ShowInTaskbar = true;
-            Topmost = true;
-            Title = "Playback";
-            WindowStyle = WindowStyle.Default;
-
-            var font = new Font(FontFamilies.Sans, 12, FontStyle.None, FontDecoration.None);
-            var size = new Size(35, 35);
-
-            Play = new CheckBox()
-            {
-                Text = "\u25B6",
-                Size = size,
-                Font = font,
-                Checked = false,
-                TabIndex = 0
-            };
-            Play.CheckedChanged += component.ClickPlay;
-
-            var stop = new Button()
-            {
-                Text = "\u25FC",
-                Size = size,
-                Font = font,
-                TabIndex = 1
-            };
-            stop.Click += component.ClickStop;
-
-            Slider = new Slider()
-            {
-                Orientation = Orientation.Vertical,
-                Size = new Size(45, 200),
-                TabIndex = 2,
-                MaxValue = 400,
-                MinValue = -200,
-                TickFrequency = 100,
-                SnapToTick = true,
-                Value = 100,
-            };
-            Slider.ValueChanged += _component.ClickScroll;
-
-            var speedLabel = new Label()
-            {
-                Text = "100%",
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-
-            var layout = new DynamicLayout();
-            layout.BeginVertical(new Padding(2), Size.Empty);
-            layout.AddSeparateRow(padding: new Padding(10), spacing: new Size(10, 0), controls: new Control[] { Play, stop });
-            layout.BeginGroup("Speeds");
-            layout.AddSeparateRow(Slider, speedLabel);
-            layout.EndGroup();
-            layout.EndVertical();
-
-            Content = layout;
-        }
-
-        protected override void OnClosing(CancelEventArgs e)
-        {
-            //base.OnClosing(e);
-            e.Cancel = true;
-            Play.Checked = false;
-            Visible = false;
-        }
+        if (!_form.Visible)
+            Stop();
     }
 }
