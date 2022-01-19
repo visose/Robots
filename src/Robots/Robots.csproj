@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	
+
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net48</TargetFrameworks>
 		<AssemblyTitle>$(Product) Core</AssemblyTitle>
@@ -17,7 +17,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Octokit" Version="0.50.0" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<EmbeddedResource Include="Remotes\URRealTime.txt" />
 	</ItemGroup>
-	
+
 </Project>

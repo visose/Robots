@@ -15,7 +15,7 @@ public class Collision
         throw NotImplemented();
     }
 
-    Exception NotImplemented() => new NotImplementedException(" Collisions have to be reimplemented.");
+    Exception NotImplemented() => new NotImplementedException(" Collisions not implemented in standalone.");
 }
 
 #elif NET48

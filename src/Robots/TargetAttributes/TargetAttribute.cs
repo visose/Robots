@@ -18,7 +18,7 @@ public abstract class TargetAttribute
         get => _name.NotNull();
         private set
         {
-            if (!value.IsValidName(out var error))
+            if (!Program.IsValidIdentifier(value, out var error))
                 throw new ArgumentException($" {GetType().Name} {error}");
 
             _name = value;

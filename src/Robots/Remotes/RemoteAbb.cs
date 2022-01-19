@@ -129,12 +129,12 @@ public class RemoteAbb : IRemote
         if (_controller is null)
             return "Controller is null.";
 
-        string tempPath = Path.Combine(Util.LibraryPath, "temp");
+        string tempPath = Path.Combine(Path.GetTempPath(), "Robots");
 
         try
         {
             if (Directory.Exists(tempPath))
-                Directory.Delete(tempPath, true);        
+                Directory.Delete(tempPath, true);
 
             Directory.CreateDirectory(tempPath);
             program.Save(tempPath);
@@ -147,7 +147,7 @@ public class RemoteAbb : IRemote
             _controller.FileSystem.PutDirectory(localFolder, program.Name, true);
 
             using Mastership master = Mastership.Request(_controller);
-            var task = _controller.Rapid.GetTasks().First();
+            using var task = _controller.Rapid.GetTasks().First();
             task.DeleteProgram();
             int count = 0;
 

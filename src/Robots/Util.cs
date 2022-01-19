@@ -15,10 +15,6 @@ static class Util
     public const double HalfPI = PI * 0.5;
     public const double PI2 = PI * 2.0;
 
-    // File
-
-    public static string LibraryPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Robots");
-
     // Exceptions
 
     public static T NotNull<T>(this T? value, string? text = null)
@@ -98,8 +94,8 @@ static class Util
 
             if (val.CompareTo(maxValue) > 0)
             {
-                maxValue = val;
                 maxItem = item;
+                maxValue = val;
             }
         }
 
@@ -121,6 +117,20 @@ static class Util
             foreach (var enumerator in enumerators)
                 enumerator.Dispose();
         }
+    }
+
+    public static byte[] Combine(params byte[][] arrays)
+    {
+        var result = new byte[arrays.Sum(x => x.Length)];
+        int offset = 0;
+
+        foreach (byte[] data in arrays)
+        {
+            Buffer.BlockCopy(data, 0, result, offset, data.Length);
+            offset += data.Length;
+        }
+
+        return result;
     }
 
     // Geometry

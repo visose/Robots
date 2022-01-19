@@ -31,10 +31,10 @@ class CheckProgram
         if (_robotSystem is RobotCell cell)
         {
             var group = cell.MechanicalGroups.MaxBy(g => g.Name.Length).Name;
-            name = $"{name}_{group}_{000}";
+            name = $"{name}_{group}_000";
         }
-
-        if (!name.IsValidName(out var error))
+        
+        if (!Program.IsValidIdentifier(name, out var error))
             _program.Errors.Add("Program " + error);
 
         if (_robotSystem is RobotCellKuka)
