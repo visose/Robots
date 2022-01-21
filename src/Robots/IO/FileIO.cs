@@ -76,7 +76,7 @@ public static class FileIO
             {
                 var name = Path.GetFileNameWithoutExtension(file);
 
-                if (!previous.Add(name))
+                if (!previous.Add(name.ToLowerInvariant()))
                     continue;
 
                 yield return file;

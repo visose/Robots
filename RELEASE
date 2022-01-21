@@ -1,6 +1,8 @@
-- version: 1.0.5
+- version: 1.1.0
   changes:
+  - Added UI to install robot libraries automatically inside Grasshopper.
   - Added validation to names of target attributes and programs.
+  - Improved behavior of simulation playback controls.
 
 - version: 1.0.4
   changes:

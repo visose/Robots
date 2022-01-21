@@ -20,15 +20,13 @@
 **Robots** is a plugin for **[Rhino's](https://www.rhino3d.com/)** **Grasshopper** visual programming interface. It allows users to create and simulate robot programs for **ABB**, **KUKA**, **UR** and **Staubli** robots. It works in **Rhino 7** for **Windows** and **MacOS**.
 
 ## Install
-1. Install in **Rhino 7** using the `_PackageManager` command, search for `Robots`.
-   > If you have an older version, delete `Robots.gha` and `Robots.dll` from the `Grasshopper Components` folder.
-1. Download at least one pair of `XML` and `3DM` files from the [libraries folder](../libraries). 
-   > You can install multiple libraries.
-1. Place them inside a folder named `Robots` under the OS's `Documents` folder.
-   > In Windows the path will look like `C:\Users\userName\Documents\Robots\RobotLibrary.xml`.<br/>
-   > In Mac the path will look like `HD/Users/userName/Robots/RobotLibrary.xml`.
+
+> If upgrading from an old version check [here](../../../wiki/home#Upgrading-from-an-older-version).
+
+1. Install in **Rhino 7** using the `_PackageManager` command, search for `Robots`.   
 1. Restart **Rhino** and open **Grasshopper**. There should be a new tab in **Grasshopper** named `Robots`.
-1. The robots from the library should appear in a **value list** when you place a `Load Robot System` component.
+1. Install a robot library by clicking on the `Libraries` button of a `Load robot system` component.
+   > The robots from the library should appear in a **value list** connected to a `Load robot system` component.
 1. Read the [docs](../../../wiki) for more info.
 1. Check the [samples](../samples/).
    > When opening a sample file, a dialog box might pop up with an assembly not found message. You can close this without fixing the path, it will automatically get fixed after the sample file is loaded.
