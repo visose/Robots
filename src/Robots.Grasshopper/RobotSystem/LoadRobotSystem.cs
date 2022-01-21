@@ -91,13 +91,18 @@ public class LoadRobotSystem : GH_Component
         foreach (string robotSystemName in robotSystems)
             valueList.ListItems.Add(new GH_ValueListItem(robotSystemName, $"\"{robotSystemName}\""));
 
-        if (selected is null)
-            return;
+        if (selected is not null)
+        {
+            var selectedIndex = valueList.ListItems.FindIndex(s => s.Name == selected.Name);
 
-        var selectedIndex = valueList.ListItems.FindIndex(s => s.Name == selected.Name);
+            if (selectedIndex != -1)
+            {
+                valueList.SelectItem(selectedIndex);
+                return;
+            }
+        }
 
-        if (selectedIndex != -1)
-            valueList.SelectItem(selectedIndex);
+        valueList.ExpireSolution(true);
     }
 
     // form
