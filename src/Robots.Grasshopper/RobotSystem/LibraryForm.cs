@@ -82,7 +82,15 @@ class LibraryForm : ComponentForm
 
     async Task RefreshAsync()
     {
-        await _library.UpdateLibraryAsync();
+        try
+        {
+            await _library.UpdateLibraryAsync();
+        }
+        catch (Exception)
+        {
+            MessageBox.Show(this, $"Error refreshing list of libraries. It's possible you reached your refresh limit, please wait one hour for the rate limit to reset.", MessageBoxType.Error);
+        }
+
         var values = _library.Libraries.Values;
         var ordered = values.OrderBy(i => i.Name).ToList();
 
@@ -105,15 +113,24 @@ class LibraryForm : ComponentForm
     {
         var item = (LibraryItem)_detailView.DataContext;
 
-        var success = item switch
+        try
         {
-            { IsUpdateAvailable: true } => await _library.TryDownloadLibraryAsync(item),
-            { IsDownloaded: true } => _library.TryRemoveDownloadedLibrary(item),
-            _ => throw new ArgumentException("Invalid action")
-        };
-
-        if (!success)
-            MessageBox.Show(this, $"{ItemActions(item)} error on {item.Name}", MessageBoxType.Error);
+            switch (item)
+            {
+                case { IsUpdateAvailable: true }:
+                    await _library.DownloadLibraryAsync(item);
+                    break;
+                case { IsDownloaded: true }:
+                    _library.RemoveDownloadedLibrary(item);
+                    break;
+                default:
+                    throw new ArgumentException("Invalid action");
+            }
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(this, $"{ItemActions(item)} error on {item.Name}.\n\n{e.Message}", MessageBoxType.Error);
+        }
 
         _detailView.UpdateBindings(BindingUpdateMode.Destination);
         _grid.ReloadData(_grid.SelectedRow);

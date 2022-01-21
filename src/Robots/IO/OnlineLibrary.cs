@@ -1,5 +1,5 @@
-﻿using Octokit;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
+using Octokit;
 
 namespace Robots;
 
@@ -34,47 +34,35 @@ public class OnlineLibrary
         AddDiskLibraries(FileIO.LocalLibraryPath, true);
     }
 
-    public async Task<bool> TryDownloadLibraryAsync(LibraryItem library)
+    public async Task DownloadLibraryAsync(LibraryItem library)
     {
         if (!library.IsUpdateAvailable)
             throw new ArgumentException("Library does not require update.");
 
-        if (!await TryDownloadFileAsync(library.Name + ".xml"))
-            return false;
-
-        if (!await TryDownloadFileAsync(library.Name + ".3dm"))
-            return false;
+        await DownloadFileAsync(library.Name + ".xml");
+        await DownloadFileAsync(library.Name + ".3dm");
 
         var xmlPath = Path.Combine(FileIO.OnlineLibraryPath, library.Name + ".xml");
         var sha = GetLocalSha(xmlPath);
 
         if (sha != library.OnlineSha)
-            return false;
+            throw new InvalidDataException("Downloaded file does not match online file.");
 
         library.DownloadedSha = sha;
         LibraryChanged?.Invoke();
-        return true;
     }
 
-    public bool TryRemoveDownloadedLibrary(LibraryItem item)
+    public void RemoveDownloadedLibrary(LibraryItem item)
     {
         var folder = FileIO.OnlineLibraryPath;
         string pathXml = Path.Combine(folder, item.Name + ".xml");
         string path3dm = Path.Combine(folder, item.Name + ".3dm");
 
-        try
-        {
-            File.Delete(pathXml);
-            File.Delete(path3dm);
-        }
-        catch (Exception)
-        {
-            return false;
-        }
+        File.Delete(pathXml);
+        File.Delete(path3dm);
 
         item.DownloadedSha = null;
         LibraryChanged?.Invoke();
-        return true;
     }
 
     async Task AddOnlineLibrariesAsync()
@@ -171,7 +159,7 @@ public class OnlineLibrary
         return hashText;
     }
 
-    async Task<bool> TryDownloadFileAsync(string fileName)
+    async Task DownloadFileAsync(string fileName)
     {
         var folder = FileIO.OnlineLibraryPath;
 
@@ -180,13 +168,9 @@ public class OnlineLibrary
 
         string downloadPath = Path.Combine(folder, fileName);
         var response = await _http.GetAsync(fileName);
-
-        if (response.StatusCode != System.Net.HttpStatusCode.OK)
-            return false;
+        response.EnsureSuccessStatusCode();
 
         var bytes = await response.Content.ReadAsByteArrayAsync();
         File.WriteAllBytes(downloadPath, bytes);
-
-        return true;
     }
 }
