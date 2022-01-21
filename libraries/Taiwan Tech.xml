@@ -1,0 +1,116 @@
+<RobotSystems>
+
+	<Tool name="KR6_Gripper_OPEN_25">
+		<Tcp x="1.231" y="-122.0216" z="95.002" q1="-0.5" q2="0.5" q3="0.5" q4="0.5" />
+		<Mass weight="0.2" x="1.231" y="-122.0216" z="95.002" />
+	</Tool>
+
+	<Tool name="KR6_Gripper_CLOSED_26">
+		<Tcp x="1.231" y="-122.0216" z="95.002" q1="-0.5" q2="0.5" q3="0.5" q4="0.5" />
+		<Mass weight="0.2" />
+	</Tool>
+
+	<Tool name="KR6_Pen">
+		<Tcp x="0.029" y="-289.783" z="95.704" q1="-0.5" q2="0.5" q3="0.5" q4="0.5" />
+		<Mass weight="0.3" />
+	</Tool>
+
+	<Tool name="KR60_Blank">
+		<Tcp x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
+		<Mass weight="1.2" />
+	</Tool>
+
+	<Tool name="KR60_AW14">
+		<Tcp x="235.084" y="60.3623" z="195.453" q1="0.693432" q2="0.096275" q3="-0.707804" q4="0.09432" />
+		<Mass weight="20" />
+	</Tool>
+
+	<Tool name="KR60_Hotwire">
+		<Tcp x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
+		<Mass weight="7" />
+	</Tool>
+
+	<RobotCell name="TTDA-KR6" manufacturer="KUKA">
+		<Mechanisms>
+			<RobotArm model="KR6-R700" manufacturer="KUKA" payload="6">
+				<Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
+				<Joints>
+					<Revolute number="1" a="25" d="400" minrange="-170" maxrange="170" maxspeed="360" />
+					<Revolute number="2" a="315" d="0" minrange="-190" maxrange="45" maxspeed="300" />
+					<Revolute number="3" a="35" d="0" minrange="-120" maxrange="156" maxspeed="360" />
+					<Revolute number="4" a="0" d="365" minrange="-185" maxrange="185" maxspeed="381" />
+					<Revolute number="5" a="0" d="0" minrange="-120" maxrange="120" maxspeed="388" />
+					<Revolute number="6" a="0" d="80" minrange="-350" maxrange="350" maxspeed="615" />
+				</Joints>
+			</RobotArm>
+		</Mechanisms>
+		<IO>
+			<DO names="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28" />
+			<DI names="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31" />
+		</IO>
+	</RobotCell>
+
+	<RobotCell name="TTDA-KR6 Cell" manufacturer="KUKA">
+		<Mechanisms>
+			<RobotArm model="KR6-Cell" manufacturer="KUKA" payload="400">
+				<Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
+				<Joints>
+					<Revolute number="1" a="0" d="0" minrange="-1" maxrange="1" maxspeed="0" />
+					<Revolute number="2" a="0" d="0" minrange="-1" maxrange="1" maxspeed="0" />
+					<Revolute number="3" a="0" d="0" minrange="-1" maxrange="1" maxspeed="0" />
+					<Revolute number="4" a="0" d="0" minrange="-1" maxrange="1" maxspeed="0" />
+					<Revolute number="5" a="0" d="0" minrange="-1" maxrange="1" maxspeed="0" />
+					<Revolute number="6" a="0" d="0" minrange="-1" maxrange="1" maxspeed="0" />
+				</Joints>
+			</RobotArm>
+		</Mechanisms>
+	</RobotCell>
+
+	<RobotCell name="TTDA-KR60" manufacturer="KUKA">
+		<Mechanisms group="0">
+			<RobotArm model="KR60-HA" manufacturer="KUKA" payload="60">
+				<Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
+				<Joints>
+					<Revolute number="1" a="350" d="815" minrange="-185" maxrange="185" maxspeed="140" />
+					<Revolute number="2" a="850" d="0" minrange="-135" maxrange="35" maxspeed="126" />
+					<Revolute number="3" a="145" d="0" minrange="-120" maxrange="158" maxspeed="140" />
+					<Revolute number="4" a="0" d="820" minrange="-350" maxrange="350" maxspeed="260" />
+					<Revolute number="5" a="0" d="0" minrange="-119" maxrange="119" maxspeed="245" />
+					<Revolute number="6" a="0" d="170" minrange="-350" maxrange="350" maxspeed="322" />
+				</Joints>
+			</RobotArm>
+			<Positioner model="DKP-400" manufacturer="KUKA" payload="400">
+				<Base x="1498.789" y="3.251" z="-27.813" q1="0.000483" q2="-0.003603" q3="0.003292" q4="0.999988" />
+				<Joints>
+					<Revolute number="7" a="0" d="510" minrange="-90" maxrange="90" maxspeed="94.5" />
+					<Revolute number="8" a="0" d="347" minrange="-INF" maxrange="INF" maxspeed="126" />
+				</Joints>
+			</Positioner>
+		</Mechanisms>
+		<IO>
+			<DO names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36" />
+			<DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32" />
+		</IO>
+	</RobotCell>
+
+	<RobotCell name="TTDA-IIWA14" manufacturer="KUKA">
+		<Mechanisms>
+			<RobotArm model="LBR14-R820" manufacturer="KUKA" payload="14">
+				<Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
+				<Joints>
+					<!--End of axis 1, a=x offset, d=z offset(along axis)-->
+					<Revolute number="1" a="0" d="360" minrange="-170" maxrange="170" maxspeed="85" />
+					<!--End of axis 2, a=x, d=z(along axis)-->
+					<Revolute number="2" a="420" d="0" minrange="-120" maxrange="120" maxspeed="85" />
+					<!--End of axis 3, a=z, d=x(along axis)-->
+					<Revolute number="3" a="0" d="400" minrange="-120" maxrange="120" maxspeed="75" />
+					<!--End of axis 4(from end of axis 2), a=z, d=x(along axis)-->
+					<Revolute number="4" a="0" d="400" minrange="-170" maxrange="170" maxspeed="130" />
+					<Revolute number="5" a="0" d="0" minrange="-120" maxrange="120" maxspeed="135" />
+					<Revolute number="6" a="0" d="126" minrange="-175" maxrange="175" maxspeed="135" />
+				</Joints>
+			</RobotArm>
+		</Mechanisms>
+	</RobotCell>
+
+</RobotSystems>

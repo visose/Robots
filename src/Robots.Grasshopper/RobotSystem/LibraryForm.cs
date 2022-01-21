@@ -88,7 +88,7 @@ class LibraryForm : ComponentForm
         }
         catch (Exception)
         {
-            MessageBox.Show(this, $"Error refreshing list of libraries. It's possible you reached your refresh limit, please wait one hour for the rate limit to reset.", MessageBoxType.Error);
+            MessageBox.Show(this, $"Error refreshing list of libraries. It's possible you reached your rate limit, please wait one hour for the limit to reset.", MessageBoxType.Error);
         }
 
         var values = _library.Libraries.Values;
