@@ -3,7 +3,7 @@ using System.Diagnostics;
 using Eto.Drawing;
 using Eto.Forms;
 using Rhino.Resources;
-using static Robots.Grasshopper.LibrariesForm;
+using static Robots.Grasshopper.LibraryForm;
 using EtoCommand = Eto.Forms.Command;
 
 namespace Robots.Grasshopper;
@@ -22,7 +22,7 @@ class LibraryCell : StackLayout
     }
 }
 
-class LibrariesForm : ComponentForm
+class LibraryForm : ComponentForm
 {
     // static
 
@@ -42,51 +42,15 @@ class LibrariesForm : ComponentForm
         return label;
     }
 
-    public static string Icons(LibraryItem item)
+    public static string Icons(LibraryItem item) => item switch
     {
-        if (item.IsLocal && item.IsDownloaded)
-            return "❕📁";
-
-        if (item.IsLocal)
-            return "📁";
-
-        if (item.IsDownloaded && item.IsUpdateAvailable)
-            return "⬆✔";
-
-        if (item.IsDownloaded)
-            return "✔";
-
-        if (item.IsOnline)
-            return "💾";
-
-        return "⚠";
-    }
-
-    static string Description(LibraryItem item)
-    {
-        if (item.IsLocal && item.IsDownloaded)
-            return "❕📁 Local override, installed";
-
-        if (item.IsLocal && item.IsOnline)
-            return "📁 Local, available online";
-
-        if (item.IsLocal)
-            return "📁 Local";
-
-        if (item.IsDownloaded && item.IsUpdateAvailable)
-            return "⬆✔ Installed, update available";
-
-        if (item.IsDownloaded && !item.IsOnline)
-            return "✔⚠ Installed, online missing";
-
-        if (item.IsDownloaded)
-            return "✔ Installed";
-
-        if (item.IsOnline)
-            return "💾 Available online";
-
-        return "⚠ Unknown error";
-    }
+        { IsLocal: true, IsDownloaded: true } => "❕📁",
+        { IsLocal: true } => "📁",
+        { IsDownloaded: true, IsUpdateAvailable: true } => "⬆✔",
+        { IsDownloaded: true } => "✔",
+        { IsOnline: true } => "💾",
+        _ => "⚠"
+    };
 
     // instance
 
@@ -94,9 +58,9 @@ class LibrariesForm : ComponentForm
     readonly GridView _grid;
     readonly StackLayout _detailView;
 
-    public LibrariesForm()
+    public LibraryForm(OnlineLibrary library)
     {
-        _library = new OnlineLibrary();
+        _library = library;
 
         Title = "Robot libraries";
         BackgroundColor = Colors.White;
@@ -116,17 +80,25 @@ class LibrariesForm : ComponentForm
         _grid.SelectedRowsChanged += (s, e) => _detailView.DataContext = _grid.SelectedItem;
     }
 
-    async Task UpdateAsync()
+    async Task RefreshAsync()
     {
         await _library.UpdateLibraryAsync();
-
         var values = _library.Libraries.Values;
-        var ordered = values.OrderBy(i => i.Name);
+        var ordered = values.OrderBy(i => i.Name).ToList();
+
+        var selected = _grid.SelectedItem as LibraryItem;
         _grid.DataStore = null;
         _grid.DataStore = ordered;
 
-        if (values.Any())
-            _grid.SelectRow(0);
+        if (!ordered.Any())
+            return;
+
+        int index = selected is null
+            ? 0 : ordered.FindIndex(i => selected.Name.ToLowerInvariant() == i.Name.ToLowerInvariant());
+        index = Math.Max(index, 0);
+
+        _grid.ScrollToRow(index);
+        _grid.SelectRow(index);
     }
 
     async Task DownloadAsync()
@@ -191,7 +163,7 @@ class LibrariesForm : ComponentForm
                 VerticalContentAlignment = VerticalAlignment.Bottom,
                 Items =
                 {
-                    new StackLayoutItem(NewAsyncButton(UpdateAsync, label: "Refresh list", runOnce: true), true),
+                    new StackLayoutItem(NewAsyncButton(RefreshAsync, label: "Refresh list", runOnce: true), true),
                     new LinkButton
                     {
                         Text = "Help",
@@ -208,10 +180,22 @@ class LibrariesForm : ComponentForm
         Items =
         {
             NewLabel(i => i.Name, font: EtoFonts.BoldHeadingFont),
-            NewLabel(i => Description(i), font: EtoFonts.NormalFont),
+            NewLabel(i => Description(i)),
             new StackLayoutItem(null, true),
             NewDetailButton()
         }
+    };
+
+    string Description(LibraryItem item) => item switch
+    {
+        { IsLocal: true, IsDownloaded: true } => "❕📁 Installed, local override",
+        { IsLocal: true, IsOnline: true } => "📁 Local, available online",
+        { IsLocal: true } => "📁 Local",
+        { IsDownloaded: true, IsUpdateAvailable: true } => "⬆✔ Installed, update available",
+        { IsDownloaded: true, IsOnline: false } => "✔⚠ Installed, online missing",
+        { IsDownloaded: true } => "✔ Installed",
+        { IsOnline: true } => "💾 Available online",
+        _ => "⚠ Unknown error"
     };
 
     StackLayout NewDetailButton()
@@ -223,7 +207,7 @@ class LibrariesForm : ComponentForm
         return detailButton;
     }
 
-    static StackLayout NewAsyncButton(Func<Task> actionAsync, string? label = null, bool runOnce = false)
+    StackLayout NewAsyncButton(Func<Task> actionAsync, string? label = null, bool runOnce = false)
     {
         Button button = new()
         {

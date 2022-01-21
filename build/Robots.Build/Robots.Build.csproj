@@ -6,7 +6,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="RhinoPackager" Version="1.0.1" />
+		<PackageReference Include="RhinoPackager" Version="1.0.2" />
 	</ItemGroup>
 
 </Project>
