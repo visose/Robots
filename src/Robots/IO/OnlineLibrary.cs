@@ -44,6 +44,33 @@ public class OnlineLibrary
         if (!await TryDownloadFileAsync(library.Name + ".3dm"))
             return false;
 
+        var xmlPath = Path.Combine(FileIO.OnlineLibraryPath, library.Name + ".xml");
+        var sha = GetLocalSha(xmlPath);
+
+        if (sha != library.OnlineSha)
+            return false;
+
+        library.DownloadedSha = sha;
+        return true;
+    }
+
+    public bool TryRemoveDownloadedLibrary(LibraryItem item)
+    {
+        var folder = FileIO.OnlineLibraryPath;
+        string pathXml = Path.Combine(folder, item.Name + ".xml");
+        string path3dm = Path.Combine(folder, item.Name + ".3dm");
+
+        try
+        {
+            File.Delete(pathXml);
+            File.Delete(path3dm);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+
+        item.DownloadedSha = null;
         return true;
     }
 
@@ -60,19 +87,20 @@ public class OnlineLibrary
                 continue;
 
             var name = Path.GetFileNameWithoutExtension(file.Name);
+            var key = name.ToLowerInvariant();
 
-            if (!Libraries.TryGetValue(name, out var value))
+            if (!Libraries.TryGetValue(key, out var value))
             {
                 value = new LibraryItem { Name = name };
-                Libraries.Add(name, value);
+                Libraries.Add(key, value);
             }
 
             var sha = value.OnlineSha;
             value.OnlineSha = extension switch
             {
-                ".xml" => string.Concat(file.Sha, sha),
-                ".3dm" => string.Concat(sha, file.Sha),
-                _ => throw new ArgumentException("Wrong extension."),
+                ".xml" => file.Sha + sha,
+                ".3dm" => sha + file.Sha,
+                _ => throw new ArgumentException("Invalid extension."),
             };
         }
     }
@@ -98,20 +126,26 @@ public class OnlineLibrary
         foreach (var file in files)
         {
             var name = Path.GetFileNameWithoutExtension(file);
+            var key = name.ToLowerInvariant();
 
-            if (!Libraries.TryGetValue(name, out var value))
+            if (!Libraries.TryGetValue(key, out var value))
             {
                 value = new LibraryItem { Name = name };
-                Libraries.Add(name, value);
+                Libraries.Add(key, value);
             }
-
-            var shaXml = GetSha1(file);
-            var sha3dm = GetSha1(Path.ChangeExtension(file, ".3dm"));
-            value.DownloadedSha = string.Concat(shaXml, sha3dm);
 
             if (isLocal)
                 value.IsLocal = true;
+            else
+                value.DownloadedSha = GetLocalSha(file);
         }
+    }
+
+    string GetLocalSha(string xmlPath)
+    {
+        var shaXml = GetSha1(xmlPath);
+        var sha3dm = GetSha1(Path.ChangeExtension(xmlPath, ".3dm"));
+        return shaXml + sha3dm;
     }
 
     string GetSha1(string file)
@@ -141,9 +175,9 @@ public class OnlineLibrary
         if (!Directory.Exists(folder))
             Directory.CreateDirectory(folder);
 
-        string downloadPath = Path.Combine(FileIO.OnlineLibraryPath, fileName);
+        string downloadPath = Path.Combine(folder, fileName);
         var response = await _http.GetAsync(fileName);
-       
+
         if (response.StatusCode != System.Net.HttpStatusCode.OK)
             return false;
 
