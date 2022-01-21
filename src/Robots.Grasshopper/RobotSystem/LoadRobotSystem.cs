@@ -8,7 +8,7 @@ namespace Robots.Grasshopper;
 
 public class LoadRobotSystem : GH_Component
 {
-    LibrariesForm? _form;
+    LibraryForm? _form;
     GH_ValueList? _valueList = null;
     IGH_Param? _parameter = null;
 
@@ -37,26 +37,49 @@ public class LoadRobotSystem : GH_Component
         if (_valueList is not null)
             return;
 
-        var inputValueList = _parameter.Sources.FirstOrDefault(s => s is GH_ValueList) as GH_ValueList;
-        _valueList = inputValueList ?? new GH_ValueList();
-
-        if (inputValueList is null)
+        if (_parameter.Sources.FirstOrDefault(s => s is GH_ValueList) is not GH_ValueList inputValueList)
         {
+            _valueList = new GH_ValueList();
             _valueList.CreateAttributes();
-            _valueList.Attributes.Pivot = new System.Drawing.PointF(Attributes.Pivot.X - 180, Attributes.Pivot.Y - 31);
-            AddRobotsToValueList(_valueList);
+            _valueList.Attributes.Pivot = new System.Drawing.PointF(Attributes.Pivot.X - 240, Attributes.Pivot.Y - 21);
+            UpdateValueList();
             Instances.ActiveCanvas.Document.AddObject(_valueList, false);
             _parameter.AddSource(_valueList);
             _parameter.CollectData();
         }
         else
         {
-            AddRobotsToValueList(_valueList);
+            _valueList = inputValueList;
+            UpdateValueList();
         }
     }
 
-    void AddRobotsToValueList(GH_ValueList valueList)
+    protected override void SolveInstance(IGH_DataAccess DA)
     {
+        string? name = null;
+        GH_Plane? basePlane = null;
+
+        if (!DA.GetData(0, ref name) || name is null) { return; }
+        if (!DA.GetData(1, ref basePlane) || basePlane is null) { return; }
+
+        try
+        {
+            var robotSystem = FileIO.LoadRobotSystem(name, basePlane.Value);
+            DA.SetData(0, new GH_RobotSystem(robotSystem));
+        }
+        catch (Exception e)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, e.Message);
+        }
+    }
+
+    void UpdateValueList()
+    {
+        if (_valueList is null)
+            return;
+
+        var valueList = _valueList;
+
         var selected = valueList.FirstSelectedItem;
         var robotSystems = FileIO.ListRobotSystems();
 
@@ -77,18 +100,6 @@ public class LoadRobotSystem : GH_Component
             valueList.SelectItem(selectedIndex);
     }
 
-    protected override void SolveInstance(IGH_DataAccess DA)
-    {
-        string? name = null;
-        GH_Plane? basePlane = null;
-
-        if (!DA.GetData(0, ref name) || name is null) { return; }
-        if (!DA.GetData(1, ref basePlane) || basePlane is null) { return; }
-
-        var robotSystem = FileIO.LoadRobotSystem(name, basePlane.Value);
-        DA.SetData(0, new GH_RobotSystem(robotSystem));
-    }
-
     // form
 
     public override void CreateAttributes()
@@ -106,7 +117,13 @@ public class LoadRobotSystem : GH_Component
 
     void ToggleForm()
     {
-        _form ??= new LibrariesForm();
+        if (_form is null)
+        {
+            var library = new OnlineLibrary();
+            library.LibraryChanged += UpdateValueList;
+            _form = new LibraryForm(library);
+        }
+
         _form.Visible = !_form.Visible;
     }
 }

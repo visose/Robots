@@ -19,6 +19,7 @@ public class OnlineLibrary
 {
     readonly HttpClient _http = new();
     public Dictionary<string, LibraryItem> Libraries { get; } = new();
+    public event Action? LibraryChanged;
 
     public OnlineLibrary()
     {
@@ -51,6 +52,7 @@ public class OnlineLibrary
             return false;
 
         library.DownloadedSha = sha;
+        LibraryChanged?.Invoke();
         return true;
     }
 
@@ -71,6 +73,7 @@ public class OnlineLibrary
         }
 
         item.DownloadedSha = null;
+        LibraryChanged?.Invoke();
         return true;
     }
 
