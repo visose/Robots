@@ -34,26 +34,30 @@ public class LoadTool : GH_Component
         if (_valueList is not null)
             return;
 
-        var inputValueList = _parameter.Sources.FirstOrDefault(s => s is GH_ValueList) as GH_ValueList;
-        _valueList = inputValueList ?? new GH_ValueList();
-
-        if (inputValueList is null)
+        if (_parameter.Sources.FirstOrDefault(s => s is GH_ValueList) is not GH_ValueList inputValueList)
         {
+            _valueList = new GH_ValueList();
             _valueList.CreateAttributes();
             _valueList.Attributes.Pivot = new PointF(Attributes.Pivot.X - 180, Attributes.Pivot.Y - 31);
-            AddToolsToValueList(_valueList);
+            UpdateValueList();
             Instances.ActiveCanvas.Document.AddObject(_valueList, false);
             _parameter.AddSource(_valueList);
             _parameter.CollectData();
         }
         else
         {
-            AddToolsToValueList(_valueList);
+            _valueList = inputValueList;
+            UpdateValueList();
         }
     }
 
-    void AddToolsToValueList(GH_ValueList valueList)
+    void UpdateValueList()
     {
+        if (_valueList is null)
+            return;
+
+        var valueList = _valueList;
+
         var selected = valueList.FirstSelectedItem;
         var tools = FileIO.ListTools();
 
@@ -65,13 +69,20 @@ public class LoadTool : GH_Component
         foreach (string toolName in tools)
             valueList.ListItems.Add(new GH_ValueListItem(toolName, $"\"{toolName}\""));
 
-        if (selected is null)
-            return;
+        if (selected is not null)
+        {
 
-        var selectedIndex = valueList.ListItems.FindIndex(s => s.Name == selected.Name);
+            var selectedIndex = valueList.ListItems
+                .FindIndex(s => s.Name.Equals(selected.Name, StringComparison.OrdinalIgnoreCase));
 
-        if (selectedIndex != -1)
-            valueList.SelectItem(selectedIndex);
+            if (selectedIndex != -1)
+            {
+                valueList.SelectItem(selectedIndex);
+                return;
+            }
+        }
+
+        valueList.ExpireSolution(true);
     }
 
     protected override void SolveInstance(IGH_DataAccess DA)

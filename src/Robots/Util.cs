@@ -22,6 +22,13 @@ static class Util
         return value ?? throw new ArgumentNullException(text ?? nameof(value));
     }
 
+    // String
+
+    public static bool EqualsIgnoreCase(this string a, string b)
+    {
+        return string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+    }
+
     // Collection
 
     public static IList<T> TryCastIList<T>(this IEnumerable<T> list)

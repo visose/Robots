@@ -102,7 +102,7 @@ class LibraryForm : ComponentForm
             return;
 
         int index = selected is null
-            ? 0 : ordered.FindIndex(i => selected.Name.ToLowerInvariant() == i.Name.ToLowerInvariant());
+            ? 0 : ordered.FindIndex(i => selected.Name.Equals(i.Name, StringComparison.OrdinalIgnoreCase));
         index = Math.Max(index, 0);
 
         _grid.ScrollToRow(index);
