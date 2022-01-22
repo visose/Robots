@@ -2,7 +2,7 @@
 using Robots;
 
 //dotnet run --property:Configuration=Release
-//new Performance();
+new Performance();
 
 //var github = new OnlineLibrary();
 //await github.UpdateLibraryAsync();

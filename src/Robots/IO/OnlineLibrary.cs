@@ -5,14 +5,19 @@ namespace Robots;
 
 public class LibraryItem
 {
-    public string Name { get; set; } = default!;
-    public bool IsLocal { get; set; }
+    public string Name { get; }
+    public bool IsLocal { get; internal set; }
     internal string? OnlineSha { get; set; }
     internal string? DownloadedSha { get; set; }
 
     public bool IsOnline => OnlineSha is not null;
     public bool IsDownloaded => DownloadedSha is not null;
     public bool IsUpdateAvailable => IsOnline && (OnlineSha != DownloadedSha);
+
+    public LibraryItem(string name)
+    {
+        Name = name;
+    }
 }
 
 public class OnlineLibrary
@@ -81,7 +86,7 @@ public class OnlineLibrary
 
             if (!Libraries.TryGetValue(name, out var value))
             {
-                value = new LibraryItem { Name = name };
+                value = new LibraryItem(name);
                 Libraries.Add(name, value);
             }
 
@@ -119,7 +124,7 @@ public class OnlineLibrary
 
             if (!Libraries.TryGetValue(name, out var value))
             {
-                value = new LibraryItem { Name = name };
+                value = new LibraryItem(name);
                 Libraries.Add(name, value);
             }
 

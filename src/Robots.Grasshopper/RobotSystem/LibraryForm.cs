@@ -140,7 +140,7 @@ class LibraryForm : ComponentForm
     {
         { IsDownloaded: true, IsUpdateAvailable: true } => "Update",
         { IsUpdateAvailable: true } => "Install",
-        { IsDownloaded: true } => "Delete",
+        { IsDownloaded: true } => "Remove",
         _ => ""
     };
 
@@ -180,7 +180,7 @@ class LibraryForm : ComponentForm
                 VerticalContentAlignment = VerticalAlignment.Bottom,
                 Items =
                 {
-                    new StackLayoutItem(NewAsyncButton(RefreshAsync, label: "Refresh list", runOnce: true), true),
+                    new StackLayoutItem(NewAsyncButton(RefreshAsync, label: "Refresh", runOnce: true), true),
                     new LinkButton
                     {
                         Text = "Help",
