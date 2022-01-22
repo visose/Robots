@@ -63,7 +63,7 @@ public static class FileIO
 
     static IEnumerable<string> GetLibraries()
     {
-        var previous = new HashSet<string>();
+        var previous = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var path in GetLibraryPaths())
         {
@@ -76,7 +76,7 @@ public static class FileIO
             {
                 var name = Path.GetFileNameWithoutExtension(file);
 
-                if (!previous.Add(name.ToLowerInvariant()))
+                if (!previous.Add(name))
                     continue;
 
                 yield return file;
@@ -105,7 +105,7 @@ public static class FileIO
         {
             var root = XElement.Load(file);
             var element = root.Elements(XName.Get(type))
-                ?.FirstOrDefault(e => e.GetAttribute("name") == name);
+                ?.FirstOrDefault(e => e.GetAttribute("name").EqualsIgnoreCase(name));
 
             if (element is not null)
                 return element;
@@ -290,7 +290,8 @@ public static class FileIO
         foreach (var file in GetLibraries())
         {
             var root = XElement.Load(file);
-            var element = root.Elements(XName.Get(type))?.FirstOrDefault(e => e.GetAttribute("name") == name);
+            var element = root.Elements(XName.Get(type))
+                ?.FirstOrDefault(e => e.GetAttribute("name").EqualsIgnoreCase(name));
 
             if (element is null)
                 continue;
@@ -310,7 +311,7 @@ public static class FileIO
     {
         var doc = GetRhinoDoc(cellName, "RobotCell");
         var layerName = $"{mechanism}.{manufacturer}.{model}";
-        var layer = doc.AllLayers.FirstOrDefault(x => x.Name == layerName);
+        var layer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(layerName));
 
         if (layer is null)
             throw new ArgumentException($" Mechanism \"{model}\" is not in the 3dm file.");
@@ -321,7 +322,7 @@ public static class FileIO
         while (true)
         {
             string name = $"{i++}";
-            var jointLayer = doc.AllLayers.FirstOrDefault(x => (x.Name == name) && (x.ParentLayerId == layer.Id));
+            var jointLayer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(name) && (x.ParentLayerId == layer.Id));
 
             if (jointLayer is null)
                 break;
@@ -338,7 +339,7 @@ public static class FileIO
         const string type = "Tool";
         var doc = GetRhinoDoc(name, type);
         var layerName = $"{type}.{name}";
-        var layer = doc.AllLayers.FirstOrDefault(x => x.Name == layerName);
+        var layer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(layerName));
 
         if (layer is null)
             throw new ArgumentException($" \"{name}\" is not in the 3dm file.");

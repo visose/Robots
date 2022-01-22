@@ -93,7 +93,8 @@ public class LoadRobotSystem : GH_Component
 
         if (selected is not null)
         {
-            var selectedIndex = valueList.ListItems.FindIndex(s => s.Name == selected.Name);
+            var selectedIndex = valueList.ListItems
+                .FindIndex(s => s.Name.Equals(selected.Name, StringComparison.OrdinalIgnoreCase));
 
             if (selectedIndex != -1)
             {

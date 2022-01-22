@@ -18,7 +18,7 @@ public class LibraryItem
 public class OnlineLibrary
 {
     readonly HttpClient _http = new();
-    public Dictionary<string, LibraryItem> Libraries { get; } = new();
+    public Dictionary<string, LibraryItem> Libraries { get; } = new(StringComparer.OrdinalIgnoreCase);
     public event Action? LibraryChanged;
 
     public OnlineLibrary()
@@ -78,12 +78,11 @@ public class OnlineLibrary
                 continue;
 
             var name = Path.GetFileNameWithoutExtension(file.Name);
-            var key = name.ToLowerInvariant();
 
-            if (!Libraries.TryGetValue(key, out var value))
+            if (!Libraries.TryGetValue(name, out var value))
             {
                 value = new LibraryItem { Name = name };
-                Libraries.Add(key, value);
+                Libraries.Add(name, value);
             }
 
             var sha = value.OnlineSha;
@@ -100,7 +99,7 @@ public class OnlineLibrary
     {
         foreach (var extension in new[] { ".xml", ".3dm" })
         {
-            if (Path.GetExtension(fileName).Equals(extension, StringComparison.InvariantCultureIgnoreCase))
+            if (Path.GetExtension(fileName).EqualsIgnoreCase(extension))
                 return extension;
         }
 
@@ -117,12 +116,11 @@ public class OnlineLibrary
         foreach (var file in files)
         {
             var name = Path.GetFileNameWithoutExtension(file);
-            var key = name.ToLowerInvariant();
 
-            if (!Libraries.TryGetValue(key, out var value))
+            if (!Libraries.TryGetValue(name, out var value))
             {
                 value = new LibraryItem { Name = name };
-                Libraries.Add(key, value);
+                Libraries.Add(name, value);
             }
 
             if (isLocal)
