@@ -90,10 +90,11 @@ class SphericalWristKinematics : RobotKinematics
         }
 
         Transform arr = default;
-        arr.M00 = c[0] * (c[1] * c[2] - s[1] * s[2]); arr.M01 = s[0]; arr.M02 = c[0] * (c[1] * s[2] + s[1] * c[2]); arr.M03 = c[0] * (a[2] * (c[1] * c[2] - s[1] * s[2]) + a[1] * c[1]) + a[0] * c[0];
-        arr.M10 = s[0] * (c[1] * c[2] - s[1] * s[2]); arr.M11 = -c[0]; arr.M12 = s[0] * (c[1] * s[2] + s[1] * c[2]); arr.M13 = s[0] * (a[2] * (c[1] * c[2] - s[1] * s[2]) + a[1] * c[1]) + a[0] * s[0];
-        arr.M20 = s[1] * c[2] + c[1] * s[2]; arr.M21 = 0; arr.M22 = s[1] * s[2] - c[1] * c[2]; arr.M23 = a[2] * (s[1] * c[2] + c[1] * s[2]) + a[1] * s[1] + d[0];
-        arr.M30 = 0; arr.M31 = 0; arr.M32 = 0; arr.M33 = 1;
+        arr.Set(
+            c[0] * (c[1] * c[2] - s[1] * s[2]), s[0], c[0] * (c[1] * s[2] + s[1] * c[2]), c[0] * (a[2] * (c[1] * c[2] - s[1] * s[2]) + a[1] * c[1]) + a[0] * c[0],
+            s[0] * (c[1] * c[2] - s[1] * s[2]), -c[0], s[0] * (c[1] * s[2] + s[1] * c[2]), s[0] * (a[2] * (c[1] * c[2] - s[1] * s[2]) + a[1] * c[1]) + a[0] * s[0],
+            s[1] * c[2] + c[1] * s[2], 0, s[1] * s[2] - c[1] * c[2], a[2] * (s[1] * c[2] + c[1] * s[2]) + a[1] * s[1] + d[0]
+            );
 
         arr.TryGetInverse(out var in123);
         var mr = in123 * transform;
@@ -135,24 +136,26 @@ class SphericalWristKinematics : RobotKinematics
 
     override protected Transform[] ForwardKinematics(double[] joints)
     {
-        var transforms = new Transform[6];
+        var t = new Transform[6];
 
         var c = Vector6d.Map(joints, x => Cos(x));
         var s = Vector6d.Map(joints, x => Sin(x));
         var a = Vector6d.Map(_mechanism.Joints, joint => joint.A);
         var d = Vector6d.Map(_mechanism.Joints, joint => joint.D);
 
-        transforms[0].SetTransform(c[0], 0, c[0], c[0] + a[0] * c[0], s[0], -c[0], s[0], s[0] + a[0] * s[0], 0, 0, 0, d[0]);
-        transforms[1].SetTransform(c[0] * (c[1] - s[1]), s[0], c[0] * (c[1] + s[1]), c[0] * ((c[1] - s[1]) + a[1] * c[1]) + a[0] * c[0], s[0] * (c[1] - s[1]), -c[0], s[0] * (c[1] + s[1]), s[0] * ((c[1] - s[1]) + a[1] * c[1]) + a[0] * s[0], s[1] + c[1], 0, s[1] - c[1], (s[1] + c[1]) + a[1] * s[1] + d[0]);
-        transforms[2].SetTransform(c[0] * (c[1] * c[2] - s[1] * s[2]), s[0], c[0] * (c[1] * s[2] + s[1] * c[2]), c[0] * (a[2] * (c[1] * c[2] - s[1] * s[2]) + a[1] * c[1]) + a[0] * c[0], s[0] * (c[1] * c[2] - s[1] * s[2]), -c[0], s[0] * (c[1] * s[2] + s[1] * c[2]), s[0] * (a[2] * (c[1] * c[2] - s[1] * s[2]) + a[1] * c[1]) + a[0] * s[0], s[1] * c[2] + c[1] * s[2], 0, s[1] * s[2] - c[1] * c[2], a[2] * (s[1] * c[2] + c[1] * s[2]) + a[1] * s[1] + d[0]);
-        transforms[3].SetTransform(c[3] - s[3], -c[3] - s[3], c[3], c[3], s[3] + c[3], -s[3] + c[3], s[3], s[3], 0, 0, 0, 0 + d[3]);
-        transforms[4].SetTransform(c[3] * c[4] - s[3], -c[3] * c[4] - s[3], c[3] * s[4], c[3] * s[4], s[3] * c[4] + c[3], -s[3] * c[4] + c[3], s[3] * s[4], s[3] * s[4], -s[4], s[4], c[4], c[4] + d[3]);
-        transforms[5].SetTransform(c[3] * c[4] * c[5] - s[3] * s[5], -c[3] * c[4] * s[5] - s[3] * c[5], c[3] * s[4], c[3] * s[4] * d[5], s[3] * c[4] * c[5] + c[3] * s[5], -s[3] * c[4] * s[5] + c[3] * c[5], s[3] * s[4], s[3] * s[4] * d[5], -s[4] * c[5], s[4] * s[5], c[4], c[4] * d[5] + d[3]);
+        t[0].Set(c[0], 0, s[0], a[0] * c[0], s[0], 0, -c[0], a[0] * s[0], 0, 1, 0, d[0]);
+        t[1].Set(c[1], -s[1], 0, a[1] * c[1], s[1], c[1], 0, a[1] * s[1], 0, 0, 1, 0);
+        t[2].Set(c[2], 0, s[2], a[2] * c[2], s[2], 0, -c[2], a[2] * s[2], 0, 1, 0, 0);
+        t[3].Set(c[3], 0, -s[3], 0, s[3], 0, c[3], 0, 0, -1, 0, d[3]);
+        t[4].Set(c[4], 0, s[4], 0, s[4], 0, -c[4], 0, 0, 1, 0, 0);
+        t[5].Set(c[5], -s[5], 0, 0, s[5], c[5], 0, 0, 0, 0, 1, d[5]);
 
-        transforms[3] = transforms[2] * transforms[3];
-        transforms[4] = transforms[2] * transforms[4];
-        transforms[5] = transforms[2] * transforms[5];
+        t[1] = t[0] * t[1];
+        t[2] = t[1] * t[2];
+        t[3] = t[2] * t[3];
+        t[4] = t[3] * t[4];
+        t[5] = t[4] * t[5];
 
-        return transforms;
+        return t;
     }
 }

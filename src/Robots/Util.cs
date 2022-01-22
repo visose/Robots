@@ -60,6 +60,7 @@ static class Util
 
         return result;
     }
+
     public static K[] Map<T, K>(this IList<T> array, Func<T, int, K> projection)
     {
         var result = new K[array.Count];
@@ -154,7 +155,7 @@ static class Util
 
     // Transform
 
-    public static void SetTransform(this ref Transform t, double m00, double m01, double m02, double m03, double m10, double m11, double m12, double m13, double m20, double m21, double m22, double m23)
+    public static void Set(this ref Transform t, double m00, double m01, double m02, double m03, double m10, double m11, double m12, double m13, double m20, double m21, double m22, double m23)
     {
         t.M00 = m00; t.M01 = m01; t.M02 = m02; t.M03 = m03;
         t.M10 = m10; t.M11 = m11; t.M12 = m12; t.M13 = m13;
@@ -191,7 +192,7 @@ static class Util
         double y = v.Y;
         double z = v.Z;
         double lengthSq = x * x + y * y + z * z;
-        double length = Math.Sqrt(lengthSq);
+        double length = Sqrt(lengthSq);
         v.X = x / length;
         v.Y = y / length;
         v.Z = z / length;

@@ -3,6 +3,23 @@ namespace Robots;
 
 public struct Vector6d
 {
+    // static
+
+    public static Vector6d Map<T>(T[] array, Func<T, double> projection)
+    {
+        if (array.Length != 6)
+            throw new ArgumentOutOfRangeException("Array length should be 6.");
+
+        Vector6d result = default;
+
+        for (int i = 0; i < 6; i++)
+            result[i] = projection(array[i]);
+
+        return result;
+    }
+
+    // instance
+
     public double A1;
     public double A2;
     public double A3;
@@ -33,35 +50,18 @@ public struct Vector6d
         A6 = joints[5];
     }
 
-    public static Vector6d Map<T>(T[] array, Func<T, double> projection)
-    {
-        if (array.Length != 6)
-            throw new ArgumentOutOfRangeException("Array lenght should be 6.");
-
-        Vector6d result = default;
-
-        for (int i = 0; i < 6; i++)
-            result[i] = projection(array[i]);
-
-        return result;
-    }
-
-
     public double this[int i]
     {
-        get
+        get => i switch
         {
-            return i switch
-            {
-                0 => A1,
-                1 => A2,
-                2 => A3,
-                3 => A4,
-                4 => A5,
-                5 => A6,
-                _ => throw new IndexOutOfRangeException("Invalid Vector6 index."),
-            };
-        }
+            0 => A1,
+            1 => A2,
+            2 => A3,
+            3 => A4,
+            4 => A5,
+            5 => A6,
+            _ => throw new IndexOutOfRangeException("Invalid Vector6 index."),
+        };
 
         set
         {
