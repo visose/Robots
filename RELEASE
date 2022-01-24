@@ -1,3 +1,8 @@
+- version: 1.1.2
+  changes:
+  - Robot system names are now case insensitive.
+  - Fixed error displaying some parameter names.
+  - Fixed forward kinematics transforms in intermediate joints.
 - version: 1.1.1
   changes:
   - Fixed refresh libraries not working.
