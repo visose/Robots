@@ -2,8 +2,8 @@
 
 	<PropertyGroup>
 		<Product>Robots</Product>
-		<Version>1.1.1</Version>
-		<Description>Create and simulate ABB, KUKA, UR and Staubli robot programs.</Description>
+		<Version>1.1.2</Version>
+		<Description>Create and simulate ABB, KUKA, UR, and Staubli robot programs.</Description>
 		<Authors>Robots Authors</Authors>
 		<Copyright>Copyright (c) 2021 $(Authors)</Copyright>
 		<PackageProjectUrl>https://github.com/visose/robots</PackageProjectUrl>
