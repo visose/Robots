@@ -21,14 +21,6 @@ public class Zone : TargetAttribute
 
     public bool IsFlyBy => Distance > DistanceTol;
 
-    //public Zone(double distance, string name = null)
-    //{
-    //    Name = name;
-    //    Distance = distance;
-    //    Rotation = (distance / 10).ToRadians();
-    //    RotationExternal = Rotation;
-    //}
-
     public Zone(double distance, double? rotation = null, double? rotationExternal = null, string? name = null) : base(name)
     {
         Distance = distance;
@@ -44,5 +36,7 @@ public class Zone : TargetAttribute
             RotationExternal = Rotation;
     }
 
-    public override string ToString() => (Name is not null) ? $"Zone ({Name})" : IsFlyBy ? $"Zone ({Distance:0.##} mm)" : $"Zone (Stop point)";
+    public override string ToString() => HasName
+         ? $"Zone ({Name})"
+         : IsFlyBy ? $"Zone ({Distance:0.##} mm)" : $"Zone (Stop point)";
 }

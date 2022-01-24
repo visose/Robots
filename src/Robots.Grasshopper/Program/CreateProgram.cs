@@ -56,7 +56,7 @@ public class CreateProgram : GH_Component
 
         var toolpaths = new List<IToolpath>();
 
-        var toolpathA = new SimpleToolpath(toolpathsA.Select(t => t.Value));
+        var toolpathA = new SimpleToolpath(toolpathsA.Where(t => t is not null).Select(t => t.Value));
         toolpaths.Add(toolpathA);
 
         if (toolpathsB.Count > 0)

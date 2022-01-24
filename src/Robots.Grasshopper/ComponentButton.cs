@@ -59,7 +59,7 @@ class ComponentButton : GH_ComponentAttributes
         }
     }
 
-    void SetMouseDown(bool value, GH_Canvas canvas, GH_CanvasMouseEvent e)
+    void SetMouseDown(bool value, GH_Canvas canvas, GH_CanvasMouseEvent e, bool action = true)
     {
         if (Owner.Locked || _mouseDown == value)
             return;
@@ -70,7 +70,7 @@ class ComponentButton : GH_ComponentAttributes
         if (!_buttonBounds.Contains(e.CanvasLocation))
             return;
 
-        if (_mouseDown && !value)
+        if (_mouseDown && !value && action)
             _action();
 
         _mouseDown = value;
@@ -91,7 +91,7 @@ class ComponentButton : GH_ComponentAttributes
 
     public override GH_ObjectResponse RespondToMouseMove(GH_Canvas sender, GH_CanvasMouseEvent e)
     {
-        SetMouseDown(false, sender, e);
+        SetMouseDown(false, sender, e, false);
         return base.RespondToMouseMove(sender, e);
     }
 }

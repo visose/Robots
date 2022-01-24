@@ -28,7 +28,7 @@ public class Frame : TargetAttribute
 
     public override string ToString()
     {
-        if (Name is not null)
+        if (HasName)
             return $"Frame ({Name})";
 
         string origin = $"{Plane.OriginX:0.##},{Plane.OriginY:0.##},{Plane.OriginZ:0.##}";
