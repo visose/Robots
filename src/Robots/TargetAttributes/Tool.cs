@@ -11,7 +11,7 @@ public class Tool : TargetAttribute
     public Point3d Centroid { get; }
     public Mesh Mesh { get; }
 
-    public Tool(Plane tcp, string? name = null, double weight = 0, Point3d? centroid = null, Mesh? mesh = null, IList<Plane>? calibrationPlanes = null) : base(name)
+    public Tool(Plane tcp, string name = "DefaultTool", double weight = 0, Point3d? centroid = null, Mesh? mesh = null, IList<Plane>? calibrationPlanes = null) : base(name)
     {
         Weight = weight;
         Centroid = (centroid is null) ? tcp.Origin : (Point3d)centroid;

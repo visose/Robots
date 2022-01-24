@@ -27,6 +27,14 @@ public class SaveProgram : GH_Component
 
         if (!DA.GetData(0, ref program) || program is null) { return; }
         if (!DA.GetData(1, ref folder) || folder is null) { return; }
-        program.Value.Save(folder);
+
+        try
+        {
+            program.Value.Save(folder);
+        }
+        catch (Exception e)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $" Program couldn't be saved: {e.Message}");
+        }
     }
 }

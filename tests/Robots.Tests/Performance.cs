@@ -10,7 +10,6 @@ class Performance
 
     public Performance()
     {
-
         int count = 20;
 
         for (int i = 0; i < count; i++)
@@ -52,7 +51,7 @@ class Performance
 
         Log("Toolpath");
 
-        var program = new Robots.Program("TestProgram", robot, new[] { toolpath }, stepSize: 0.02);
+        var program = new Program("TestProgram", robot, new[] { toolpath }, stepSize: 0.02);
 
         Log("Program"); // 486
 
@@ -79,7 +78,7 @@ class Performance
 
         Log("Toolpath");
 
-        var program = new Robots.Program("URTest", robot, new[] { toolpath }, stepSize: 0.01);
+        var program = new Program("URTest", robot, new[] { toolpath }, stepSize: 0.01);
 
         Log("Program");
 
