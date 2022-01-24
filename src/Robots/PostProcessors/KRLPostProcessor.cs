@@ -58,7 +58,9 @@ DEFDAT {_program.Name}_{groupName} PUBLIC
         foreach (var command in _program.Attributes.OfType<Command>())
         {
             string declaration = command.Declaration(_program);
-            if (declaration is not null) code.Add(declaration);
+
+            if (!string.IsNullOrWhiteSpace(declaration))
+                code.Add(declaration);
         }
 
         code.Add("ENDDAT");
@@ -75,8 +77,8 @@ DEFDAT {_program.Name}_{groupName} PUBLIC
 &REL 1
 DEF {_program.Name}_{groupName}()
 BAS (#INITMOV,0)
-$ADVANCE=5
-$APO.CPTP=100
+$ADVANCE = 5
+$APO.CPTP = 100
 "
                 };
 
@@ -135,7 +137,7 @@ DEF {_program.Name}_{groupName}_{file:000}()
                 }
                 else
                 {
-                    code.Add($"$BASE={target.Frame.Name}");
+                    code.Add($"$BASE = {target.Frame.Name}");
                 }
 
                 currentFrame = target.Frame;
@@ -143,7 +145,7 @@ DEF {_program.Name}_{groupName}_{file:000}()
 
             if (target.Zone.IsFlyBy && (currentZone is null || target.Zone != currentZone))
             {
-                code.Add($"$APO.CDIS={target.Zone.Name}");
+                code.Add($"$APO.CDIS = {target.Zone.Name}");
                 currentZone = target.Zone;
             }
 
@@ -189,7 +191,7 @@ DEF {_program.Name}_{groupName}_{file:000}()
             for (int i = 0; i < target.External.Length; i++)
             {
                 int num = i + 1;
-                external += $", E{num} {values[i]:0.####}";
+                external += $",E{num} {values[i]:0.####}";
             }
 
             // motion command
@@ -234,7 +236,7 @@ DEF {_program.Name}_{groupName}_{file:000}()
 
                                 string status = Convert.ToString(configNum, 2);
                                 string turn = Convert.ToString(turnNum, 2);
-                                bits = $", S'B{status:000}',T'B{turn:000000}'";
+                                bits = $",S'B{status:000}',T'B{turn:000000}'";
                             }
 
                             moveText = $"PTP {{X {euler[0]:0.###},Y {euler[1]:0.###},Z {euler[2]:0.###},A {euler[3]:0.####},B {euler[4]:0.####},C {euler[5]:0.####}{external}{bits}}}";
@@ -290,17 +292,17 @@ DEF {_program.Name}_{groupName}_{file:000}()
 
     string SetTool(Tool tool)
     {
-        string toolTxt = $"$TOOL={tool.Name}";
-        string load = $"$LOAD.M={tool.Weight}";
+        string toolTxt = $"$TOOL = {tool.Name}";
+        string load = $"$LOAD.M = {tool.Weight}";
         Point3d centroid = tool.Centroid;
-        string centroidTxt = $"$LOAD.CM={{X {centroid.X:0.###},Y {centroid.Y:0.###},Z {centroid.Z:0.###},A 0,B 0,C 0}}";
+        string centroidTxt = $"$LOAD.CM = {{X {centroid.X:0.###},Y {centroid.Y:0.###},Z {centroid.Z:0.###},A 0,B 0,C 0}}";
         return $"{toolTxt}\r\n{load}\r\n{centroidTxt}";
     }
 
     string Tool(Tool tool)
     {
         double[] euler = RobotCellKuka.PlaneToEuler(tool.Tcp);
-        return $"DECL GLOBAL FRAME {tool.Name}={{FRAME: X {euler[0]:0.###},Y {euler[1]:0.###},Z {euler[2]:0.###},A {euler[3]:0.####},B {euler[4]:0.####},C {euler[5]:0.####}}}";
+        return $"DECL GLOBAL FRAME {tool.Name} = {{FRAME: X {euler[0]:0.###},Y {euler[1]:0.###},Z {euler[2]:0.###},A {euler[3]:0.####},B {euler[4]:0.####},C {euler[5]:0.####}}}";
     }
 
     string Frame(Frame frame)
@@ -309,6 +311,6 @@ DEF {_program.Name}_{groupName}_{file:000}()
         plane.InverseOrient(ref _cell.BasePlane);
 
         double[] euler = RobotCellKuka.PlaneToEuler(plane);
-        return $"DECL GLOBAL FRAME {frame.Name}={{FRAME: X {euler[0]:0.###},Y {euler[1]:0.###},Z {euler[2]:0.###},A {euler[3]:0.####},B {euler[4]:0.####},C {euler[5]:0.####}}}";
+        return $"DECL GLOBAL FRAME {frame.Name} = {{FRAME: X {euler[0]:0.###},Y {euler[1]:0.###},Z {euler[2]:0.###},A {euler[3]:0.####},B {euler[4]:0.####},C {euler[5]:0.####}}}";
     }
 }
