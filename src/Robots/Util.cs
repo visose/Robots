@@ -19,7 +19,7 @@ static class Util
 
     public static T NotNull<T>(this T? value, string? text = null)
     {
-        return value ?? throw new ArgumentNullException(text ?? nameof(value));
+        return value ?? throw new ArgumentNullException(nameof(value), text);
     }
 
     // String
@@ -91,7 +91,7 @@ static class Util
     public static T MaxBy<T, K>(this IEnumerable<T> list, Func<T, K> comparable) where K : IComparable<K>
     {
         if (!list.Any())
-            throw new ArgumentException("List can't be empty.");
+            throw new ArgumentOutOfRangeException(nameof(list), "List can't be empty.");
 
         T maxItem = list.First();
         K maxValue = comparable(maxItem);

@@ -42,7 +42,7 @@ public class OnlineLibrary
     public async Task DownloadLibraryAsync(LibraryItem library)
     {
         if (!library.IsUpdateAvailable)
-            throw new ArgumentException("Library does not require update.");
+            throw new ArgumentException("Library does not require update.", nameof(library));
 
         await DownloadFileAsync(library.Name + ".xml");
         await DownloadFileAsync(library.Name + ".3dm");
@@ -51,7 +51,7 @@ public class OnlineLibrary
         var sha = GetLocalSha(xmlPath);
 
         if (sha != library.OnlineSha)
-            throw new InvalidDataException("Downloaded file does not match online file.");
+            throw new InvalidOperationException(" Downloaded file does not match online file.");
 
         library.DownloadedSha = sha;
         LibraryChanged?.Invoke();
@@ -95,7 +95,7 @@ public class OnlineLibrary
             {
                 ".xml" => file.Sha + sha,
                 ".3dm" => sha + file.Sha,
-                _ => throw new ArgumentException("Invalid extension."),
+                _ => throw new ArgumentException(" Invalid extension.", nameof(extension)),
             };
         }
     }

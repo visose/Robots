@@ -1,5 +1,4 @@
 ﻿using Rhino.Geometry;
-using static Robots.Util;
 
 namespace Robots;
 
@@ -28,11 +27,8 @@ public class RobotCellAbb : RobotCell
 
     internal override void SaveCode(IProgram program, string folder)
     {
-        if (!Directory.Exists(folder))
-            throw new DirectoryNotFoundException($" Folder \"{folder}\" not found");
-
         if (program.Code is null)
-            throw new ArgumentNullException(" Program code not generated");
+            throw new ArgumentNullException(nameof(program.Code), " Program code not generated");
 
         Directory.CreateDirectory(Path.Combine(folder, program.Name));
         bool multiProgram = program.MultiFileIndices.Count > 1;

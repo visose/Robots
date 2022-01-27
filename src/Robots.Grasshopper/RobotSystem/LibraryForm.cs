@@ -112,6 +112,7 @@ class LibraryForm : ComponentForm
     async Task DownloadAsync()
     {
         var item = (LibraryItem)_detailView.DataContext;
+        var action = ItemActions(item);
 
         try
         {
@@ -124,12 +125,12 @@ class LibraryForm : ComponentForm
                     _library.RemoveDownloadedLibrary(item);
                     break;
                 default:
-                    throw new ArgumentException("Invalid action");
+                    throw new InvalidOperationException("Invalid action");
             }
         }
         catch (Exception e)
         {
-            MessageBox.Show(this, $"{ItemActions(item)} error on {item.Name}.\n\n{e.Message}", MessageBoxType.Error);
+            MessageBox.Show(this, $"{action} error on {item.Name}.\n\n{e.Message}", MessageBoxType.Error);
         }
 
         _detailView.UpdateBindings(BindingUpdateMode.Destination);

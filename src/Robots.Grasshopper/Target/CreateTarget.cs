@@ -230,7 +230,7 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
         else
         {
             if (joints is null)
-                throw new ArgumentNullException(" Joints shouldn't be null.");
+                throw new ArgumentNullException(nameof(joints));
 
             target = new JointTarget(joints, tool, speed, zone, command, frame, external);
         }
@@ -274,7 +274,7 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
         Menu_AppendItem(menu, "External input", AddExternal, true, Params.Input.Any(x => x.Name == "External"));
     }
 
-    // Varible methods
+    // Variable methods
     private void SwitchCartesian()
     {
         if (_isCartesian)

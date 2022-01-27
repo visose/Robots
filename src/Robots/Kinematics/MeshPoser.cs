@@ -30,7 +30,7 @@ public class RhinoMeshPoser : IMeshPoser
         {
             RobotCell cell => cell.MechanicalGroups.Sum(g => g.DefaultMeshes.Count + 1),
             RobotSystemUR ur => ur.Robot.DefaultMeshes.Count + 1,
-            _ => throw new ArgumentException(" Invalid RobotSystem type.")
+            _ => throw new ArgumentException(" Invalid RobotSystem type.", nameof(robot))
         };
 
         Meshes = new List<Mesh>(meshCount);
@@ -53,7 +53,7 @@ public class RhinoMeshPoser : IMeshPoser
         {
             case RobotCell cell: PoseCell(cell, solutions, tools); return;
             case RobotSystemUR ur: PoseRobot(ur.Robot, solutions[0], tools[0]); return;
-            default: throw new ArgumentException(" Invalid RobotSystem type.");
+            default: throw new ArgumentException(" Invalid RobotSystem type.", nameof(_robot));
         };
     }
 

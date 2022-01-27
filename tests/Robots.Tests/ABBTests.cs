@@ -83,7 +83,7 @@ MoveL [[300,-200,610],[0.5,0.5,0.5,0.5],conf,extj],Speed000,fine,DefaultTool \WO
 ENDPROC
 ENDMODULE";
 
-        var code = _program.Code ?? throw new ArgumentNullException("Code not generated.");
+        var code = _program.Code ?? throw new InvalidOperationException("Program code not generated");
         var actual = string.Join(Environment.NewLine, code[0].SelectMany(c => c));
         Assert.AreEqual(expected, actual);
     }

@@ -187,7 +187,8 @@ class VAL3PostProcessor
         foreach (var command in attributes.OfType<Command>())
         {
             string declaration = command.Declaration(_program);
-            if (declaration is not null)
+
+            if (!string.IsNullOrWhiteSpace(declaration))
                 codes.Add(declaration);
         }
 

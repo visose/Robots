@@ -19,7 +19,7 @@ public abstract class TargetAttribute
         private set
         {
             if (!Program.IsValidIdentifier(value, out var error))
-                throw new ArgumentException($" {GetType().Name} {error}");
+                throw new ArgumentException($" {GetType().Name} {error}", nameof(value));
 
             _name = value;
         }

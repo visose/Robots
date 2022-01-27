@@ -77,7 +77,7 @@ public class URTests
   movel(p[0.7, 0.25, 0.6, -1.2092, -1.2092, -1.2092],a=1,v=Speed000,r=DefaultZone)
 end";
 
-        var code = _program.Code ?? throw new ArgumentNullException("Code not generated.");
+        var code = _program.Code ?? throw new InvalidOperationException("Program code not generated");
         var actual = string.Join(Environment.NewLine, code[0].SelectMany(c => c)).ReplaceLineEndings();
         Assert.AreEqual(expected, actual);
     }

@@ -1,6 +1,8 @@
 ﻿using System.Drawing;
 using System.Reflection;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Special;
 using Grasshopper;
 
 [assembly: GH_Loading(GH_LoadingDemand.ForceDirect)]
@@ -11,7 +13,10 @@ public class RobotsInfo : GH_AssemblyInfo
 {
     public RobotsInfo()
     {
-        Instances.DocumentServer.DocumentAdded += FixScriptReferences;
+        var docServer = Instances.DocumentServer;
+
+        docServer.DocumentAdded += FixScriptReferences;
+        docServer.DocumentAdded += UpdateToLibraryParams;
     }
 
     public override string Name => GetInfo<AssemblyProductAttribute>().Product;
@@ -60,12 +65,38 @@ public class RobotsInfo : GH_AssemblyInfo
             Rhino.RhinoApp.WriteLine($"Fixed {count} script component reference(s) to Robots.dll.");
     }
 
+    void UpdateToLibraryParams(GH_DocumentServer sender, GH_Document doc)
+    {
+        var loadRobotSystems = doc.Objects.OfType<LoadRobotSystem>().ToList();
+        int count = 0;
+
+        foreach (var component in loadRobotSystems)
+        {
+            var inputParam = component.Params.First();
+            var valueLists = inputParam.Sources
+                .OfType<GH_ValueList>()
+                .Where(v => v is not LibraryParam)
+                .ToList();
+
+            var selected = (valueLists.FirstOrDefault(v => v.SelectedItems.Any())?.FirstSelectedItem.Value as GH_String)?.Value;
+
+            foreach (var valueList in valueLists)
+                doc.RemoveObject(valueList, true);
+
+            if (LibraryParam.CreateIfEmpty(doc, component, ElementType.RobotCell, selected))
+                count++;
+        }
+
+        if (count > 0)
+            Rhino.RhinoApp.WriteLine($"Updated {count} robot library value list(s).");
+    }
+
     string GetRobotsPath()
     {
         var robotsLib = Instances.ComponentServer.Libraries.FirstOrDefault(l => l.Name == "Robots");
 
         if (robotsLib is null)
-            throw new FileNotFoundException(" Robots plugin not loaded.");
+            throw new ArgumentNullException(nameof(robotsLib), " Robots plugin not loaded.");
 
         var folder = Path.GetDirectoryName(robotsLib.Location);
         var dllFile = Path.Combine(folder, "Robots.dll");

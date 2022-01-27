@@ -14,7 +14,7 @@ public class SetAO : Command
     protected override void ErrorChecking(RobotSystem robotSystem)
     {
         if (AO > robotSystem.IO.AO.Length - 1)
-            throw new Exception(" Index of analog output is too high.");
+            throw new ArgumentOutOfRangeException(nameof(AO), " Index of analog output is too high.");
     }
 
     protected override void Populate()

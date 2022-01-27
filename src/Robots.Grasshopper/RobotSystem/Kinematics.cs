@@ -54,7 +54,7 @@ public class Kinematics : GH_Component
 
                     for (int i = 0; i < jointsText.Length; i++)
                         if (!GH_Convert.ToDouble_Secondary(jointsText[i], ref prevJoint[i]))
-                            throw new Exception(" Previous joints not formatted correctly.");
+                            throw new ArgumentException(" Previous joints not formatted correctly.", nameof(jointsText));
 
                     prevJoints.Add(prevJoint);
                 }

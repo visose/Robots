@@ -252,7 +252,7 @@ DEF {_program.Name}_{groupName}_{file:000}()
                         }
 
                     default:
-                        throw new NotImplementedException($" Motion {cartesian.Motion} not implemented.");
+                        throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.", nameof(cartesian.Motion));
                 }
             }
 

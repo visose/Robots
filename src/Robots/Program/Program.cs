@@ -19,7 +19,7 @@ public class Program : IProgram
     public static bool IsValidIdentifier(string name, out string error)
     {
         if (name.Length == 0)
-        {            
+        {
             error = "name is empty.";
             return false;
         }
@@ -70,14 +70,14 @@ public class Program : IProgram
         var targets = toolpaths.Select(t => t.Targets);
 
         if (!targets.SelectMany(x => x).Any())
-            throw new ArgumentException(" The program has to contain at least 1 target.");
+            throw new ArgumentException(" The program has to contain at least 1 target.", nameof(targets));
 
         int targetCount = targets.First().Count();
 
         foreach (var subTargets in targets)
         {
             if (subTargets.Count() != targetCount)
-                throw new ArgumentException(" All sub programs have to contain the same number of targets.");
+                throw new ArgumentException(" All sub programs have to contain the same number of targets.", nameof(subTargets));
         }
 
         Name = name;
@@ -112,7 +112,7 @@ public class Program : IProgram
             {
                 return t is not null
                     ? new ProgramTarget(t, i)
-                    : throw new ArgumentNullException($" Target {targetIndex} in robot {i} is null or invalid.");
+                    : throw new ArgumentNullException(nameof(subTargets), $" Target {targetIndex} in robot {i} is null or invalid.");
             });
 
             var cellTarget = new CellTarget(programTargets, targetIndex);

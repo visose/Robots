@@ -15,7 +15,7 @@ public class PulseDO : Command
     protected override void ErrorChecking(RobotSystem robotSystem)
     {
         if (DO > robotSystem.IO.DO.Length - 1)
-            throw new Exception(" Index of digital output is too high.");
+            throw new ArgumentOutOfRangeException(nameof(DO), " Index of digital output is too high.");
     }
 
     protected override void Populate()

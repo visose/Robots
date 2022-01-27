@@ -14,7 +14,7 @@ public class WaitDI : Command
     protected override void ErrorChecking(RobotSystem robotSystem)
     {
         if (DI > robotSystem.IO.DI.Length - 1)
-            throw new Exception(" Index of digital input is too high.");
+            throw new ArgumentOutOfRangeException(nameof(DI), " Index of digital input is too high.");
     }
 
     protected override void Populate()

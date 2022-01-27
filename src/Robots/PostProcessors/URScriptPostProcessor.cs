@@ -66,7 +66,8 @@ class URScriptPostProcessor
         foreach (var command in _program.Attributes.OfType<Command>())
         {
             string declaration = command.Declaration(_program);
-            if (declaration is not null && declaration.Length > 0)
+
+            if (!string.IsNullOrWhiteSpace(declaration))
             {
                 declaration = indent + declaration;
                 //  declaration = indent + declaration.Replace("\n", "\n" + indent);
@@ -151,7 +152,7 @@ class URScriptPostProcessor
                             break;
                         }
                     default:
-                        throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.");
+                        throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.", nameof(cartesian.Motion));
                 }
             }
 

@@ -58,7 +58,8 @@ class RapidPostProcessor
             foreach (var command in _program.Attributes.OfType<Command>())
             {
                 string declaration = command.Declaration(_program);
-                if (declaration is not null)
+
+                if (!string.IsNullOrWhiteSpace(declaration))
                     code.Add(declaration);
             }
         }
@@ -210,7 +211,7 @@ class RapidPostProcessor
                             break;
                         }
                     default:
-                        throw new NotImplementedException(" Motion type not implemented.");
+                        throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.", nameof(cartesian.Motion));
                 }
             }
 

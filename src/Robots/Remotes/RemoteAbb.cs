@@ -185,7 +185,7 @@ public class RemoteAbb : IRemote
             Connect();
 
         if (_controller is null)
-            throw new ArgumentNullException(" Controller is null.");
+            throw new ArgumentNullException(nameof(_controller));
 
         var joints = _controller.MotionSystem.ActiveMechanicalUnit.GetPosition();
         var values = new double[] { joints.RobAx.Rax_1, joints.RobAx.Rax_2, joints.RobAx.Rax_3, joints.RobAx.Rax_4, joints.RobAx.Rax_5, joints.RobAx.Rax_6 };

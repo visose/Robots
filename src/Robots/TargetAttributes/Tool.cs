@@ -24,7 +24,7 @@ public class Tool : TargetAttribute
         else
         {
             if (calibrationPlanes.Count != 4)
-                throw new ArgumentException(" Calibration requires 4 planes.");
+                throw new ArgumentException(" Calibration requires 4 planes.", nameof(calibrationPlanes));
 
             var origin = FourPointCalibration(calibrationPlanes);
             Tcp = new Plane(origin, tcp.XAxis, tcp.YAxis);

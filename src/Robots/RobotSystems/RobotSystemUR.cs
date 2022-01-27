@@ -214,11 +214,8 @@ public class RobotSystemUR : RobotSystem
 
     internal override void SaveCode(IProgram program, string folder)
     {
-        if (!Directory.Exists(folder))
-            throw new DirectoryNotFoundException($" Folder \"{folder}\" not found");
-
         if (program.Code is null)
-            throw new ArgumentNullException(" Program code not generated");
+            throw new ArgumentNullException(nameof(program.Code), " Program code not generated");
 
         string file = Path.Combine(folder, $"{program.Name}.URS");
         var joinedCode = string.Join("\r\n", program.Code[0].SelectMany(c => c));

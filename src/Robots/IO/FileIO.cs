@@ -5,10 +5,24 @@ using Rhino.Geometry;
 
 namespace Robots;
 
+public enum ElementType { RobotCell, Tool }
+
 public static class FileIO
 {
-    public static List<string> ListRobotSystems() => List("RobotCell");
-    public static List<string> ListTools() => List("Tool");
+    public static List<string> List(ElementType type)
+    {
+        var names = new List<string>();
+
+        foreach (var file in GetLibraries())
+        {
+            var root = XElement.Load(file);
+
+            foreach (var element in root.Elements(XName.Get(type.ToString())))
+                names.Add(element.GetAttribute("name"));
+        }
+
+        return names;
+    }
 
     public static RobotSystem ParseRobotSystem(string xml, Plane basePlane)
     {
@@ -18,13 +32,13 @@ public static class FileIO
 
     public static RobotSystem LoadRobotSystem(string name, Plane basePlane, bool loadMeshes = true)
     {
-        var element = LoadElement(name, "RobotCell");
+        var element = LoadElement(name, ElementType.RobotCell);
         return CreateRobotSystem(element, basePlane, loadMeshes);
     }
 
     public static Tool LoadTool(string name)
     {
-        var element = LoadElement(name, "Tool");
+        var element = LoadElement(name, ElementType.Tool);
         return CreateTool(element);
     }
 
@@ -84,48 +98,34 @@ public static class FileIO
         }
     }
 
-    static List<string> List(string type)
-    {
-        var names = new List<string>();
-
-        foreach (var file in GetLibraries())
-        {
-            var root = XElement.Load(file);
-
-            foreach (var element in root.Elements(XName.Get(type)))
-                names.Add(element.GetAttribute("name"));
-        }
-
-        return names;
-    }
-
-    static XElement LoadElement(string name, string type)
+    static XElement LoadElement(string name, ElementType type)
     {
         foreach (var file in GetLibraries())
         {
             var root = XElement.Load(file);
-            var element = root.Elements(XName.Get(type))
+            var element = root.Elements(XName.Get(type.ToString()))
                 ?.FirstOrDefault(e => e.GetAttribute("name").EqualsIgnoreCase(name));
 
             if (element is not null)
                 return element;
         }
 
-        throw new ArgumentException($" {type} \"{name}\" not found");
+        throw new ArgumentException($" {type} \"{name}\" not found", nameof(type));
     }
 
     static RobotSystem CreateRobotSystem(XElement element, Plane basePlane, bool loadMeshes)
     {
-        var type = element.Name.LocalName;
+        var typeName = element.Name.LocalName;
 
-        if (type != "RobotCell")
-            throw new ArgumentException($" Element '{type}' should be 'RobotCell'");
+        if (!Enum.TryParse<ElementType>(typeName, out var type)
+            || type != ElementType.RobotCell)
+            throw new ArgumentException($" Element '{typeName}' should be 'RobotCell'", nameof(typeName));
 
         var name = element.GetAttribute("name");
         var manufacturerAttribute = element.GetAttribute("manufacturer");
 
         if (!Enum.TryParse<Manufacturers>(manufacturerAttribute, out var manufacturer))
-            throw new ArgumentException($" Manufacturer '{manufacturerAttribute}' not valid.");
+            throw new ArgumentException($" Manufacturer '{manufacturerAttribute}' not valid.", nameof(manufacturerAttribute));
 
         var mechanicalGroups = new List<MechanicalGroup>();
 
@@ -142,7 +142,7 @@ public static class FileIO
             Manufacturers.UR => new RobotSystemUR(name, (RobotUR)mechanicalGroups[0].Robot, io, basePlane, environment),
             Manufacturers.FANUC => new RobotCellFanuc(name, mechanicalGroups, io, basePlane, environment),
             Manufacturers.Staubli => new RobotCellStaubli(name, mechanicalGroups, io, basePlane, environment),
-            _ => throw new ArgumentException($" Manufacturer '{manufacturer} is not supported.")
+            _ => throw new ArgumentException($" Manufacturer '{manufacturer} is not supported.", nameof(manufacturer))
         };
     }
 
@@ -194,7 +194,7 @@ public static class FileIO
             {
                 "Revolute" => new RevoluteJoint { Index = i, Number = number, A = a, D = d, Range = range, MaxSpeed = maxSpeed.ToRadians(), Mesh = mesh },
                 "Prismatic" => new PrismaticJoint { Index = i, Number = number, A = a, D = d, Range = range, MaxSpeed = maxSpeed, Mesh = mesh },
-                _ => throw new ArgumentException(" Invalid joint type.")
+                _ => throw new ArgumentException(" Invalid joint type.", nameof(jointElement.Name.LocalName))
             };
         }
 
@@ -207,12 +207,12 @@ public static class FileIO
                 Manufacturers.UR => new RobotUR(model, payload, basePlane, baseMesh, joints),
                 Manufacturers.Staubli => new RobotStaubli(model, payload, basePlane, baseMesh, joints),
                 // Manufacturers.FANUC => new RobotFanuc(modelName, payload, basePlane, baseMesh, joints);
-                _ => throw new ArgumentException($" Manufacturer '{manufacturer}' not supported."),
+                _ => throw new ArgumentException($" Manufacturer '{manufacturer}' not supported.", nameof(manufacturer)),
             },
             "Positioner" => new Positioner(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
             "Track" => new Track(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
             "Custom" => new Custom(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
-            _ => throw new ArgumentException($" Unknown mechanism type '{element.Name}'.")
+            _ => throw new ArgumentException($" Unknown mechanism type '{element.Name}'.", nameof(element.Name))
         };
     }
 
@@ -241,7 +241,7 @@ public static class FileIO
         var type = element.Name.LocalName;
 
         if (type != "Tool")
-            throw new ArgumentException($" Element '{type}' should be 'Tool'");
+            throw new ArgumentException($" Element '{type}' should be 'Tool'", nameof(type));
 
         var name = element.GetAttribute("name");
 
@@ -285,21 +285,18 @@ public static class FileIO
         return new Point3d(x, y, z);
     }
 
-    static File3dm GetRhinoDoc(string name, string type)
+    static File3dm GetRhinoDoc(string name, ElementType type)
     {
         foreach (var file in GetLibraries())
         {
             var root = XElement.Load(file);
-            var element = root.Elements(XName.Get(type))
+            var element = root.Elements(XName.Get(type.ToString()))
                 ?.FirstOrDefault(e => e.GetAttribute("name").EqualsIgnoreCase(name));
 
             if (element is null)
                 continue;
 
             var path3dm = Path.ChangeExtension(file, ".3dm");
-
-            if (!File.Exists(path3dm))
-                throw new FileNotFoundException($" File '{Path.GetFileName(path3dm)}' not found");
 
             return File3dm.Read(path3dm);
         }
@@ -309,7 +306,7 @@ public static class FileIO
 
     static List<Mesh> GetMechanismMeshes(string cellName, string mechanism, string model, Manufacturers manufacturer)
     {
-        var doc = GetRhinoDoc(cellName, "RobotCell");
+        var doc = GetRhinoDoc(cellName, ElementType.RobotCell);
         var layerName = $"{mechanism}.{manufacturer}.{model}";
         var layer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(layerName));
 
@@ -336,7 +333,7 @@ public static class FileIO
 
     static Mesh GetToolMesh(string name)
     {
-        const string type = "Tool";
+        const ElementType type = ElementType.Tool;
         var doc = GetRhinoDoc(name, type);
         var layerName = $"{type}.{name}";
         var layer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(layerName));

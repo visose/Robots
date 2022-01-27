@@ -1,16 +1,12 @@
-﻿using Rhino.Geometry;
-using Grasshopper;
+﻿using System.Xml;
+using Rhino.Geometry;
 using Grasshopper.Kernel;
-using Grasshopper.Kernel.Types;
-using Grasshopper.Kernel.Special;
 
 namespace Robots.Grasshopper;
 
 public class LoadRobotSystem : GH_Component
 {
     LibraryForm? _form;
-    GH_ValueList? _valueList = null;
-    IGH_Param? _parameter = null;
 
     public LoadRobotSystem() : base("Load robot system", "LoadRobot", "Loads a robot system from the library.", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.primary;
@@ -21,7 +17,6 @@ public class LoadRobotSystem : GH_Component
     {
         pManager.AddTextParameter("Name", "N", "Name of the robot system", GH_ParamAccess.item);
         pManager.AddPlaneParameter("Base", "P", "Base plane", GH_ParamAccess.item, Plane.WorldXY);
-        _parameter = pManager[0];
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -29,81 +24,40 @@ public class LoadRobotSystem : GH_Component
         pManager.AddParameter(new RobotSystemParameter(), "Robot system", "R", "Robot system", GH_ParamAccess.item);
     }
 
-    protected override void BeforeSolveInstance()
+    public override void AddedToDocument(GH_Document document)
     {
-        if (_parameter is null)
-            throw new ArgumentNullException(nameof(_parameter));
-
-        if (_valueList is not null)
-            return;
-
-        if (_parameter.Sources.FirstOrDefault(s => s is GH_ValueList) is not GH_ValueList inputValueList)
-        {
-            _valueList = new GH_ValueList();
-            _valueList.CreateAttributes();
-            _valueList.Attributes.Pivot = new System.Drawing.PointF(Attributes.Pivot.X - 240, Attributes.Pivot.Y - 21);
-            UpdateValueList();
-            Instances.ActiveCanvas.Document.AddObject(_valueList, false);
-            _parameter.AddSource(_valueList);
-            _parameter.CollectData();
-        }
-        else
-        {
-            _valueList = inputValueList;
-            UpdateValueList();
-        }
+        base.AddedToDocument(document);
+        LibraryParam.CreateIfEmpty(document, this, ElementType.RobotCell);
     }
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         string? name = null;
-        GH_Plane? basePlane = null;
+        Plane basePlane = default;
 
-        if (!DA.GetData(0, ref name) || name is null) { return; }
-        if (!DA.GetData(1, ref basePlane) || basePlane is null) { return; }
+        if (!DA.GetData(0, ref name)) return;
+        if (!DA.GetData(1, ref basePlane)) return;
+
+        if (name is null)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $" Input parameter N cannot be null");
+            DA.AbortComponentSolution();
+            return;
+        }
 
         try
         {
-            var robotSystem = FileIO.LoadRobotSystem(name, basePlane.Value);
+            var robotSystem = FileIO.LoadRobotSystem(name, basePlane);
             DA.SetData(0, new GH_RobotSystem(robotSystem));
         }
         catch (Exception e)
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, e.Message);
+            var message = e is XmlException ex
+                ? $" Invalid XML format in \"{Path.GetFileName(ex.SourceUri)}\""
+                : e.Message;
+
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, message);
         }
-    }
-
-    void UpdateValueList()
-    {
-        if (_valueList is null)
-            return;
-
-        var valueList = _valueList;
-
-        var selected = valueList.FirstSelectedItem;
-        var robotSystems = FileIO.ListRobotSystems();
-
-        if (robotSystems.SequenceEqual(valueList.ListItems.Select(i => i.Name)))
-            return;
-
-        valueList.ListItems.Clear();
-
-        foreach (string robotSystemName in robotSystems)
-            valueList.ListItems.Add(new GH_ValueListItem(robotSystemName, $"\"{robotSystemName}\""));
-
-        if (selected is not null)
-        {
-            var selectedIndex = valueList.ListItems
-                .FindIndex(s => s.Name.Equals(selected.Name, StringComparison.OrdinalIgnoreCase));
-
-            if (selectedIndex != -1)
-            {
-                valueList.SelectItem(selectedIndex);
-                return;
-            }
-        }
-
-        valueList.ExpireSolution(true);
     }
 
     // form
@@ -119,6 +73,9 @@ public class LoadRobotSystem : GH_Component
 
         if (_form is not null)
             _form.Visible = false;
+
+        if (LibraryParam.IsConnected(this, out var libraryParam))
+            document.RemoveObject(libraryParam, false);
     }
 
     void ToggleForm()
@@ -126,7 +83,12 @@ public class LoadRobotSystem : GH_Component
         if (_form is null)
         {
             var library = new OnlineLibrary();
-            library.LibraryChanged += UpdateValueList;
+            library.LibraryChanged += () =>
+            {
+                if (LibraryParam.IsConnected(this, out var libraryParam))
+                    libraryParam.UpdateAndExpire();
+            };
+
             _form = new LibraryForm(library);
         }
 
