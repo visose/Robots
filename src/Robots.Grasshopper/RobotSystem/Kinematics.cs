@@ -5,7 +5,7 @@ namespace Robots.Grasshopper;
 
 public class Kinematics : GH_Component
 {
-    public Kinematics() : base("Kinematics", "K", "Inverse and forward kinematics for a single target (or group of targets in a robot cell with coord", "Robots", "Components") { }
+    public Kinematics() : base("Kinematics", "K", "Inverse and forward kinematics for a single target, or list of targets when using a robot cell with coordinated robots.", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.quinary;
     public override Guid ComponentGuid => new("{EFDA05EB-B281-4703-9C9E-B5F98A9B2E1D}");
     protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconKinematics");
@@ -14,7 +14,7 @@ public class Kinematics : GH_Component
     {
         pManager.AddParameter(new RobotSystemParameter(), "Robot system", "R", "Robot system", GH_ParamAccess.item);
         pManager.AddParameter(new TargetParameter(), "Target", "T", "One target per robot", GH_ParamAccess.list);
-        pManager.AddTextParameter("Previous joints", "J", "Optional previous joint values. If the pose is ambigous is will select one based on this previous position.", GH_ParamAccess.list);
+        pManager.AddTextParameter("Previous joints", "J", "Optional previous joint values. If the pose is ambiguous is will select one based on this previous position.", GH_ParamAccess.list);
         pManager.AddBooleanParameter("Display geometry", "M", "Display mesh geometry of the robot", GH_ParamAccess.item, false);
         pManager[2].Optional = true;
     }

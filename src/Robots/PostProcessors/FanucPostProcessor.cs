@@ -15,6 +15,6 @@ class FanucPostProcessor
          * TODO: Implement...
          */
 
-        throw new NotImplementedException(" Fanuc postprocessor not implemented.");
+        throw new NotImplementedException(" Fanuc post-processor not implemented.");
     }
 }

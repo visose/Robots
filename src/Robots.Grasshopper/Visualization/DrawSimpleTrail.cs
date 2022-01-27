@@ -9,7 +9,7 @@ public class DrawSimpleTrail : GH_Component
     SimpleTrail? _trail;
     Program? _program;
 
-    public DrawSimpleTrail() : base("Simple trail", "Trail", "Draws a trail behind the TCP. To be used with the simulation component.", "Robots", "Util") { }
+    public DrawSimpleTrail() : base("Simple trail", "Trail", "Draws a trail behind the TCP. To be used with the simulation component.", "Robots", "Utility") { }
     public override GH_Exposure Exposure => GH_Exposure.secondary;
     public override Guid ComponentGuid => new("{20F09C83-25A5-453B-B0C9-673CD784A52F}");
     protected override Bitmap Icon => Util.GetIcon("iconSimpleTrail");

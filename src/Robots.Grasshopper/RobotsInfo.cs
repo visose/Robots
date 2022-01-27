@@ -96,7 +96,7 @@ public class RobotsInfo : GH_AssemblyInfo
         var robotsLib = Instances.ComponentServer.Libraries.FirstOrDefault(l => l.Name == "Robots");
 
         if (robotsLib is null)
-            throw new ArgumentNullException(nameof(robotsLib), " Robots plugin not loaded.");
+            throw new ArgumentNullException(nameof(robotsLib), " Robots plug-in not loaded.");
 
         var folder = Path.GetDirectoryName(robotsLib.Location);
         var dllFile = Path.Combine(folder, "Robots.dll");

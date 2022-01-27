@@ -109,7 +109,7 @@ public class RobotSystemUR : RobotSystem
         // as we have reached here there are no singularities so we can handle normally
         double s = Sqrt((t.M21 - t.M12) * (t.M21 - t.M12)
           + (t.M02 - t.M20) * (t.M02 - t.M20)
-          + (t.M10 - t.M01) * (t.M10 - t.M01)); // used to normalise
+          + (t.M10 - t.M01) * (t.M10 - t.M01)); // used to normalize
         if (Abs(s) < 0.001) s = 1;
         // prevent divide by zero, should not happen if matrix is orthogonal and should be
         // caught by singularity test above, but I've left it in just in case

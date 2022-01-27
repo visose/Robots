@@ -207,12 +207,12 @@ class LibraryForm : ComponentForm
     string Description(LibraryItem item) => item switch
     {
         { IsLocal: true, IsDownloaded: true } => "❕📁 Installed, local override",
-        { IsLocal: true, IsOnline: true } => "📁 Local, available online",
+        { IsLocal: true, IsOnline: true } => "📁 Local, available on-line",
         { IsLocal: true } => "📁 Local",
         { IsDownloaded: true, IsUpdateAvailable: true } => "⬆✔ Installed, update available",
-        { IsDownloaded: true, IsOnline: false } => "✔⚠ Installed, online missing",
+        { IsDownloaded: true, IsOnline: false } => "✔⚠ Installed, on-line missing",
         { IsDownloaded: true } => "✔ Installed",
-        { IsOnline: true } => "💾 Available online",
+        { IsOnline: true } => "💾 Available on-line",
         _ => "⚠ Unknown error"
     };
 

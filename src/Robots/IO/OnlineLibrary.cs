@@ -51,7 +51,7 @@ public class OnlineLibrary
         var sha = GetLocalSha(xmlPath);
 
         if (sha != library.OnlineSha)
-            throw new InvalidOperationException(" Downloaded file does not match online file.");
+            throw new InvalidOperationException(" Downloaded file does not match on line file.");
 
         library.DownloadedSha = sha;
         LibraryChanged?.Invoke();

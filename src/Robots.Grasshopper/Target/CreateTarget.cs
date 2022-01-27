@@ -29,7 +29,7 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
 
     bool _isCartesian = true;
 
-    public CreateTarget() : base("Create target", "Target", "Creates or modifies a target. Right click for additional inputs", "Robots", "Components") { }
+    public CreateTarget() : base("Create target", "Target", "Creates or modifies a target. Right click for additional inputs.", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.secondary;
     public override Guid ComponentGuid => new("{BC68DC2C-EED6-4717-9F49-80A2B21B75B6}");
     protected override Bitmap Icon => Util.GetIcon("iconCreateTarget");

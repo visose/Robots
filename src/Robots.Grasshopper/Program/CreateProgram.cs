@@ -6,7 +6,7 @@ namespace Robots.Grasshopper;
 
 public class CreateProgram : GH_Component
 {
-    public CreateProgram() : base("Create program", "Program", "Creates a program, checks for possible issues and fixes common mistakes", "Robots", "Components") { }
+    public CreateProgram() : base("Create program", "Program", "Creates a program, checks for possible issues and fixes common mistakes.", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.quarternary;
     public override Guid ComponentGuid => new("{5186EFD5-C042-4CA9-A7D2-E143F4848DEF}");
     protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconCreateProgram");
@@ -18,7 +18,7 @@ public class CreateProgram : GH_Component
         pManager.AddParameter(new ToolpathParameter(), "Targets 1", "T1", "List of targets or toolpaths for the first or only robot.", GH_ParamAccess.list);
         pManager.AddParameter(new ToolpathParameter(), "Targets 2", "T2", "List of targets or toolpaths for a second coordinated robot.", GH_ParamAccess.list);
         pManager.AddParameter(new CommandParameter(), "Init commands", "C", "Optional list of commands that will run at the start of the program", GH_ParamAccess.list);
-        pManager.AddIntegerParameter("Multifile indices", "I", "Optional list of indices to split the program into multiple files. The indices correspond to the first target of the aditional files", GH_ParamAccess.list);
+        pManager.AddIntegerParameter("Multi-file indices", "I", "Optional list of indices to split the program into multiple files. The indices correspond to the first target of the additional files", GH_ParamAccess.list);
         pManager.AddNumberParameter("Step Size", "S", "Distance in mm to step through linear motions, used for error checking and program simulation. Smaller is more accurate but slower", GH_ParamAccess.item, 1);
         pManager[3].Optional = true;
         pManager[4].Optional = true;

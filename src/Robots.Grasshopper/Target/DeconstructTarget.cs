@@ -22,7 +22,7 @@ public sealed class DeconstructTarget : GH_Component, IGH_VariableParameterCompo
             new Param_String() { Name = "External", NickName = "E", Description = "External axes", Optional = true }
     };
 
-    public DeconstructTarget() : base("Deconstruct target", "DeTarget", "Deconstructs a target. Right click for additional outputs", "Robots", "Components") { }
+    public DeconstructTarget() : base("Deconstruct target", "DeTarget", "Deconstructs a target. Right click for additional outputs.", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.secondary;
     public override Guid ComponentGuid => new("{3252D880-59F9-4C9A-8A92-A6CD4C0BA591}");
     protected override Bitmap Icon => Util.GetIcon("iconDeconstructTarget");

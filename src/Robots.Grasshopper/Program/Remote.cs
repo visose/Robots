@@ -13,7 +13,7 @@ public class Remote : GH_Component
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
-        pManager.AddTextParameter("IP", "IP", "IP address of robot controller. If omited on ABB controllers, it will connect to the first found controller.", GH_ParamAccess.item);
+        pManager.AddTextParameter("IP", "IP", "IP address of robot controller. If omitted on ABB controllers, it will connect to the first found controller.", GH_ParamAccess.item);
         pManager.AddBooleanParameter("Upload", "U", "Upload program", GH_ParamAccess.item, false);
         pManager.AddBooleanParameter("Play", "P", "Play", GH_ParamAccess.item, false);
         pManager.AddBooleanParameter("Pause", "S", "Pause", GH_ParamAccess.item, false);

@@ -16,7 +16,7 @@ class CircumcentreSolver
     internal double Radius => _radius;
 
     /// <summary>
-    /// Computes the centre of a sphere such that all four specified points in
+    /// Computes the center of a sphere such that all four specified points in
     /// 3D space lie on the sphere's surface.
     /// </summary>
     /// <param name="a">The first point (array of 3 doubles for X, Y, Z).</param>
