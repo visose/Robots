@@ -9,7 +9,7 @@ public class ProgramTarget
 
     public Target Target { get; internal set; }
     public int Group { get; internal set; }
-    public Commands.Group? Commands { get; private set; }
+    public List<Command>? Commands { get; private set; }
     internal bool ChangesConfiguration { get; set; } = false;
     internal int LeadingJoint { get; set; }
 
@@ -64,19 +64,7 @@ public class ProgramTarget
     {
         Target = target;
         Group = group;
-        Commands = new Commands.Group();
-
-        var commands = new List<Command>();
-
-        if (target.Command is not null)
-        {
-            if (target.Command is Commands.Group g)
-                commands.AddRange(g.Flatten());
-            else
-                commands.Add(target.Command);
-        }
-
-        Commands = new Commands.Group(commands.Where(c => c is not null && c != Command.Default));
+        Commands = target.Command.Flatten().ToList();
     }
 
     public ProgramTarget ShallowClone(CellTarget cellTarget)

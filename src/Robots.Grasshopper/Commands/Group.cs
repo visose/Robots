@@ -23,10 +23,10 @@ public class Group : GH_Component
     {
         var commands = new List<GH_Command>();
 
-        if (!DA.GetDataList(0, commands)) { return; }
+        if (!DA.GetDataList(0, commands)) return;
 
         var command = new Robots.Commands.Group();
         command.AddRange(commands.Select(x => x.Value));
-        DA.SetData(0, new GH_Command(command));
+        DA.SetData(0, command);
     }
 }

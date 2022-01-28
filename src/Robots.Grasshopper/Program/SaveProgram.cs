@@ -22,15 +22,15 @@ public class SaveProgram : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        GH_Program? program = null;
+        IProgram? program = null;
         string? folder = null;
 
-        if (!DA.GetData(0, ref program) || program is null) { return; }
-        if (!DA.GetData(1, ref folder) || folder is null) { return; }
+        if (!DA.GetData(0, ref program) || program is null) return;
+        if (!DA.GetData(1, ref folder) || folder is null) return;
 
         try
         {
-            program.Value.Save(folder);
+            program.Save(folder);
         }
         catch (Exception e)
         {

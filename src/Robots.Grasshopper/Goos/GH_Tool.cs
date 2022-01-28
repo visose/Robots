@@ -23,4 +23,15 @@ public class GH_Tool : GH_Goo<Tool>
                 return false;
         }
     }
+
+    public override bool CastTo<Q>(ref Q target)
+    {
+        if (typeof(Q).IsAssignableFrom(typeof(Tool)))
+        {
+            target = (Q)(object)Value;
+            return true;
+        }
+
+        return false;
+    }
 }

@@ -26,6 +26,6 @@ public class Wait : GH_Component
         if (!DA.GetData(0, ref time)) return;
 
         var command = new Robots.Commands.Wait(time);
-        DA.SetData(0, new GH_Command(command));
+        DA.SetData(0, command);
     }
 }

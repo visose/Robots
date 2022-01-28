@@ -11,39 +11,20 @@ class CheckProgram
     int _lastIndex;
 
     internal List<CellTarget> Keyframes { get; } = new List<CellTarget>();
-    internal int IndexError { get; private set; }
+    internal List<CellTarget> FixedTargets { get; }
 
     internal CheckProgram(Program program, List<CellTarget> cellTargets, double stepSize)
     {
         _robotSystem = program.RobotSystem;
         _program = program;
 
-        CheckName();
         FixFirstTarget(cellTargets[0]);
         FixTargetAttributes(cellTargets);
-        IndexError = FixTargetMotions(cellTargets, stepSize);
-    }
+        var indexError = FixTargetMotions(cellTargets, stepSize);
 
-    void CheckName()
-    {
-        var name = _program.Name;
-
-        if (_robotSystem is RobotCell cell)
-        {
-            var group = cell.MechanicalGroups.MaxBy(g => g.Name.Length).Name;
-            name = $"{name}_{group}_000";
-        }
-        
-        if (!Program.IsValidIdentifier(name, out var error))
-            _program.Errors.Add("Program " + error);
-
-        if (_robotSystem is RobotCellKuka)
-        {
-            var excess = name.Length - 24;
-
-            if (excess > 0)
-                _program.Warnings.Add($"If using an older KRC2 or KRC3 controller, make the program name {excess} character(s) shorter.");
-        }
+        FixedTargets = (indexError != -1)
+             ? cellTargets.GetRange(0, indexError + 1)
+             : cellTargets;
     }
 
     void FixFirstTarget(CellTarget firstTarget)
@@ -230,7 +211,7 @@ class CheckProgram
         for (int i = 0; i < cellTargets.Count; i++)
         {
             var cellTarget = cellTargets[i];
-            int errorIndex = -1;
+            //int errorIndex = -1;
 
             // first target
             if (i == 0)
@@ -239,9 +220,6 @@ class CheckProgram
                 cellTargets[0].SetTargetKinematics(firstKinematics, _program.Errors, _program.Warnings);
                 CheckUndefined(cellTarget, cellTargets);
                 Keyframes.Add(cellTargets[0].ShallowClone());
-
-                if (_program.Errors.Count > 0)
-                    errorIndex = i;
             }
             else
             {
@@ -329,12 +307,9 @@ class CheckProgram
                     prevInterTarget = interTarget;
                 }
 
-                if (_program.Errors.Count > 0)
-                    errorIndex = i;
-
                 Keyframes.Add(prevInterTarget.ShallowClone());
 
-                if (errorIndex == -1)
+                if (_program.Errors.Count == 0)
                 {
                     double longestWaitTime = 0;
                     foreach (var target in cellTarget.ProgramTargets)
@@ -369,11 +344,16 @@ class CheckProgram
                 }
             }
 
-            _program.Duration = time;
+            if (_program.Errors.Count > 0)
+            {
+                _program.Duration = time;
+                return i;
+            }
 
-            if (errorIndex != -1) return errorIndex;
+            //   if (errorIndex != -1) return errorIndex;
         }
 
+        _program.Duration = time;
         return -1;
     }
 
@@ -387,7 +367,7 @@ class CheckProgram
                 if (!cellTargets[i + 1].ProgramTargets[target.Group].IsJointMotion)
                 {
                     _program.Errors.Add($"Undefined configuration (probably due to a singularity) in target {target.Index} of robot {target.Group} before a linear motion");
-                    IndexError = i;
+                    //IndexError = i;
                 }
             }
         }

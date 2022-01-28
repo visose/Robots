@@ -1,4 +1,5 @@
-﻿using Grasshopper.Kernel;
+﻿using Rhino.Geometry;
+using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 using static System.Math;
 
@@ -33,29 +34,29 @@ public class CheckCollisions : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        GH_Program? program = null;
+        Program? program = null;
         var first = new List<GH_Integer>();
         var second = new List<GH_Integer>();
-        GH_Mesh? environment = null;
+        Mesh? environment = null;
         int environmentPlane = -1;
         double linearStep = 100;
         double angularStep = PI / 4.0;
 
-        if (!DA.GetData(0, ref program)) { return; }
-        if (!DA.GetDataList(1, first)) { return; }
-        if (!DA.GetDataList(2, second)) { return; }
+        if (!DA.GetData(0, ref program)) return;
+        if (!DA.GetDataList(1, first)) return;
+        if (!DA.GetDataList(2, second)) return;
         DA.GetData(3, ref environment);
-        if (!DA.GetData(4, ref environmentPlane)) { return; }
-        if (!DA.GetData(5, ref linearStep)) { return; }
-        if (!DA.GetData(6, ref angularStep)) { return; }
+        if (!DA.GetData(4, ref environmentPlane)) return;
+        if (!DA.GetData(5, ref linearStep)) return;
+        if (!DA.GetData(6, ref angularStep)) return;
 
-        if (program?.Value is not Program p)
+        if (program is not Program p)
         {
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Input program can't have custom code.");
             return;
         }
 
-        var collision = p.CheckCollisions(first.Select(x => x.Value), second.Select(x => x.Value), environment?.Value, environmentPlane, linearStep, angularStep);
+        var collision = p.CheckCollisions(first.Select(x => x.Value), second.Select(x => x.Value), environment, environmentPlane, linearStep, angularStep);
         DA.SetData(0, collision.HasCollision);
 
         if (collision.CollisionTarget is not null)

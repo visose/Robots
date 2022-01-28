@@ -8,6 +8,8 @@ public class TargetParameter : GH_PersistentParam<GH_Target>
     public override GH_Exposure Exposure => GH_Exposure.secondary;
     protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconTargetParam");
     public override Guid ComponentGuid => new("{BEB590A9-905E-42ED-AB08-3E999EA94553}");
+    protected override GH_Target PreferredCast(object data) =>
+        data is Target cast ? new GH_Target(cast) : null!;
 
     protected override GH_GetterResult Prompt_Singular(ref GH_Target value)
     {

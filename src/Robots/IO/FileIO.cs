@@ -110,7 +110,7 @@ public static class FileIO
                 return element;
         }
 
-        throw new ArgumentException($" {type} \"{name}\" not found", nameof(type));
+        throw new ArgumentException($" {type} \"{name}\" not found");
     }
 
     static RobotSystem CreateRobotSystem(XElement element, Plane basePlane, bool loadMeshes)

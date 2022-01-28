@@ -1,7 +1,6 @@
 ﻿using System.Drawing;
 using Rhino.Geometry;
 using Grasshopper.Kernel;
-using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
@@ -34,24 +33,24 @@ public class CreateTool : GH_Component
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         string? name = null;
-        GH_Plane? tcp = null;
+        Plane tcp = default;
         double weight = 0;
-        GH_Mesh? mesh = null;
-        GH_Point? centroid = null;
+        Mesh? mesh = null;
+        Point3d? centroid = null;
         var planes = new List<Plane>();
 
-        if (!DA.GetData(0, ref name) || name is null) { return; }
-        if (!DA.GetData(1, ref tcp) || tcp is null) { return; }
+        if (!DA.GetData(0, ref name) || name is null) return;
+        if (!DA.GetData(1, ref tcp)) return;
         DA.GetDataList(2, planes);
-        if (!DA.GetData(3, ref weight)) { return; }
+        if (!DA.GetData(3, ref weight)) return; 
         DA.GetData(4, ref centroid);
         DA.GetData(5, ref mesh);
 
         try
         {
-            var tool = new Tool(tcp.Value, name, weight, centroid?.Value, mesh?.Value, planes);
+            var tool = new Tool(tcp, name, weight, centroid, mesh, planes);
 
-            DA.SetData(0, new GH_Tool(tool));
+            DA.SetData(0, tool);
             DA.SetData(1, tool.Tcp);
         }
         catch (ArgumentException e)

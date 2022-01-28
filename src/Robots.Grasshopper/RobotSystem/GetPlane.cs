@@ -27,16 +27,17 @@ public class GetPlane : GH_Component
     {
         var numbers = new List<double>();
         Plane plane;
-        GH_RobotSystem? robotSystem = null;
+        RobotSystem? robotSystem = null;
 
-        if (!DA.GetDataList(0, numbers)) { return; }
+        if (!DA.GetDataList(0, numbers)) return;
         DA.GetData(1, ref robotSystem);
 
         if (robotSystem is null)
         {
             if (numbers.Count != 7)
             {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The list should be made out of 7 numbers.");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " The list should be made out of 7 numbers");
+                DA.AbortComponentSolution();
                 return;
             }
 
@@ -44,11 +45,12 @@ public class GetPlane : GH_Component
         }
         else
         {
-            if (robotSystem.Value.Manufacturer == Manufacturers.ABB)
+            if (robotSystem.Manufacturer == Manufacturers.ABB)
             {
                 if (numbers.Count != 7)
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The list should be made out of 7 numbers.");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " The list should be made out of 7 numbers");
+                    DA.AbortComponentSolution();
                     return;
                 }
             }
@@ -56,12 +58,13 @@ public class GetPlane : GH_Component
             {
                 if (numbers.Count != 6)
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " The list should be made out of 6 numbers.");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " The list should be made out of 6 numbers");
+                    DA.AbortComponentSolution();
                     return;
                 }
             }
 
-            plane = robotSystem.Value.NumbersToPlane(numbers.ToArray());
+            plane = robotSystem.NumbersToPlane(numbers.ToArray());
         }
 
         DA.SetData(0, plane);

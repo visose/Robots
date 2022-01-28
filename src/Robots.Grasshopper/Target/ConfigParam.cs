@@ -15,6 +15,7 @@ public class ConfigParam : GH_ValueList
     protected override void OnVolatileDataCollected()
     {
         int config = 0;
+
         if (VolatileDataCount > 0)
         {
             var values = VolatileData.get_Branch(0);

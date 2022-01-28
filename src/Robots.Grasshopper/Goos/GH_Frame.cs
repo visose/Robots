@@ -31,4 +31,15 @@ public class GH_Frame : GH_Goo<Frame>
                 return false;
         }
     }
+
+    public override bool CastTo<Q>(ref Q target)
+    {
+        if (typeof(Q).IsAssignableFrom(typeof(Frame)))
+        {
+            target = (Q)(object)Value;
+            return true;
+        }
+
+        return false;
+    }
 }

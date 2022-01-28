@@ -27,12 +27,13 @@ public class DeconstructProgramTargets : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        GH_Program? program = null;
-        if (!DA.GetData(0, ref program) || program is null) { return; }
+        IProgram? program = null;
+        if (!DA.GetData(0, ref program) || program is null) return;
 
-        if (program.Value is not Program p)
+        if (program is not Program p)
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Input program can't have custom code.");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " Input program can't have custom code");
+            DA.AbortComponentSolution();
             return;
         }
 

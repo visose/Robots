@@ -25,10 +25,10 @@ public class SetDO : GH_Component
         int DO = 0;
         bool value = false;
 
-        if (!DA.GetData(0, ref DO)) { return; }
-        if (!DA.GetData(1, ref value)) { return; }
+        if (!DA.GetData(0, ref DO)) return;
+        if (!DA.GetData(1, ref value)) return;
 
         var command = new Robots.Commands.SetDO(DO, value);
-        DA.SetData(0, new GH_Command(command));
+        DA.SetData(0, command);
     }
 }

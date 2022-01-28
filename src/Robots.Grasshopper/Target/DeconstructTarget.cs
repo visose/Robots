@@ -1,7 +1,6 @@
 ﻿using System.Drawing;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
-using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
@@ -39,10 +38,10 @@ public sealed class DeconstructTarget : GH_Component, IGH_VariableParameterCompo
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        GH_Target? target = null;
+        Target? target = null;
         if (!DA.GetData("Target", ref target) || target is null) return;
 
-        bool isCartesian = target.Value is CartesianTarget;
+        bool isCartesian = target is CartesianTarget;
         // if (isTargetCartesian != isCartesian) SwitchCartesian();
 
         bool hasJoints = Params.Output.Any(x => x.Name == "Joints");
@@ -56,22 +55,22 @@ public sealed class DeconstructTarget : GH_Component, IGH_VariableParameterCompo
         bool hasFrame = Params.Output.Any(x => x.Name == "Frame");
         bool hasExternal = Params.Output.Any(x => x.Name == "External");
 
-        if (hasJoints) DA.SetData("Joints", isCartesian ? null : new GH_String(string.Join(",", ((JointTarget)target.Value).Joints.Select(x => $"{x:0.#####}"))));
-        if (hasPlane) DA.SetData("Plane", isCartesian ? new GH_Plane(((CartesianTarget)target.Value).Plane) : null);
+        if (hasJoints) DA.SetData("Joints", isCartesian ? null : string.Join(",", ((JointTarget)target).Joints.Select(x => $"{x:0.#####}")));
+        if (hasPlane) DA.SetData("Plane", isCartesian ? ((CartesianTarget)target).Plane : null);
         if (hasConfig && isCartesian)
         {
-            var targetConfig = ((CartesianTarget)target.Value).Configuration;
+            var targetConfig = ((CartesianTarget)target).Configuration;
 
             if (targetConfig is not null)
-                DA.SetData("RobConf", new GH_Integer((int)targetConfig));
+                DA.SetData("RobConf", (int)targetConfig);
         }
-        if (hasMotion) DA.SetData("Motion", isCartesian ? new GH_String(((CartesianTarget)target.Value).Motion.ToString()) : null);
-        if (hasTool && (target.Value.Tool is not null)) DA.SetData("Tool", new GH_Tool(target.Value.Tool));
-        if (hasSpeed && (target.Value.Speed is not null)) DA.SetData("Speed", new GH_Speed(target.Value.Speed));
-        if (hasZone && (target.Value.Zone is not null)) DA.SetData("Zone", new GH_Zone(target.Value.Zone));
-        if (hasCommand) DA.SetData("Command", new GH_Command(target.Value.Command));
-        if (hasFrame) DA.SetData("Frame", new GH_Frame(target.Value.Frame));
-        if (hasExternal) DA.SetData("External", new GH_String(string.Join(",", target.Value.External.Select(x => $"{x:0.#####}"))));
+        if (hasMotion) DA.SetData("Motion", isCartesian ? ((CartesianTarget)target).Motion.ToString() : null);
+        if (hasTool && (target.Tool is not null)) DA.SetData("Tool", target.Tool);
+        if (hasSpeed && (target.Speed is not null)) DA.SetData("Speed", target.Speed);
+        if (hasZone && (target.Zone is not null)) DA.SetData("Zone", target.Zone);
+        if (hasCommand) DA.SetData("Command", target.Command);
+        if (hasFrame) DA.SetData("Frame", target.Frame);
+        if (hasExternal) DA.SetData("External", string.Join(",", target.External.Select(x => $"{x:0.#####}")));
     }
 
     // Menu items

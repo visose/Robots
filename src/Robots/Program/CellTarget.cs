@@ -13,13 +13,12 @@ public class CellTarget
     public Plane[] Planes => ProgramTargets.SelectMany(x => x.Kinematics.Planes).ToArray();
     public double[] Joints => ProgramTargets.SelectMany(x => x.Kinematics.Joints).ToArray();
 
-    internal CellTarget(IEnumerable<ProgramTarget> programTargets, int index)
+    internal CellTarget(List<ProgramTarget> programTargets, int index)
     {
-        ProgramTargets = programTargets.ToList();
-
-        foreach (var programTarget in ProgramTargets)
+        foreach (var programTarget in programTargets)
             programTarget.CellTarget = this;
 
+        ProgramTargets = programTargets;
         Index = index;
     }
 

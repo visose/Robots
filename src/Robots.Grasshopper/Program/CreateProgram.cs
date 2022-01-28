@@ -37,20 +37,20 @@ public class CreateProgram : GH_Component
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         string? name = null;
-        GH_RobotSystem? robotSystem = null;
+        RobotSystem? robotSystem = null;
         var initCommandsGH = new List<GH_Command>();
         var toolpathsA = new List<GH_Toolpath>();
         var toolpathsB = new List<GH_Toolpath>();
         var multiFileIndices = new List<int>();
         double stepSize = 1;
 
-        if (!DA.GetData(0, ref name) || name is null) { return; }
-        if (!DA.GetData(1, ref robotSystem) || robotSystem is null) { return; }
-        if (!DA.GetDataList(2, toolpathsA)) { return; }
+        if (!DA.GetData(0, ref name) || name is null) return;
+        if (!DA.GetData(1, ref robotSystem) || robotSystem is null) return;
+        if (!DA.GetDataList(2, toolpathsA)) return;
         DA.GetDataList(3, toolpathsB);
         DA.GetDataList(4, initCommandsGH);
         DA.GetDataList(5, multiFileIndices);
-        if (!DA.GetData(6, ref stepSize)) { return; }
+        if (!DA.GetData(6, ref stepSize)) return;
 
         var initCommands = initCommandsGH.Count > 0 ? new Robots.Commands.Group(initCommandsGH.Select(x => x.Value)) : null;
 
@@ -65,9 +65,9 @@ public class CreateProgram : GH_Component
             toolpaths.Add(toolpathB);
         }
 
-        var program = new Program(name, robotSystem.Value, toolpaths, initCommands, multiFileIndices, stepSize);
+        var program = new Program(name, robotSystem, toolpaths, initCommands, multiFileIndices, stepSize);
 
-        DA.SetData(0, new GH_Program(program));
+        DA.SetData(0, program);
 
         if (program.Code is not null)
         {

@@ -43,7 +43,7 @@ public class LoadTool : GH_Component
         try
         {
             var tool = FileIO.LoadTool(name);
-            DA.SetData(0, new GH_Tool(tool));
+            DA.SetData(0, tool);
         }
         catch (Exception e)
         {

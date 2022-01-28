@@ -59,4 +59,16 @@ public class GH_Zone : GH_Goo<Zone>
             return false;
         }
     }
+
+
+    public override bool CastTo<Q>(ref Q target)
+    {
+        if (typeof(Q).IsAssignableFrom(typeof(Zone)))
+        {
+            target = (Q)(object)Value;
+            return true;
+        }
+
+        return false;
+    }
 }

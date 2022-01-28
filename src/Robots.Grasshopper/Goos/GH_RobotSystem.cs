@@ -27,6 +27,17 @@ public class GH_RobotSystem : GH_Goo<RobotSystem>, IGH_PreviewData
         }
     }
 
+    public override bool CastTo<Q>(ref Q target)
+    {
+        if (typeof(Q).IsAssignableFrom(typeof(RobotSystem)))
+        {
+            target = (Q)(object)Value;
+            return true;
+        }
+
+        return false;
+    }
+
     public BoundingBox ClippingBox => Value.DisplayMesh.GetBoundingBox(true);
 
     public void DrawViewportMeshes(GH_PreviewMeshArgs args)

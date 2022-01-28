@@ -4,7 +4,6 @@ using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Special;
-using Grasshopper.Kernel.Types;
 using GH_IO.Serialization;
 
 namespace Robots.Grasshopper;
@@ -58,7 +57,7 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
         bool hasFrame = Params.Input.Any(x => x.Name == "Frame");
         bool hasExternal = Params.Input.Any(x => x.Name == "External");
 
-        GH_Target? sourceTarget = null;
+        Target? sourceTarget = null;
 
         if (hasTarget)
         {
@@ -79,11 +78,11 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
 
         if (hasJoints)
         {
-            GH_String? jointsGH = null;
+            string? jointsGH = null;
             if (!DA.GetData("Joints", ref jointsGH) || jointsGH is null)
                 return;
 
-            string[] jointsText = jointsGH.Value.Split(',');
+            string[] jointsText = jointsGH.Split(',');
             if (jointsText.Length != 6)
                 return;
 
@@ -95,114 +94,101 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
         }
         else if (sourceTarget is not null)
         {
-            if (sourceTarget.Value is JointTarget jointTarget)
+            if (sourceTarget is JointTarget jointTarget)
                 joints = jointTarget.Joints;
         }
 
         if (hasPlane)
         {
-            GH_Plane? planeGH = null;
-            if (!DA.GetData("Plane", ref planeGH) || planeGH is null)
+            if (!DA.GetData("Plane", ref plane))
                 return;
-
-            plane = planeGH.Value;
         }
         else if (sourceTarget is not null)
         {
-            if (sourceTarget.Value is CartesianTarget cartesian)
+            if (sourceTarget is CartesianTarget cartesian)
                 plane = cartesian.Plane;
         }
 
         if (hasConfig)
         {
-            GH_Integer? configGH = null;
-            DA.GetData("RobConf", ref configGH);
-            configuration = (configGH is null) ? null : (RobotConfigurations?)configGH.Value;
+            int? config = null;
+            DA.GetData("RobConf", ref config);
+            configuration = (RobotConfigurations?)config;
         }
         else if (sourceTarget is not null)
         {
-            if (sourceTarget.Value is CartesianTarget cartesian)
+            if (sourceTarget is CartesianTarget cartesian)
                 configuration = cartesian.Configuration;
         }
 
         if (hasMotion)
         {
-            GH_String? motionGH = null;
-            DA.GetData("Motion", ref motionGH);
-            motion = (motionGH is null) ? Motions.Joint : (Motions)Enum.Parse(typeof(Motions), motionGH.Value);
+            string motionText = "Joint";
+            DA.GetData("Motion", ref motionText);
+            Enum.TryParse(motionText, out motion);
         }
         else if (sourceTarget is not null)
         {
-            if (sourceTarget.Value is CartesianTarget cartesian)
+            if (sourceTarget is CartesianTarget cartesian)
                 motion = cartesian.Motion;
         }
 
         if (hasTool)
         {
-            GH_Tool? toolGH = null;
-            DA.GetData("Tool", ref toolGH);
-            tool = toolGH?.Value;
+            DA.GetData("Tool", ref tool);
         }
         else if (sourceTarget is not null)
         {
-            tool = sourceTarget.Value.Tool;
+            tool = sourceTarget.Tool;
         }
 
         if (hasSpeed)
         {
-            GH_Speed? speedGH = null;
-            DA.GetData("Speed", ref speedGH);
-            speed = speedGH?.Value;
+            DA.GetData("Speed", ref speed);
         }
         else if (sourceTarget is not null)
         {
-            speed = sourceTarget.Value.Speed;
+            speed = sourceTarget.Speed;
         }
 
         if (hasZone)
         {
-            GH_Zone? zoneGH = null;
-            DA.GetData("Zone", ref zoneGH);
-            zone = zoneGH?.Value;
+            DA.GetData("Zone", ref zone);
         }
         else if (sourceTarget is not null)
         {
-            zone = sourceTarget.Value.Zone;
+            zone = sourceTarget.Zone;
         }
 
         if (hasCommand)
         {
-            GH_Command? commandGH = null;
-            DA.GetData("Command", ref commandGH);
-            command = commandGH?.Value;
+            DA.GetData("Command", ref command);
         }
         else if (sourceTarget is not null)
         {
-            command = sourceTarget.Value.Command;
+            command = sourceTarget.Command;
         }
 
         if (hasFrame)
         {
-            GH_Frame? frameGH = null;
-            DA.GetData("Frame", ref frameGH);
-            frame = frameGH?.Value;
+            DA.GetData("Frame", ref frame);
         }
         else if (sourceTarget is not null)
         {
-            frame = sourceTarget.Value.Frame;
+            frame = sourceTarget.Frame;
         }
 
         if (hasExternal)
         {
-            GH_String? externalGH = null;
+            string? externalInput = null;
 
-            if (!DA.GetData("External", ref externalGH) || externalGH is null)
+            if (!DA.GetData("External", ref externalInput) || externalInput is null || string.IsNullOrWhiteSpace(externalInput))
             {
                 external = new double[0];
             }
             else
             {
-                string[]? externalText = externalGH.Value.Split(',');
+                string[]? externalText = externalInput.Split(',');
                 int length = externalText.Length;
                 external = new double[length];
 
@@ -213,13 +199,13 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
         }
         else if (sourceTarget is not null)
         {
-            external = sourceTarget.Value.External;
+            external = sourceTarget.External;
         }
 
         bool localCartesian = _isCartesian;
 
         if (hasTarget && !hasPlane && !hasJoints && sourceTarget is not null)
-            localCartesian = sourceTarget.Value is CartesianTarget;
+            localCartesian = sourceTarget is CartesianTarget;
 
         Target target;
 
@@ -236,9 +222,9 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
         }
 
         if (sourceTarget is not null)
-            target.ExternalCustom = sourceTarget.Value.ExternalCustom;
+            target.ExternalCustom = sourceTarget.ExternalCustom;
 
-        DA.SetData(0, new GH_Target(target));
+        DA.SetData(0, target);
     }
 
     public override bool Write(GH_IWriter writer)

@@ -25,10 +25,10 @@ public class SetAO : GH_Component
         int AO = 0;
         double value = 0;
 
-        if (!DA.GetData(0, ref AO)) { return; }
-        if (!DA.GetData(1, ref value)) { return; }
+        if (!DA.GetData(0, ref AO)) return;
+        if (!DA.GetData(1, ref value)) return;
 
         var command = new Robots.Commands.SetAO(AO, value);
-        DA.SetData(0, new GH_Command(command));
+        DA.SetData(0, command);
     }
 }

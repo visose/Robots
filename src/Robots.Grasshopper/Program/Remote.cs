@@ -1,5 +1,4 @@
 ﻿using Grasshopper.Kernel;
-using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
@@ -27,12 +26,12 @@ public class Remote : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        GH_Program? program = null;
-        GH_String? ip = null;
+        IProgram? program = null;
+        string? ip = null;
 
-        if (!DA.GetData(0, ref program) || program is null) { return; }
+        if (!DA.GetData(0, ref program) || program is null) return;
 
-        var remote = program.Value.RobotSystem.Remote;
+        var remote = program.RobotSystem.Remote;
 
         if (remote is null)
         {
@@ -41,14 +40,14 @@ public class Remote : GH_Component
         }
 
         if (DA.GetData(1, ref ip) && ip is not null)
-            remote.IP = ip.Value;
+            remote.IP = ip;
 
         bool upload = false, play = false, pause = false;
-        if (!DA.GetData("Upload", ref upload)) { return; }
-        if (!DA.GetData("Play", ref play)) { return; }
-        if (!DA.GetData("Pause", ref pause)) { return; }
+        if (!DA.GetData("Upload", ref upload)) return;
+        if (!DA.GetData("Play", ref play)) return; 
+        if (!DA.GetData("Pause", ref pause)) return; 
 
-        if (upload) remote.Upload(program.Value);
+        if (upload) remote.Upload(program);
         if (play) remote.Play();
         if (pause) remote.Pause();
 

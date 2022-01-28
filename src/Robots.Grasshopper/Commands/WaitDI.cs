@@ -23,9 +23,9 @@ public class WaitDI : GH_Component
     {
         int DI = 0;
 
-        if (!DA.GetData(0, ref DI)) { return; }
+        if (!DA.GetData(0, ref DI)) return;
 
         var command = new Robots.Commands.WaitDI(DI);
-        DA.SetData(0, new GH_Command(command));
+        DA.SetData(0, command);
     }
 }

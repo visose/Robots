@@ -28,23 +28,24 @@ public class DrawSimpleTrail : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        GH_Program? ghProgram = null;
+        IProgram? program = null;
         double length = 0;
         int mechanicalGroup = 0;
 
-        if (!DA.GetData(0, ref ghProgram) || ghProgram is null) { return; }
-        if (!DA.GetData(1, ref length)) { return; }
-        if (!DA.GetData(2, ref mechanicalGroup)) { return; }
+        if (!DA.GetData(0, ref program) || program is null) return;
+        if (!DA.GetData(1, ref length)) return;
+        if (!DA.GetData(2, ref mechanicalGroup)) return;
 
-        if (ghProgram?.Value is not Program p)
+        if (!program.HasSimulation)
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " Input program can't have custom code.");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, " Input program cannot be animated");
+            DA.AbortComponentSolution();
             return;
         }
 
-        if (ghProgram.Value != _program)
+        if (program != _program)
         {
-            _program = p;
+            _program = (Program)program;
             _trail = new SimpleTrail(_program, length, mechanicalGroup);
         }
 

@@ -23,7 +23,6 @@ public class Group : Command, IList<Command>
     public int IndexOf(Command item) => _commandList.IndexOf(item);
     public void Insert(int index, Command item) => _commandList.Insert(index, item);
     public void RemoveAt(int index) => _commandList.RemoveAt(index);
-
     public int Count => _commandList.Count;
     public bool IsReadOnly => false;
     public void Add(Command item) => _commandList.Add(item);
@@ -36,18 +35,9 @@ public class Group : Command, IList<Command>
 
     public void AddRange(IEnumerable<Command> source) => _commandList.AddRange(source);
 
-    public IEnumerable<Command> Flatten()
+    internal override IEnumerable<Command> Flatten()
     {
-        var commands = new List<Command>();
-        foreach (var command in _commandList)
-        {
-            if (command is Group group)
-                commands.AddRange(group.Flatten());
-            else
-                commands.Add(command);
-        }
-
-        return commands;
+        return _commandList.SelectMany(c => c.Flatten());
     }
     public override string ToString() => $"Command (Group with {Count} commands)";
 }

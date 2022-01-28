@@ -1,5 +1,5 @@
-﻿using Grasshopper.Kernel;
-using Grasshopper.Kernel.Types;
+﻿using Rhino.Geometry;
+using Grasshopper.Kernel;
 
 namespace Robots.Grasshopper;
 
@@ -24,21 +24,15 @@ public class FromPlane : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        double[] numbers;
-        GH_Plane? plane = null;
-        GH_RobotSystem? robotSystem = null;
+        Plane plane = default;
+        RobotSystem? robotSystem = null;
 
-        if (!DA.GetData(0, ref plane) || plane is null) { return; }
+        if (!DA.GetData(0, ref plane)) return;
         DA.GetData(1, ref robotSystem);
 
-        if (robotSystem is null)
-        {
-            numbers = RobotCellAbb.PlaneToQuaternion(plane.Value);
-        }
-        else
-        {
-            numbers = robotSystem.Value.PlaneToNumbers(plane.Value);
-        }
+        var numbers = robotSystem is null
+            ? RobotCellAbb.PlaneToQuaternion(plane)
+            : robotSystem.PlaneToNumbers(plane);
 
         DA.SetDataList(0, numbers);
     }

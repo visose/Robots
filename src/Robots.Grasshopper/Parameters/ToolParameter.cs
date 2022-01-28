@@ -8,6 +8,8 @@ public class ToolParameter : GH_PersistentParam<GH_Tool>
     public override GH_Exposure Exposure => GH_Exposure.tertiary;
     protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconToolParam");
     public override Guid ComponentGuid => new("{073A02A6-2166-4387-9482-2EE3282E9209}");
+    protected override GH_Tool PreferredCast(object data) =>
+        data is Tool cast ? new GH_Tool(cast) : null!;
 
     protected override GH_GetterResult Prompt_Singular(ref GH_Tool value)
     {

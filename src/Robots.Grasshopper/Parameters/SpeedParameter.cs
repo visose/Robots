@@ -8,6 +8,8 @@ public class SpeedParameter : GH_PersistentParam<GH_Speed>
     public override GH_Exposure Exposure => GH_Exposure.tertiary;
     protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconSpeedParam");
     public override Guid ComponentGuid => new("{0B329813-13A0-48C4-B89A-65F289A4FF28}");
+    protected override GH_Speed PreferredCast(object data) =>
+        data is Speed cast ? new GH_Speed(cast) : null!;
 
     protected override GH_GetterResult Prompt_Singular(ref GH_Speed value)
     {

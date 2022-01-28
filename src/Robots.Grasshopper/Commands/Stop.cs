@@ -21,6 +21,6 @@ public class Stop : GH_Component
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         var command = new Robots.Commands.Stop();
-        DA.SetData(0, new GH_Command(command));
+        DA.SetData(0, command);
     }
 }

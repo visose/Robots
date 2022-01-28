@@ -36,7 +36,7 @@ class Simulation
         _keyframes = keyframes;
         _duration = program.Duration;
 
-        var firstTarget = program.Targets[0];
+        var firstTarget = keyframes[0];
         var kinematics = firstTarget.ProgramTargets.MapToList(t => t.Kinematics);
         CurrentSimulationPose = new SimulationPose(kinematics, firstTarget.Index);
     }
@@ -44,9 +44,7 @@ class Simulation
     public void Step(double time, bool isNormalized)
     {
         if (_keyframes.Count == 1)
-        {
             return;
-        }
 
         if (isNormalized) time *= _program.Duration;
         time = Clamp(time, 0, _duration);

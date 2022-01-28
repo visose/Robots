@@ -29,6 +29,6 @@ public class PulseDO : GH_Component
         if (!DA.GetData(1, ref length)) return;
 
         var command = new Robots.Commands.PulseDO(DO, length);
-        DA.SetData(0, new GH_Command(command));
+        DA.SetData(0, command);
     }
 }

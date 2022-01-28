@@ -1,7 +1,6 @@
 ﻿using System.Drawing;
 using Rhino.Geometry;
 using Grasshopper.Kernel;
-using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
@@ -28,20 +27,20 @@ public class CreateFrame : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        GH_Plane? plane = null;
+        Plane plane = default;
         int coupledGroup = -1;
         int coupledMechanism = -1;
         string? name = null;
 
-        if (!DA.GetData(0, ref plane) || plane is null) { return; }
-        if (!DA.GetData(1, ref coupledGroup)) { return; }
-        if (!DA.GetData(2, ref coupledMechanism)) { return; }
+        if (!DA.GetData(0, ref plane)) return;
+        if (!DA.GetData(1, ref coupledGroup)) return;
+        if (!DA.GetData(2, ref coupledMechanism)) return;
         DA.GetData(3, ref name);
 
         try
         {
-            var frame = new Frame(plane.Value, coupledMechanism, coupledGroup, name);
-            DA.SetData(0, new GH_Frame(frame));
+            var frame = new Frame(plane, coupledMechanism, coupledGroup, name);
+            DA.SetData(0, frame);
         }
         catch (ArgumentException e)
         {

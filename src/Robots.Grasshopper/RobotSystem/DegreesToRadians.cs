@@ -24,14 +24,14 @@ public class DegreesToRadians : GH_Component
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         var degrees = new List<double>();
-        GH_RobotSystem? robotSystem = null;
+        RobotSystem? robotSystem = null;
         int group = 0;
 
-        if (!DA.GetDataList(0, degrees)) { return; }
-        if (!DA.GetData(1, ref robotSystem) || robotSystem is null) { return; }
-        if (!DA.GetData(2, ref group)) { return; }
+        if (!DA.GetDataList(0, degrees)) return;
+        if (!DA.GetData(1, ref robotSystem) || robotSystem is null) return;
+        if (!DA.GetData(2, ref group)) return;
 
-        var radians = degrees.Select((x, i) => (robotSystem.Value).DegreeToRadian(x, i, group));
+        var radians = degrees.Select((x, i) => robotSystem.DegreeToRadian(x, i, group));
         string radiansText = string.Join(",", radians.Select(x => $"{x:0.#####}"));
 
         DA.SetData(0, radiansText);

@@ -9,6 +9,7 @@ public interface IProgram
     string Name { get; }
     RobotSystem RobotSystem { get; }
     List<List<List<string>>>? Code { get; }
+    bool HasSimulation { get; }
     List<int> MultiFileIndices { get; }
     void Save(string folder);
 }
@@ -50,94 +51,146 @@ public class Program : IProgram
 
     // instance
 
-    readonly Simulation _simulation;
+    readonly Simulation? _simulation;
 
     public string Name { get; }
     public RobotSystem RobotSystem { get; }
     public List<CellTarget> Targets { get; }
     public List<int> MultiFileIndices { get; }
     public List<TargetAttribute> Attributes { get; } = new List<TargetAttribute>();
-    public Commands.Group InitCommands { get; } = new Commands.Group();
+    public List<Command> InitCommands { get; }
     public List<string> Warnings { get; } = new List<string>();
     public List<string> Errors { get; } = new List<string>();
     public List<List<List<string>>>? Code { get; }
     public double Duration { get; internal set; }
-    public SimulationPose CurrentSimulationPose => _simulation.CurrentSimulationPose;
+
     public IMeshPoser? MeshPoser { get; set; }
+    public SimulationPose CurrentSimulationPose => _simulation?.CurrentSimulationPose
+        ?? throw new InvalidOperationException(" This program cannot be animated.");
+
+    public bool HasSimulation => _simulation is not null;
 
     public Program(string name, RobotSystem robotSystem, IEnumerable<IToolpath> toolpaths, Commands.Group? initCommands = null, IEnumerable<int>? multiFileIndices = null, double stepSize = 1.0)
     {
-        var targets = toolpaths.Select(t => t.Targets);
-
-        if (!targets.SelectMany(x => x).Any())
-            throw new ArgumentException(" The program has to contain at least 1 target.", nameof(targets));
-
-        int targetCount = targets.First().Count();
-
-        foreach (var subTargets in targets)
-        {
-            if (subTargets.Count() != targetCount)
-                throw new ArgumentException(" All sub programs have to contain the same number of targets.", nameof(subTargets));
-        }
-
-        Name = name;
         RobotSystem = robotSystem;
+        Name = name;
+        CheckName(name, robotSystem);
+        InitCommands = initCommands?.Flatten().ToList() ?? new List<Command>(0);
 
-        if (initCommands is not null)
-            InitCommands.AddRange(initCommands.Flatten());
+        var targets = CreateCellTargets(toolpaths);
 
-        MultiFileIndices = multiFileIndices?.ToList() ?? new List<int> { 0 };
-
-        if (MultiFileIndices.Count > 0)
+        if (targets.Count > 0)
         {
-            int startCount = MultiFileIndices.Count;
-            MultiFileIndices = MultiFileIndices.Where(x => x < targetCount).ToList();
-
-            if (startCount > MultiFileIndices.Count)
-                Warnings.Add("Multi-file index was higher than the number of targets.");
-
-            MultiFileIndices.Sort();
+            var checkProgram = new CheckProgram(this, targets, stepSize);
+            _simulation = new Simulation(this, checkProgram.Keyframes);
+            targets = checkProgram.FixedTargets;
         }
 
-        if (MultiFileIndices.Count == 0 || MultiFileIndices[0] != 0)
-            MultiFileIndices.Insert(0, 0);
-
-        var cellTargets = new List<CellTarget>(targetCount);
-
-        int targetIndex = 0;
-
-        foreach (var subTargets in targets.Transpose())
-        {
-            var programTargets = subTargets.Select((t, i) =>
-            {
-                return t is not null
-                    ? new ProgramTarget(t, i)
-                    : throw new ArgumentNullException(nameof(subTargets), $" Target {targetIndex} in robot {i} is null or invalid.");
-            });
-
-            var cellTarget = new CellTarget(programTargets, targetIndex);
-            cellTargets.Add(cellTarget);
-            targetIndex++;
-        }
-
-        var checkProgram = new CheckProgram(this, cellTargets, stepSize);
-        int indexError = checkProgram.IndexError;
-
-        if (indexError != -1)
-            cellTargets = cellTargets.GetRange(0, indexError + 1);
-
-        Targets = cellTargets;
-
-        _simulation = new Simulation(this, checkProgram.Keyframes);
+        Targets = targets;
+        MultiFileIndices = FixMultiFileIndices(multiFileIndices, Targets.Count);
 
         if (Errors.Count == 0)
             Code = RobotSystem.Code(this);
+    }
+
+    void CheckName(string name, RobotSystem robotSystem)
+    {
+        if (robotSystem is RobotCell cell)
+        {
+            var group = cell.MechanicalGroups.MaxBy(g => g.Name.Length).Name;
+            name = $"{name}_{group}_000";
+        }
+
+        if (!IsValidIdentifier(name, out var error))
+            Errors.Add("Program " + error);
+
+        if (robotSystem is RobotCellKuka)
+        {
+            var excess = name.Length - 24;
+
+            if (excess > 0)
+                Warnings.Add($"If using an older KRC2 or KRC3 controller, make the program name {excess} character(s) shorter.");
+        }
+    }
+
+    List<CellTarget> CreateCellTargets(IEnumerable<IToolpath> toolpaths)
+    {
+        var cellTargets = new List<CellTarget>();
+        var enumerators = toolpaths.Select(e => e.Targets.GetEnumerator()).ToList();
+
+        if (RobotSystem is RobotCell cell)
+        {
+            var pathsCount = enumerators.Count;
+            var groupCount = cell.MechanicalGroups.Count;
+
+            if (pathsCount != groupCount)
+            {
+                Errors.Add($"You supplied {pathsCount} toolpath(s), this robot cell requires {groupCount} toolpath(s).");
+                goto End;
+            }
+        }
+
+        while (enumerators.All(e => e.MoveNext()))
+        {
+            var programTargets = new List<ProgramTarget>(enumerators.Count);
+            programTargets.AddRange(enumerators.Select((e, i) => new ProgramTarget(e.Current, i)));
+
+            if (programTargets.Any(t => t.Target is null))
+            {
+                Errors.Add($"Target index {cellTargets.Count} is null or invalid.");
+                goto End;
+            }
+
+            var cellTarget = new CellTarget(programTargets, cellTargets.Count);
+            cellTargets.Add(cellTarget);
+        }
+
+        if (enumerators.Any(e => e.MoveNext()))
+        {
+            Errors.Add("All toolpaths must contain the same number of targets.");
+            goto End;
+        }
+
+        if (cellTargets.Count == 0)
+        {
+            Errors.Add("The program must contain at least 1 target.");
+        }
+
+    End:
+        return cellTargets;
+    }
+
+    List<int> FixMultiFileIndices(IEnumerable<int>? multiFileIndices, int targetCount)
+    {
+        if (Errors.Any())
+            return new List<int> { 0 };
+
+        var indices = multiFileIndices?.ToList() ?? new List<int> { 0 };
+
+        if (indices.Count > 0)
+        {
+            int startCount = indices.Count;
+            indices = indices.Where(i => i < targetCount).ToList();
+
+            if (startCount > indices.Count)
+                Warnings.Add("Multi-file index was higher than the number of targets.");
+
+            indices.Sort();
+        }
+
+        if (indices.Count == 0 || indices[0] != 0)
+            indices.Insert(0, 0);
+
+        return indices;
     }
 
     public IProgram CustomCode(List<List<List<string>>> code) => new CustomProgram(Name, RobotSystem, MultiFileIndices, code);
 
     public void Animate(double time, bool isNormalized = true)
     {
+        if (_simulation is null)
+            return;
+
         _simulation.Step(time, isNormalized);
 
         if (MeshPoser is null)

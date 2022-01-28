@@ -24,4 +24,15 @@ public class GH_Program : GH_Goo<IProgram>
                 return false;
         }
     }
+
+    public override bool CastTo<Q>(ref Q target)
+    {
+        if (typeof(Q).IsAssignableFrom(typeof(IProgram)))
+        {
+            target = (Q)Value;
+            return true;
+        }
+
+        return false;
+    }
 }

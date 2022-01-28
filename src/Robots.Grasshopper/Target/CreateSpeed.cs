@@ -28,12 +28,12 @@ public class CreateSpeed : GH_Component
     {
         double translationSpeed = 0, rotationSpeed = 0, translationExternal = 0, rotationExternal = 0;
 
-        if (!DA.GetData(0, ref translationSpeed)) { return; }
-        if (!DA.GetData(1, ref rotationSpeed)) { return; }
-        if (!DA.GetData(2, ref translationExternal)) { return; }
-        if (!DA.GetData(3, ref rotationExternal)) { return; }
+        if (!DA.GetData(0, ref translationSpeed)) return;
+        if (!DA.GetData(1, ref rotationSpeed)) return;
+        if (!DA.GetData(2, ref translationExternal)) return;
+        if (!DA.GetData(3, ref rotationExternal)) return;
 
         var speed = new Speed(translationSpeed, rotationSpeed, translationExternal, rotationExternal);
-        DA.SetData(0, new GH_Speed(speed));
+        DA.SetData(0, speed);
     }
 }

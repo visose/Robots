@@ -24,4 +24,15 @@ public class GH_Command : GH_Goo<Command>
                 return false;
         }
     }
+
+    public override bool CastTo<Q>(ref Q target)
+    {
+        if (typeof(Q).IsAssignableFrom(typeof(Command)))
+        {
+            target = (Q)(object)Value;
+            return true;
+        }
+
+        return false;
+    }
 }

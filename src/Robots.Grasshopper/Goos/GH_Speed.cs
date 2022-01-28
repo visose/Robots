@@ -49,4 +49,15 @@ public class GH_Speed : GH_Goo<Speed>
         }
         return false;
     }
+
+    public override bool CastTo<Q>(ref Q target)
+    {
+        if (typeof(Q).IsAssignableFrom(typeof(Speed)))
+        {
+            target = (Q)(object)Value;
+            return true;
+        }
+
+        return false;
+    }
 }

@@ -9,6 +9,8 @@ public class RobotSystemParameter : GH_Param<GH_RobotSystem>, IGH_PreviewObject
     public override GH_Exposure Exposure => GH_Exposure.primary;
     protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconRobotParam");
     public override Guid ComponentGuid => new("{3DBDF573-248C-44B5-8D46-184657A56BCB}");
+    protected override GH_RobotSystem PreferredCast(object data) =>
+        data is RobotSystem cast ? new GH_RobotSystem(cast) : null!;
     public bool Hidden { get; set; }
     public bool IsPreviewCapable => true;
     public BoundingBox ClippingBox => Preview_ComputeClippingBox();

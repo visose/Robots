@@ -23,9 +23,9 @@ public class Message : GH_Component
     {
         string message = string.Empty;
 
-        if (!DA.GetData(0, ref message)) { return; }
+        if (!DA.GetData(0, ref message)) return;
 
         var command = new Robots.Commands.Message(message);
-        DA.SetData(0, new GH_Command(command));
+        DA.SetData(0, command);
     }
 }

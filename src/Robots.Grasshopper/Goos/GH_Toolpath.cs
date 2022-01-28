@@ -34,4 +34,15 @@ public class GH_Toolpath : GH_Goo<IToolpath>
                 return false;
         }
     }
+
+    public override bool CastTo<Q>(ref Q target)
+    {
+        if (typeof(Q).IsAssignableFrom(typeof(IToolpath)))
+        {
+            target = (Q)(object)Value;
+            return true;
+        }
+
+        return false;
+    }
 }

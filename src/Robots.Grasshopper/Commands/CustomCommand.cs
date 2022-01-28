@@ -11,7 +11,7 @@ public class CustomCommand : GH_Component
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddTextParameter("Name", "N", "Name", GH_ParamAccess.item, "Custom command");
+        pManager.AddTextParameter("Name", "N", "Name", GH_ParamAccess.item, "CustomCommand");
         pManager.AddTextParameter("Manufacturer", "M", "Robot manufacturer, options:  ABB, KUKA, UR, FANUC, Staubli, Other, All. If you select 'All', the command will always be included irrespective of the manufacturer.", GH_ParamAccess.item, "All");
         pManager.AddTextParameter("Code", "C", "Command code", GH_ParamAccess.item);
         pManager.AddTextParameter("Declaration", "D", "Variable declaration and assignment", GH_ParamAccess.item);
@@ -30,8 +30,8 @@ public class CustomCommand : GH_Component
         string? manufacturerText = null;
         string? code = null, declaration = null;
 
-        if (!DA.GetData(0, ref name) || name is null) { return; }
-        if (!DA.GetData(1, ref manufacturerText) || manufacturerText is null) { return; }
+        if (!DA.GetData(0, ref name) || name is null) return;
+        if (!DA.GetData(1, ref manufacturerText) || manufacturerText is null) return;
         DA.GetData(2, ref code);
         DA.GetData(3, ref declaration);
 
@@ -44,6 +44,6 @@ public class CustomCommand : GH_Component
         }
 
         command.AddCommand(manufacturer, code, declaration);
-        DA.SetData(0, new GH_Command(command));
+        DA.SetData(0, command);
     }
 }

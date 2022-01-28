@@ -29,15 +29,15 @@ public class Kinematics : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        GH_RobotSystem? robotSystem = null;
+        RobotSystem? robotSystem = null;
         var ghTargets = new List<GH_Target>();
         var prevJointsText = new List<GH_String>();
         bool drawMeshes = false;
 
-        if (!DA.GetData(0, ref robotSystem) || robotSystem is null) { return; }
-        if (!DA.GetDataList(1, ghTargets)) { return; }
+        if (!DA.GetData(0, ref robotSystem) || robotSystem is null) return;
+        if (!DA.GetDataList(1, ghTargets)) return;
         DA.GetDataList(2, prevJointsText);
-        if (!DA.GetData(3, ref drawMeshes)) { return; }
+        if (!DA.GetData(3, ref drawMeshes)) return;
 
         List<double[]>? prevJoints = null;
 
@@ -62,7 +62,7 @@ public class Kinematics : GH_Component
         }
 
         var targets = ghTargets.Select(x => x.Value).ToList();
-        var kinematics = robotSystem.Value.Kinematics(targets, prevJoints);
+        var kinematics = robotSystem.Kinematics(targets, prevJoints);
         var errors = kinematics.SelectMany(x => x.Errors);
 
         if (errors.Any())
@@ -77,7 +77,7 @@ public class Kinematics : GH_Component
 
         if (drawMeshes)
         {
-            var meshes = RhinoMeshPoser.Pose(robotSystem.Value, kinematics, targets);
+            var meshes = RhinoMeshPoser.Pose(robotSystem, kinematics, targets);
             DA.SetDataList(0, meshes.Select(x => new GH_Mesh(x)));
         }
 

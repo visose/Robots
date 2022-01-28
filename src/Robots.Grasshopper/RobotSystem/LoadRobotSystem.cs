@@ -48,7 +48,7 @@ public class LoadRobotSystem : GH_Component
         try
         {
             var robotSystem = FileIO.LoadRobotSystem(name, basePlane);
-            DA.SetData(0, new GH_RobotSystem(robotSystem));
+            DA.SetData(0, robotSystem);
         }
         catch (Exception e)
         {
@@ -57,6 +57,7 @@ public class LoadRobotSystem : GH_Component
                 : e.Message;
 
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, message);
+            DA.AbortComponentSolution();
         }
     }
 

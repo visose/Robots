@@ -38,22 +38,23 @@ public sealed class Simulation : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        GH_Program? program = null;
-        GH_Number? inputTimeGh = null;
-        GH_Boolean? isNormalized = null;
+        IProgram? program = null;
+        double inputTime = 0;
+        bool isNormalized = true;
 
-        if (!DA.GetData(0, ref program) || program is null) { return; }
-        if (!DA.GetData(1, ref inputTimeGh) || inputTimeGh is null) { return; }
-        if (!DA.GetData(2, ref isNormalized) || isNormalized is null) { return; }
+        if (!DA.GetData(0, ref program) || program is null) return;
+        if (!DA.GetData(1, ref inputTime)) return;
+        if (!DA.GetData(2, ref isNormalized)) return;
 
-        if (program?.Value is not Program p)
+        if (!program.HasSimulation)
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Input program can't have custom code.");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, " Input program cannot be animated");
+            DA.AbortComponentSolution();
             return;
         }
 
-        var inputTime = inputTimeGh.Value;
-        inputTime = (isNormalized.Value) ? inputTime * p.Duration : inputTime;
+        var p = (Program)program;
+        inputTime = (isNormalized) ? inputTime * p.Duration : inputTime;
 
         if (_lastInputTime != inputTime)
         {
