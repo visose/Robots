@@ -1,0 +1,31 @@
+﻿<RobotSystems>
+
+  <RobotCell name="ETH-Gantry" manufacturer="ABB">
+    <Mechanisms group="0">
+      <RobotArm model="IRB4600-255" manufacturer="ABB" payload="40">
+        <Base x="0.000" y="0.000" z="0.000" q1="0.000" q2="1.000" q3="0.000" q4="0.000" />
+        <Joints>
+          <Revolute number="1" a="175" d="495" minrange="-180" maxrange="180" maxspeed="175" />
+          <Revolute number="2" a="1095" d="0" minrange="-90" maxrange="150" maxspeed="175" />
+          <Revolute number="3" a="175" d="0" minrange="-180" maxrange="75" maxspeed="175" />
+          <Revolute number="4" a="0" d="1270" minrange="-400" maxrange="400" maxspeed="250" />
+          <Revolute number="5" a="0" d="0" minrange="-125" maxrange="120" maxspeed="250" />
+          <Revolute number="6" a="0" d="135" minrange="-400" maxrange="400" maxspeed="360" />
+        </Joints>
+      </RobotArm>
+      <Track model="Gudel" manufacturer="ABB" payload="1000" movesRobot="true">
+        <Base x="2100.00" y="865.00" z="3250.00" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
+        <Joints>
+          <Prismatic number="7" a="0.00" d="0.00" minrange="0" maxrange="42864.75" maxspeed="1890" />
+          <Prismatic number="8" a="0.00" d="0.00" minrange="0" maxrange="12673.00" maxspeed="1890" />
+          <Prismatic number="9" a="0.00" d="0.00" minrange="0" maxrange="-1227.00" maxspeed="1890" />
+        </Joints>
+      </Track>
+    </Mechanisms>
+    <IO>
+      <DO names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+    </IO>
+  </RobotCell>
+
+</RobotSystems>
