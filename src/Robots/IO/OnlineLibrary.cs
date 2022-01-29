@@ -28,7 +28,7 @@ public class OnlineLibrary
 
     public OnlineLibrary()
     {
-        _http.BaseAddress = new Uri("https://raw.githubusercontent.com/visose/Robots/master/libraries/");
+        _http.BaseAddress = new Uri("https://raw.githubusercontent.com/visose/Robots/libraries/");
     }
 
     public async Task UpdateLibraryAsync()
@@ -73,7 +73,7 @@ public class OnlineLibrary
     async Task AddOnlineLibrariesAsync()
     {
         var github = new GitHubClient(new ProductHeaderValue("visoseRobots"));
-        var files = await github.Repository.Content.GetAllContents("visose", "Robots", "libraries");
+        var files = await github.Repository.Content.GetAllContentsByRef("visose", "Robots", "libraries");
 
         foreach (var file in files)
         {
