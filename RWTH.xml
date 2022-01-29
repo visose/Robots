@@ -1,0 +1,43 @@
+<RobotSystems>
+
+  <RobotCell name="RWTH-KR10" manufacturer="KUKA">
+    <Mechanisms>
+      <RobotArm model="KR10-R1100" manufacturer="KUKA" payload="10">
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Joints>
+          <Revolute number="1" a ="25" d ="400" minrange = "-170" maxrange ="170" maxspeed ="300"/>
+          <Revolute number="2" a ="560" d ="0" minrange = "-190" maxrange ="45" maxspeed ="225"/>
+          <Revolute number="3" a ="35" d ="0" minrange = "-120" maxrange ="156" maxspeed ="225"/>
+          <Revolute number="4" a ="0" d ="515" minrange = "-185" maxrange ="185" maxspeed ="381"/>
+          <Revolute number="5" a ="0" d ="0" minrange = "-120" maxrange ="120" maxspeed ="311"/>
+          <Revolute number="6" a ="0" d ="80" minrange = "-350" maxrange ="350" maxspeed ="492"/>
+        </Joints>
+      </RobotArm>
+    </Mechanisms>
+    <IO>
+      <DO names="1,2,3,4,5,6,7,8"/>
+      <DI names="1,2,3,4,5,6,7,8"/>
+    </IO>
+  </RobotCell>
+
+   <RobotCell name="RWTH-Doosan" manufacturer="Doosan">
+    <Mechanisms>
+      <RobotArm model="M1013" manufacturer="Doosan" payload="10">
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Joints>
+          <Revolute number="1" a="0" d="152.5" minrange="-360" maxrange="360" maxspeed="120" />
+          <Revolute number="2" a="620" d="34.5" minrange="-360" maxrange="360" maxspeed="120" />
+          <Revolute number="3" a="0" d="0" minrange="-160" maxrange="160" maxspeed="180" />
+          <Revolute number="4" a="0" d="559" minrange="-360" maxrange="360" maxspeed="225" />
+          <Revolute number="5" a="0" d="0" minrange="-360" maxrange="360" maxspeed="225" />
+          <Revolute number="6" a="0" d="121" minrange="-360" maxrange="360" maxspeed="225" />
+        </Joints>
+      </RobotArm>
+    </Mechanisms>
+    <IO>
+      <DO names="1,2,3,4,5,6"/>
+      <DI names="1,2,3,4,5,6"/>
+    </IO>
+  </RobotCell>
+
+</RobotSystems>
