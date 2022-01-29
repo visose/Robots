@@ -1,0 +1,96 @@
+﻿<RobotSystems>
+
+ <RobotCell name="uem-IRB120" manufacturer="ABB">
+    <Mechanisms>
+      <RobotArm model="IRB120" manufacturer="ABB" payload="3">
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Joints>
+          <Revolute number="1" a ="0" d ="290" minrange = "-165" maxrange ="165" maxspeed ="250"/>
+          <Revolute number="2" a ="270" d ="0" minrange = "-110" maxrange ="110" maxspeed ="250"/>
+          <Revolute number="3" a ="70" d ="0" minrange = "-110" maxrange ="70" maxspeed ="250"/>
+          <Revolute number="4" a ="0" d ="302" minrange = "-160" maxrange ="160" maxspeed ="320"/>
+          <Revolute number="5" a ="0" d ="0" minrange = "-120" maxrange ="120" maxspeed ="320"/>
+          <Revolute number="6" a ="0" d ="72" minrange = "-400" maxrange ="400" maxspeed ="420"/>
+        </Joints>
+      </RobotArm>
+    </Mechanisms>
+    <IO>
+      <DO names="DO01"/>
+      <DI names="DI01"/>
+    </IO>
+  </RobotCell>
+
+    <RobotCell name="uem-IRB1600" manufacturer="ABB">
+    <Mechanisms>
+      <RobotArm model="IRB1600-145" manufacturer="ABB" payload="6">
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Joints>
+          <Revolute number="1" a ="150" d ="486.5" minrange = "-180" maxrange ="180" maxspeed ="180"/>
+          <Revolute number="2" a ="700" d ="0" minrange = "-90" maxrange ="150" maxspeed ="180"/>
+          <Revolute number="3" a ="0" d ="0" minrange = "-245" maxrange ="65" maxspeed ="185"/>
+          <Revolute number="4" a ="0" d ="600" minrange = "-200" maxrange ="200" maxspeed ="385"/>
+          <Revolute number="5" a ="0" d ="0" minrange = "-115" maxrange ="115" maxspeed ="400"/>
+          <Revolute number="6" a ="0" d ="65" minrange = "-400" maxrange ="400" maxspeed ="460"/>
+        </Joints>
+      </RobotArm>
+    </Mechanisms>
+    <IO>
+      <DO names="DO01"/>
+      <DI names="DI01"/>
+    </IO>
+  </RobotCell>
+  
+   <RobotCell name="uem-IRB2600" manufacturer="ABB">
+    <Mechanisms>
+      <RobotArm model="IRB2600-165" manufacturer="ABB" payload="12">
+        <Base x="2346.44" y="1376.57" z="15.5481" q1="0.501289" q2="0.00267937" q3="-0.00393171" q4="-0.865267"/>
+        <Joints>
+          <Revolute number="1" a ="150" d ="445" minrange = "-180" maxrange ="180" maxspeed ="175"/>
+          <Revolute number="2" a ="700" d ="0" minrange = "-95" maxrange ="155" maxspeed ="175"/>
+          <Revolute number="3" a ="115" d ="0" minrange = "-180" maxrange ="75" maxspeed ="175"/>
+          <Revolute number="4" a ="0" d ="795" minrange = "-400" maxrange ="400" maxspeed ="360"/>
+          <Revolute number="5" a ="0" d ="0" minrange = "-120" maxrange ="120" maxspeed ="360"/>
+          <Revolute number="6" a ="0" d ="85" minrange = "-400" maxrange ="400" maxspeed ="500"/>
+        </Joints>
+      </RobotArm>
+    </Mechanisms> 
+    <IO>
+      <DO names="DO01"/>
+      <DI names="DI01"/>
+    </IO>
+  </RobotCell>
+  
+  <RobotCell name="uem-IRB1600_IRB2600" manufacturer="ABB">
+    <Mechanisms group="0">
+      <RobotArm model="IRB1600-145" manufacturer="ABB" payload="6">
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Joints>
+          <Revolute number="1" a ="150" d ="486.5" minrange = "-180" maxrange ="180" maxspeed ="180"/>
+          <Revolute number="2" a ="700" d ="0" minrange = "-90" maxrange ="150" maxspeed ="180"/>
+          <Revolute number="3" a ="0" d ="0" minrange = "-245" maxrange ="65" maxspeed ="185"/>
+          <Revolute number="4" a ="0" d ="600" minrange = "-200" maxrange ="200" maxspeed ="385"/>
+          <Revolute number="5" a ="0" d ="0" minrange = "-115" maxrange ="115" maxspeed ="400"/>
+          <Revolute number="6" a ="0" d ="65" minrange = "-400" maxrange ="400" maxspeed ="460"/>
+        </Joints>
+      </RobotArm>
+      </Mechanisms>
+     <Mechanisms group="1">
+      <RobotArm model="IRB2600-165" manufacturer="ABB" payload="12">
+        <Base x="2346.44" y="1376.57" z="15.5481" q1="0.501289" q2="0.00267937" q3="-0.00393171" q4="-0.865267"/>
+        <Joints>
+          <Revolute number="1" a ="150" d ="445" minrange = "-180" maxrange ="180" maxspeed ="175"/>
+          <Revolute number="2" a ="700" d ="0" minrange = "-95" maxrange ="155" maxspeed ="175"/>
+          <Revolute number="3" a ="115" d ="0" minrange = "-180" maxrange ="75" maxspeed ="175"/>
+          <Revolute number="4" a ="0" d ="795" minrange = "-400" maxrange ="400" maxspeed ="360"/>
+          <Revolute number="5" a ="0" d ="0" minrange = "-120" maxrange ="120" maxspeed ="360"/>
+          <Revolute number="6" a ="0" d ="85" minrange = "-400" maxrange ="400" maxspeed ="500"/>
+        </Joints>
+      </RobotArm>
+    </Mechanisms>
+    <IO>
+      <DO names="DO01"/>
+      <DI names="DI01"/>
+    </IO>
+  </RobotCell>
+  
+</RobotSystems>
