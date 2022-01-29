@@ -1,8 +1,6 @@
 ﻿using Robots.Tests;
 using Robots;
+using Rhino.Geometry;
 
 //dotnet run --property:Configuration=Release
-new Performance();
-
-//var github = new OnlineLibrary();
-//await github.UpdateLibraryAsync();
+// new Performance();

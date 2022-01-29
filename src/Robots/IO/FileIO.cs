@@ -9,6 +9,8 @@ public enum ElementType { RobotCell, Tool }
 
 public static class FileIO
 {
+    static readonly Mesh _emptyMesh = new();
+
     public static List<string> List(ElementType type)
     {
         var names = new List<string>();
@@ -171,12 +173,13 @@ public static class FileIO
         var basePlane = CreatePlane(baseElement);
 
         var jointElements = element.GetElement("Joints").Descendants().ToList();
-        Joint[] joints = new Joint[jointElements.Count];
+        var jointCount = jointElements.Count;
+        Joint[] joints = new Joint[jointCount];
 
-        var meshes = loadMeshes ? GetMechanismMeshes(cellName, mechanism, model, manufacturer) : null;
+        var meshes = loadMeshes ? GetMechanismMeshes(cellName, mechanism, model, manufacturer, jointCount) : null;
         Mesh? baseMesh = meshes?[0].DuplicateMesh();
 
-        for (int i = 0; i < jointElements.Count; i++)
+        for (int i = 0; i < jointCount; i++)
         {
             var jointElement = jointElements[i];
             double a = jointElement.GetDoubleAttribute("a");
@@ -304,27 +307,30 @@ public static class FileIO
         throw new ArgumentException($" {type} \"{name}\" not found");
     }
 
-    static List<Mesh> GetMechanismMeshes(string cellName, string mechanism, string model, Manufacturers manufacturer)
+    static List<Mesh> GetMechanismMeshes(string cellName, string mechanism, string model, Manufacturers manufacturer, int jointCount)
     {
+        var meshCount = jointCount + 1;
         var doc = GetRhinoDoc(cellName, ElementType.RobotCell);
-        var layerName = $"{mechanism}.{manufacturer}.{model}";
-        var layer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(layerName));
+        var parentName = $"{mechanism}.{manufacturer}.{model}";
+        var parentLayer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(parentName));
 
-        if (layer is null)
-            throw new ArgumentException($" Mechanism \"{model}\" is not in the 3dm file.");
+        if (parentLayer is null)
+            return Enumerable.Repeat(_emptyMesh, meshCount).ToList();
 
-        var meshes = new List<Mesh>();
-        int i = 0;
+        var meshes = new List<Mesh>(meshCount);
 
-        while (true)
+        for (int i = 0; i < meshCount; i++)
         {
-            string name = $"{i++}";
-            var jointLayer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(name) && (x.ParentLayerId == layer.Id));
+            var layerName = i.ToString();
+            var jointLayer = doc.AllLayers.FirstOrDefault(l => l.Name.EqualsIgnoreCase(layerName) && (l.ParentLayerId == parentLayer.Id));
 
             if (jointLayer is null)
-                break;
+            {
+                meshes.Add(_emptyMesh);
+                continue;
+            }
 
-            var mesh = doc.Objects.FirstOrDefault(x => x.Attributes.LayerIndex == jointLayer.Index && x.Geometry is Mesh)?.Geometry as Mesh ?? new Mesh();
+            var mesh = doc.Objects.FirstOrDefault(x => x.Attributes.LayerIndex == jointLayer.Index && x.Geometry is Mesh)?.Geometry as Mesh ?? _emptyMesh;
             meshes.Add(mesh);
         }
 
