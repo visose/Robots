@@ -65,7 +65,7 @@ public class RobotCellStaubli : RobotCell
     internal override void SaveCode(IProgram program, string folder)
     {
         if (program.Code is null)
-            throw new ArgumentNullException(nameof(program.Code), " Program code not generated");
+            throw new InvalidOperationException(" Program code not generated");
 
         var programDir = Path.Combine(folder, program.Name);
         Directory.CreateDirectory(programDir);

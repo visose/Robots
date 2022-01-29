@@ -215,7 +215,7 @@ public class RobotSystemUR : RobotSystem
     internal override void SaveCode(IProgram program, string folder)
     {
         if (program.Code is null)
-            throw new ArgumentNullException(nameof(program.Code), " Program code not generated");
+            throw new InvalidOperationException(" Program code not generated");
 
         string file = Path.Combine(folder, $"{program.Name}.URS");
         var joinedCode = string.Join("\r\n", program.Code[0].SelectMany(c => c));

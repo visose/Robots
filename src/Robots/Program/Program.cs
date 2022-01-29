@@ -73,10 +73,7 @@ public class Program : IProgram
     public Program(string name, RobotSystem robotSystem, IEnumerable<IToolpath> toolpaths, Commands.Group? initCommands = null, IEnumerable<int>? multiFileIndices = null, double stepSize = 1.0)
     {
         RobotSystem = robotSystem;
-        Name = name;
-        CheckName(name, robotSystem);
         InitCommands = initCommands?.Flatten().ToList() ?? new List<Command>(0);
-
         var targets = CreateCellTargets(toolpaths);
 
         if (targets.Count > 0)
@@ -87,6 +84,9 @@ public class Program : IProgram
         }
 
         Targets = targets;
+
+        Name = name;
+        CheckName(name, robotSystem);
         MultiFileIndices = FixMultiFileIndices(multiFileIndices, Targets.Count);
 
         if (Errors.Count == 0)

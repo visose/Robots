@@ -28,7 +28,7 @@ public class RobotCellAbb : RobotCell
     internal override void SaveCode(IProgram program, string folder)
     {
         if (program.Code is null)
-            throw new ArgumentNullException(nameof(program.Code), " Program code not generated");
+            throw new InvalidOperationException(" Program code not generated");
 
         Directory.CreateDirectory(Path.Combine(folder, program.Name));
         bool multiProgram = program.MultiFileIndices.Count > 1;
