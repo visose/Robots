@@ -1,0 +1,25 @@
+<RobotSystems>
+
+  <RobotCell name="VUB-KR15-c" manufacturer="KUKA">
+    <Mechanisms>
+      <RobotArm model="KR15-2" manufacturer="KUKA" payload="15">
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Joints>
+          <Revolute number="1" a ="300" d ="675" minrange = "-185" maxrange ="185" maxspeed ="152"/>
+          <Revolute number="2" a ="650" d ="0" minrange = "-145" maxrange ="-40" maxspeed ="152"/>
+          <Revolute number="3" a ="155" d ="0" minrange = "-50" maxrange ="160" maxspeed ="152"/>
+          <Revolute number="4" a ="0" d ="600" minrange = "-180" maxrange ="180" maxspeed ="284"/>
+          <Revolute number="5" a ="0" d ="0" minrange = "-100" maxrange ="100" maxspeed ="293"/>
+          <Revolute number="6" a ="0" d ="103" minrange = "-350" maxrange ="350" maxspeed ="604"/>
+        </Joints>
+      </RobotArm>
+    </Mechanisms>
+    <IO>
+      <DO names="1,2,3,4"/>
+      <DI names="1,2,3,4"/>
+      <AO names="1,2"/>
+      <AI names="1,2"/>
+    </IO>
+  </RobotCell>
+
+</RobotSystems>
