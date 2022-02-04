@@ -1,0 +1,37 @@
+# Artifacts
+Library/
+Temp/
+obj/
+Logs/
+UserSettings/
+
+*.sln
+*.csproj
+
+# Visual Studio
+.vs/
+.vsconfig
+
+# Binaries
+/Assets/libs
+/Assets/libs.meta
+
+# Default settings
+ProjectSettings/AudioManager.asset
+ProjectSettings/CommonBurstAotSettings.json
+ProjectSettings/boot.config
+ProjectSettings/BurstAotSettings_StandaloneWindows.json
+ProjectSettings/ClusterInputManager.asset
+ProjectSettings/DynamicsManager.asset
+ProjectSettings/EditorBuildSettings.asset
+ProjectSettings/InputManager.asset
+ProjectSettings/MemorySettings.asset
+ProjectSettings/NavMeshAreas.asset
+ProjectSettings/Physics2DSettings.asset
+ProjectSettings/PresetManager.asset
+ProjectSettings/SceneTemplateSettings.json
+ProjectSettings/TagManager.asset
+ProjectSettings/TimeManager.asset
+ProjectSettings/UnityConnectSettings.asset
+ProjectSettings/VersionControlSettings.asset
+ProjectSettings/VFXManager.asset
