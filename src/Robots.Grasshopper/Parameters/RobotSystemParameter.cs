@@ -1,5 +1,4 @@
 ﻿using Rhino.Geometry;
-using Grasshopper.Kernel;
 
 namespace Robots.Grasshopper;
 

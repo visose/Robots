@@ -1,6 +1,4 @@
-﻿using Grasshopper.Kernel;
-
-namespace Robots.Grasshopper;
+﻿namespace Robots.Grasshopper;
 
 public class ToolParameter : GH_PersistentParam<GH_Tool>
 {

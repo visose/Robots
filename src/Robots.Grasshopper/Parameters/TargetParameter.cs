@@ -1,6 +1,4 @@
-﻿using Grasshopper.Kernel;
-
-namespace Robots.Grasshopper;
+﻿namespace Robots.Grasshopper;
 
 public class TargetParameter : GH_PersistentParam<GH_Target>
 {

@@ -1,6 +1,4 @@
-﻿using Grasshopper.Kernel;
-
-namespace Robots.Grasshopper.Commands;
+﻿namespace Robots.Grasshopper.Commands;
 
 public class SetAO : GH_Component
 {

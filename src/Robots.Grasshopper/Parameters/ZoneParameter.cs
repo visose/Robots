@@ -1,6 +1,4 @@
-﻿using Grasshopper.Kernel;
-
-namespace Robots.Grasshopper;
+﻿namespace Robots.Grasshopper;
 
 public class ZoneParameter : GH_PersistentParam<GH_Zone>
 {

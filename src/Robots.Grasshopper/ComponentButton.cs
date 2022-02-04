@@ -1,6 +1,5 @@
 ﻿using System.Drawing;
 using System.Windows.Forms;
-using Grasshopper.Kernel;
 using Grasshopper.Kernel.Attributes;
 using Grasshopper.GUI;
 using Grasshopper.GUI.Canvas;

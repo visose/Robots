@@ -1,6 +1,7 @@
-﻿using System.Drawing;
+﻿global using Grasshopper.Kernel;
+
+using System.Drawing;
 using System.Reflection;
-using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Special;
 using Grasshopper;

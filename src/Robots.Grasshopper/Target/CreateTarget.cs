@@ -1,7 +1,6 @@
 ﻿using System.Drawing;
 using Rhino.Geometry;
 using Grasshopper;
-using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Special;
 using GH_IO.Serialization;
