@@ -1,7 +1,13 @@
 ﻿using System.Security.Cryptography;
-using Octokit;
+using Newtonsoft.Json;
 
 namespace Robots;
+
+class FileDto
+{
+    public string Name { get; set; } = default!;
+    public string Sha { get; set; } = default!;
+}
 
 public class LibraryItem
 {
@@ -28,7 +34,9 @@ public class OnlineLibrary
 
     public OnlineLibrary()
     {
-        _http.BaseAddress = new Uri("https://raw.githubusercontent.com/visose/Robots/libraries/");
+        var headers = _http.DefaultRequestHeaders;
+        headers.Add("Accept", "application/vnd.github.v3+json");
+        headers.Add("User-Agent", "request");
     }
 
     public async Task UpdateLibraryAsync()
@@ -72,8 +80,12 @@ public class OnlineLibrary
 
     async Task AddOnlineLibrariesAsync()
     {
-        var github = new GitHubClient(new ProductHeaderValue("visoseRobots"));
-        var files = await github.Repository.Content.GetAllContentsByRef("visose", "Robots", "libraries");
+        var uri = new Uri("https://api.github.com/repos/visose/robots/contents?ref=libraries");
+        var json = await _http.GetStringAsync(uri);
+        var files = JsonConvert.DeserializeObject<List<FileDto>>(json);
+
+        if (files is null)
+            throw new ArgumentNullException(" Could not list libraries.");
 
         foreach (var file in files)
         {
@@ -170,10 +182,11 @@ public class OnlineLibrary
             Directory.CreateDirectory(folder);
 
         string downloadPath = Path.Combine(folder, fileName);
-        var response = await _http.GetAsync(fileName);
-        response.EnsureSuccessStatusCode();
 
-        var bytes = await response.Content.ReadAsByteArrayAsync();
+        var baseUri = new Uri("https://raw.githubusercontent.com/visose/Robots/libraries/");
+        var uri = new Uri(baseUri, fileName);
+
+        var bytes = await _http.GetByteArrayAsync(uri);
         File.WriteAllBytes(downloadPath, bytes);
     }
 }

@@ -7,7 +7,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="HelixToolkit.SharpDX.Core.Wpf" Version="2.20.0" />
+		<PackageReference Include="HelixToolkit.SharpDX.Core.Wpf" Version="2.20.2" />
 		<PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
 		<ProjectReference Include="..\Robots\Robots.csproj" />
 	</ItemGroup>	
