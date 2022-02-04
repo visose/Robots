@@ -482,7 +482,7 @@ class CheckProgram
 
             if (deltaTime < TimeTol)
             {
-                _program.Warnings.Add($"Position and orientation don't change for {target.Index}");
+                _program.Warnings.Add($"Position and orientation do not change for {target.Index}");
             }
             else if (deltaIndex == 1)
             {

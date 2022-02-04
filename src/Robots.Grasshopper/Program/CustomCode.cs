@@ -23,14 +23,14 @@ public class CustomCode : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        Program? program = null;
+        IProgram? program = null;
 
         if (!DA.GetData(0, ref program) || program is null) return;
         if (!DA.GetDataTree(1, out GH_Structure<GH_String> codeTree)) return;
 
         if (program is not Program p)
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " Input program can't have custom code");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " Input program cannot have custom code");
             DA.AbortComponentSolution();
             return;
         }

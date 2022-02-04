@@ -31,7 +31,7 @@ public class DeconstructProgramTargets : GH_Component
 
         if (program is not Program p)
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " Input program can't have custom code");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " Input program cannot have custom code");
             DA.AbortComponentSolution();
             return;
         }

@@ -5,7 +5,7 @@ namespace Robots;
 
 public class RobotAbb : RobotArm
 {
-    internal RobotAbb(string model, double payload, Plane basePlane, Mesh? baseMesh, Joint[] joints) : base(model, Manufacturers.ABB, payload, basePlane, baseMesh, joints) { }
+    internal RobotAbb(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints) : base(model, Manufacturers.ABB, payload, basePlane, baseMesh, joints) { }
 
     protected override JointTarget GetStartPose() => new(new double[] { 0, PI / 2, 0, 0, 0, 0 });
 

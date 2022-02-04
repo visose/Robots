@@ -4,7 +4,7 @@ namespace Robots;
 
 public abstract class RobotArm : Mechanism
 {
-    internal RobotArm(string model, Manufacturers manufactuer, double payload, Plane basePlane, Mesh? baseMesh, Joint[] joints) : base(model, manufactuer, payload, basePlane, baseMesh, joints, false) { }
+    internal RobotArm(string model, Manufacturers manufactuer, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints) : base(model, manufactuer, payload, basePlane, baseMesh, joints, false) { }
 
     protected override void SetStartPlanes()
     {

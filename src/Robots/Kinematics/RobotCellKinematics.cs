@@ -42,7 +42,7 @@ class RobotCellKinematics
             if (coupledGroup != -1 && target.Frame.CoupledMechanism == -1)
             {
                 if (coupledGroup == i)
-                    throw new ArgumentException(" Can't couple a robot with itself.", nameof(coupledGroup));
+                    throw new ArgumentException(" Cannot couple a robot with itself.", nameof(coupledGroup));
 
                 coupledPlane = Solutions[coupledGroup].Planes[Solutions[coupledGroup].Planes.Length - 2] as Plane?;
             }

@@ -6,7 +6,7 @@ namespace Robots;
 
 public class RobotKuka : RobotArm
 {
-    internal RobotKuka(string model, double payload, Plane basePlane, Mesh? baseMesh, Joint[] joints) : base(model, Manufacturers.KUKA, payload, basePlane, baseMesh, joints) { }
+    internal RobotKuka(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints) : base(model, Manufacturers.KUKA, payload, basePlane, baseMesh, joints) { }
 
     protected override JointTarget GetStartPose() => new(new double[] { 0, HalfPI, 0, 0, 0, -PI });
 

@@ -33,7 +33,7 @@ public class CheckCollisions : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        Program? program = null;
+        IProgram? program = null;
         var first = new List<GH_Integer>();
         var second = new List<GH_Integer>();
         Mesh? environment = null;
@@ -51,7 +51,7 @@ public class CheckCollisions : GH_Component
 
         if (program is not Program p)
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Input program can't have custom code.");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " Input program cannot have custom code");
             return;
         }
 

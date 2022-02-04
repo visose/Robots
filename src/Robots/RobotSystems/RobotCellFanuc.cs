@@ -21,7 +21,7 @@ public class RobotCellFanuc : RobotCell
         throw NotImplemented();
     }
 
-    NotImplementedException NotImplemented() => new NotImplementedException(" Fanuc post-processor not yet implemented.");
+    NotImplementedException NotImplemented() => new(" Fanuc post-processor not yet implemented.");
 
     internal override List<List<List<string>>> Code(Program program) => new FanucPostProcessor(this, program).Code;
 }

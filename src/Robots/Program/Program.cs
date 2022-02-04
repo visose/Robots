@@ -198,9 +198,8 @@ public class Program : IProgram
 
         var current = _simulation.CurrentSimulationPose;
         var cellTarget = Targets[current.TargetIndex];
-        var tools = cellTarget.ProgramTargets.Map(t => t.Target.Tool);
 
-        MeshPoser.Pose(current.Kinematics, tools);
+        MeshPoser.Pose(current.Kinematics, cellTarget);
     }
 
     public Collision CheckCollisions(IEnumerable<int>? first = null, IEnumerable<int>? second = null, Mesh? environment = null, int environmentPlane = 0, double linearStep = 100, double angularStep = PI / 4.0)

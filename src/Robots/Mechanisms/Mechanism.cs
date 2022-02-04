@@ -10,15 +10,13 @@ public abstract class Mechanism
     public Manufacturers Manufacturer { get; }
     public double Payload { get; }
     public ref Plane BasePlane => ref _basePlane;
-    public Mesh? BaseMesh { get; }
+    public Mesh BaseMesh { get; }
     public Joint[] Joints { get; }
     public bool MovesRobot { get; }
     public Mesh DisplayMesh { get; }
     public string Model => $"{Manufacturer}.{_model}";
-    public List<Plane> DefaultPlanes { get; }
-    public List<Mesh> DefaultMeshes { get; }
 
-    internal Mechanism(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh? baseMesh, IEnumerable<Joint> joints, bool movesRobot)
+    internal Mechanism(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh baseMesh, IEnumerable<Joint> joints, bool movesRobot)
     {
         _model = model;
         Manufacturer = manufacturer;
@@ -35,11 +33,6 @@ public abstract class Mechanism
             Joints[i].Range = new Interval(DegreeToRadian(Joints[i].Range.T0, i), DegreeToRadian(Joints[i].Range.T1, i));
 
         SetStartPlanes();
-
-        DefaultPlanes = Joints.Select(j => j.Plane).Prepend(Plane.WorldXY).ToList();
-        DefaultMeshes = BaseMesh is null 
-            ? new List<Mesh>(0)
-            : Joints.Select(j => j.Mesh.NotNull()).Prepend(BaseMesh).ToList();
     }
 
     Mesh CreateDisplayMesh()

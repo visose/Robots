@@ -4,7 +4,7 @@ namespace Robots;
 
 public class Custom : Mechanism
 {
-    internal Custom(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh? baseMesh, Joint[] joints, bool movesRobot)
+    internal Custom(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints, bool movesRobot)
         : base(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot) { }
 
     protected override void SetStartPlanes()

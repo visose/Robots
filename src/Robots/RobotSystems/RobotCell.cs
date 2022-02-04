@@ -6,7 +6,8 @@ public abstract class RobotCell : RobotSystem
 {
     public List<MechanicalGroup> MechanicalGroups { get; }
 
-    internal RobotCell(string name, Manufacturers manufacturer, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment) : base(name, manufacturer, io, basePlane, environment)
+    internal RobotCell(string name, Manufacturers manufacturer, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment)
+        : base(name, manufacturer, io, basePlane, environment, GetDefaultPose(mechanicalGroups))
     {
         MechanicalGroups = mechanicalGroups;
         foreach (var group in mechanicalGroups)
@@ -28,13 +29,14 @@ public abstract class RobotCell : RobotSystem
         }
 
         DisplayMesh.Transform(BasePlane.ToTransform());
+    }
 
-        if (DisplayMesh.Vertices.Count > 0)
-        {
-            DefaultMeshes = MechanicalGroups.Select(g => g.Externals.SelectMany(m => m.DefaultMeshes).Concat(g.Robot.DefaultMeshes).ToList()).ToList();
-            DefaultPlanes = MechanicalGroups.Select(g => g.Externals.SelectMany(m => m.DefaultPlanes).Concat(g.Robot.DefaultPlanes).ToList()).ToList();
-        }
-
+    static DefaultPose GetDefaultPose(List<MechanicalGroup> groups)
+    {
+        return new DefaultPose(
+            planes: groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY)).SelectMany(p => p).ToList()).ToList(),
+            meshes: groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Mesh).Prepend(e.BaseMesh)).SelectMany(p => p).ToList()).ToList()
+            );
     }
 
     internal override double Payload(int group)

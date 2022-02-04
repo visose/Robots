@@ -6,22 +6,23 @@ namespace Robots;
 public class RobotSystemUR : RobotSystem
 {
     public RobotUR Robot { get; }
-    // public override List<Mesh> DefaultMeshes => new() { Robot.DefaultMeshes };
-    // public override List<Plane> DefaultPlanes => Robot.DefaultPlanes;
     // public URRealTime URRealTime { get; set; }
 
-    internal RobotSystemUR(string name, RobotUR robot, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.UR, io, basePlane, environment)
+    internal RobotSystemUR(string name, RobotUR robot, IO io, Plane basePlane, Mesh? environment) 
+        : base(name, Manufacturers.UR, io, basePlane, environment, GetDefaultPose(robot))
     {
         Remote = new RemoteUR();
         Robot = robot;
         DisplayMesh.Append(robot.DisplayMesh);
         DisplayMesh.Transform(BasePlane.ToTransform());
+    }
 
-        if (DisplayMesh.Vertices.Count > 0)
-        {
-            DefaultPlanes = new() { Robot.DefaultPlanes };
-            DefaultMeshes = new() { Robot.DefaultMeshes };
-        }
+    static DefaultPose GetDefaultPose(RobotUR robot)
+    {
+        return new DefaultPose(
+            planes: new() { robot.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY).ToList() },
+            meshes: new() { robot.Joints.Select(j => j.Mesh).Prepend(robot.BaseMesh).ToList() }
+            );
     }
 
     /// <summary>

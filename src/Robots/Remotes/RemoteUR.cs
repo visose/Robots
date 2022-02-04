@@ -18,7 +18,7 @@ public class RemoteUR : IRemote
     {
         if (IP is null)
         {
-            AddLog("IP hasn't been set.");
+            AddLog("IP has not been set.");
             return;
         }
 

@@ -9,19 +9,15 @@ namespace Robots.Standalone;
 
 class HelixMeshPoser : IMeshPoser
 {
-    readonly RobotSystem _robot;
+    readonly DefaultPose _default;
     readonly ObservableElement3DCollection _robotModels;
 
     public HelixMeshPoser(RobotSystem robot, PBRMaterial material, ObservableElement3DCollection robotModels)
     {
-        _robot = robot;
+        _default = robot.DefaultPose;
         _robotModels = robotModels;
-        var meshes = robot.DefaultMeshes;
 
-        if (meshes is null)
-            return;
-
-        foreach (var joint in meshes.SelectMany(m => m))
+        foreach (var joint in _default.Meshes.SelectMany(m => m))
         {
             var model = new MeshGeometryModel3D
             {
@@ -39,17 +35,12 @@ class HelixMeshPoser : IMeshPoser
     {
         // TODO: tool display not implemented
 
-        var allDefaultPlanes = _robot.DefaultPlanes;
-
-        if (allDefaultPlanes is null)
-            return;
-
         int count = 0;
 
         for (int i = 0; i < solutions.Count; i++)
         {
             var planes = solutions[i].Planes;
-            var defaultPlanes = allDefaultPlanes[i];
+            var defaultPlanes = _default.Planes[i];
 
             for (int j = 0; j < planes.Length - 1; j++)
             {

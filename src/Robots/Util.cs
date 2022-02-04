@@ -91,7 +91,7 @@ static class Util
     public static T MaxBy<T, K>(this IEnumerable<T> list, Func<T, K> comparable) where K : IComparable<K>
     {
         if (!list.Any())
-            throw new ArgumentOutOfRangeException(nameof(list), "List can't be empty.");
+            throw new ArgumentOutOfRangeException(nameof(list), "List cannot be empty.");
 
         T maxItem = list.First();
         K maxValue = comparable(maxItem);

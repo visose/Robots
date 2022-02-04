@@ -6,7 +6,7 @@ namespace Robots;
 
 public class RobotUR : RobotArm
 {
-    internal RobotUR(string model, double payload, Plane basePlane, Mesh? baseMesh, Joint[] joints) : base(model, Manufacturers.UR, payload, basePlane, baseMesh, joints) { }
+    internal RobotUR(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints) : base(model, Manufacturers.UR, payload, basePlane, baseMesh, joints) { }
 
     public override KinematicSolution Kinematics(Target target, double[]? prevJoints, Plane? basePlane = null) => new OffsetWristKinematics(this, target, prevJoints, basePlane);
 

@@ -6,6 +6,18 @@ namespace Robots;
 
 public enum Manufacturers { ABB, KUKA, UR, FANUC, Staubli, Other, All };
 
+public class DefaultPose
+{
+    public List<List<Plane>> Planes { get; }
+    public List<List<Mesh>> Meshes { get; }
+
+    public DefaultPose(List<List<Plane>> planes, List<List<Mesh>> meshes)
+    {
+        Planes = planes;
+        Meshes = meshes;
+    }
+}
+
 public abstract class RobotSystem
 {
     Plane _basePlane;
@@ -14,11 +26,9 @@ public abstract class RobotSystem
     public IO IO { get; }
     public ref Plane BasePlane => ref _basePlane;
     public Mesh? Environment { get; }
-    public Mesh DisplayMesh { get; } = new ();
+    public Mesh DisplayMesh { get; } = new();
+    public DefaultPose DefaultPose { get; }
     public IRemote? Remote { get; protected set; }
-
-    public List<List<Plane>>? DefaultPlanes { get; protected set; }
-    public List<List<Mesh>>? DefaultMeshes { get; protected set; }
 
     static RobotSystem()
     {
@@ -26,13 +36,14 @@ public abstract class RobotSystem
         Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
     }
 
-    protected RobotSystem(string name, Manufacturers manufacturer, IO io, Plane basePlane, Mesh? environment)
+    protected RobotSystem(string name, Manufacturers manufacturer, IO io, Plane basePlane, Mesh? environment, DefaultPose defaultPose)
     {
         Name = name;
         Manufacturer = manufacturer;
         IO = io;
         BasePlane = basePlane;
         Environment = environment;
+        DefaultPose = defaultPose;
     }
 
     /// <summary>

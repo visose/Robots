@@ -7,18 +7,14 @@ namespace Robots.Unity
 {
     class UnityMeshPoser : IMeshPoser
     {
-        readonly RobotSystem _robot;
+        readonly DefaultPose _default;
         readonly Transform[] _joints;
 
         public UnityMeshPoser(RobotSystem robot, Material material)
         {
-            _robot = robot;
-            var meshes = robot.DefaultMeshes;
+            _default = robot.DefaultPose;
 
-            if (meshes is null)
-                return;
-
-            var allMeshes = robot.DefaultMeshes.SelectMany(m => m).ToList();
+            var allMeshes = _default.Meshes.SelectMany(m => m).ToList();
             _joints = new Transform[allMeshes.Count];
 
             var parent = GameObject.Find("Robot").transform;
@@ -44,17 +40,12 @@ namespace Robots.Unity
         {
             // TODO: tool display not implemented
 
-            var allDefaultPlanes = _robot.DefaultPlanes;
-
-            if (allDefaultPlanes is null)
-                return;
-
             int count = 0;
 
             for (int i = 0; i < solutions.Count; i++)
             {
                 var planes = solutions[i].Planes;
-                var defaultPlanes = allDefaultPlanes[i];
+                var defaultPlanes = _default.Planes[i];
 
                 for (int j = 0; j < planes.Length - 1; j++)
                 {

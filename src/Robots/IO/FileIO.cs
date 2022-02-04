@@ -176,8 +176,11 @@ public static class FileIO
         var jointCount = jointElements.Count;
         Joint[] joints = new Joint[jointCount];
 
-        var meshes = loadMeshes ? GetMechanismMeshes(cellName, mechanism, model, manufacturer, jointCount) : null;
-        Mesh? baseMesh = meshes?[0].DuplicateMesh();
+        var meshes = loadMeshes
+            ? GetMechanismMeshes(cellName, mechanism, model, manufacturer, jointCount)
+            : Enumerable.Repeat(_emptyMesh, jointCount + 1).ToList();
+
+        Mesh baseMesh = meshes[0];
 
         for (int i = 0; i < jointCount; i++)
         {
@@ -190,7 +193,7 @@ public static class FileIO
             var range = new Interval(minRange, maxRange);
 
             double maxSpeed = jointElement.GetDoubleAttribute("maxspeed");
-            Mesh? mesh = meshes?[i + 1].DuplicateMesh();
+            Mesh mesh = meshes[i + 1];
             int number = jointElement.GetIntAttribute("number") - 1;
 
             joints[i] = jointElement.Name.LocalName switch
@@ -228,7 +231,7 @@ public static class FileIO
 
         return new IO(@do, di, ao, ai);
 
-        string[] GetNames(XElement? ioElement, string element)
+        static string[] GetNames(XElement? ioElement, string element)
         {
             var e = ioElement?.GetElementOrDefault(element);
 

@@ -69,7 +69,7 @@ public class RemoteAbb : IRemote
 
         if (!Connected)
         {
-            AddLog("Couldn't connect to controller.");
+            AddLog("Could not connect to controller.");
             return;
         }
     }
@@ -166,7 +166,7 @@ public class RemoteAbb : IRemote
                 }
             }
 
-            throw new OperationCanceledException("Couldn't upload after 10 attempts.");
+            throw new OperationCanceledException("Could not upload after 10 attempts.");
         }
         catch (Exception e)
         {

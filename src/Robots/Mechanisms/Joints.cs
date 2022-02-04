@@ -11,7 +11,7 @@ public abstract class Joint
     public Interval Range { get; internal set; }
     public double MaxSpeed { get; internal set; }
     public Plane Plane { get; set; }
-    public Mesh? Mesh { get; set; }
+    public Mesh Mesh { get; set; } = default!;
 }
 
 public class BaseJoint

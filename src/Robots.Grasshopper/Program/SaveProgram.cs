@@ -32,7 +32,7 @@ public class SaveProgram : GH_Component
         }
         catch (Exception e)
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $" Program couldn't be saved: {e.Message}");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $" Program could not be saved: {e.Message}");
         }
     }
 }
