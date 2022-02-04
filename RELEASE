@@ -1,3 +1,7 @@
+- version: 1.1.4
+  changes:
+  - Added example of Unity project using Robots (without Rhino.Inside)
+  - Fixed invalid cast in collision and custom code components.
 - version: 1.1.3
   changes:
   - Cleaned library files and fixed invalid meshes.
