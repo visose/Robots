@@ -1,21 +1,26 @@
 - version: 1.1.4
   changes:
-  - Added example of Unity project using Robots (without Rhino.Inside)
+  - Added example using Robots in a Unity project (without Rhino.Inside)
   - Fixed invalid cast in collision and custom code components.
+  - Fixed should not appear as supported in Rhino 6 or lower.
+
 - version: 1.1.3
   changes:
   - Cleaned library files and fixed invalid meshes.
   - Improved value list that displays robot libraries.
   - Improved some program errors threw exceptions rather than show in error output.
   - Fixed custom command component had invalid name.
+
 - version: 1.1.2
   changes:
   - Robot system names are now case insensitive.
   - Fixed error displaying some parameter names.
   - Fixed forward kinematics transforms in intermediate joints.
+
 - version: 1.1.1
   changes:
   - Fixed refresh libraries not working.
+
 - version: 1.1.0
   changes:
   - Added UI to install robot libraries automatically inside Grasshopper.

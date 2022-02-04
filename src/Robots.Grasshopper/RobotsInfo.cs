@@ -6,8 +6,6 @@ using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Special;
 using Grasshopper;
 
-[assembly: GH_Loading(GH_LoadingDemand.ForceDirect)]
-
 namespace Robots.Grasshopper;
 
 public class RobotsInfo : GH_AssemblyInfo

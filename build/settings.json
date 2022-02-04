@@ -8,11 +8,11 @@
     "Robots.gha",
     "ABB.Robotics.Controllers.PC.dll",
     "RobotStudio.Services.RobApi.Desktop.dll",
-    "RobotStudio.Services.RobApi.dll",
-    "Octokit.dll"
+    "RobotStudio.Services.RobApi.dll"
   ],
   "GithubOwner": "visose",
   "GithubRepo": "Robots",
   "ReleaseFile": "RELEASE",
-  "ReleaseMessage": "> This **release** can only be installed through the package manager in **Rhino 7** using the `_PackageManager` command.\n> Check the [readme](../../blob/master/.github/README.md) for more details."
+  "ReleaseMessage": "> This **release** can only be installed through the package manager in **Rhino 7** using the `_PackageManager` command.\n> Check the [readme](../../blob/master/.github/README.md) for more details.",
+  "Tag": "rh7-any"
 }
