@@ -14,8 +14,11 @@ public abstract class RobotSystem
     public IO IO { get; }
     public ref Plane BasePlane => ref _basePlane;
     public Mesh? Environment { get; }
-    public Mesh DisplayMesh { get; } = new Mesh();
+    public Mesh DisplayMesh { get; } = new ();
     public IRemote? Remote { get; protected set; }
+
+    public List<List<Plane>>? DefaultPlanes { get; protected set; }
+    public List<List<Mesh>>? DefaultMeshes { get; protected set; }
 
     static RobotSystem()
     {

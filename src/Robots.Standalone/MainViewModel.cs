@@ -8,13 +8,13 @@ public class MainViewModel : ObservableObject
     string _log = "";
     double _time;
     bool _isPlaying;
-
-    readonly Timer _timer;
     DateTime _last;
     double _dir = 1.0;
 
-    public ObservableElement3DCollection RobotModels { get; } = new ObservableElement3DCollection();
-    public Program Program { get; set; }
+    readonly Program _program;
+    readonly Timer _timer;
+
+    public ObservableElement3DCollection RobotModels { get; } = new();
 
     public string Log
     {
@@ -28,7 +28,7 @@ public class MainViewModel : ObservableObject
         set
         {
             SetField(ref _time, value);
-            Program.Animate(_time / 100.0);
+            _program.Animate(_time / 100.0);
         }
     }
 
@@ -64,9 +64,10 @@ public class MainViewModel : ObservableObject
         };
 
         // robot program
-        Program = TestProgram.Create();
-        Log = Program.Errors.Count == 0 ? Program.RobotSystem.Name : string.Join(" ", Program.Errors);
-        Program.MeshPoser = new HelixMeshPoser((RobotCell)Program.RobotSystem, material, RobotModels);
+        _program = TestProgram.Create();
+        _program.MeshPoser = new HelixMeshPoser(_program.RobotSystem, material, RobotModels);
+
+        Log = _program.Errors.Count == 0 ? _program.RobotSystem.Name : string.Join(" ", _program.Errors);
 
         // timer
         _timer = new Timer(Tick, null, Timeout.Infinite, 0);
@@ -79,7 +80,7 @@ public class MainViewModel : ObservableObject
 
         var now = DateTime.Now;
         var delta = now - _last;
-        var t = (delta.TotalSeconds / Program.Duration) * 100;
+        var t = (delta.TotalSeconds / _program.Duration) * 100;
         Time += t * _dir;
         _last = now;
     }

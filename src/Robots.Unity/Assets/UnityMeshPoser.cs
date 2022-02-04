@@ -1,48 +1,67 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Robots.Unity
 {
     class UnityMeshPoser : IMeshPoser
     {
-        readonly List<Rhino.Geometry.Plane> _planes;
+        readonly RobotSystem _robot;
         readonly Transform[] _joints;
 
-        public UnityMeshPoser(RobotCell cell, Material material)
+        public UnityMeshPoser(RobotSystem robot, Material material)
         {
-            var group = cell.MechanicalGroups[0];
-            _planes = group.DefaultPlanes;
-            _joints = new Transform[_planes.Count];
+            _robot = robot;
+            var meshes = robot.DefaultMeshes;
 
-            var robot = GameObject.Find("Robot").transform;
+            if (meshes is null)
+                return;
 
-            for (int i = 0; i < _joints.Length; i++)
+            var allMeshes = robot.DefaultMeshes.SelectMany(m => m).ToList();
+            _joints = new Transform[allMeshes.Count];
+
+            var parent = GameObject.Find("Robot").transform;
+
+            for (int i = 0; i < allMeshes.Count; i++)
             {
                 string name = $"Joint {i}";
                 var go = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
 
                 var filter = go.GetComponent<MeshFilter>();
-                filter.mesh = ToMesh(group.DefaultMeshes[i], name);
+                filter.mesh = ToMesh(allMeshes[i], name);
 
                 var renderer = go.GetComponent<MeshRenderer>();
                 renderer.material = material;
 
                 var transform = go.transform;
-                transform.SetParent(robot);
+                transform.SetParent(parent);
                 _joints[i] = transform;
             }
         }
 
         public void Pose(List<KinematicSolution> solutions, Tool[] tools)
         {
-            var planes = solutions[0].Planes;
+            // TODO: tool display not implemented
 
-            for (int i = 0; i < planes.Length - 1; i++)
+            var allDefaultPlanes = _robot.DefaultPlanes;
+
+            if (allDefaultPlanes is null)
+                return;
+
+            int count = 0;
+
+            for (int i = 0; i < solutions.Count; i++)
             {
-                var transform = Rhino.Geometry.Transform.PlaneToPlane(_planes[i], planes[i]);
-                var matrix = ToMatrix(ref transform);
-                _joints[i].SetPositionAndRotation(matrix.GetPosition(), matrix.rotation);
+                var planes = solutions[i].Planes;
+                var defaultPlanes = allDefaultPlanes[i];
+
+                for (int j = 0; j < planes.Length - 1; j++)
+                {
+                    var transform = Rhino.Geometry.Transform.PlaneToPlane(defaultPlanes[j], planes[j]);
+                    var matrix = ToMatrix(ref transform);
+                    _joints[count++].SetPositionAndRotation(matrix.GetPosition(), matrix.rotation);
+                }
             }
         }
 

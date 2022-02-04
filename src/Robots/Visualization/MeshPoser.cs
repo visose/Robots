@@ -19,20 +19,15 @@ public class RhinoMeshPoser : IMeshPoser
 
     // Instance
 
-    public List<Mesh> Meshes { get; private set; }
-    RobotSystem _robot;
+    public List<Mesh> Meshes { get; }
+
+    readonly RobotSystem _robot;
 
     public RhinoMeshPoser(RobotSystem robot)
     {
         _robot = robot;
 
-        var meshCount = robot switch
-        {
-            RobotCell cell => cell.MechanicalGroups.Sum(g => g.DefaultMeshes.Count + 1),
-            RobotSystemUR ur => ur.Robot.DefaultMeshes.Count + 1,
-            _ => throw new ArgumentException(" Invalid RobotSystem type.", nameof(robot))
-        };
-
+        var meshCount = robot.DefaultMeshes.Sum(m => m.Count + 1);
         Meshes = new List<Mesh>(meshCount);
     }
 
@@ -44,31 +39,18 @@ public class RhinoMeshPoser : IMeshPoser
 
     public void Pose(List<KinematicSolution> solutions, Tool[] tools)
     {
-        if (_robot.DisplayMesh.Faces.Count == 0)
+        var defaultPlanes = _robot.DefaultPlanes;
+        var defaultMeshes = _robot.DefaultMeshes;
+
+        if (defaultPlanes is null || defaultMeshes is null)
             return;
 
         Meshes.Clear();
 
-        switch (_robot)
+        for (int i = 0; i < solutions.Count; i++)
         {
-            case RobotCell cell: PoseCell(cell, solutions, tools); return;
-            case RobotSystemUR ur: PoseRobot(ur.Robot, solutions[0], tools[0]); return;
-            default: throw new ArgumentException(" Invalid RobotSystem type.", nameof(_robot));
-        };
-    }
-
-    void PoseCell(RobotCell cell, List<KinematicSolution> solutions, Tool[] tools)
-    {
-        for (int i = 0; i < cell.MechanicalGroups.Count; i++)
-        {
-            var group = cell.MechanicalGroups[i];
-            AddGroupPose(Meshes, solutions[i].Planes, tools[i].Mesh, group.DefaultPlanes, group.DefaultMeshes);
+            AddGroupPose(Meshes, solutions[i].Planes, tools[i].Mesh, defaultPlanes[i], defaultMeshes[i]);
         }
-    }
-
-    void PoseRobot(RobotArm arm, KinematicSolution solution, Tool tool)
-    {
-        AddGroupPose(Meshes, solution.Planes, tool.Mesh, arm.DefaultPlanes, arm.DefaultMeshes);
     }
 
     void AddGroupPose(List<Mesh> meshes, Plane[] planes, Mesh tool, List<Plane> defaultPlanes, List<Mesh> defaultMeshes)

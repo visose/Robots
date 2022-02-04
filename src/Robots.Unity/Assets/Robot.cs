@@ -12,9 +12,7 @@ namespace Robots.Unity
         void Start()
         {
             _program = TestProgram.Create();
-            var cell = (RobotCell)_program.RobotSystem;
-            var poser = new UnityMeshPoser(cell, _material);
-            _program.MeshPoser = poser;
+            _program.MeshPoser = new UnityMeshPoser(_program.RobotSystem, _material);
         }
 
         void Update()

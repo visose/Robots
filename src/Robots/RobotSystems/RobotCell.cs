@@ -28,6 +28,13 @@ public abstract class RobotCell : RobotSystem
         }
 
         DisplayMesh.Transform(BasePlane.ToTransform());
+
+        if (DisplayMesh.Vertices.Count > 0)
+        {
+            DefaultMeshes = MechanicalGroups.Select(g => g.Externals.SelectMany(m => m.DefaultMeshes).Concat(g.Robot.DefaultMeshes).ToList()).ToList();
+            DefaultPlanes = MechanicalGroups.Select(g => g.Externals.SelectMany(m => m.DefaultPlanes).Concat(g.Robot.DefaultPlanes).ToList()).ToList();
+        }
+
     }
 
     internal override double Payload(int group)

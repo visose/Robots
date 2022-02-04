@@ -1,26 +1,31 @@
 ﻿using System.Windows.Media.Media3D;
 using HelixToolkit.Wpf.SharpDX;
+using HelixToolkit.SharpDX.Core;
+using SharpDX;
 using Rhino.Geometry;
+using MeshGeometry3D = HelixToolkit.SharpDX.Core.MeshGeometry3D;
 
 namespace Robots.Standalone;
 
 class HelixMeshPoser : IMeshPoser
 {
-    readonly List<Plane> _defaultPlanes;
+    readonly RobotSystem _robot;
     readonly ObservableElement3DCollection _robotModels;
 
-    public HelixMeshPoser(RobotCell cell, PBRMaterial material, ObservableElement3DCollection robotModels)
+    public HelixMeshPoser(RobotSystem robot, PBRMaterial material, ObservableElement3DCollection robotModels)
     {
-        var group = cell.MechanicalGroups.First();
-        var meshes = group.DefaultMeshes;
-        _defaultPlanes = group.DefaultPlanes;
+        _robot = robot;
         _robotModels = robotModels;
+        var meshes = robot.DefaultMeshes;
 
-        foreach (var joint in meshes)
+        if (meshes is null)
+            return;
+
+        foreach (var joint in meshes.SelectMany(m => m))
         {
             var model = new MeshGeometryModel3D
             {
-                Geometry = joint.ToWPF(),
+                Geometry = ToWPF(joint),
                 Material = material,
                 Transform = Transform3D.Identity,
                 IsThrowingShadow = true
@@ -32,14 +37,46 @@ class HelixMeshPoser : IMeshPoser
 
     public void Pose(List<KinematicSolution> solutions, Tool[] tools)
     {
-        var planes = solutions[0].Planes;
+        // TODO: tool display not implemented
 
-        for (int i = 0; i < planes.Length - 1; i++)
+        var allDefaultPlanes = _robot.DefaultPlanes;
+
+        if (allDefaultPlanes is null)
+            return;
+
+        int count = 0;
+
+        for (int i = 0; i < solutions.Count; i++)
         {
-            var s = Transform.PlaneToPlane(_defaultPlanes[i], planes[i]);
-            var matrix = new SharpDX.Matrix((float)s.M00, (float)s.M10, (float)s.M20, (float)s.M30, (float)s.M01, (float)s.M11, (float)s.M21, (float)s.M31, (float)s.M02, (float)s.M12, (float)s.M22, (float)s.M32, (float)s.M03, (float)s.M13, (float)s.M23, (float)s.M33);
-            var model = _robotModels[i];
-            model.SceneNode.ModelMatrix = matrix;
+            var planes = solutions[i].Planes;
+            var defaultPlanes = allDefaultPlanes[i];
+
+            for (int j = 0; j < planes.Length - 1; j++)
+            {
+                var t = Transform.PlaneToPlane(defaultPlanes[j], planes[j]);
+                var matrix = ToMatrix(ref t);
+                var model = _robotModels[count++];
+                model.SceneNode.ModelMatrix = matrix;
+            }
         }
     }
+
+    static MeshGeometry3D ToWPF(Mesh m)
+    {
+        return new MeshGeometry3D()
+        {
+            Positions = new Vector3Collection(m.Vertices.Select(ToVector3)),
+            Indices = new IntCollection(m.Faces.ToIntArray(true)),
+            Normals = new Vector3Collection(m.Normals.Select(ToVector3)),
+        };
+    }
+
+    static Vector3 ToVector3(Point3f p) => new(p.X, p.Y, p.Z);
+    static Vector3 ToVector3(Vector3f p) => new(p.X, p.Y, p.Z);
+
+    static SharpDX.Matrix ToMatrix(ref Transform t) => new(
+        (float)t.M00, (float)t.M10, (float)t.M20, (float)t.M30,
+        (float)t.M01, (float)t.M11, (float)t.M21, (float)t.M31,
+        (float)t.M02, (float)t.M12, (float)t.M22, (float)t.M32,
+        (float)t.M03, (float)t.M13, (float)t.M23, (float)t.M33);
 }
