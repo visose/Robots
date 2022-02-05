@@ -7,6 +7,5 @@ It requires copying the binaries from Robots (NET Standard 2.0 version) and Rhin
 - Robots.dll
 - Rhino3dm.dll
 - runtimes/win-x64/native/librhino3dm_native.dll (or any other in this folder for other OS platforms)
-- Newtonsoft.Json.dll (optional)
 
 In the future these files will be distributed via the Unity package manager (hopefully).
