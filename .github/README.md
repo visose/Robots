@@ -4,7 +4,7 @@
 ### Create and simulate ABB, KUKA, UR and Staubli robot programs
 
 [![License](https://img.shields.io/github/license/visose/Robots?style=flat-square)](../LICENSE)
-[![Version](https://img.shields.io/github/v/release/visose/robots?style=flat-square)](../../../releases)
+[![NuGet package](https://img.shields.io/nuget/v/robots?style=flat-square)](https://www.nuget.org/packages/Robots)
 [![Repo stars](https://img.shields.io/github/stars/visose/robots?style=flat-square)](../../../)
 [![Discussions](https://img.shields.io/github/discussions/visose/robots?style=flat-square)](../../../discussions)
 [![Sponsor](https://img.shields.io/badge/sponsor-gray?style=flat-square&logo=GitHub-Sponsors)](https://github.com/sponsors/visose)

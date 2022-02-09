@@ -5,8 +5,8 @@
 		<Version>1.1.5</Version>
 		<Authors>Robots Authors</Authors>
 		<Description>Create and simulate ABB, KUKA, UR, and Staubli robot programs.</Description>
-		<PackageProjectUrl>https://github.com/visose/robots</PackageProjectUrl>
 		<PackageTags>Robots;ABB;KUKA;UR;Staubli;Robotics</PackageTags>
+		<PackageProjectUrl>https://github.com/visose/robots</PackageProjectUrl>
 		<IconUrl>https://github.com/visose/robots/raw/master/build/Assets/iconRobot.png</IconUrl>
 		<ReleaseNotes>RELEASE</ReleaseNotes>
 
