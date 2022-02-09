@@ -9,7 +9,7 @@ on:
       commands:
         description: 'Commands'
         required: true
-        default: 'test check build package publish release'
+        default: 'debug'
 
 jobs:
   publish:
@@ -21,3 +21,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           YAK_TOKEN: ${{ secrets.YAK_TOKEN }}
+          NUGET_KEY: ${{ secrets.NUGET_KEY }}

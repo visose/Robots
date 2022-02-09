@@ -3,6 +3,10 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net48</TargetFrameworks>
 		<AssemblyTitle>$(Product) Core</AssemblyTitle>
+
+		<PackageId>Robots</PackageId>
+		<PackageIcon>icon128.png</PackageIcon>
+		<Description>$(Description)</Description>
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
@@ -11,19 +15,15 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-		<PackageReference Include="RhinoCommon" Version="7.14.22010.17001" />
-		<Reference Include="System.Net.Http"/>
-		<Reference Include="Newtonsoft.Json.Rhino">
-			<HintPath>..\..\lib\Newtonsoft.Json.Rhino.dll</HintPath>
-			<Private>False</Private>
-		</Reference>
-		<Reference Include="ABB.Robotics.Controllers.PC">
-			<HintPath>..\..\lib\ABB.Robotics.Controllers.PC.dll</HintPath>
-		</Reference>
+		<PackageReference Include="RhinoCommon" Version="7.0.20314.3001" ExcludeAssets="runtime" />
+		<Reference Include="System.Net.Http" />
+		<Reference Include="Newtonsoft.Json.Rhino" HintPath="..\..\lib\Newtonsoft.Json.Rhino.dll" Private="false"/>
+		<Reference Include="ABB.Robotics.Controllers.PC" HintPath="..\..\lib\ABB.Robotics.Controllers.PC.dll" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<EmbeddedResource Include="Remotes\URRealTime.txt" />
+		<None Include="..\..\build\Assets\icon128.png" Pack="true" PackagePath="" />
 	</ItemGroup>
 
 </Project>

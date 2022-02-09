@@ -19,6 +19,7 @@ class LibraryCell : StackLayout
 
         Items.Add(new StackLayoutItem(NewLabel(i => i.Name), true));
         Items.Add(NewLabel(i => Icons(i), TextAlignment.Right));
+        Width = 280;
     }
 }
 
@@ -156,8 +157,8 @@ class LibraryForm : ComponentForm
         {
             new GridColumn
             {
-                DataCell = CustomCell.Create<LibraryCell>(),
-                Expand = true
+                DataCell = CustomCell.Create<LibraryCell>()
+                // Expand = true; // Not available in early 7.0 releases.
             }
         }
     };

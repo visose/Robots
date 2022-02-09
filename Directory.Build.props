@@ -2,14 +2,19 @@
 
 	<PropertyGroup>
 		<Product>Robots</Product>
-		<Version>1.1.4</Version>
-		<Description>Create and simulate ABB, KUKA, UR, and Staubli robot programs.</Description>
+		<Version>1.1.5</Version>
 		<Authors>Robots Authors</Authors>
-		<Copyright>Copyright (c) 2021 $(Authors)</Copyright>
+		<Description>Create and simulate ABB, KUKA, UR, and Staubli robot programs.</Description>
 		<PackageProjectUrl>https://github.com/visose/robots</PackageProjectUrl>
-		<PackageTags>Robots;ABB;KUKA;UR;Staubli;Grasshopper;Robotics</PackageTags>
+		<PackageTags>Robots;ABB;KUKA;UR;Staubli;Robotics</PackageTags>
 		<IconUrl>https://github.com/visose/robots/raw/master/build/Assets/iconRobot.png</IconUrl>
+		<ReleaseNotes>RELEASE</ReleaseNotes>
+
+		<CurrentYear>$([System.DateTime]::Now.Year)</CurrentYear>
+		<Copyright>Copyright (c) 2015-$(CurrentYear) $(Authors)</Copyright>
 		<Company>$(Authors) - $(PackageProjectUrl)</Company>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<RepositoryUrl>https://github.com/visose/robots.git</RepositoryUrl>
 	</PropertyGroup>
 
 	<PropertyGroup>

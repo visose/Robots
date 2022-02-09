@@ -1,3 +1,8 @@
+- version: 1.1.5
+  changes:
+  - Added Nuget packages.
+  - Fixed compatibility with early Rhino 7.0 service releases.
+
 - version: 1.1.4
   changes:
   - Added example using Robots in a Unity project (without Rhino.Inside)
