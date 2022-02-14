@@ -13,32 +13,12 @@ namespace Robots.Samples.Unity
 
         async void Start()
         {
-            try
-            {
-                _program = TestProgram.Create();
-            }
-            catch (ArgumentException e)
-            {
-                if (!e.Message.Contains("not found"))
-                    throw;
-
-                Debug.Log("Bartlett robot library not found, installing...");
-                await DownloadLibraryAsync();
-                _program = TestProgram.Create();
-            }
+            _program = await TestProgram.CreateAsync();
 
             if (_material == null)
                 throw new ArgumentNullException(nameof(_material));
 
             _program.MeshPoser = new UnityMeshPoser(_program.RobotSystem, _material);
-        }
-
-        async Task DownloadLibraryAsync()
-        {
-            var online = new OnlineLibrary();
-            await online.UpdateLibraryAsync();
-            var bartlett = online.Libraries["Bartlett"];
-            await online.DownloadLibraryAsync(bartlett);
         }
 
         void Update()

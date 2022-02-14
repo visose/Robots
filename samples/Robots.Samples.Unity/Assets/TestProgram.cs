@@ -1,12 +1,14 @@
 using Rhino.Geometry;
+using System;
+using System.Threading.Tasks;
 
 namespace Robots.Samples.Unity
 {
     class TestProgram
     {
-        public static Program Create()
+        public static async Task<Program> CreateAsync()
         {
-            var robot = FileIO.LoadRobotSystem("Bartlett-IRB120", Plane.WorldXY);
+            var robot = await GetRobotAsync();
 
             var planeA = Plane.WorldYZ;
             var planeB = Plane.WorldYZ;
@@ -18,6 +20,33 @@ namespace Robots.Samples.Unity
             var toolpath = new SimpleToolpath() { targetA, targetB };
 
             return new Program("TestProgram", robot, new[] { toolpath });
+        }
+
+        static async Task<RobotSystem> GetRobotAsync()
+        {
+            var cellName = "Bartlett-IRB120";
+
+            try
+            {
+                return FileIO.LoadRobotSystem(cellName, Plane.WorldXY);
+            }
+            catch (ArgumentException e)
+            {
+                if (!e.Message.Contains("not found"))
+                    throw;
+
+                UnityEngine.Debug.Log("Bartlett robot library not found, installing...");
+                await DownloadLibraryAsync();
+                return FileIO.LoadRobotSystem(cellName, Plane.WorldXY);
+            }
+        }
+
+        static async Task DownloadLibraryAsync()
+        {
+            var online = new OnlineLibrary();
+            await online.UpdateLibraryAsync();
+            var bartlett = online.Libraries["Bartlett"];
+            await online.DownloadLibraryAsync(bartlett);
         }
     }
 }
