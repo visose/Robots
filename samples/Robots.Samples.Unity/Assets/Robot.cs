@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Robots.Unity
+namespace Robots.Samples.Unity
 {
     public class Robot : MonoBehaviour
     {

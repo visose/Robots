@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace Robots.Standalone;
+namespace Robots.Samples.Wpf;
 
 public partial class App : Application
 {

@@ -1,7 +1,7 @@
 ﻿using SharpDX;
 using HelixToolkit.Wpf.SharpDX;
 
-namespace Robots.Standalone;
+namespace Robots.Samples.Wpf;
 
 public class MainViewModel : ObservableObject
 {

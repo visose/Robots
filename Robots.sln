@@ -5,8 +5,6 @@ VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robots", "src\Robots\Robots.csproj", "{3896FB4D-9007-48FB-B302-6B289B15E9BF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Robots.Standalone", "src\Robots.Standalone\Robots.Standalone.csproj", "{2556FB1C-3A8D-469B-8553-46C66BCF8BE4}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robots.Grasshopper", "src\Robots.Grasshopper\Robots.Grasshopper.csproj", "{3E69607D-A2A9-4061-86E8-2EA7CCB79601}"
 	ProjectSection(ProjectDependencies) = postProject
 		{3896FB4D-9007-48FB-B302-6B289B15E9BF} = {3896FB4D-9007-48FB-B302-6B289B15E9BF}
@@ -29,10 +27,6 @@ Global
 		{3896FB4D-9007-48FB-B302-6B289B15E9BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3896FB4D-9007-48FB-B302-6B289B15E9BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3896FB4D-9007-48FB-B302-6B289B15E9BF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2556FB1C-3A8D-469B-8553-46C66BCF8BE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2556FB1C-3A8D-469B-8553-46C66BCF8BE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2556FB1C-3A8D-469B-8553-46C66BCF8BE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2556FB1C-3A8D-469B-8553-46C66BCF8BE4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3E69607D-A2A9-4061-86E8-2EA7CCB79601}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3E69607D-A2A9-4061-86E8-2EA7CCB79601}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E69607D-A2A9-4061-86E8-2EA7CCB79601}.Release|Any CPU.ActiveCfg = Release|Any CPU

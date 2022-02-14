@@ -1,7 +1,7 @@
 ﻿using Rhino.Geometry;
 using Plane = Rhino.Geometry.Plane;
 
-namespace Robots.Standalone;
+namespace Robots.Samples.Wpf;
 
 class TestProgram
 {

@@ -1,5 +1,5 @@
 {
-    "name": "Robots.Unity",
+    "name": "Robots.Samples.Unity",
     "rootNamespace": "",
     "references": [
         "Unity.InputSystem"

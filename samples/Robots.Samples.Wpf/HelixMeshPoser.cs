@@ -5,7 +5,7 @@ using SharpDX;
 using Rhino.Geometry;
 using MeshGeometry3D = HelixToolkit.SharpDX.Core.MeshGeometry3D;
 
-namespace Robots.Standalone;
+namespace Robots.Samples.Wpf;
 
 class HelixMeshPoser : IMeshPoser
 {

@@ -1,7 +1,7 @@
-﻿namespace Robots.Standalone;
-
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
+
+namespace Robots.Samples.Wpf;
 
 public abstract class ObservableObject : INotifyPropertyChanged
 {

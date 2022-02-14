@@ -20,8 +20,8 @@
 	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<ArtifactsDir>..\..\artifacts\</ArtifactsDir>
+		<ImplicitUsings>enable</ImplicitUsings>		
+		<ArtifactsDir>$(MSBuildThisFileDirectory)artifacts\</ArtifactsDir>
 		<OutputPath>$(ArtifactsDir)bin\$(MSBuildProjectName)</OutputPath>
 		<BaseIntermediateOutputPath>$(ArtifactsDir)obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
 	</PropertyGroup>

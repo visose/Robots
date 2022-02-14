@@ -1,9 +1,9 @@
-﻿<Window x:Class="Robots.Standalone.MainWindow"
+﻿<Window x:Class="Robots.Samples.Wpf.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:hx="http://helix-toolkit.org/wpf/SharpDX"
-    xmlns:local="clr-namespace:Robots.Standalone"
-    Title="Robots Standalone"
+    xmlns:local="clr-namespace:Robots.Samples.Wpf"
+    Title="Robots Sample Wpf"
     Width="1024"
     Height="768">
 

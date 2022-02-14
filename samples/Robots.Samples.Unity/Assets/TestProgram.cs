@@ -1,6 +1,6 @@
 using Rhino.Geometry;
 
-namespace Robots.Unity
+namespace Robots.Samples.Unity
 {
     class TestProgram
     {

@@ -1,6 +1,6 @@
 ﻿using System.Windows.Input;
 
-namespace Robots.Standalone;
+namespace Robots.Samples.Wpf;
 
 internal class RelayCommand : ICommand
 {

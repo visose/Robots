@@ -7,7 +7,7 @@ using HelixToolkit.Wpf.SharpDX;
 using PerspectiveCamera = HelixToolkit.Wpf.SharpDX.PerspectiveCamera;
 using Color = System.Windows.Media.Color;
 
-namespace Robots.Standalone;
+namespace Robots.Samples.Wpf;
 
 public partial class MainWindow : Window, IDisposable
 {

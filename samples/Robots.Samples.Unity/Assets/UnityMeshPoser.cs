@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace Robots.Unity
+namespace Robots.Samples.Unity
 {
     class UnityMeshPoser : IMeshPoser
     {

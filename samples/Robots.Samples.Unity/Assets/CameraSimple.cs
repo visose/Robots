@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace Robots.Unity
+namespace Robots.Samples.Unity
 {
     public class CameraSimple : MonoBehaviour
     {
