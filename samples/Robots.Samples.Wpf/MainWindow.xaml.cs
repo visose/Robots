@@ -9,7 +9,7 @@ using Color = System.Windows.Media.Color;
 
 namespace Robots.Samples.Wpf;
 
-public partial class MainWindow : Window, IDisposable
+partial class MainWindow : Window, IDisposable
 {
     public MainWindow()
     {

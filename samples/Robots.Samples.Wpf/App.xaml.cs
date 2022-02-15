@@ -2,6 +2,6 @@
 
 namespace Robots.Samples.Wpf;
 
-public partial class App : Application
+partial class App : Application
 {
 }

@@ -1,23 +1,22 @@
-﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
+using System.ComponentModel;
+using System.Windows.Media;
 using SharpDX;
 using HelixToolkit.Wpf.SharpDX;
+using HelixToolkit.Wpf.SharpDX.Controls;
 
 namespace Robots.Samples.Wpf;
 
-public class MainViewModel : INotifyPropertyChanged
+class MainViewModel : INotifyPropertyChanged
 {
     string _log = "";
     double _time;
     bool _isPlaying;
-    DateTime _last;
-    double _dir = 1.0;
-
     Program? _program;
-    readonly Timer _timer;
+    readonly CompositionTargetEx _timer = new();
 
-    public event PropertyChangedEventHandler? PropertyChanged;
     public ObservableElement3DCollection RobotModels { get; } = new();
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     public string Log
     {
@@ -30,8 +29,8 @@ public class MainViewModel : INotifyPropertyChanged
         get => _time;
         set
         {
-            SetField(ref _time, value);
-            _program?.Animate(_time / 100.0);
+            if (SetField(ref _time, value))
+                _program?.Animate(_time / 100.0);
         }
     }
 
@@ -40,23 +39,18 @@ public class MainViewModel : INotifyPropertyChanged
         get => _isPlaying;
         set
         {
-            SetField(ref _isPlaying, value);
+            if (!SetField(ref _isPlaying, value))
+                return;
 
             if (_isPlaying)
             {
-                _last = DateTime.Now;
-                _timer.Change(0, 16);
+                _timer.Rendering += Update;
             }
             else
             {
-                _timer.Change(Timeout.Infinite, 0);
+                _timer.Rendering -= Update;
             }
         }
-    }
-
-    public MainViewModel()
-    {
-        _timer = new Timer(Tick, null, Timeout.Infinite, 0);
     }
 
     public async Task InitAsync()
@@ -73,47 +67,52 @@ public class MainViewModel : INotifyPropertyChanged
 
         // robot program
         var programTask = TestProgram.CreateAsync();
-        _ = SpinnerAsync();
-
+        var cancel = new CancellationTokenSource();
+        _ = SpinnerAsync(cancel);
         _program = await programTask;
+        cancel.Cancel();
+
         _program.MeshPoser = new HelixMeshPoser(_program.RobotSystem, material, RobotModels);
-    }
 
-    async Task SpinnerAsync()
-    {
-        string dots = "...";
-
-        while(_program is null)
-        {
-            Log = "Downloading Bartlett library " + dots;
-            dots += ".";
-            await Task.Delay(250);
-        }
-
-        Log = _program.Errors.Count == 0 
-            ? _program.RobotSystem.Name 
+        Log = _program.Errors.Count == 0
+            ? _program.RobotSystem.Name
             : string.Join(" ", _program.Errors);
+
+        IsPlaying = true;
     }
 
+    async Task SpinnerAsync(CancellationTokenSource cancel)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(250));
+        string text = "Downloading Bartlett library";
 
-    void Tick(object? o)
+        while (await timer.WaitForNextTickAsync(cancel.Token))
+            Log = text += ".";
+    }
+
+    void Update(object? sender, RenderingEventArgs args)
     {
         if (_program is null)
             return;
 
-        if (_time < 0 || _time > 100)
-            _dir *= -1;
-
-        var now = DateTime.Now;
-        var delta = now - _last;
-        var t = (delta.TotalSeconds / _program.Duration) * 100;
-        Time += t * _dir;
-        _last = now;
+        var t = args.RenderingTime.TotalSeconds / _program.Duration;
+        Time = PingPong(t) * 100;
     }
 
-    void SetField<T>(ref T field, T value, [CallerMemberName] string property = "")
+    static double PingPong(double t)
     {
+        t = Math.Clamp(t - Math.Floor(t / 2) * 2, 0.0, 2);
+        return 1 - Math.Abs(t - 1);
+    }
+
+    bool SetField<T>(ref T field, T value, [CallerMemberName] string property = "")
+        where T : notnull, IEquatable<T>
+    {
+        if (value.Equals(field))
+            return false;
+
         field = value;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
+        return true;
     }
 }
