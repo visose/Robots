@@ -1,9 +1,11 @@
-﻿using SharpDX;
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using SharpDX;
 using HelixToolkit.Wpf.SharpDX;
 
 namespace Robots.Samples.Wpf;
 
-public class MainViewModel : ObservableObject
+public class MainViewModel : INotifyPropertyChanged
 {
     string _log = "";
     double _time;
@@ -11,9 +13,10 @@ public class MainViewModel : ObservableObject
     DateTime _last;
     double _dir = 1.0;
 
-    readonly Program _program;
+    Program? _program;
     readonly Timer _timer;
 
+    public event PropertyChangedEventHandler? PropertyChanged;
     public ObservableElement3DCollection RobotModels { get; } = new();
 
     public string Log
@@ -28,7 +31,7 @@ public class MainViewModel : ObservableObject
         set
         {
             SetField(ref _time, value);
-            _program.Animate(_time / 100.0);
+            _program?.Animate(_time / 100.0);
         }
     }
 
@@ -53,6 +56,11 @@ public class MainViewModel : ObservableObject
 
     public MainViewModel()
     {
+        _timer = new Timer(Tick, null, Timeout.Infinite, 0);
+    }
+
+    public async Task InitAsync()
+    {
         // robot material
         var material = new PBRMaterial
         {
@@ -64,17 +72,35 @@ public class MainViewModel : ObservableObject
         };
 
         // robot program
-        _program = TestProgram.Create();
+        var programTask = TestProgram.CreateAsync();
+        _ = SpinnerAsync();
+
+        _program = await programTask;
         _program.MeshPoser = new HelixMeshPoser(_program.RobotSystem, material, RobotModels);
-
-        Log = _program.Errors.Count == 0 ? _program.RobotSystem.Name : string.Join(" ", _program.Errors);
-
-        // timer
-        _timer = new Timer(Tick, null, Timeout.Infinite, 0);
     }
+
+    async Task SpinnerAsync()
+    {
+        string dots = "...";
+
+        while(_program is null)
+        {
+            Log = "Downloading Bartlett library " + dots;
+            dots += ".";
+            await Task.Delay(250);
+        }
+
+        Log = _program.Errors.Count == 0 
+            ? _program.RobotSystem.Name 
+            : string.Join(" ", _program.Errors);
+    }
+
 
     void Tick(object? o)
     {
+        if (_program is null)
+            return;
+
         if (_time < 0 || _time > 100)
             _dir *= -1;
 
@@ -83,5 +109,11 @@ public class MainViewModel : ObservableObject
         var t = (delta.TotalSeconds / _program.Duration) * 100;
         Time += t * _dir;
         _last = now;
+    }
+
+    void SetField<T>(ref T field, T value, [CallerMemberName] string property = "")
+    {
+        field = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
     }
 }

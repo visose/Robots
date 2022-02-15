@@ -14,7 +14,15 @@ public partial class MainWindow : Window, IDisposable
     public MainWindow()
     {
         InitializeComponent();
+    }
+
+    protected override async void OnInitialized(EventArgs e)
+    {
+        base.OnInitialized(e);
+
         SetViewport();
+        var viewModel = (MainViewModel)DataContext;
+        await viewModel.InitAsync();
     }
 
     void SetViewport()
@@ -69,25 +77,25 @@ public partial class MainWindow : Window, IDisposable
     }
 
     private bool _disposedValue = false;
-    public void Dispose() => Dispose(true);
-
-    protected virtual void Dispose(bool disposing)
+    public void Dispose()
     {
-        if (!_disposedValue)
-        {
-            var effectsManager = view.EffectsManager;
-
-            if (effectsManager is not null)
-                Disposer.RemoveAndDispose(ref effectsManager);
-
-            _disposedValue = true;
-            GC.SuppressFinalize(this);
-        }
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 
-    ~MainWindow()
+    void Dispose(bool disposing)
     {
-        Dispose(false);
+        if (_disposedValue)
+            return;
+
+        var effectsManager = view.EffectsManager;
+
+        if (effectsManager is not null)
+            Disposer.RemoveAndDispose(ref effectsManager);
+
+        _disposedValue = true;
+
     }
 
+    ~MainWindow() => Dispose(false);
 }
