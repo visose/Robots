@@ -46,8 +46,11 @@ DEFDAT {_program.Name}_{groupName} PUBLIC
 
         // Attribute declarations
 
-        foreach (var tool in _program.Attributes.OfType<Tool>()) code.Add(Tool(tool));
-        foreach (var frame in _program.Attributes.OfType<Frame>()) code.Add(Frame(frame));
+        foreach (var tool in _program.Attributes.OfType<Tool>()) 
+            code.Add(Tool(tool));
+
+        foreach (var frame in _program.Attributes.OfType<Frame>()) 
+            code.Add(Frame(frame));
 
         foreach (var speed in _program.Attributes.OfType<Speed>())
             code.Add($"DECL GLOBAL REAL {speed.Name} = {speed.TranslationSpeed / 1000:0.#####}");
@@ -162,7 +165,6 @@ DEF {_program.Name}_{groupName}_{file:000}()
                         if (!programTarget.IsJointMotion)
                         {
                             double rotation = target.Speed.RotationSpeed.ToDegrees();
-                            //  code.Add($"$VEL={{CP {target.Speed.Name}, ORI1 {rotation:0.000}, ORI2 {rotation:0.000}}}");
                             code.Add($"$VEL.CP = {target.Speed.Name}\r\n$VEL.ORI1 = {rotation:0.###}\r\n$VEL.ORI2 = {rotation:0.####}");
                             currentSpeed = target.Speed;
                         }
@@ -239,14 +241,14 @@ DEF {_program.Name}_{groupName}_{file:000}()
                                 bits = $",S'B{status:000}',T'B{turn:000000}'";
                             }
 
-                            moveText = $"PTP {{X {euler[0]:0.###},Y {euler[1]:0.###},Z {euler[2]:0.###},A {euler[3]:0.####},B {euler[4]:0.####},C {euler[5]:0.####}{external}{bits}}}";
+                            moveText = $"PTP {{{GetXyzAbc(euler)}{external}{bits}}}";
                             if (target.Zone.IsFlyBy) moveText += " C_PTP";
                             break;
                         }
 
                     case Motions.Linear:
                         {
-                            moveText = $"LIN {{X {euler[0]:0.###},Y {euler[1]:0.###},Z {euler[2]:0.###},A {euler[3]:0.####},B {euler[4]:0.####},C {euler[5]:0.####}{external}}}";
+                            moveText = $"LIN {{{GetXyzAbc(euler)}{external}}}";
                             if (target.Zone.IsFlyBy) moveText += " C_DIS";
                             break;
                         }
@@ -271,21 +273,19 @@ DEF {_program.Name}_{groupName}_{file:000}()
 
     string ExternalSpeed(ProgramTarget target)
     {
-        string externalSpeedCode = "";
         var joints = _cell.GetJoints(target.Group);
-        //   int externalJointsCount = target.External.Length;
-
-        // for (int i = 0; i < externalJointsCount; i++)
+        var joint = joints[target.LeadingJoint];
+        var speed = joint switch
         {
-            var joint = joints[target.LeadingJoint];
-            double percentSpeed = 0;
-            if (joint is PrismaticJoint) percentSpeed = target.Target.Speed.TranslationExternal / joint.MaxSpeed;
-            if (joint is RevoluteJoint) percentSpeed = target.Target.Speed.RotationExternal / joint.MaxSpeed;
-            percentSpeed = Clamp(percentSpeed, 0.0, 1.0);
-            externalSpeedCode += $"BAS(#VEL_PTP, 100)" + "\r\n";
-            externalSpeedCode += $"$VEL_EXTAX[{target.LeadingJoint + 1 - 6}] = {percentSpeed * 100:0.###}";
-            //     if (i < externalJointsCount - 1) externalSpeedCode += "\r\n";
-        }
+            PrismaticJoint => target.Target.Speed.TranslationExternal,
+            RevoluteJoint => target.Target.Speed.RotationExternal,
+            _ => throw new ArgumentException(nameof(joint)),
+        };
+
+        var percentSpeed = Clamp(speed / joint.MaxSpeed, 0.0, 1.0);
+
+        var externalSpeedCode = $"BAS(#VEL_PTP, 100)" + "\r\n";
+        externalSpeedCode += $"$VEL_EXTAX[{target.LeadingJoint + 1 - 6}] = {percentSpeed * 100:0.###}";
 
         return externalSpeedCode;
     }
@@ -295,14 +295,14 @@ DEF {_program.Name}_{groupName}_{file:000}()
         string toolTxt = $"$TOOL = {tool.Name}";
         string load = $"$LOAD.M = {tool.Weight}";
         Point3d centroid = tool.Centroid;
-        string centroidTxt = $"$LOAD.CM = {{X {centroid.X:0.###},Y {centroid.Y:0.###},Z {centroid.Z:0.###},A 0,B 0,C 0}}";
+        string centroidTxt = $"$LOAD.CM = {{{GetXyzAbc(centroid.X, centroid.Y, centroid.Z, 0, 0, 0)}}}";
         return $"{toolTxt}\r\n{load}\r\n{centroidTxt}";
     }
 
     string Tool(Tool tool)
     {
         double[] euler = RobotCellKuka.PlaneToEuler(tool.Tcp);
-        return $"DECL GLOBAL FRAME {tool.Name} = {{FRAME: X {euler[0]:0.###},Y {euler[1]:0.###},Z {euler[2]:0.###},A {euler[3]:0.####},B {euler[4]:0.####},C {euler[5]:0.####}}}";
+        return $"DECL GLOBAL FRAME {tool.Name} = {{FRAME: {GetXyzAbc(euler)}}}";
     }
 
     string Frame(Frame frame)
@@ -311,6 +311,11 @@ DEF {_program.Name}_{groupName}_{file:000}()
         plane.InverseOrient(ref _cell.BasePlane);
 
         double[] euler = RobotCellKuka.PlaneToEuler(plane);
-        return $"DECL GLOBAL FRAME {frame.Name} = {{FRAME: X {euler[0]:0.###},Y {euler[1]:0.###},Z {euler[2]:0.###},A {euler[3]:0.####},B {euler[4]:0.####},C {euler[5]:0.####}}}";
+        return $"DECL GLOBAL FRAME {frame.Name} = {{FRAME: {GetXyzAbc(euler)}}}";
+    }
+
+    string GetXyzAbc(params double[] values)
+    {
+        return $"X {values[0]:0.###},Y {values[1]:0.###},Z {values[2]:0.###},A {values[3]:0.####},B {values[4]:0.####},C {values[5]:0.####}";
     }
 }

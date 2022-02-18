@@ -436,6 +436,7 @@ class CheckProgram
         // External
         double deltaExternalTime = 0;
         int externalLeadingJoint = -1;
+        int deltaIndex = -1;
 
         for (int i = 0; i < target.Target.External.Length; i++)
         {
@@ -453,7 +454,15 @@ class CheckProgram
             }
         }
 
-        if (target.Target.Speed.Time == 0)
+        Vector6d deltaTimes;
+
+        if (target.Target.Speed.Time > 0)
+        {
+            // Get slowest by time
+            double deltaTimeTime = target.Target.Speed.Time;
+            deltaTimes = new Vector6d(deltaTimeTime, double.MaxValue, deltaAxisTime, deltaExternalTime, 0, 0);
+        }
+        else
         {
             // Translation
             double distance = prevPlane.Origin.DistanceTo(target.Plane.Origin);
@@ -466,56 +475,37 @@ class CheckProgram
             double deltaRotationTime = angle / target.Target.Speed.RotationSpeed;
 
             // Get slowest
-            //double[] deltaTimes = new double[] { deltaLinearTime, deltaRotationTime, deltaAxisTime, deltaExternalTime };
-            var deltaTimes = new Vector6d(deltaLinearTime, deltaRotationTime, deltaAxisTime, deltaExternalTime, 0, 0);
+            deltaTimes = new Vector6d(deltaLinearTime, deltaRotationTime, deltaAxisTime, deltaExternalTime, 0, 0);
+        }
 
-            int deltaIndex = -1;
-
-            for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 4; i++)
+        {
+            if (deltaTimes[i] > deltaTime)
             {
-                if (deltaTimes[i] > deltaTime)
-                {
-                    deltaTime = deltaTimes[i];
-                    deltaIndex = i;
-                }
-            }
-
-            if (deltaTime < TimeTol)
-            {
-                _program.Warnings.Add($"Position and orientation do not change for {target.Index}");
-            }
-            else if (deltaIndex == 1)
-            {
-                if (target.Index != _lastIndex) _program.Warnings.Add($"Rotation speed limit reached in target {target.Index}");
-                _lastIndex = target.Index;
-            }
-            else if (deltaIndex == 2)
-            {
-                if (target.Index != _lastIndex) _program.Warnings.Add($"Axis {leadingJoint + 1} speed limit reached in target {target.Index}");
-                _lastIndex = target.Index;
-            }
-            else if (deltaIndex == 3)
-            {
-                if (target.Index != _lastIndex) _program.Warnings.Add($"External axis {externalLeadingJoint + 1} speed limit reached in target {target.Index}");
-                leadingJoint = externalLeadingJoint;
-                _lastIndex = target.Index;
+                deltaTime = deltaTimes[i];
+                deltaIndex = i;
             }
         }
-        else
-        {
-            // Get slowest by time
-            double deltaTimeTime = target.Target.Speed.Time;
-            double[] deltaTimes = new double[] { deltaTimeTime, deltaAxisTime, deltaExternalTime };
-            //int deltaIndex = -1;
 
-            for (int i = 0; i < deltaTimes.Length; i++)
-            {
-                if (deltaTimes[i] > deltaTime)
-                {
-                    deltaTime = deltaTimes[i];
-                    //deltaIndex = i;
-                }
-            }
+        if (deltaTime < TimeTol)
+        {
+            _program.Warnings.Add($"Position and orientation do not change for {target.Index}");
+        }
+        else if (deltaIndex == 1)
+        {
+            if (target.Index != _lastIndex) _program.Warnings.Add($"Rotation speed limit reached in target {target.Index}");
+            _lastIndex = target.Index;
+        }
+        else if (deltaIndex == 2)
+        {
+            if (target.Index != _lastIndex) _program.Warnings.Add($"Axis {leadingJoint + 1} speed limit reached in target {target.Index}");
+            _lastIndex = target.Index;
+        }
+        else if (deltaIndex == 3)
+        {
+            if (target.Index != _lastIndex) _program.Warnings.Add($"External axis {externalLeadingJoint + 1} speed limit reached in target {target.Index}");
+            leadingJoint = externalLeadingJoint;
+            _lastIndex = target.Index;
         }
 
         return (deltaTime, deltaAxisTime, leadingJoint);

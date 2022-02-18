@@ -1,3 +1,8 @@
+- version: 1.1.6
+  changes:
+  - Improved speed approximation of joint motions in UR.
+  - Fixed compatibility with early Rhino 7.0 service releases.
+
 - version: 1.1.5
   changes:
   - Added Nuget packages.

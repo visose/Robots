@@ -20,7 +20,6 @@ class URScriptPostProcessor
         // MultiFile warning
         if (program.MultiFileIndices.Count > 1)
             program.Warnings.Add("Multi-file input not supported on UR robots");
-
     }
 
     List<string> Program()
@@ -70,7 +69,6 @@ class URScriptPostProcessor
             if (!string.IsNullOrWhiteSpace(declaration))
             {
                 declaration = indent + declaration;
-                //  declaration = indent + declaration.Replace("\n", "\n" + indent);
                 code.Add(declaration);
             }
         }
@@ -96,23 +94,13 @@ class URScriptPostProcessor
             }
 
             string moveText;
-            string zoneDistance = $"{target.Zone.Name:0.#####}";
-            // double zoneDistance = target.Zone.Distance / 1000;
-
+            string zoneDistance = target.Zone.Name;
 
             if (programTarget.IsJointTarget || (programTarget.IsJointMotion && programTarget.ForcedConfiguration))
             {
                 double[] joints = programTarget.IsJointTarget ? ((JointTarget)programTarget.Target).Joints : programTarget.Kinematics.Joints;
-                double maxAxisSpeed = _robot.Joints.Max(x => x.MaxSpeed);
-                double percentage = (cellTarget.DeltaTime > 0) ? cellTarget.MinTime / cellTarget.DeltaTime : 0.1;
-                double axisSpeed = percentage * maxAxisSpeed;
-                double axisAccel = target.Speed.AxisAccel;
-
-                string speed = target.Speed.Time == 0 ?
-                        $"v={axisSpeed: 0.###}" :
-                        $"t={target.Speed.Time: 0.###}";
-
-                moveText = $"  movej([{joints[0]:0.####}, {joints[1]:0.####}, {joints[2]:0.####}, {joints[3]:0.####}, {joints[4]:0.####}, {joints[5]:0.####}], a={axisAccel:0.####}, {speed}, r={zoneDistance})";
+                var speed = GetAxisSpeed();
+                moveText = $"  movej([{joints[0]:0.####}, {joints[1]:0.####}, {joints[2]:0.####}, {joints[3]:0.####}, {joints[4]:0.####}, {joints[5]:0.####}], {speed}, r={zoneDistance})";
             }
             else
             {
@@ -126,29 +114,20 @@ class URScriptPostProcessor
                 {
                     case Motions.Joint:
                         {
-                            double maxAxisSpeed = _robot.Joints.Min(x => x.MaxSpeed);
-                            double percentage = (cellTarget.DeltaTime > 0) ? cellTarget.MinTime / cellTarget.DeltaTime : 0.1;
-                            double axisSpeed = percentage * maxAxisSpeed;
-                            double axisAccel = target.Speed.AxisAccel;
-
-                            string speed = target.Speed.Time == 0 ?
-                                 $"v={axisSpeed: 0.###}" :
-                                 $"t={target.Speed.Time: 0.###}";
-
-                            moveText = $"  movej(p[{axisAngle[0]:0.#####}, {axisAngle[1]:0.#####}, {axisAngle[2]:0.#####}, {axisAngle[3]:0.#####}, {axisAngle[4]:0.#####}, {axisAngle[5]:0.#####}],a={axisAccel:0.#####},{speed},r={zoneDistance})";
+                            var speed = GetAxisSpeed();
+                            moveText = $"  movej(p[{axisAngle[0]:0.#####}, {axisAngle[1]:0.#####}, {axisAngle[2]:0.#####}, {axisAngle[3]:0.#####}, {axisAngle[4]:0.#####}, {axisAngle[5]:0.#####}], {speed}, r={zoneDistance})";
                             break;
                         }
 
                     case Motions.Linear:
                         {
-                            double linearSpeed = target.Speed.TranslationSpeed / 1000;
                             double linearAccel = target.Speed.TranslationAccel / 1000;
 
-                            string speed = target.Speed.Time == 0 ?
-                                $"v={target.Speed.Name}" :
-                                $"t={target.Speed.Time: 0.###}";
+                            string speed = target.Speed.Time > 0 ?
+                                $"t={target.Speed.Time: 0.####}" :
+                                $"a={linearAccel:0.#####}, v={target.Speed.Name}";
 
-                            moveText = $"  movel(p[{axisAngle[0]:0.#####}, {axisAngle[1]:0.#####}, {axisAngle[2]:0.#####}, {axisAngle[3]:0.#####}, {axisAngle[4]:0.#####}, {axisAngle[5]:0.#####}],a={linearAccel:0.#####},{speed},r={zoneDistance})";
+                            moveText = $"  movel(p[{axisAngle[0]:0.#####}, {axisAngle[1]:0.#####}, {axisAngle[2]:0.#####}, {axisAngle[3]:0.#####}, {axisAngle[4]:0.#####}, {axisAngle[5]:0.#####}], {speed}, r={zoneDistance})";
                             break;
                         }
                     default:
@@ -170,6 +149,22 @@ class URScriptPostProcessor
                 string commands = command.Code(_program, target);
                 commands = indent + commands;
                 code.Add(commands);
+            }
+
+            string GetAxisSpeed()
+            {
+                var speed = target.Speed;
+
+                if (speed.Time > 0)
+                    return $"t={speed.Time:0.####}";
+
+                int leadIndex = programTarget.LeadingJoint;
+                double leadAxisSpeed = _robot.Joints[leadIndex].MaxSpeed;
+                double percentage = (cellTarget.DeltaTime > 0) ? cellTarget.MinTime / cellTarget.DeltaTime : 0.1;
+                double axisSpeed = percentage * leadAxisSpeed;
+                double axisAccel = target.Speed.AxisAccel;
+
+                return $"a={axisAccel:0.####}, v={axisSpeed:0.####}";
             }
         }
 

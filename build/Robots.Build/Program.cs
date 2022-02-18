@@ -27,7 +27,7 @@ app.Add(new ICommand[]
                 "RobotStudio.Services.RobApi.Desktop.dll",
                 "RobotStudio.Services.RobApi.dll"
             },
-            tag: "rh7_0-any"
+            tag: "rh7-any"
         ),
         new Nuget
         (
