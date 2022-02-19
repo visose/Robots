@@ -73,7 +73,7 @@ public class URTests
   DefaultZone = 0
   set_tcp(DefaultToolTcp)
   set_payload(DefaultToolWeight, DefaultToolCog)
-  movej([2.2208, -2.4093, 2.5006, 3.0503, 0.9208, -3.1416], a=3.1416, v=0.2094, r=DefaultZone)
+  movej([2.2208, -2.4093, 2.5006, 3.0503, 0.9208, -3.1416], a=3.1416, v=0.3142, r=DefaultZone)
   movel(p[0.7, 0.25, 0.6, -1.2092, -1.2092, -1.2092], a=1, v=Speed000, r=DefaultZone)
 end";
 

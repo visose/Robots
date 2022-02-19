@@ -158,10 +158,23 @@ class URScriptPostProcessor
                 if (speed.Time > 0)
                     return $"t={speed.Time:0.####}";
 
-                int leadIndex = programTarget.LeadingJoint;
-                double leadAxisSpeed = _robot.Joints[leadIndex].MaxSpeed;
-                double percentage = (cellTarget.DeltaTime > 0) ? cellTarget.MinTime / cellTarget.DeltaTime : 0.1;
-                double axisSpeed = percentage * leadAxisSpeed;
+                double axisSpeed;
+
+                if (cellTarget.DeltaTime > 0)
+                {
+                    int leadIndex = programTarget.LeadingJoint;
+                    double leadAxisSpeed = _robot.Joints[leadIndex].MaxSpeed;
+                    double percentage = cellTarget.MinTime / cellTarget.DeltaTime;
+                    axisSpeed = percentage * leadAxisSpeed;
+                }
+                else
+                {
+                    const double maxTranslationSpeed = 1000.0;
+                    double leadAxisSpeed = _robot.Joints.Max(j => j.MaxSpeed);
+                    double percentage = speed.TranslationSpeed / maxTranslationSpeed;
+                    axisSpeed = percentage * leadAxisSpeed;
+                }
+
                 double axisAccel = target.Speed.AxisAccel;
 
                 return $"a={axisAccel:0.####}, v={axisSpeed:0.####}";
