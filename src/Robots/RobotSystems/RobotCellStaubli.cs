@@ -22,7 +22,7 @@ public class RobotCellStaubli : RobotCell
         double sb = Sin(b);
         double cc = Cos(c);
         double sc = Sin(c);
-        
+
         Transform t = default;
         t.M00 = cb * cc; t.M01 = ca * sc + sa * sb * cc; t.M02 = sa * sc - ca * sb * cc;
         t.M10 = -cb * sc; t.M11 = ca * cc - sa * sb * sc; t.M12 = sa * cc + ca * sb * sc;
