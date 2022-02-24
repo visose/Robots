@@ -100,14 +100,13 @@ public class RemoteAbb : IRemote
             return "Controller is null.";
 
         if (_controller.OperatingMode != ControllerOperatingMode.Auto)
-            return "Controller not set in automatic.";
+            return "Controller not set to automatic.";
 
         if (_controller.State != ControllerState.MotorsOn)
             return "Motors not on.";
 
         using Mastership master = Mastership.Request(_controller);
         _controller.Rapid.Start(RegainMode.Continue, ExecutionMode.Continuous, ExecutionCycle.Once, StartCheck.CallChain);
-
         return "Program started.";
     }
 
@@ -145,32 +144,37 @@ public class RemoteAbb : IRemote
 
             _controller.AuthenticationSystem.DemandGrant(Grant.WriteFtp);
             _controller.FileSystem.PutDirectory(localFolder, program.Name, true);
+            AddLog($"Program {program.Name} copied to {_controller.Name}...");
 
-            using Mastership master = Mastership.Request(_controller);
+            if (_controller.OperatingMode != ControllerOperatingMode.Auto)
+                return $"Skipping loading program to {_controller.Name}. Set controller to automatic to allow loading remotely.";
+
+            using var master = Mastership.Request(_controller);
+            _controller.AuthenticationSystem.DemandGrant(Grant.LoadRapidProgram);
             using var task = _controller.Rapid.GetTasks().First();
             task.DeleteProgram();
+
             int count = 0;
 
             while (count++ < 10)
             {
-                Thread.Sleep(100);
                 try
                 {
-                    _controller.AuthenticationSystem.DemandGrant(Grant.LoadRapidProgram);
                     if (task.LoadProgramFromFile(programPath, RapidLoadMode.Replace))
-                        return $"Program {program.Name} uploaded to {_controller.Name}.";
+                        return $"Program {program.Name} loaded to {_controller.Name}.";
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    Log.Insert(0, $"Retrying {count}: {e}");
+                    Thread.Sleep(300);
+                    AddLog($"Retrying loading program... ({count}/10)");
                 }
             }
 
-            throw new OperationCanceledException("Could not upload after 10 attempts.");
+            throw new OperationCanceledException("Could not load program after 10 attempts.");
         }
         catch (Exception e)
         {
-            return $"Error uploading: {e}";
+            return $"Error: {e.Message}";
         }
         finally
         {
