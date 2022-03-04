@@ -39,7 +39,7 @@
 					<Revolute number="2" a="315" d="0" minrange="-190" maxrange="45" maxspeed="300" />
 					<Revolute number="3" a="35" d="0" minrange="-120" maxrange="156" maxspeed="360" />
 					<Revolute number="4" a="0" d="365" minrange="-185" maxrange="185" maxspeed="381" />
-					<Revolute number="5" a="0" d="0" minrange="-120" maxrange="120" maxspeed="388" />
+					<Revolute number="5" a="0" d="0" minrange="-114" maxrange="115" maxspeed="388" />
 					<Revolute number="6" a="0" d="80" minrange="-350" maxrange="350" maxspeed="615" />
 				</Joints>
 			</RobotArm>
