@@ -33,11 +33,9 @@ class LibraryForm : ComponentForm
     {
         var label = new Label
         {
-            TextAlignment = align
+            TextAlignment = align,
+            Font = font ?? EtoFonts.NormalFont
         };
-
-        if (font is not null)
-            label.Font = font;
 
         label.TextBinding.BindDataContext(bindText);
         return label;
@@ -64,7 +62,6 @@ class LibraryForm : ComponentForm
         _library = library;
 
         Title = "Robot libraries";
-        BackgroundColor = Colors.White;
         MinimumSize = new Size(600, 300);
         Content = new StackLayout
         {
