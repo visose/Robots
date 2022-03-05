@@ -257,11 +257,13 @@ class LibraryForm : ComponentForm
         {
             button.Enabled = false;
             spinner.Visible = true;
+            spinner.Enabled = true;
 
             await actionAsync();
 
             button.Enabled = true;
             spinner.Visible = false;
+            spinner.Enabled = false;
         }
     }
 }

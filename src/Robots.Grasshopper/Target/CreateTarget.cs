@@ -13,7 +13,7 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
     readonly IGH_Param[] _parameters = new IGH_Param[11]
     {
             new TargetParameter() { Name = "Target", NickName = "T", Description = "Reference target", Optional = false },
-            new Param_String() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false },
+            new JointsParameter() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false },
             new Param_Plane() { Name = "Plane", NickName = "P", Description = "Target plane", Optional = false },
             new Param_Integer() { Name = "RobConf", NickName = "Cf", Description = "Robot configuration", Optional = true },
             new Param_String() { Name = "Motion", NickName = "M", Description = "Type of motion", Optional = true },
@@ -77,19 +77,8 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
 
         if (hasJoints)
         {
-            string? jointsGH = null;
-            if (!DA.GetData("Joints", ref jointsGH) || jointsGH is null)
+            if (!DA.GetData("Joints", ref joints) || joints is null)
                 return;
-
-            string[] jointsText = jointsGH.Split(',');
-            if (jointsText.Length != 6)
-                return;
-
-            joints = new double[6];
-
-            for (int i = 0; i < 6; i++)
-                if (!GH_Convert.ToDouble_Secondary(jointsText[i], ref joints[i]))
-                    return;
         }
         else if (sourceTarget is not null)
         {

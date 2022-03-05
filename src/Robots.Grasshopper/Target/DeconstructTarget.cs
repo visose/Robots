@@ -8,7 +8,7 @@ public sealed class DeconstructTarget : GH_Component, IGH_VariableParameterCompo
     // Variable outputs
     readonly IGH_Param[] _parameters = new IGH_Param[10]
     {
-            new Param_String() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false },
+            new JointsParameter() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false },
             new Param_Plane() { Name = "Plane", NickName = "P", Description = "Target plane", Optional = false },
             new Param_Integer() { Name = "RobConf", NickName = "Cf", Description = "Robot configuration", Optional = true },
             new Param_String() { Name = "Motion", NickName = "M", Description = "Type of motion", Optional = true },
@@ -54,7 +54,7 @@ public sealed class DeconstructTarget : GH_Component, IGH_VariableParameterCompo
         bool hasFrame = Params.Output.Any(x => x.Name == "Frame");
         bool hasExternal = Params.Output.Any(x => x.Name == "External");
 
-        if (hasJoints) DA.SetData("Joints", isCartesian ? null : string.Join(",", ((JointTarget)target).Joints.Select(x => $"{x:0.#####}")));
+        if (hasJoints) DA.SetData("Joints", isCartesian ? null : ((JointTarget)target).Joints);
         if (hasPlane) DA.SetData("Plane", isCartesian ? ((CartesianTarget)target).Plane : null);
         if (hasConfig && isCartesian)
         {

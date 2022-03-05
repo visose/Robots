@@ -16,12 +16,12 @@ public class DegreesToRadians : GH_Component
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddTextParameter("Radians", "R", "Radians", GH_ParamAccess.item);
+        pManager.AddParameter(new JointsParameter(), "Radians", "R", "Radians", GH_ParamAccess.item);
     }
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        var degrees = new List<double>();
+        var degrees = new List<double>(6);
         RobotSystem? robotSystem = null;
         int group = 0;
 
@@ -29,9 +29,7 @@ public class DegreesToRadians : GH_Component
         if (!DA.GetData(1, ref robotSystem) || robotSystem is null) return;
         if (!DA.GetData(2, ref group)) return;
 
-        var radians = degrees.Select((x, i) => robotSystem.DegreeToRadian(x, i, group));
-        string radiansText = string.Join(",", radians.Select(x => $"{x:0.#####}"));
-
-        DA.SetData(0, radiansText);
+        var radians = degrees.Select((x, i) => robotSystem.DegreeToRadian(x, i, group)).ToArray();
+        DA.SetData(0, radians);
     }
 }
