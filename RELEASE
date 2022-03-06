@@ -1,3 +1,8 @@
+- version: 1.1.9
+  changes:
+  - Added Joints parameter for the joint target input.
+  - Fixed libraries form UI issues on Mac.
+
 - version: 1.1.8
   changes:
   - Fixed ABB remote issues with RW 5.x controllers.
