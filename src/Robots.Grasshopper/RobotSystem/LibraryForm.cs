@@ -62,6 +62,7 @@ class LibraryForm : ComponentForm
         _library = library;
 
         Title = "Robot libraries";
+        BackgroundColor = Colors.Transparent;
         MinimumSize = new Size(600, 300);
         Content = new StackLayout
         {
@@ -157,7 +158,8 @@ class LibraryForm : ComponentForm
                 DataCell = CustomCell.Create<LibraryCell>()
                 // Expand = true; // Not available in early 7.0 releases.
             }
-        }
+        },
+        RowHeight = 31
     };
 
     StackLayout ListView(GridView grid) => new()
@@ -232,7 +234,6 @@ class LibraryForm : ComponentForm
 
         Spinner spinner = new()
         {
-            Size = new Size(22, 22),
             Visible = false
         };
 
