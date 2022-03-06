@@ -88,13 +88,13 @@ class LibraryForm : ComponentForm
         catch (Exception)
         {
             MessageBox.Show(this, $"Error refreshing list of libraries. It is possible you reached your rate limit, please wait one hour for the limit to reset.", MessageBoxType.Error);
+            return;
         }
 
         var values = _library.Libraries.Values;
         var ordered = values.OrderBy(i => i.Name).ToList();
 
         var selected = _grid.SelectedItem as LibraryItem;
-        _grid.DataStore = null;
         _grid.DataStore = ordered;
 
         if (!ordered.Any())
@@ -133,7 +133,7 @@ class LibraryForm : ComponentForm
         }
 
         _detailView.UpdateBindings(BindingUpdateMode.Destination);
-        _grid.ReloadData(_grid.SelectedRow);
+        _grid.DataStore = _grid.DataStore;
     }
 
     string ItemActions(LibraryItem item) => item switch
