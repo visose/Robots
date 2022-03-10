@@ -8,7 +8,7 @@ public struct Vector6d
     public static Vector6d Map<T>(T[] array, Func<T, double> projection)
     {
         if (array.Length != 6)
-            throw new ArgumentOutOfRangeException(nameof(array), "Array length should be 6.");
+            throw new ArgumentOutOfRangeException(nameof(array), " Array length should be 6");
 
         Vector6d result = default;
 
@@ -40,7 +40,7 @@ public struct Vector6d
     public Vector6d(double[] joints)
     {
         if (joints.Length != 6)
-            throw new ArgumentOutOfRangeException(nameof(joints), "Array length should be 6.");
+            throw new ArgumentOutOfRangeException(nameof(joints), " Array length should be 6");
 
         A1 = joints[0];
         A2 = joints[1];
@@ -60,7 +60,7 @@ public struct Vector6d
             3 => A4,
             4 => A5,
             5 => A6,
-            _ => throw new ArgumentOutOfRangeException(nameof(i), " Invalid Vector6 index."),
+            _ => throw new ArgumentOutOfRangeException(nameof(i), " Invalid Vector6 index"),
         };
 
         set
@@ -74,7 +74,7 @@ public struct Vector6d
                 case 4: A5 = value; break;
                 case 5: A6 = value; break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(i), "Invalid Vector6 index.");
+                    throw new ArgumentOutOfRangeException(nameof(i), " Invalid Vector6 index");
             }
         }
     }

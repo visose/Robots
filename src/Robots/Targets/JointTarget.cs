@@ -9,6 +9,7 @@ public class JointTarget : Target
 
     public JointTarget(double[] joints, Tool? tool = null, Speed? speed = null, Zone? zone = null, Command? command = null, Frame? frame = null, IEnumerable<double>? external = null) : base(tool, speed, zone, command, frame, external)
     {
+        Array.Resize(ref joints, 6);
         Joints = joints;
     }
 
@@ -29,7 +30,7 @@ public class JointTarget : Target
     }
 
     public static double GetAbsoluteJoint(double joint)
-    {       
+    {
         double absJoint = Abs(joint);
         double result = absJoint - Floor(absJoint / PI2) * PI2;
         if (result > PI) result -= PI2;

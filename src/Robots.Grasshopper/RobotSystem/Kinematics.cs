@@ -13,7 +13,7 @@ public class Kinematics : GH_Component
     {
         pManager.AddParameter(new RobotSystemParameter(), "Robot system", "R", "Robot system", GH_ParamAccess.item);
         pManager.AddParameter(new TargetParameter(), "Target", "T", "One target per robot", GH_ParamAccess.list);
-        pManager.AddTextParameter("Previous joints", "J", "Optional previous joint values. If the pose is ambiguous is will select one based on this previous position.", GH_ParamAccess.list);
+        pManager.AddParameter(new JointsParameter(), "Previous joints", "J", "Optional previous joint values. If the pose is ambiguous is will select one based on this previous position.", GH_ParamAccess.list);
         pManager.AddBooleanParameter("Display geometry", "M", "Display mesh geometry of the robot", GH_ParamAccess.item, false);
         pManager[2].Optional = true;
     }
@@ -21,7 +21,7 @@ public class Kinematics : GH_Component
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddMeshParameter("Meshes", "M", "Robot system's meshes", GH_ParamAccess.list);
-        pManager.AddTextParameter("Joints", "J", "Robot system's joint rotations as a string of numbers separated by commas.", GH_ParamAccess.item);
+        pManager.AddParameter(new JointsParameter(), "Joints", "J", "Robot system's joint rotations.", GH_ParamAccess.item);
         pManager.AddPlaneParameter("Planes", "P", "Robot system's joint lanes", GH_ParamAccess.list);
         pManager.AddTextParameter("Errors", "E", "Errors in kinematic solution", GH_ParamAccess.list);
     }
@@ -30,35 +30,17 @@ public class Kinematics : GH_Component
     {
         RobotSystem? robotSystem = null;
         var ghTargets = new List<GH_Target>();
-        var prevJointsText = new List<GH_String>();
+        var ghPrevJoints = new List<GH_Joints>();
         bool drawMeshes = false;
 
         if (!DA.GetData(0, ref robotSystem) || robotSystem is null) return;
         if (!DA.GetDataList(1, ghTargets)) return;
-        DA.GetDataList(2, prevJointsText);
+        DA.GetDataList(2, ghPrevJoints);
         if (!DA.GetData(3, ref drawMeshes)) return;
 
-        List<double[]>? prevJoints = null;
-
-        if (prevJointsText.Count > 0)
-        {
-            prevJoints = new List<double[]>();
-
-            foreach (var text in prevJointsText)
-            {
-                if (text is not null)
-                {
-                    string[] jointsText = text.Value.Split(',');
-                    var prevJoint = new double[jointsText.Length];
-
-                    for (int i = 0; i < jointsText.Length; i++)
-                        if (!GH_Convert.ToDouble_Secondary(jointsText[i], ref prevJoint[i]))
-                            throw new ArgumentException(" Previous joints not formatted correctly.", nameof(jointsText));
-
-                    prevJoints.Add(prevJoint);
-                }
-            }
-        }
+        var prevJoints = ghPrevJoints.Count == 0
+            ? null
+            : ghPrevJoints.Select(v => v.Value).ToList();
 
         var targets = ghTargets.Select(x => x.Value).ToList();
         var kinematics = robotSystem.Kinematics(targets, prevJoints);
@@ -69,9 +51,7 @@ public class Kinematics : GH_Component
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in solution");
         }
 
-        var strings = kinematics.SelectMany(x => x.Joints).Select(x => new GH_Number(x).ToString());
-        var joints = string.Join(",", strings);
-
+        var joints = kinematics.SelectMany(x => x.Joints).ToArray();
         var planes = kinematics.SelectMany(x => x.Planes);
 
         if (drawMeshes)

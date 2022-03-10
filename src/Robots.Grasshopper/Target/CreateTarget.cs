@@ -22,7 +22,7 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
             new ZoneParameter() { Name = "Zone", NickName = "Z", Description = "Approximation zone in mm", Optional = true },
             new CommandParameter() { Name = "Command", NickName = "C", Description = "Robot command", Optional = true },
             new FrameParameter() { Name = "Frame", NickName = "F", Description = "Base frame", Optional = true },
-            new Param_String() { Name = "External", NickName = "E", Description = "External axis", Optional = true }
+            new JointsParameter() { Name = "External", NickName = "E", Description = "External axes", Optional = true }
     };
 
     bool _isCartesian = true;
@@ -40,6 +40,33 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddParameter(new TargetParameter(), "Target", "T", "Target", GH_ParamAccess.item);
+    }
+
+    public override void AddedToDocument(GH_Document document)
+    {
+        base.AddedToDocument(document);
+
+        FixJointsParams(1);
+        FixJointsParams(10);
+    }
+
+    void FixJointsParams(int index)
+    {
+        var param = _parameters[index];
+        var inputParam = Params.Input.FirstOrDefault(p => p.Name == param.Name);
+
+        if (inputParam is null or JointsParameter)
+            return;
+
+        var sources = inputParam.Sources.ToList();
+
+        Params.UnregisterInputParameter(inputParam, true);
+        AddParam(index);
+
+        var updatedParam = Params.Input.FirstOrDefault(p => p.Name == param.Name);
+
+        foreach (var source in sources)
+            updatedParam.AddSource(source);
     }
 
     protected override void SolveInstance(IGH_DataAccess DA)
@@ -168,22 +195,7 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
 
         if (hasExternal)
         {
-            string? externalInput = null;
-
-            if (!DA.GetData("External", ref externalInput) || externalInput is null || string.IsNullOrWhiteSpace(externalInput))
-            {
-                external = new double[0];
-            }
-            else
-            {
-                string[]? externalText = externalInput.Split(',');
-                int length = externalText.Length;
-                external = new double[length];
-
-                for (int i = 0; i < length; i++)
-                    if (!GH_Convert.ToDouble_Secondary(externalText[i], ref external[i]))
-                        return;
-            }
+            DA.GetData("External", ref external);
         }
         else if (sourceTarget is not null)
         {

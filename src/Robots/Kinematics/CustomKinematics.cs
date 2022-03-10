@@ -15,7 +15,7 @@ class CustomKinematics : MechanismKinematics
 
             if (target.External.Length < externalNum + 1)
             {
-                Errors.Add($"Custom external axis not configured on this target.");
+                Errors.Add("Custom external axis not configured on this target.");
             }
             else
             {

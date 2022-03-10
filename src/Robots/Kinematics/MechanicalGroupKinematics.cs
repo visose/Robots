@@ -7,9 +7,15 @@ class MechanicalGroupKinematics : KinematicSolution
     internal MechanicalGroupKinematics(MechanicalGroup group, Target target, double[]? prevJoints, Plane? coupledPlane, Plane? basePlane)
     {
         var jointCount = group.Joints.Count;
+
+        if (prevJoints is not null && prevJoints.Length != jointCount)
+        {
+            Errors.Add($"Previous joints set but contain {prevJoints.Length} value(s), should contain {jointCount} values.");
+            prevJoints = null;
+        }
+
         Joints = new double[jointCount];
         var planes = new List<Plane>(jointCount + 2);
-        var errors = new List<string>();
 
         Plane? robotBase = basePlane;
 
@@ -31,7 +37,7 @@ class MechanicalGroupKinematics : KinematicSolution
                 Joints[external.Joints[i].Number] = externalKinematics.Joints[i];
 
             planes.AddRange(externalKinematics.Planes);
-            errors.AddRange(externalKinematics.Errors);
+            Errors.AddRange(externalKinematics.Errors);
 
             if (external == coupledMech)
                 coupledPlane = externalKinematics.Planes[externalKinematics.Planes.Length - 1];
@@ -45,7 +51,7 @@ class MechanicalGroupKinematics : KinematicSolution
 
         // Coupling
         if (coupledPlane is not null)
-        {            
+        {
             var coupledFrame = target.Frame.ShallowClone();
             var plane = coupledFrame.Plane;
             var cPlane = (Plane)coupledPlane;
@@ -68,7 +74,7 @@ class MechanicalGroupKinematics : KinematicSolution
             planes.AddRange(robotKinematics.Planes);
             Configuration = robotKinematics.Configuration;
 
-            errors.AddRange(robotKinematics.Errors);
+            Errors.AddRange(robotKinematics.Errors);
         }
 
         // Tool
@@ -78,6 +84,5 @@ class MechanicalGroupKinematics : KinematicSolution
         planes.Add(toolPlane);
 
         Planes = planes.ToArray();
-        Errors.AddRange(errors);
     }
 }

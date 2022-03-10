@@ -44,9 +44,9 @@ public abstract class RobotCell : RobotSystem
         return MechanicalGroups[group].Robot.Payload;
     }
 
-    internal override Joint[] GetJoints(int group)
+    internal override IList<Joint> GetJoints(int group)
     {
-        return MechanicalGroups[group].Joints.ToArray();
+        return MechanicalGroups[group].Joints;
     }
 
     internal int GetPlaneIndex(Frame frame)

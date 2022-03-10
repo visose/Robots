@@ -189,10 +189,16 @@ public class RobotSystemUR : RobotSystem
     {
         var target = targets.First();
         var prevJoint = prevJoints?.First();
-        var kinematics = new List<KinematicSolution>();
+        string? error = null;
+
+        if (prevJoint is not null && prevJoint.Length != 6)
+        {
+            error = $"Previous joints set but contain {prevJoint.Length} value(s), should contain 6 values.";
+            prevJoint = null;
+        }
+
         var kinematic = Robot.Kinematics(target, prevJoint, BasePlane);
         var planes = kinematic.Planes.ToList();
-
 
         // Tool
         if (target.Tool is not null)
@@ -205,8 +211,11 @@ public class RobotSystemUR : RobotSystem
             planes.Add(planes[planes.Count - 1]);
 
         kinematic.Planes = planes.ToArray();
-        kinematics.Add(kinematic);
-        return kinematics;
+
+        if (error is not null)
+            kinematic.Errors.Add(error);
+
+        return new List<KinematicSolution> { kinematic };
     }
 
     internal override double Payload(int group)
@@ -214,7 +223,7 @@ public class RobotSystemUR : RobotSystem
         return Robot.Payload;
     }
 
-    internal override Joint[] GetJoints(int group)
+    internal override IList<Joint> GetJoints(int group)
     {
         return Robot.Joints;
     }

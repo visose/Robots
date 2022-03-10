@@ -17,7 +17,7 @@ public sealed class DeconstructTarget : GH_Component, IGH_VariableParameterCompo
             new ZoneParameter() { Name = "Zone", NickName = "Z", Description = "Approximation zone in mm", Optional = true },
             new CommandParameter() { Name = "Command", NickName = "C", Description = "Robot command", Optional = true },
             new FrameParameter() { Name = "Frame", NickName = "F", Description = "Base frame", Optional = true },
-            new Param_String() { Name = "External", NickName = "E", Description = "External axes", Optional = true }
+            new JointsParameter() { Name = "External", NickName = "E", Description = "External axes", Optional = true }
     };
 
     public DeconstructTarget() : base("Deconstruct target", "DeTarget", "Deconstructs a target. Right click for additional outputs.", "Robots", "Components") { }
@@ -33,6 +33,26 @@ public sealed class DeconstructTarget : GH_Component, IGH_VariableParameterCompo
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         Params.RegisterOutputParam(_parameters[0]);
+    }
+
+    public override void AddedToDocument(GH_Document document)
+    {
+        base.AddedToDocument(document);
+
+        FixJointsParams(0);
+        FixJointsParams(9);
+    }
+
+    void FixJointsParams(int index)
+    {
+        var param = _parameters[index];
+        var outputParam = Params.Output.FirstOrDefault(p => p.Name == param.Name);
+
+        if (outputParam is null or JointsParameter)
+            return;
+
+        Params.UnregisterOutputParameter(outputParam, true);
+        AddParam(index);
     }
 
     protected override void SolveInstance(IGH_DataAccess DA)
@@ -69,7 +89,7 @@ public sealed class DeconstructTarget : GH_Component, IGH_VariableParameterCompo
         if (hasZone && (target.Zone is not null)) DA.SetData("Zone", target.Zone);
         if (hasCommand) DA.SetData("Command", target.Command);
         if (hasFrame) DA.SetData("Frame", target.Frame);
-        if (hasExternal) DA.SetData("External", string.Join(",", target.External.Select(x => $"{x:0.#####}")));
+        if (hasExternal) DA.SetData("External", target.External);
     }
 
     // Menu items

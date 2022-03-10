@@ -9,16 +9,20 @@ class RobotCellKinematics
     internal RobotCellKinematics(RobotCell cell, IEnumerable<Target> targets, IEnumerable<double[]>? prevJoints)
     {
         Solutions = new List<KinematicSolution>(new KinematicSolution[cell.MechanicalGroups.Count]);
+        var targetsList = targets.TryCastIList();
+        var prevJointsList = prevJoints?.TryCastIList();
 
-        if (targets.Count() != cell.MechanicalGroups.Count)
+        var groupsCount = cell.MechanicalGroups.Count;
+
+        if (targetsList.Count != groupsCount)
             throw new ArgumentException(" Incorrect number of targets.", nameof(targets));
 
-        if (prevJoints is not null && prevJoints.Count() != cell.MechanicalGroups.Count)
+        if (prevJointsList is not null && prevJointsList.Count != groupsCount)
             throw new ArgumentException(" Incorrect number of previous joint values.", nameof(prevJoints));
 
         var groups = cell.MechanicalGroups.ToList();
 
-        foreach (var target in targets)
+        foreach (var target in targetsList)
         {
             var index = target.Frame.CoupledMechanicalGroup;
             if (index == -1) continue;
@@ -27,14 +31,11 @@ class RobotCellKinematics
             groups.Insert(0, group);
         }
 
-        var targetsArray = targets.TryCastIList();
-        var prevJointsArray = prevJoints?.TryCastIList();
-
         foreach (var group in groups)
         {
             int i = group.Index;
-            var target = targetsArray[i];
-            var prevJoint = prevJointsArray?[i];
+            var target = targetsList[i];
+            var prevJoint = prevJointsList?[i];
             Plane? coupledPlane = null;
 
             int coupledGroup = target.Frame.CoupledMechanicalGroup;

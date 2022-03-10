@@ -71,7 +71,7 @@ public abstract class RobotSystem
     internal abstract void SaveCode(IProgram program, string folder);
     internal abstract List<List<List<string>>> Code(Program program);
     internal abstract double Payload(int group);
-    internal abstract Joint[] GetJoints(int group);
+    internal abstract IList<Joint> GetJoints(int group);
     public abstract List<KinematicSolution> Kinematics(IEnumerable<Target> target, IEnumerable<double[]>? prevJoints = null);
     public abstract double DegreeToRadian(double degree, int i, int group = 0);
     public abstract double[] PlaneToNumbers(Plane plane);

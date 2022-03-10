@@ -11,7 +11,7 @@ public class GH_Joints : GH_Goo<double[]>
     public override bool IsValid => true;
     public override string TypeName => "Joints";
     public override string TypeDescription => "Joints";
-    public override string ToString() => string.Join(",", Value.Select(x => $"{x:0.######}"));
+    public override string ToString() => string.Join(",", Value.Select(x => $"{x:0.#####}"));
 
     public override bool CastFrom(object source)
     {
