@@ -1,18 +1,19 @@
 <div align="center">
     
 # ![Robots](../docs/Images/iconRobot.svg)<br/>robots
-### Create and simulate ABB, KUKA, UR and Staubli robot programs
+**Create and simulate ABB, KUKA, UR and Staubli robot programs**
 
 [![License](https://img.shields.io/github/license/visose/Robots?style=flat-square)](../LICENSE)
 [![NuGet package](https://img.shields.io/nuget/v/robots?style=flat-square)](https://www.nuget.org/packages?q=visose+robots)
-[![Repo stars](https://img.shields.io/github/stars/visose/robots?style=flat-square)](../../../)
-[![Discussions](https://img.shields.io/github/discussions/visose/robots?style=flat-square)](../../../discussions)
+[![Repo stars](https://img.shields.io/github/stars/visose/robots?style=flat-square)](https://github.com/visose/Robots)
+[![Discussions](https://img.shields.io/github/discussions/visose/robots?style=flat-square)](https://github.com/visose/Robots/discussions)
 [![Sponsor](https://img.shields.io/badge/sponsor-gray?style=flat-square&logo=GitHub-Sponsors)](https://github.com/sponsors/visose)
 
 **[About](#about) •
 [Install](#install) •
 [Docs](../../../wiki) •
-[Support](#install)**
+[Support](#support) •
+[Sponsors](#sponsors)**
 
 </div>
 
@@ -34,5 +35,20 @@
 
 
 ## Support
-### [Commercial support](https://visose.com/robots)
+
+### 🆓 [Community](https://github.com/visose/Robots/discussions)
+
+Ask any questions in our discussions forum.
+### 💼 [Commercial](https://visose.com/robots)
+
 Partner with the creators of Robots to ensure you have the best support for your organization. You can find more information [here](https://visose.com/robots).
+
+## Sponsors
+
+The continued development and maintenance of this project is made possible by our sponsors and commercial partners. Become a sponsor by purchasing [commercial support](https://visose.com/robots), or by donating via [GitHub Sponsors](https://github.com/sponsors/visose) or [PayPal](https://visose.com/paypal).
+
+### Our top sponsors
+
+[![B-made](../docs/Sponsors/Bmade_light.png)](https://www.ucl.ac.uk/bartlett/about-us/our-resources/b-made-bartlett-workshops#gh-light-mode-only)
+[![B-made](../docs/Sponsors/Bmade_dark.png)](https://www.ucl.ac.uk/bartlett/about-us/our-resources/b-made-bartlett-workshops#gh-dark-mode-only)
+
