@@ -105,14 +105,22 @@
       "dependencies": {},
       "url": "https://unitynuget-registry.azurewebsites.net"
     },
+    "org.nuget.rhino3dm": {
+      "version": "7.11.0",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unitynuget-registry.azurewebsites.net"
+    },
     "org.nuget.robots": {
-      "version": "https://github.com/visose/Robots.Package.git",
+      "version": "1.1.10",
       "depth": 0,
-      "source": "git",
+      "source": "registry",
       "dependencies": {
-        "org.nuget.newtonsoft.json": "13.0.1"
+        "org.nuget.newtonsoft.json": "13.0.1",
+        "org.nuget.rhino3dm": "7.11.0"
       },
-      "hash": "9489720cac236db36a94dccf6f4959a59db569f6"
+      "url": "https://unitynuget-registry.azurewebsites.net"
     },
     "com.unity.modules.imgui": {
       "version": "1.0.0",
