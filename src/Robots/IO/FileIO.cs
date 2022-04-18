@@ -304,6 +304,9 @@ public static class FileIO
 
             var path3dm = Path.ChangeExtension(file, ".3dm");
 
+            if (!File.Exists(path3dm))
+                throw new FileNotFoundException($@" File ""{Path.GetFileName(path3dm)}"" not found");
+
             return File3dm.Read(path3dm);
         }
 

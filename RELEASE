@@ -1,3 +1,7 @@
+- version: 1.1.11
+  changes:
+  - Added error message when 3dm library file is not found.
+
 - version: 1.1.10
   changes:
   - Added Joints parameter to more components.
@@ -25,7 +29,7 @@
 
 - version: 1.1.5
   changes:
-  - Added Nuget packages.
+  - Added NuGet packages.
   - Fixed compatibility with early Rhino 7.0 service releases.
 
 - version: 1.1.4
