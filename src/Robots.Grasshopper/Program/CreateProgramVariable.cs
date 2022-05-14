@@ -3,7 +3,7 @@ using Grasshopper.Kernel.Data;
 
 namespace Robots.Grasshopper;
 
-public class CreateProgramVariable : GH_Component
+public class CreateProgramVariable : GH_Component, IGH_VariableParameterComponent
 {
     RobotSystem? _robotSystem;
 
@@ -157,4 +157,10 @@ public class CreateProgramVariable : GH_Component
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in program");
         }
     }
+
+    bool IGH_VariableParameterComponent.CanInsertParameter(GH_ParameterSide side, int index) => false;
+    bool IGH_VariableParameterComponent.CanRemoveParameter(GH_ParameterSide side, int index) => false;
+    IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index) => default!;
+    bool IGH_VariableParameterComponent.DestroyParameter(GH_ParameterSide side, int index) => false;
+    void IGH_VariableParameterComponent.VariableParameterMaintenance() { }
 }
