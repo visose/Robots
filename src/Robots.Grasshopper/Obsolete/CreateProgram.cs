@@ -3,10 +3,12 @@ using Grasshopper.Kernel.Data;
 
 namespace Robots.Grasshopper;
 
+[Obsolete]
 public class CreateProgram : GH_Component
 {
     public CreateProgram() : base("Create program", "Program", "Creates a program, checks for possible issues and fixes common mistakes.", "Robots", "Components") { }
-    public override GH_Exposure Exposure => GH_Exposure.quarternary;
+    public override GH_Exposure Exposure => GH_Exposure.hidden;
+    public override bool Obsolete => true;
     public override Guid ComponentGuid => new("{5186EFD5-C042-4CA9-A7D2-E143F4848DEF}");
     protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconCreateProgram");
 
