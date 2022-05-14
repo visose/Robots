@@ -22,6 +22,12 @@ public class GH_Joints : GH_Goo<double[]>
                 return true;
             case GH_String text:
                 {
+                    if(string.IsNullOrWhiteSpace(text.Value))
+                    {
+                        Value = new double[0];
+                        return true;
+                    }
+
                     string[] texts = text.Value.Split(',');
                     double[] values = new double[texts.Length];
 
