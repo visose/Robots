@@ -21,10 +21,7 @@ public class URRealTime
 
     void MakeDataTypes()
     {
-        var resource = "Robots.Remote.URRealTime.txt";
-        var assembly = GetType().Assembly;
-        using var stream = assembly.GetManifestResourceStream(resource);
-        using var reader = new StreamReader(stream);
+        using var reader = Util.GetResource("URRealTime.txt");
         int start = 0;
 
         string line;

@@ -1,0 +1,14 @@
+﻿<URProgram name="{Name}" installation="default" installationRelativePath="default" createdIn="{Version}" lastSavedIn="{Version}">
+  <children>
+    <MainProgram runOnlyOnce="true" InitVariablesNode="false">
+      <children>
+        <Script type="File">
+          <cachedContents>{Code}
+Program()
+</cachedContents>
+          <file>{File}</file>
+        </Script>
+      </children>
+    </MainProgram>
+  </children>
+</URProgram>

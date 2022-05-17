@@ -8,7 +8,7 @@ public class RobotSystemUR : RobotSystem
     public RobotUR Robot { get; }
     // public URRealTime URRealTime { get; set; }
 
-    internal RobotSystemUR(string name, RobotUR robot, IO io, Plane basePlane, Mesh? environment) 
+    internal RobotSystemUR(string name, RobotUR robot, IO io, Plane basePlane, Mesh? environment)
         : base(name, Manufacturers.UR, io, basePlane, environment, GetDefaultPose(robot))
     {
         Remote = new RemoteUR();
@@ -235,8 +235,20 @@ public class RobotSystemUR : RobotSystem
         if (program.Code is null)
             throw new InvalidOperationException(" Program code not generated");
 
-        string file = Path.Combine(folder, $"{program.Name}.URS");
-        var joinedCode = string.Join("\r\n", program.Code[0].SelectMany(c => c));
-        File.WriteAllText(file, joinedCode);
+        // e-Series or CB-Series
+        var isESeries = Robot.Model.EndsWith("e", StringComparison.OrdinalIgnoreCase);
+
+        // Version number does not appear to matter
+        string version = isESeries ? "5.11.11" : "3.15.6";
+        var code = string.Join("\r\n", program.Code[0].SelectMany(c => c));
+
+        string urp = Util.GetStringResource("UrpTemplate.txt")
+            .Replace("{Name}", program.Name)
+            .Replace("{Version}", version)
+            .Replace("{File}", $"{program.Name}.script")
+            .Replace("{Code}", code);
+
+        string filePath = Path.Combine(folder, $"{program.Name}.urp");
+        File.WriteAllText(filePath, urp);
     }
 }

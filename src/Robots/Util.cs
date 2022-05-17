@@ -1,4 +1,5 @@
-﻿using Rhino.Geometry;
+﻿using System.Reflection;
+using Rhino.Geometry;
 using static System.Math;
 
 namespace Robots;
@@ -20,6 +21,22 @@ static class Util
     public static T NotNull<T>(this T? value, string? text = null)
     {
         return value ?? throw new ArgumentNullException(nameof(value), text);
+    }
+
+    // Resources
+
+    public static StreamReader GetResource(string name)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var resourceName = $"Robots.Resources.{name}";
+        var stream = assembly.GetManifestResourceStream(resourceName);
+        return new StreamReader(stream);
+    }
+
+    public static string GetStringResource(string name)
+    {
+        using var reader = GetResource(name);
+        return reader.ReadToEnd();
     }
 
     // String
