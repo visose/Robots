@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Robots;
 
-public class RemoteUR : IRemote
+public class RemoteURSecondaryClient : IRemote
 {
     public string? IP { get; set; }
     public int Port { get; set; } = 30002;

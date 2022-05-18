@@ -11,7 +11,8 @@ public class RobotSystemUR : RobotSystem
     internal RobotSystemUR(string name, RobotUR robot, IO io, Plane basePlane, Mesh? environment)
         : base(name, Manufacturers.UR, io, basePlane, environment, GetDefaultPose(robot))
     {
-        Remote = new RemoteUR();
+        // Remote = new RemoteURSecondaryClient();
+        Remote = new RemoteURFtp();
         Robot = robot;
         DisplayMesh.Append(robot.DisplayMesh);
         DisplayMesh.Transform(BasePlane.ToTransform());
@@ -232,11 +233,19 @@ public class RobotSystemUR : RobotSystem
 
     internal override void SaveCode(IProgram program, string folder)
     {
+        string filePath = Path.Combine(folder, $"{program.Name}.urp");
+        var urp = CreateUrp(program);
+        File.WriteAllText(filePath, urp);
+    }
+
+    internal static string CreateUrp(IProgram program)
+    {
         if (program.Code is null)
             throw new InvalidOperationException(" Program code not generated");
 
         // e-Series or CB-Series
-        var isESeries = Robot.Model.EndsWith("e", StringComparison.OrdinalIgnoreCase);
+        var ur = (RobotSystemUR)program.RobotSystem;
+        var isESeries = ur.Robot.Model.EndsWith("e", StringComparison.OrdinalIgnoreCase);
 
         // Version number does not appear to matter
         string version = isESeries ? "5.11.11" : "3.15.6";
@@ -248,7 +257,6 @@ public class RobotSystemUR : RobotSystem
             .Replace("{File}", $"{program.Name}.script")
             .Replace("{Code}", code);
 
-        string filePath = Path.Combine(folder, $"{program.Name}.urp");
-        File.WriteAllText(filePath, urp);
+        return urp;
     }
 }

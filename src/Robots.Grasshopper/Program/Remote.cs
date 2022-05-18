@@ -37,13 +37,13 @@ public class Remote : GH_Component
             return;
         }
 
-        if (DA.GetData(1, ref ip) && ip is not null)
-            remote.IP = ip;
+        DA.GetData(1, ref ip);
+        remote.IP = ip;
 
         bool upload = false, play = false, pause = false;
         if (!DA.GetData("Upload", ref upload)) return;
-        if (!DA.GetData("Play", ref play)) return; 
-        if (!DA.GetData("Pause", ref pause)) return; 
+        if (!DA.GetData("Play", ref play)) return;
+        if (!DA.GetData("Pause", ref pause)) return;
 
         if (upload) remote.Upload(program);
         if (play) remote.Play();

@@ -25,7 +25,8 @@ app.Add(new ICommand[]
                 "Robots.gha",
                 "ABB.Robotics.Controllers.PC.dll",
                 "RobotStudio.Services.RobApi.Desktop.dll",
-                "RobotStudio.Services.RobApi.dll"
+                "RobotStudio.Services.RobApi.dll",
+                "Renci.SshNet.dll"
             },
             tags: new []
             {
