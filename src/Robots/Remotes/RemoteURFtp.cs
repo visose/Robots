@@ -1,70 +1,46 @@
 ﻿using Renci.SshNet;
-using Renci.SshNet.Sftp;
 using System.Net.Sockets;
 using System.Text;
 
 namespace Robots;
 
-public class RemoteURFtp : IRemote
+class RemoteURFtp : IRemoteURBackend
 {
-    string? _ip;
-    string? _username;
-    string? _password;
-    string? _programsDir;
+    const int _dashboardPort = 29999;
+    readonly string _ip;
+    readonly string _username;
+    readonly string _password;
+    readonly string _programsDir;
+    readonly Action<string> _log;
 
-    public List<string> Log { get; } = new List<string>();
-
-    public string? IP
+    public RemoteURFtp(Uri uri, Action<string> log)
     {
-        get => _ip;
-        set
+        _log = log;
+
+        // ftp://username:password@hostname/dir
+
+        _ip = uri.Host;
+        _username = "root";
+        _password = "easybot";
+        _programsDir = "/programs";
+
+        if (!string.IsNullOrWhiteSpace(uri.UserInfo))
         {
-            // ftp://username:password@hostname/dir
+            var split = uri.UserInfo.Split(':');
 
-            _username = "root";
-            _password = "easybot";
-            _programsDir = "/programs";
-
-            try
+            if (split is not null && split.Length == 2)
             {
-                var uri = new Uri(value);
-                _ip = uri.Host;
-
-                if (!string.IsNullOrWhiteSpace(uri.UserInfo))
-                {
-                    var split = uri.UserInfo.Split(':');
-
-                    if (split is not null && split.Length == 2)
-                    {
-                        _username = split[0];
-                        _password = split[1];
-                    }
-                }
-
-                if (!string.IsNullOrWhiteSpace(uri.PathAndQuery))
-                    _programsDir = uri.PathAndQuery;
-            }
-            catch
-            {
-                _ip = value;
+                _username = split[0];
+                _password = split[1];
             }
         }
+
+        if (!string.IsNullOrWhiteSpace(uri.PathAndQuery) && uri.PathAndQuery != "/")
+            _programsDir = uri.PathAndQuery;
     }
 
     public void Upload(IProgram program)
     {
-        if (program.Code is null)
-        {
-            AddLog("Error: No code generated.");
-            return;
-        }
-
-        if (IP is null)
-        {
-            AddLog("Error: IP has not been set.");
-            return;
-        }
-
         try
         {
             UploadFtp(program);
@@ -81,22 +57,11 @@ public class RemoteURFtp : IRemote
     public void Pause() => Send("pause");
     public void Play() => Send("play");
 
-    void AddLog(string text)
-    {
-        Log.Add($"{DateTime.Now.ToShortTimeString()} - {text}");
-    }
-
     public void Send(string message)
     {
-        if (IP is null)
-        {
-            AddLog("Error: IP has not been set.");
-            return;
-        }
-
         try
         {
-            SendCommand(message);
+            SendPrivate(message);
         }
         catch (Exception e)
         {
@@ -104,16 +69,10 @@ public class RemoteURFtp : IRemote
         }
     }
 
-    void SendCommand(string message)
+    void SendPrivate(string message)
     {
         using var client = new TcpClient();
-        client.Connect(IP, 29999);
-
-        if (!client.Connected)
-        {
-            AddLog("Error: Not able to connect.");
-            return;
-        }
+        client.Connect(_ip, _dashboardPort);
 
         using var stream = client.GetStream();
         string first = GetMessage(stream);
@@ -156,4 +115,6 @@ public class RemoteURFtp : IRemote
         client.UploadFile(stream, fileName, true);
         client.Disconnect();
     }
+
+    void AddLog(string message) => _log(message);
 }

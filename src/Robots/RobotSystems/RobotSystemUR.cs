@@ -11,8 +11,7 @@ public class RobotSystemUR : RobotSystem
     internal RobotSystemUR(string name, RobotUR robot, IO io, Plane basePlane, Mesh? environment)
         : base(name, Manufacturers.UR, io, basePlane, environment, GetDefaultPose(robot))
     {
-        // Remote = new RemoteURSecondaryClient();
-        Remote = new RemoteURFtp();
+        Remote = new RemoteUR();
         Robot = robot;
         DisplayMesh.Append(robot.DisplayMesh);
         DisplayMesh.Transform(BasePlane.ToTransform());
@@ -241,7 +240,7 @@ public class RobotSystemUR : RobotSystem
     internal static string CreateUrp(IProgram program)
     {
         if (program.Code is null)
-            throw new InvalidOperationException(" Program code not generated");
+            throw new InvalidOperationException("Program code not generated.");
 
         // e-Series or CB-Series
         var ur = (RobotSystemUR)program.RobotSystem;

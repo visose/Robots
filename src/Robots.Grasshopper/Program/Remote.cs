@@ -10,7 +10,7 @@ public class Remote : GH_Component
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
-        pManager.AddTextParameter("IP", "IP", "IP address of robot controller. If omitted on ABB controllers, it will connect to the first found controller.", GH_ParamAccess.item);
+        pManager.AddTextParameter("IP", "IP", "IP address of robot controller.\r\n- ABB: If the IP is omitted, it will connect to the first found controller.\r\n- UR: If you input an IP address, it will use the secondary client interface to stream the program and run the play and pause commands. You can switch to the FTP back-end by specifying the IP in the format of 'sftp://ip'. This will upload the program as a .urp file to the controller using the FTP server and load it. It uses the dashboard interface for loading, play, and pause. You can change the default values for username, password, or location of the programs folder, by using: 'sftp://user:pass@ip/path/to/programs'", GH_ParamAccess.item);
         pManager.AddBooleanParameter("Upload", "U", "Upload program", GH_ParamAccess.item, false);
         pManager.AddBooleanParameter("Play", "P", "Play", GH_ParamAccess.item, false);
         pManager.AddBooleanParameter("Pause", "S", "Pause", GH_ParamAccess.item, false);
