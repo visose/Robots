@@ -22,10 +22,10 @@ public class URRealTime
 
     public void UpdateFeedback()
     {
-        int length = UpdateBuffer();
+        UpdateBuffer();
 
         foreach (var type in FeedbackData)
-            UpdateDataType(type, length);
+            UpdateDataType(type);
     }
 
     public void Send(string message)
@@ -78,34 +78,34 @@ public class URRealTime
         return client;
     }
 
-    int UpdateBuffer()
+    void UpdateBuffer()
     {
         using var client = GetClient();
         var stream = client.GetStream();
-        
-        int length = stream.Read(_buffer, 0, _bufferLength);
+
+        stream.Read(_buffer, 0, _bufferLength);
         Array.Reverse(_buffer);
-        return length;
     }
 
-    void UpdateDataType(FeedbackType type, int length)
+    void UpdateDataType(FeedbackType type)
     {
         bool isInteger = type.Type == "integer";
-        int take = isInteger ? 4 : 8;
         var result = type.Value;
 
-        for (int i = 0; i < type.Length; i++)
+        if (isInteger)
         {
-            int index = type.Start + i * take;
+            if (type.Length > 1)
+                throw new ArgumentException("Integer data type can only have length 1");
 
-            if (index > length - take)
-                return;
-
-            int reverseIndex = _bufferLength - index - take;
-
-            result[i] = isInteger
-                ? BitConverter.ToInt32(_buffer, reverseIndex)
-                : BitConverter.ToDouble(_buffer, reverseIndex);
+            int reverseIndex = _bufferLength - type.Start - 4;
+            result[0] = BitConverter.ToInt32(_buffer, reverseIndex);
+        }
+        else
+        {
+            int byteCount = type.Length * 8;
+            int reverseIndex = _bufferLength - type.Start - byteCount;
+            Buffer.BlockCopy(_buffer, reverseIndex, result, 0, byteCount);
+            Array.Reverse(result);
         }
     }
 }
