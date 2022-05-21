@@ -6,20 +6,38 @@ namespace Robots;
 
 public class URRealTime
 {
+    const int _bufferLength = 1220;
+
     readonly ASCIIEncoding _encoder = new();
     readonly IPEndPoint _ipEndPoint;
+    readonly byte[] _buffer = new byte[_bufferLength];
 
-    public List<string> Log { get; set; }
-    public List<FeedbackType> FeedbackData { get; } = new List<FeedbackType>();
+    public FeedbackType[] FeedbackData { get; }
 
     public URRealTime(string IP)
     {
         _ipEndPoint = new IPEndPoint(IPAddress.Parse(IP), 30003);
-        Log = new List<string>();
-        MakeDataTypes();
+        FeedbackData = MakeDataTypes().ToArray();
     }
 
-    void MakeDataTypes()
+    public void UpdateFeedback()
+    {
+        int length = UpdateBuffer();
+
+        foreach (var type in FeedbackData)
+            UpdateDataType(type, length);
+    }
+
+    public void Send(string message)
+    {
+        using var client = GetClient();
+
+        byte[] byteArray = _encoder.GetBytes(message + '\n');
+        var stream = client.GetStream();
+        stream.Write(byteArray, 0, byteArray.Length);
+    }
+
+    IEnumerable<FeedbackType> MakeDataTypes()
     {
         using var reader = Util.GetResource("URRealTime.txt");
         int start = 0;
@@ -42,94 +60,53 @@ public class URRealTime
             };
 
             start += dataType.Size;
-            FeedbackData.Add(dataType);
+            yield return dataType;
         }
     }
 
-    byte[] GetByteStream()
+    TcpClient GetClient()
     {
-        const int bufferSize = 812;
-
-        var client = new TcpClient()
+        TcpClient client = new()
         {
             NoDelay = true,
-            ReceiveBufferSize = bufferSize,
+            ReceiveBufferSize = _bufferLength,
+            ReceiveTimeout = 1000,
+            SendTimeout = 1000
         };
 
         client.Connect(_ipEndPoint);
-
-        var byteStream = new byte[bufferSize];
-        int size = 0;
-
-        using (var stream = client.GetStream())
-        {
-            while (true)
-            {
-                int currentSize = stream.Read(byteStream, size, bufferSize - size);
-                if (currentSize == 0) break;
-                size += currentSize;
-            }
-        }
-
-        client.Close();
-
-        var result = new byte[size];
-        Array.Copy(byteStream, result, size);
-        return result;
+        return client;
     }
 
-    double[]? ReadDataType(FeedbackType type, byte[] byteStream)
+    int UpdateBuffer()
+    {
+        using var client = GetClient();
+        var stream = client.GetStream();
+        
+        int length = stream.Read(_buffer, 0, _bufferLength);
+        Array.Reverse(_buffer);
+        return length;
+    }
+
+    void UpdateDataType(FeedbackType type, int length)
     {
         bool isInteger = type.Type == "integer";
         int take = isInteger ? 4 : 8;
-        var result = new double[type.Length];
+        var result = type.Value;
 
         for (int i = 0; i < type.Length; i++)
         {
             int index = type.Start + i * take;
 
-            if (index >= byteStream.Length)
-                return null;
+            if (index > length - take)
+                return;
 
-            var bytes = byteStream.Skip(index).Take(take).Reverse().ToArray();
-            result[i] = isInteger ? (double)BitConverter.ToInt32(bytes, 0) : BitConverter.ToDouble(bytes, 0);
+            int reverseIndex = _bufferLength - index - take;
+
+            result[i] = isInteger
+                ? BitConverter.ToInt32(_buffer, reverseIndex)
+                : BitConverter.ToDouble(_buffer, reverseIndex);
         }
-
-        return result;
-    }
-
-    public void UpdateFeedback()
-    {
-        var byteStream = GetByteStream();
-
-        if (byteStream is null)
-            return;
-
-        foreach (var type in FeedbackData)
-        {
-            var result = ReadDataType(type, byteStream);
-            type.Value = result ?? new double[type.Length];
-        }
-    }
-
-    public void Send(string message)
-    {
-        var client = new TcpClient()
-        {
-            NoDelay = true,
-        };
-
-        client.Connect(_ipEndPoint);
-
-        message += '\n';
-        byte[] byteArray = _encoder.GetBytes(message);
-
-        using (var stream = client.GetStream())
-        {
-            stream.Write(byteArray, 0, byteArray.Length);
-        }
-
-        client.Close();
     }
 }
 
@@ -138,8 +115,8 @@ public class FeedbackType
     public string Meaning { get; set; } = default!;
     public string Notes { get; set; } = default!;
     internal string Type { get; set; } = default!;
+    public double[] Value { get; set; } = default!;
     internal int Length { get; set; }
     internal int Size { get; set; }
     internal int Start { get; set; }
-    public double[] Value { get; set; } = default!;
 }
