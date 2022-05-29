@@ -39,7 +39,7 @@ public class URRealTime
 
     IEnumerable<FeedbackType> MakeDataTypes()
     {
-        using var reader = Util.GetResource("URRealTime.txt");
+        using var reader = Util.GetResource("URRealTime.csv");
         int start = 0;
 
         string line;
