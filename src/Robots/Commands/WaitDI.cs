@@ -13,8 +13,8 @@ public class WaitDI : Command
 
     protected override void ErrorChecking(RobotSystem robotSystem)
     {
-        if (DI > robotSystem.IO.DI.Length - 1)
-            throw new ArgumentOutOfRangeException(nameof(DI), " Index of digital input is too high.");
+        var io = robotSystem.IO;
+        io.CheckBounds(DI, io.DI);
     }
 
     protected override void Populate()
@@ -27,28 +27,40 @@ public class WaitDI : Command
 
     string CodeAbb(RobotSystem robotSystem, Target target)
     {
+        var io = robotSystem.IO;
         string textValue = Value ? "1" : "0";
-        return $"WaitDI {robotSystem.IO.DI[DI]},{textValue};";
+        return $"WaitDI {io.DI[DI]},{textValue};";
     }
 
     string CodeKuka(RobotSystem robotSystem, Target target)
     {
+        var number = GetNumber(robotSystem);
         string textValue = Value ? "TRUE" : "FALSE";
-        return $"WAIT FOR $IN[{robotSystem.IO.DI[DI]}]=={textValue}";
+        return $"WAIT FOR $IN[{number}]=={textValue}";
     }
 
     string CodeUR(RobotSystem robotSystem, Target target)
     {
-        //string textValue = Value ? "True" : "False";
+        var number = GetNumber(robotSystem);
         const string indent = "  ";
         string textValue = Value ? "not " : "";
-        return $"while {textValue}get_digital_in({robotSystem.IO.DI[DI]}):\r\n{indent}{indent}sleep(0.008)\r\n{indent}end";
+        return $"while {textValue}get_digital_in({number}):\r\n{indent}{indent}sleep(0.008)\r\n{indent}end";
     }
 
     string CodeStaubli(RobotSystem robotSystem, Target target)
     {
+        var number = GetNumber(robotSystem);
         string textValue = Value ? "true" : "false";
-        return $"waitEndMove()\r\nwait(dis[{DI}] == {textValue})";
+        return $"waitEndMove()\r\nwait(dis[{number}] == {textValue})";
+    }
+
+    string GetNumber(RobotSystem robotSystem)
+    {
+        var io = robotSystem.IO;
+
+        return io.UseControllerNumbering
+         ? DI.ToString()
+         : io.DI[DI];
     }
 
     public override string ToString() => $"Command (WaitDI until {DI} is {Value})";

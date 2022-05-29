@@ -14,8 +14,8 @@ public class PulseDO : Command
 
     protected override void ErrorChecking(RobotSystem robotSystem)
     {
-        if (DO > robotSystem.IO.DO.Length - 1)
-            throw new ArgumentOutOfRangeException(nameof(DO), " Index of digital output is too high.");
+        var io = robotSystem.IO;
+        io.CheckBounds(DO, io.DO);
     }
 
     protected override void Populate()
@@ -26,15 +26,27 @@ public class PulseDO : Command
 
     string CodeAbb(RobotSystem robotSystem, Target target)
     {
-        return $@"PulseDO \PLength:={_length:0.###}, {robotSystem.IO.DO[DO]};";
+        var io = robotSystem.IO;
+        return $@"PulseDO \PLength:={_length:0.###}, {io.DO[DO]};";
     }
 
     string CodeKuka(RobotSystem robotSystem, Target target)
     {
+        var number = GetNumber(robotSystem);
+        
         if (target.Zone.IsFlyBy)
-            return $"CONTINUE\r\nPULSE($OUT[{robotSystem.IO.DO[DO]}],TRUE,{_length:0.###})";
+            return $"CONTINUE\r\nPULSE($OUT[{number}],TRUE,{_length:0.###})";
         else
-            return $"PULSE($OUT[{robotSystem.IO.DO[DO]}],TRUE,{_length:0.###})";
+            return $"PULSE($OUT[{number}],TRUE,{_length:0.###})";
+    }
+
+    string GetNumber(RobotSystem robotSystem)
+    {
+        var io = robotSystem.IO;
+
+        return io.UseControllerNumbering
+         ? DO.ToString()
+         : io.DO[DO];
     }
 
     public override string ToString() => $"Command (Pulse {DO} for {_length:0.###} secs)";

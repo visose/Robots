@@ -134,7 +134,7 @@ public static class FileIO
         foreach (var mechanicalGroup in element.Elements(XName.Get("Mechanisms")))
             mechanicalGroups.Add(CreateMechanicalGroup(mechanicalGroup, loadMeshes));
 
-        var io = CreateIO(element.GetElementOrDefault("IO"));
+        var io = CreateIO(element.GetElementOrDefault("IO"), manufacturer);
         Mesh? environment = null;
 
         return manufacturer switch
@@ -222,14 +222,16 @@ public static class FileIO
         };
     }
 
-    static IO CreateIO(XElement? element)
+    static IO CreateIO(XElement? element, Manufacturers manufacturer)
     {
         var @do = GetNames(element, "DO");
         var di = GetNames(element, "DI");
         var ao = GetNames(element, "AO");
         var ai = GetNames(element, "AI");
 
-        return new IO(@do, di, ao, ai);
+        var useControllerNumbering = element is not null && element.GetBoolAttributeOrDefault("useControllerNumbering");
+
+        return new IO(manufacturer, useControllerNumbering, @do, di, ao, ai);
 
         static string[] GetNames(XElement? ioElement, string element)
         {

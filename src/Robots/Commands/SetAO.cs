@@ -13,8 +13,8 @@ public class SetAO : Command
 
     protected override void ErrorChecking(RobotSystem robotSystem)
     {
-        if (AO > robotSystem.IO.AO.Length - 1)
-            throw new ArgumentOutOfRangeException(nameof(AO), " Index of analog output is too high.");
+        var io = robotSystem.IO;
+        io.CheckBounds(AO, io.AO);
     }
 
     protected override void Populate()
@@ -52,22 +52,35 @@ public class SetAO : Command
 
     string CodeAbb(RobotSystem robotSystem, Target target)
     {
-        return $"SetAO {robotSystem.IO.AO[AO]},{Name};";
+        var io = robotSystem.IO;
+        return $"SetAO {io.AO[AO]},{Name};";
     }
 
     string CodeKuka(RobotSystem robotSystem, Target target)
     {
-        return $"$ANOUT[{robotSystem.IO.AO[AO]}] = {Name}";
+        var number = GetNumber(robotSystem);
+        return $"$ANOUT[{number}] = {Name}";
     }
 
     string CodeUR(RobotSystem robotSystem, Target target)
     {
-        return $"set_analog_out({robotSystem.IO.AO[AO]},{Name})";
+        var number = GetNumber(robotSystem);
+        return $"set_analog_out({number},{Name})";
     }
 
     string CodeStaubli(RobotSystem robotSystem, Target target)
     {
-        return $"aioSet(aos[{AO}], {Name})";
+        var number = GetNumber(robotSystem);
+        return $"aioSet(aos[{number}], {Name})";
+    }
+
+    string GetNumber(RobotSystem robotSystem)
+    {
+        var io = robotSystem.IO;
+        
+        return io.UseControllerNumbering
+         ? AO.ToString()
+         : io.AO[AO];
     }
 
     public override string ToString() => $"Command (AO {AO} set to \"{Value}\")";

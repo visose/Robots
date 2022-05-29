@@ -13,8 +13,8 @@ public class SetDO : Command
 
     protected override void ErrorChecking(RobotSystem robotSystem)
     {
-        if (DO > robotSystem.IO.DO.Length - 1)
-            throw new ArgumentOutOfRangeException(nameof(DO), " Index of digital output is too high.");
+        var io = robotSystem.IO;
+        io.CheckBounds(DO, io.DO);
     }
 
     protected override void Populate()
@@ -27,34 +27,49 @@ public class SetDO : Command
 
     string CodeAbb(RobotSystem robotSystem, Target target)
     {
+        var io = robotSystem.IO;
         string textValue = Value ? "1" : "0";
 
         if (target.Zone.IsFlyBy)
-            return $"SetDO {robotSystem.IO.DO[DO]},{textValue};";
+            return $"SetDO {io.DO[DO]},{textValue};";
         else
-            return $@"SetDO \Sync ,{robotSystem.IO.DO[DO]},{textValue};";
+            return $@"SetDO \Sync ,{io.DO[DO]},{textValue};";
     }
 
     string CodeKuka(RobotSystem robotSystem, Target target)
     {
+        var number = GetNumber(robotSystem);
         string textValue = Value ? "TRUE" : "FALSE";
 
         if (target.Zone.IsFlyBy)
-            return $"CONTINUE\r\n$OUT[{robotSystem.IO.DO[DO]}] = {textValue}";
+            return $"CONTINUE\r\n$OUT[{number}] = {textValue}";
         else
-            return $"$OUT[{robotSystem.IO.DO[DO]}] = {textValue}";
+            return $"$OUT[{number}] = {textValue}";
     }
 
     string CodeUR(RobotSystem robotSystem, Target target)
     {
+        var number = GetNumber(robotSystem);
+
         string textValue = Value ? "True" : "False";
-        return $"set_digital_out({robotSystem.IO.DO[DO]},{textValue})";
+        return $"set_digital_out({number},{textValue})";
     }
 
     string CodeStaubli(RobotSystem robotSystem, Target target)
     {
+        var number = GetNumber(robotSystem);
+
         string textValue = Value ? "true" : "false";
-        return $"waitEndMove()\r\ndos[{DO}] = {textValue}";
+        return $"waitEndMove()\r\ndos[{number}] = {textValue}";
+    }
+
+    string GetNumber(RobotSystem robotSystem)
+    {
+        var io = robotSystem.IO;
+        
+        return io.UseControllerNumbering
+         ? DO.ToString()
+         : io.DO[DO];
     }
 
     public override string ToString() => $"Command (DO {DO} set to {Value})";
