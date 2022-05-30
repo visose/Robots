@@ -41,6 +41,7 @@ class RapidPostProcessor
         code.Add("VAR confdata conf := [0,0,0,0];");
 
         // Attribute declarations
+        var attributes = _program.Attributes;
 
         if (_cell.MechanicalGroups.Count > 1)
         {
@@ -50,11 +51,19 @@ class RapidPostProcessor
         }
 
         {
-            foreach (var tool in _program.Attributes.OfType<Tool>()) code.Add(Tool(tool));
-            foreach (var frame in _program.Attributes.OfType<Frame>()) code.Add(Frame(frame));
-            foreach (var speed in _program.Attributes.OfType<Speed>()) code.Add(Speed(speed));
-            foreach (var zone in _program.Attributes.OfType<Zone>()) if (zone.IsFlyBy) code.Add(Zone(zone));
-            foreach (var command in _program.Attributes.OfType<Command>())
+            foreach (var tool in attributes.OfType<Tool>().Where(t => !t.UseController))
+                code.Add(Tool(tool));
+
+            foreach (var frame in attributes.OfType<Frame>().Where(t => !t.UseController))
+                code.Add(Frame(frame));
+
+            foreach (var speed in attributes.OfType<Speed>())
+                code.Add(Speed(speed));
+
+            foreach (var zone in attributes.OfType<Zone>().Where(z => z.IsFlyBy))
+                code.Add(Zone(zone));
+
+            foreach (var command in attributes.OfType<Command>())
             {
                 string declaration = command.Declaration(_program);
 

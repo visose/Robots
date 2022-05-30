@@ -5,7 +5,7 @@ using Rhino.Geometry;
 
 namespace Robots;
 
-public enum ElementType { RobotCell, Tool }
+public enum ElementType { RobotCell, Tool, Frame }
 
 public static class FileIO
 {
@@ -42,6 +42,12 @@ public static class FileIO
     {
         var element = LoadElement(name, ElementType.Tool);
         return CreateTool(element);
+    }
+
+    public static Frame LoadFrame(string name)
+    {
+        var element = LoadElement(name, ElementType.Frame);
+        return CreateFrame(element);
     }
 
     // library files
@@ -150,7 +156,7 @@ public static class FileIO
 
     static MechanicalGroup CreateMechanicalGroup(XElement element, bool loadMeshes)
     {
-        var index = element.GetIntAttributeOrDefault("group");
+        var index = element.GetIntAttributeOrDefault("group") ?? 0;
         var mechanisms = new List<Mechanism>();
 
         foreach (var mechanismElement in element.Elements())
@@ -260,9 +266,35 @@ public static class FileIO
         var weight = mass.GetDoubleAttribute("weight");
         var centroid = CreatePoint(mass);
 
+        var useController = element.GetBoolAttributeOrDefault("useController");
+        var number = element.GetIntAttributeOrDefault("number");
+
         Mesh mesh = GetToolMesh(name);
-        var tool = new Tool(plane, name, weight, centroid, mesh);
+        var tool = new Tool(plane, name, weight, centroid, mesh, useController: useController, number: number);
         return tool;
+    }
+
+    static Frame CreateFrame(XElement element)
+    {
+        var type = element.Name.LocalName;
+
+        if (type != "Frame")
+            throw new ArgumentException($" Element '{type}' should be 'Frame'", nameof(type));
+
+        var name = element.GetAttribute("name");
+
+        var baseElement = element.GetElement("Base");
+        var plane = CreatePlane(baseElement);
+
+        var couplingElement = element.GetElement("Coupling");
+        var mechanism = couplingElement.GetIntAttributeOrDefault("mechanism") ?? -1;
+        var group = couplingElement.GetIntAttributeOrDefault("group") ?? -1;
+
+        var useController = element.GetBoolAttributeOrDefault("useController");
+        var number = element.GetIntAttributeOrDefault("number");
+
+        var frame = new Frame(plane, mechanism, group, name, useController, number);
+        return frame;
     }
 
     static Plane CreatePlane(XElement element)
@@ -407,9 +439,9 @@ public static class FileIO
         return XmlConvert.ToInt32(s);
     }
 
-    static int GetIntAttributeOrDefault(this XElement element, string name)
+    static int? GetIntAttributeOrDefault(this XElement element, string name)
     {
         string? s = element.Attribute(XName.Get(name))?.Value;
-        return s is null ? 0 : XmlConvert.ToInt32(s);
+        return s is null ? null : XmlConvert.ToInt32(s);
     }
 }

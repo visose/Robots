@@ -45,20 +45,21 @@ DEFDAT {_program.Name}_{groupName} PUBLIC
                 };
 
         // Attribute declarations
+        var attributes = _program.Attributes;
 
-        foreach (var tool in _program.Attributes.OfType<Tool>()) 
+        foreach (var tool in attributes.OfType<Tool>().Where(t => !t.UseController))
             code.Add(Tool(tool));
 
-        foreach (var frame in _program.Attributes.OfType<Frame>()) 
+        foreach (var frame in attributes.OfType<Frame>().Where(t => !t.UseController))
             code.Add(Frame(frame));
 
-        foreach (var speed in _program.Attributes.OfType<Speed>())
+        foreach (var speed in attributes.OfType<Speed>())
             code.Add($"DECL GLOBAL REAL {speed.Name} = {speed.TranslationSpeed / 1000:0.#####}");
 
-        foreach (var zone in _program.Attributes.OfType<Zone>())
+        foreach (var zone in attributes.OfType<Zone>())
             code.Add($"DECL GLOBAL REAL {zone.Name} = {zone.Distance:0.###}");
 
-        foreach (var command in _program.Attributes.OfType<Command>())
+        foreach (var command in attributes.OfType<Command>())
         {
             string declaration = command.Declaration(_program);
 
@@ -132,17 +133,7 @@ DEF {_program.Name}_{groupName}_{file:000}()
 
             if (currentFrame is null || target.Frame != currentFrame)
             {
-                if (target.Frame.IsCoupled)
-                {
-                    int mech = target.Frame.CoupledMechanism + 2;
-                    code.Add($"$BASE = EK(MACHINE_DEF[{mech}].ROOT, MACHINE_DEF[{mech}].MECH_TYPE, {target.Frame.Name})");
-                    code.Add($"$ACT_EX_AX = 2");
-                }
-                else
-                {
-                    code.Add($"$BASE = {target.Frame.Name}");
-                }
-
+                code.Add(SetFrame(target.Frame));
                 currentFrame = target.Frame;
             }
 
@@ -292,17 +283,45 @@ DEF {_program.Name}_{groupName}_{file:000}()
 
     string SetTool(Tool tool)
     {
-        string toolTxt = $"$TOOL = {tool.Name}";
-        string load = $"$LOAD.M = {tool.Weight}";
-        Point3d centroid = tool.Centroid;
-        string centroidTxt = $"$LOAD.CM = {{{GetXyzAbc(centroid.X, centroid.Y, centroid.Z, 0, 0, 0)}}}";
-        return $"{toolTxt}\r\n{load}\r\n{centroidTxt}";
+        if (tool.Number is null)
+        {
+            string toolTxt = $"$TOOL = {tool.Name}";
+            string loadTxt = $"$LOAD = {tool.Name}_L";
+            return $"{toolTxt}\r\n{loadTxt}";
+        }
+        else
+        {
+            int number = tool.Number.Value;
+            string toolTxt = $"$TOOL = TOOL_DATA[{number}]";
+            string loadTxt = $"$LOAD = LOAD_DATA[{number}]";
+            return $"{toolTxt}\r\n{loadTxt}";
+        }
     }
 
     string Tool(Tool tool)
     {
         double[] euler = RobotCellKuka.PlaneToEuler(tool.Tcp);
-        return $"DECL GLOBAL FRAME {tool.Name} = {{FRAME: {GetXyzAbc(euler)}}}";
+        var toolTxt = $"DECL GLOBAL FRAME {tool.Name} = {{{GetXyzAbc(euler)}}}";
+        Point3d centroid = tool.Centroid;
+        var loadTxt = $"DECL GLOBAL LOAD {tool.Name}_L = {{M: {tool.Weight},CM: {{{GetXyzAbc(centroid.X, centroid.Y, centroid.Z, 0, 0, 0)}}},J {{X 0,Y 0,Z 0}}}}";
+        return $"{toolTxt}\r\n{loadTxt}";
+    }
+
+    string SetFrame(Frame frame)
+    {
+        var name = frame.Number is null ? frame.Name : $"BASE_DATA[{frame.Number}]";
+
+        if (frame.IsCoupled)
+        {
+            int mech = frame.CoupledMechanism + 2;
+            var frameTxt = $"$BASE = EK(MACHINE_DEF[{mech}].ROOT, MACHINE_DEF[{mech}].MECH_TYPE, {name})\r\n";
+            frameTxt += $"$ACT_EX_AX = 2";
+            return frameTxt;
+        }
+        else
+        {
+            return $"$BASE = {name}";
+        }
     }
 
     string Frame(Frame frame)
@@ -311,7 +330,7 @@ DEF {_program.Name}_{groupName}_{file:000}()
         plane.InverseOrient(ref _cell.BasePlane);
 
         double[] euler = RobotCellKuka.PlaneToEuler(plane);
-        return $"DECL GLOBAL FRAME {frame.Name} = {{FRAME: {GetXyzAbc(euler)}}}";
+        return $"DECL GLOBAL FRAME {frame.Name} = {{{GetXyzAbc(euler)}}}";
     }
 
     string GetXyzAbc(params double[] values)

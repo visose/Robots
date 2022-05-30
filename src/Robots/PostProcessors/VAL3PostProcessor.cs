@@ -56,7 +56,7 @@ class VAL3PostProcessor
 
         if (groupCount > 1)
         {
-            _program.Errors.Add("Coordinated robots not supported for Staubli.");
+            _program.Errors.Add("Coordinated robots not supported on Staubli.");
             return;
         }
 
@@ -179,8 +179,13 @@ class VAL3PostProcessor
         var attributes = _program.Attributes;
 
         codes.Add(VAL3Syntax.NumData("Inertia", 0));
-        foreach (var tool in attributes.OfType<Tool>()) codes.Add(Tool(tool));
-        foreach (var frame in attributes.OfType<Frame>()) codes.Add(Frame(frame));
+
+        foreach (var tool in attributes.OfType<Tool>().Where(t => !t.UseController))
+            codes.Add(Tool(tool));
+
+        foreach (var frame in attributes.OfType<Frame>().Where(t => !t.UseController)) 
+            codes.Add(Frame(frame));
+
         codes.AddRange(IOData());
         codes.AddRange(Speeds(mdescs));
 

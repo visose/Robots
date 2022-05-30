@@ -31,8 +31,9 @@ class URScriptPostProcessor
                 };
 
         // Attribute declarations
+        var attributes = _program.Attributes;
 
-        foreach (var tool in _program.Attributes.OfType<Tool>())
+        foreach (var tool in attributes.OfType<Tool>().Where(t => !t.UseController))
         {
             Plane tcp = tool.Tcp;
             var originPlane = new Plane(Point3d.Origin, Vector3d.YAxis, -Vector3d.XAxis);
@@ -50,19 +51,19 @@ class URScriptPostProcessor
             code.Add(indent + $"{tool.Name}Cog = [{cog.X:0.#####}, {cog.Y:0.#####}, {cog.Z:0.#####}]");
         }
 
-        foreach (var speed in _program.Attributes.OfType<Speed>())
+        foreach (var speed in attributes.OfType<Speed>())
         {
             double linearSpeed = speed.TranslationSpeed / 1000;
             code.Add(indent + $"{speed.Name} = {linearSpeed:0.#####}");
         }
 
-        foreach (var zone in _program.Attributes.OfType<Zone>())
+        foreach (var zone in attributes.OfType<Zone>())
         {
             double zoneDistance = zone.Distance / 1000;
             code.Add(indent + $"{zone.Name} = {zoneDistance:0.#####}");
         }
 
-        foreach (var command in _program.Attributes.OfType<Command>())
+        foreach (var command in attributes.OfType<Command>())
         {
             string declaration = command.Declaration(_program);
 
