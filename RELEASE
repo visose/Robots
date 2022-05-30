@@ -1,3 +1,8 @@
+- version: 1.4.0
+  changes:
+  - Added Frames to robot library.
+  - Tools and Frames defined in robot libraries can be set to use the definition stored in the controller, and tool/base number in KUKA.
+
 - version: 1.3.1
   changes:
   - Added useControllerNumbering attribute to the IO element, allowing to specify the signal number directly instead of defining a list of signal names.
