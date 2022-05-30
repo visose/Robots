@@ -282,16 +282,15 @@ public static class FileIO
             throw new ArgumentException($" Element '{type}' should be 'Frame'", nameof(type));
 
         var name = element.GetAttribute("name");
-
-        var baseElement = element.GetElement("Base");
-        var plane = CreatePlane(baseElement);
-
-        var couplingElement = element.GetElement("Coupling");
-        var mechanism = couplingElement.GetIntAttributeOrDefault("mechanism") ?? -1;
-        var group = couplingElement.GetIntAttributeOrDefault("group") ?? -1;
-
         var useController = element.GetBoolAttributeOrDefault("useController");
         var number = element.GetIntAttributeOrDefault("number");
+        
+        var baseElement = element.GetElement("Base");
+        var plane = CreatePlane(baseElement);
+        
+        var couplingElement = element.GetElementOrDefault("Coupling");
+        var mechanism = couplingElement?.GetIntAttributeOrDefault("mechanism") ?? -1;
+        var group = couplingElement?.GetIntAttributeOrDefault("group") ?? -1;
 
         var frame = new Frame(plane, mechanism, group, name, useController, number);
         return frame;
