@@ -1,4 +1,4 @@
-- version: 1.4.0
+- version: 1.4.1
   changes:
   - Added Frames to robot library.
   - Tools and Frames defined in robot libraries can be set to use the definition stored in the controller, and tool/base number in KUKA.
