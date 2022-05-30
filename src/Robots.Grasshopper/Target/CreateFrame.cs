@@ -8,7 +8,7 @@ public class CreateFrame : GH_Component
     public CreateFrame() : base("Create frame", "Frame", "Creates a frame or work plane.", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.tertiary;
     public override Guid ComponentGuid => new("{467237C8-08F5-4104-A553-8814AACAFE51}");
-    protected override Bitmap Icon => Util.GetIcon("iconFrame");
+    protected override Bitmap Icon => Util.GetIcon("iconCreateFrame");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
