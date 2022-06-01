@@ -1,3 +1,7 @@
+- version: 1.4.2
+  changes:
+  - Added more detailed error message when failed to refresh list of robot libraries.
+
 - version: 1.4.1
   changes:
   - Added Frames to robot library.

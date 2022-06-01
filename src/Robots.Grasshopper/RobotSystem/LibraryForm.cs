@@ -85,9 +85,10 @@ class LibraryForm : ComponentForm
         {
             await _library.UpdateLibraryAsync();
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            MessageBox.Show(this, $"Error refreshing list of libraries. It is possible you reached your rate limit, please wait one hour for the limit to reset.", MessageBoxType.Error);
+            string rateLimit = e.Message.Contains(": 403") ? " It is possible you reached your rate limit, please wait one hour for the limit to reset." : "";
+            MessageBox.Show(this, $"Error refreshing list of libraries.{rateLimit}\n\n{e.Message}", MessageBoxType.Error);
             return;
         }
 
