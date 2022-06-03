@@ -1,6 +1,8 @@
-- version: 1.4.2
+- version: 1.5.0
   changes:
-  - Added more detailed error message when failed to refresh list of robot libraries.
+  - Added support for reading UR's Real-Time Data Exchange outputs.
+  - Added a more informative error message when failure to refresh list of robot libraries.
+  - Updated some icons.
 
 - version: 1.4.1
   changes:

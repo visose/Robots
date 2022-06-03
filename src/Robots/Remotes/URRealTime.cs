@@ -4,6 +4,7 @@ using System.Text;
 
 namespace Robots;
 
+[Obsolete("Use the URRealTimeDataExchange class instead.")]
 public class URRealTime
 {
     const int _bufferLength = 1220;
