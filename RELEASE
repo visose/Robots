@@ -1,3 +1,7 @@
+- version: 1.5.1
+  changes:
+  - Fixed PulseDo command now works with UR.
+
 - version: 1.5.0
   changes:
   - Added support for reading UR's Real-Time Data Exchange outputs.

@@ -22,6 +22,22 @@ public class PulseDO : Command
     {
         _commands.Add(Manufacturers.ABB, CodeAbb);
         _commands.Add(Manufacturers.KUKA, CodeKuka);
+        _commands.Add(Manufacturers.UR, CodeUR);
+
+        _declarations.Add(Manufacturers.UR, DeclarationUR);
+    }
+
+    string DeclarationUR(RobotSystem robotSystem)
+    {
+        var number = GetNumber(robotSystem);
+        
+        string time = $"{Name} = {_length:0.###}";
+        string thread = $@"  thread run{Name}():
+    sleep({Name})
+    set_digital_out({number}, False)
+  end";
+
+        return $"{time}\r\n{thread}";
     }
 
     string CodeAbb(RobotSystem robotSystem, Target target)
@@ -33,11 +49,17 @@ public class PulseDO : Command
     string CodeKuka(RobotSystem robotSystem, Target target)
     {
         var number = GetNumber(robotSystem);
-        
+
         if (target.Zone.IsFlyBy)
             return $"CONTINUE\r\nPULSE($OUT[{number}],TRUE,{_length:0.###})";
         else
             return $"PULSE($OUT[{number}],TRUE,{_length:0.###})";
+    }
+
+    string CodeUR(RobotSystem robotSystem, Target target)
+    {
+        var number = GetNumber(robotSystem);
+        return $"set_digital_out({number},True)\r\n  run run{Name}()";
     }
 
     string GetNumber(RobotSystem robotSystem)

@@ -68,16 +68,16 @@ class URScriptPostProcessor
             string declaration = command.Declaration(_program);
 
             if (!string.IsNullOrWhiteSpace(declaration))
-            {
-                declaration = indent + declaration;
-                code.Add(declaration);
-            }
+                code.Add(indent + declaration);
         }
 
         // Init commands
 
         foreach (var command in _program.InitCommands)
-            code.Add(command.Code(_program, Target.Default));
+        {
+            string commands = command.Code(_program, Target.Default);
+            code.Add(indent + commands);
+        }
 
         Tool? currentTool = null;
 
