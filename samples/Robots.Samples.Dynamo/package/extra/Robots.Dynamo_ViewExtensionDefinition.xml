@@ -1,0 +1,4 @@
+<ViewExtensionDefinition>
+	<AssemblyPath>..\bin\Robots.Dynamo.dll</AssemblyPath>
+	<TypeName>Robots.Dynamo.RobotsViewExtension</TypeName>
+</ViewExtensionDefinition>

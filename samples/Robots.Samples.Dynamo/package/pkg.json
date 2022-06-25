@@ -1,0 +1,20 @@
+﻿{
+  "license": "MIT",
+  "file_hash": null,
+  "name": "Robots for Dynamo",
+  "version": "1.0.0",
+  "description": "Robots for Dynamo",
+  "group": "",
+  "keywords": null,
+  "dependencies": [],
+  "contents": "",
+  "engine_version": "2.13.0.0",
+  "engine": "dynamo",
+  "engine_metadata": "",
+  "site_url": "https://github.com/visose/robots",
+  "repository_url": "https://github.com/visose/Robots.git",
+  "contains_binaries": true,
+  "node_libraries": [
+    "Robots.Dynamo, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+  ]
+}
