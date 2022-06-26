@@ -1,4 +1,4 @@
-﻿using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
@@ -22,7 +22,7 @@ public class GH_Joints : GH_Goo<double[]>
                 return true;
             case GH_String text:
                 {
-                    if(string.IsNullOrWhiteSpace(text.Value))
+                    if (string.IsNullOrWhiteSpace(text.Value))
                     {
                         Value = new double[0];
                         return true;
@@ -32,8 +32,10 @@ public class GH_Joints : GH_Goo<double[]>
                     double[] values = new double[texts.Length];
 
                     for (int i = 0; i < texts.Length; i++)
+                    {
                         if (!GH_Convert.ToDouble_Secondary(texts[i], ref values[i]))
                             return false;
+                    }
 
                     Value = values;
                     return true;

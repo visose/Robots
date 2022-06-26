@@ -14,7 +14,7 @@ class Performance
 
         for (int i = 0; i < count; i++)
             PerfTestAbb();
-            //PerfTestUR();
+        //PerfTestUR();
 
         foreach (var time in _times)
             Console.WriteLine($"{time.Key}: {time.Value / (count - 1)} ms");

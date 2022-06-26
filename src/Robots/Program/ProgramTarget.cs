@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots;
 
@@ -151,6 +151,8 @@ public class ProgramTarget
             warnings.Add($"Configuration changed to \"{kinematics.Configuration}\" on target {Index} of robot {Group}");
         }
         else
+        {
             ChangesConfiguration = false;
+        }
     }
 }

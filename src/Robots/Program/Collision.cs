@@ -1,5 +1,4 @@
-﻿using Rhino.Geometry;
-using static System.Math;
+using Rhino.Geometry;
 
 namespace Robots;
 
@@ -10,6 +9,7 @@ public class Collision
     public Mesh[] Meshes => throw NotImplemented();
     public CellTarget CollisionTarget => throw NotImplemented();
 
+#pragma warning disable IDE0060
     internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh? environment, int environmentPlane, double linearStep, double angularStep)
     {
         throw NotImplemented();
@@ -19,6 +19,8 @@ public class Collision
 }
 
 #elif NET48
+using static System.Math;
+
 public class Collision
 {
     readonly Program _program;

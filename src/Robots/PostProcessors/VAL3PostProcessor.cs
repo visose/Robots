@@ -183,7 +183,7 @@ class VAL3PostProcessor
         foreach (var tool in attributes.OfType<Tool>().Where(t => !t.UseController))
             codes.Add(Tool(tool));
 
-        foreach (var frame in attributes.OfType<Frame>().Where(t => !t.UseController)) 
+        foreach (var frame in attributes.OfType<Frame>().Where(t => !t.UseController))
             codes.Add(Frame(frame));
 
         codes.AddRange(IOData());

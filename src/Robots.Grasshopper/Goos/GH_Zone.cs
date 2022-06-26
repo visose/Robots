@@ -1,4 +1,4 @@
-﻿using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
@@ -29,8 +29,10 @@ public class GH_Zone : GH_Goo<Zone>
                     double[] values = new double[texts.Length];
 
                     for (int i = 0; i < texts.Length; i++)
+                    {
                         if (!GH_Convert.ToDouble_Secondary(texts[i], ref values[i]))
                             return false;
+                    }
 
                     if (texts.Length == 1)
                     {
@@ -58,7 +60,6 @@ public class GH_Zone : GH_Goo<Zone>
             return false;
         }
     }
-
 
     public override bool CastTo<Q>(ref Q target)
     {

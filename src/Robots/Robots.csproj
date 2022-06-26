@@ -1,34 +1,33 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0;net48</TargetFrameworks>
-		<AssemblyTitle>$(Product) Core</AssemblyTitle>
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net48</TargetFrameworks>
+    <AssemblyTitle>$(Product) Core</AssemblyTitle>
 
-		<PackageId>Robots</PackageId>
-		<PackageIcon>icon128.png</PackageIcon>
-		<Description>$(Description)</Description>
-	</PropertyGroup>
+    <PackageId>Robots</PackageId>
+    <PackageIcon>icon128.png</PackageIcon>
+    <Description>$(Description)</Description>
+  </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="SSH.NET" Version="2020.0.2" />
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="SSH.NET" Version="2020.0.2" />
+  </ItemGroup>
 
-	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-		<PackageReference Include="Rhino3dm" Version="7.11.0" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-	</ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Rhino3dm" Version="7.11.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
 
-	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-		<PackageReference Include="RhinoCommon" Version="7.0.20314.3001" ExcludeAssets="runtime" />
-		<Reference Include="System.Net.Http" />
-		<Reference Include="Newtonsoft.Json.Rhino" HintPath="..\..\lib\Newtonsoft.Json.Rhino.dll" Private="false" />
-		<Reference Include="ABB.Robotics.Controllers.PC" HintPath="..\..\lib\ABB.Robotics.Controllers.PC.dll" />
-	</ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <PackageReference Include="RhinoCommon" Version="7.0.20314.3001" ExcludeAssets="runtime" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="Newtonsoft.Json.Rhino" HintPath="..\..\lib\Newtonsoft.Json.Rhino.dll" Private="false" />
+    <Reference Include="ABB.Robotics.Controllers.PC" HintPath="..\..\lib\ABB.Robotics.Controllers.PC.dll" />
+  </ItemGroup>
 
-	<ItemGroup>
-		<EmbeddedResource Include="Resources\**\*" />
-		<None Include="..\..\build\Assets\icon128.png" Pack="true" PackagePath="" />
-	</ItemGroup>
-
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\**\*" />
+    <None Include="..\..\build\Assets\icon128.png" Pack="true" PackagePath="" />
+  </ItemGroup>
 
 </Project>

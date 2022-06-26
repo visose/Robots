@@ -1,4 +1,4 @@
-﻿using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
@@ -29,8 +29,10 @@ public class GH_Speed : GH_Goo<Speed>
                     double[] values = new double[texts.Length];
 
                     for (int i = 0; i < texts.Length; i++)
+                    {
                         if (!GH_Convert.ToDouble_Secondary(texts[i], ref values[i]))
                             return false;
+                    }
 
                     if (texts.Length == 1)
                     {

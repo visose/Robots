@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using static System.Math;
 using static Robots.Util;
 
@@ -14,15 +14,20 @@ class OffsetWristKinematics : RobotKinematics
     /// </summary>
     /// <param name="target">Cartesian target</param>
     /// <returns>Returns the 6 rotation values in radians.</returns>
-    override protected double[] InverseKinematics(Transform transform, RobotConfigurations configuration, out List<string> errors)
+    protected override double[] InverseKinematics(Transform transform, RobotConfigurations configuration, out List<string> errors)
     {
         errors = new List<string>();
 
         bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
         bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
-        if (shoulder) elbow = !elbow;
+
+        if (shoulder)
+            elbow = !elbow;
+
         bool wrist = !configuration.HasFlag(RobotConfigurations.Wrist);
-        if (shoulder) wrist = !wrist;
+
+        if (shoulder)
+            wrist = !wrist;
 
         double[] joints = new double[6];
         bool isUnreachable = false;
@@ -47,10 +52,7 @@ class OffsetWristKinematics : RobotKinematics
 
             double arctan = Atan2(-B, A);
 
-            if (!shoulder)
-                joints[0] = arccos + arctan;
-            else
-                joints[0] = -arccos + arctan;
+            joints[0] = !shoulder ? arccos + arctan : -arccos + arctan;
         }
 
         // wrist 2
@@ -66,10 +68,7 @@ class OffsetWristKinematics : RobotKinematics
                 isUnreachable = true;
             }
 
-            if (!wrist)
-                joints[4] = arccos;
-            else
-                joints[4] = 2.0 * PI - arccos;
+            joints[4] = !wrist ? arccos : 2.0 * PI - arccos;
         }
 
         // rest
@@ -95,20 +94,16 @@ class OffsetWristKinematics : RobotKinematics
                 isUnreachable = true;
             }
 
-            if (!elbow)
-                joints[2] = arccos;
-            else
-                joints[2] = PI2 - arccos;
+            joints[2] = !elbow ? arccos : PI2 - arccos;
 
             double denom = a[1] * a[1] + a[2] * a[2] + 2 * a[1] * a[2] * c3;
             double s3 = Sin(arccos);
             double A = (a[1] + a[2] * c3);
             double B = a[2] * s3;
 
-            if (!elbow)
-                joints[1] = Atan2((A * p13y - B * p13x) / denom, (A * p13x + B * p13y) / denom);
-            else
-                joints[1] = Atan2((A * p13y + B * p13x) / denom, (A * p13x - B * p13y) / denom);
+            joints[1] = !elbow
+                ? Atan2((A * p13y - B * p13x) / denom, (A * p13x + B * p13y) / denom)
+                : Atan2((A * p13y + B * p13x) / denom, (A * p13x - B * p13y) / denom);
 
             double c23_0 = Cos(joints[1] + joints[2]);
             double s23_0 = Sin(joints[1] + joints[2]);
@@ -123,14 +118,17 @@ class OffsetWristKinematics : RobotKinematics
 
         for (int i = 0; i < 6; i++)
         {
-            if (joints[i] > PI) joints[i] -= PI2;
-            if (joints[i] < -PI) joints[i] += PI2;
+            if (joints[i] > PI)
+                joints[i] -= PI2;
+
+            if (joints[i] < -PI)
+                joints[i] += PI2;
         }
 
         return joints;
     }
 
-    override protected Transform[] ForwardKinematics(double[] joints)
+    protected override Transform[] ForwardKinematics(double[] joints)
     {
         var transforms = new Transform[6];
 

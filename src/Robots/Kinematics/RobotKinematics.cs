@@ -22,7 +22,7 @@ abstract class RobotKinematics : MechanismKinematics
             Plane targetPlane = cartesianTarget.Plane;
             targetPlane.Orient(ref target.Frame.Plane);
 
-           var transform = Planes[0].ToInverseTransform() * Transform.PlaneToPlane(tcp, targetPlane);
+            var transform = Planes[0].ToInverseTransform() * Transform.PlaneToPlane(tcp, targetPlane);
 
             List<string> errors;
             double[] joints;

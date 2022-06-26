@@ -1,37 +1,37 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFramework>net48</TargetFramework>
-		<AssemblyTitle>$(Product) Grasshopper</AssemblyTitle>
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyTitle>$(Product) Grasshopper</AssemblyTitle>
 
-		<PackageId>Robots.Rhino</PackageId>
-		<PackageIcon>iconRhino128.png</PackageIcon>
-		<Description>$(Description) This package is for development of Rhino and Grasshopper plug-ins.</Description>
-		<PackageTags>$(PackageTags);Rhino;Grasshopper</PackageTags>
-	</PropertyGroup>
+    <PackageId>Robots.Rhino</PackageId>
+    <PackageIcon>iconRhino128.png</PackageIcon>
+    <Description>$(Description) This package is for development of Rhino and Grasshopper plug-ins.</Description>
+    <PackageTags>$(PackageTags);Rhino;Grasshopper</PackageTags>
+  </PropertyGroup>
 
-	<ItemGroup>
-		<Reference Include="Microsoft.CSharp" />
-		<Reference Include="System.Windows.Forms" />
-		<PackageReference Include="Grasshopper" Version="7.0.20314.3001" ExcludeAssets="runtime" />
-		<ProjectReference Include="..\Robots\Robots.csproj" PrivateAssets="All" />
-	</ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Windows.Forms" />
+    <PackageReference Include="Grasshopper" Version="7.0.20314.3001" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\Robots\Robots.csproj" PrivateAssets="All" />
+  </ItemGroup>
 
-	<ItemGroup>
-		<EmbeddedResource Include="Assets\Embed\**\*" />
-		<None Include="..\..\build\Assets\iconRhino128.png" Pack="true" PackagePath="" />
-		<None Include="Build\Robots.Rhino.targets" Pack="true" PackagePath="buildTransitive" />
-		<None Include="$(TargetDir)$(Product).dll" Pack="true" PackagePath="lib\net48" />
-	</ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\Embed\**\*" />
+    <None Include="..\..\build\Assets\iconRhino128.png" Pack="true" PackagePath="" />
+    <None Include="Build\Robots.Rhino.targets" Pack="true" PackagePath="buildTransitive" />
+    <None Include="$(TargetDir)$(Product).dll" Pack="true" PackagePath="lib\net48" />
+  </ItemGroup>
 
-	<Target Name="Rename" AfterTargets="AfterBuild" Condition="'$(ContinuePackingAfterGeneratingNuspec)' != 'true'">
-		<Move SourceFiles="$(TargetPath)" DestinationFiles="$(TargetDir)$(Product).gha" />
-	</Target>
+  <Target Name="Rename" AfterTargets="AfterBuild" Condition="'$(ContinuePackingAfterGeneratingNuspec)' != 'true'">
+    <Move SourceFiles="$(TargetPath)" DestinationFiles="$(TargetDir)$(Product).gha" />
+  </Target>
 
-	<PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows))">
-		<StartProgram>C:\Program Files\Rhino 7\System\Rhino.exe</StartProgram>
-		<StartArguments>/nosplash /runscript="-grasshopper window show _enter"</StartArguments>
-		<StartAction>Program</StartAction>
-	</PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows))">
+    <StartProgram>C:\Program Files\Rhino 7\System\Rhino.exe</StartProgram>
+    <StartArguments>/nosplash /runscript="-grasshopper window show _enter"</StartArguments>
+    <StartAction>Program</StartAction>
+  </PropertyGroup>
 
 </Project>

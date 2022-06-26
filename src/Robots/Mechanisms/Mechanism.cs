@@ -51,7 +51,7 @@ public abstract class Mechanism
         return mesh;
     }
 
-      public abstract KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? basePlane = null);
+    public abstract KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? basePlane = null);
 
     protected abstract void SetStartPlanes();
     public abstract double DegreeToRadian(double degree, int i);

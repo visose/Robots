@@ -1,4 +1,4 @@
-﻿namespace Robots;
+namespace Robots;
 
 public abstract class Command : TargetAttribute
 {
@@ -29,7 +29,8 @@ public abstract class Command : TargetAttribute
 
         if (_declarations.TryGetValue(robot.Manufacturer, out var declaration))
             return declaration(robot);
-        else if (_declarations.TryGetValue(Manufacturers.All, out declaration))
+
+        if (_declarations.TryGetValue(Manufacturers.All, out declaration))
             return declaration(robot);
 
         return "";
@@ -41,7 +42,8 @@ public abstract class Command : TargetAttribute
 
         if (_commands.TryGetValue(robot.Manufacturer, out var command))
             return command(robot, target);
-        else if (_commands.TryGetValue(Manufacturers.All, out command))
+
+        if (_commands.TryGetValue(Manufacturers.All, out command))
             return command(robot, target);
 
         program.Warnings.Add($"Command {Name} not implemented for {robot.Manufacturer} robots.");

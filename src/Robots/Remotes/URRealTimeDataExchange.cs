@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
@@ -18,7 +18,6 @@ public class VariableOutput
     internal TypeCode Type { get; set; } = default!;
     public double[] Values { get; set; } = default!;
 }
-
 
 public class URRealTimeDataExchange : IDisposable
 {
@@ -278,14 +277,14 @@ public class URRealTimeDataExchange : IDisposable
             throw new InvalidOperationException($"{type} denied");
     }
 
-    void WritePausePackage()
-    {
-        var type = PackageType.RTDE_CONTROL_PACKAGE_PAUSE;
-        WritePackage(type, Array.Empty<byte>());
-        var accepted = _reader.ReadByte() == 1 ? "accepted" : "denied";
+    //void WritePausePackage()
+    //{
+    //    var type = PackageType.RTDE_CONTROL_PACKAGE_PAUSE;
+    //    WritePackage(type, Array.Empty<byte>());
+    //    var accepted = _reader.ReadByte() == 1 ? "accepted" : "denied";
 
-        AddLog($"{type}: {accepted}");
-    }
+    //    AddLog($"{type}: {accepted}");
+    //}
 
     void ReadDataPackage()
     {

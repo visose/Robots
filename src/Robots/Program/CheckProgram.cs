@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using static Robots.Util;
 using static System.Math;
 
@@ -406,8 +406,10 @@ class CheckProgram
                 var group = target.Commands.NotNull();
 
                 for (int i = 0; i < group.Count; i++)
+                {
                     if (group[i] == attribute as Command)
                         group[i] = command;
+                }
             }
         }
     }

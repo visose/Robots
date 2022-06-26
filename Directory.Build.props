@@ -1,29 +1,29 @@
 <Project>
 
-	<PropertyGroup>
-		<Product>Robots</Product>
-		<Version>1.5.1</Version>
-		<Authors>Robots Authors</Authors>
-		<Description>Create and simulate ABB, KUKA, UR, and Staubli robot programs.</Description>
-		<PackageTags>Robots;ABB;KUKA;UR;Staubli;Robotics</PackageTags>
-		<PackageProjectUrl>https://github.com/visose/robots</PackageProjectUrl>
-		<IconUrl>https://github.com/visose/robots/raw/master/build/Assets/iconRobot.png</IconUrl>
-		<ReleaseNotes>RELEASE</ReleaseNotes>
+  <PropertyGroup>
+    <Product>Robots</Product>
+    <Version>1.5.1</Version>
+    <Authors>Robots Authors</Authors>
+    <Description>Create and simulate ABB, KUKA, UR, and Staubli robot programs.</Description>
+    <PackageTags>Robots;ABB;KUKA;UR;Staubli;Robotics</PackageTags>
+    <PackageProjectUrl>https://github.com/visose/robots</PackageProjectUrl>
+    <IconUrl>https://github.com/visose/robots/raw/master/build/Assets/iconRobot.png</IconUrl>
+    <ReleaseNotes>RELEASE</ReleaseNotes>
 
-		<CurrentYear>$([System.DateTime]::Now.Year)</CurrentYear>
-		<Copyright>Copyright (c) 2015-$(CurrentYear) $(Authors)</Copyright>
-		<Company>$(Authors) - $(PackageProjectUrl)</Company>
-		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<RepositoryUrl>https://github.com/visose/robots.git</RepositoryUrl>
-	</PropertyGroup>
+    <CurrentYear>$([System.DateTime]::Now.Year)</CurrentYear>
+    <Copyright>Copyright (c) 2015-$(CurrentYear) $(Authors)</Copyright>
+    <Company>$(Authors) - $(PackageProjectUrl)</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/visose/robots.git</RepositoryUrl>
+  </PropertyGroup>
 
-	<PropertyGroup>
-		<LangVersion>latest</LangVersion>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>enable</ImplicitUsings>		
-		<ArtifactsDir>$(MSBuildThisFileDirectory)artifacts\</ArtifactsDir>
-		<OutputPath>$(ArtifactsDir)bin\$(MSBuildProjectName)</OutputPath>
-		<BaseIntermediateOutputPath>$(ArtifactsDir)obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
-	</PropertyGroup>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ArtifactsDir>$(MSBuildThisFileDirectory)artifacts\</ArtifactsDir>
+    <OutputPath>$(ArtifactsDir)bin\$(MSBuildProjectName)</OutputPath>
+    <BaseIntermediateOutputPath>$(ArtifactsDir)obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+  </PropertyGroup>
 
 </Project>

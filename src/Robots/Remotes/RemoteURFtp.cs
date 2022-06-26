@@ -1,4 +1,4 @@
-﻿using Renci.SshNet;
+using Renci.SshNet;
 using System.Net.Sockets;
 using System.Text;
 
@@ -84,7 +84,7 @@ class RemoteURFtp : IRemoteURBackend
         string second = GetMessage(stream);
         AddLog($"Received: {second}");
 
-        string GetMessage(NetworkStream stream)
+        static string GetMessage(NetworkStream stream)
         {
             byte[] receiveBuffer = new byte[1024];
             int bytesReceived = stream.Read(receiveBuffer, 0, receiveBuffer.Length);

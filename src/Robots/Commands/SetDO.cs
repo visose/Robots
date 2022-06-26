@@ -66,7 +66,7 @@ public class SetDO : Command
     string GetNumber(RobotSystem robotSystem)
     {
         var io = robotSystem.IO;
-        
+
         return io.UseControllerNumbering
          ? DO.ToString()
          : io.DO[DO];

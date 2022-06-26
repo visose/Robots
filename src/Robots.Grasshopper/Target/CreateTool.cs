@@ -41,7 +41,7 @@ public class CreateTool : GH_Component
         if (!DA.GetData(0, ref name) || name is null) return;
         if (!DA.GetData(1, ref tcp)) return;
         DA.GetDataList(2, planes);
-        if (!DA.GetData(3, ref weight)) return; 
+        if (!DA.GetData(3, ref weight)) return;
         DA.GetData(4, ref centroid);
         DA.GetData(5, ref mesh);
 

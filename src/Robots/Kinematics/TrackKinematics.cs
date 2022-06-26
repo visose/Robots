@@ -36,7 +36,7 @@ class TrackKinematics : MechanismKinematics
         Planes[3] = _mechanism.Joints[2].Plane;
         Planes[3].Origin += Planes[2].Origin + Planes[3].ZAxis * Joints[2];
 
-        if (_mechanism.Joints.Length == 3) 
+        if (_mechanism.Joints.Length == 3)
             return;
     }
 }

@@ -30,7 +30,7 @@ public class PulseDO : Command
     string DeclarationUR(RobotSystem robotSystem)
     {
         var number = GetNumber(robotSystem);
-        
+
         string time = $"{Name} = {_length:0.###}";
         string thread = $@"  thread run{Name}():
     sleep({Name})

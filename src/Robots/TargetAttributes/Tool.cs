@@ -19,7 +19,7 @@ public class Tool : TargetAttribute
     /// </summary>
     public int? Number { get; }
 
-    public Tool(Plane tcp, string name = "DefaultTool", double weight = 0, Point3d? centroid = null, Mesh? mesh = null, IList<Plane>? calibrationPlanes = null, bool useController = false, int? number = null) 
+    public Tool(Plane tcp, string name = "DefaultTool", double weight = 0, Point3d? centroid = null, Mesh? mesh = null, IList<Plane>? calibrationPlanes = null, bool useController = false, int? number = null)
         : base(name)
     {
         Weight = weight;

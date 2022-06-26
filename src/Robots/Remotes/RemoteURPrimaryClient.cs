@@ -14,7 +14,7 @@ class RemoteURSecondaryClient : IRemoteURBackend
         _ip = ip;
         _log = log;
     }
-    
+
     public void Upload(IProgram program)
     {
         if (program.Code is null)

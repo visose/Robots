@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using static System.Math;
 
 namespace Robots;
@@ -208,7 +208,9 @@ public class RobotSystemUR : RobotSystem
             planes.Add(toolPlane);
         }
         else
+        {
             planes.Add(planes[planes.Count - 1]);
+        }
 
         kinematic.Planes = planes.ToArray();
 

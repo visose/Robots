@@ -77,7 +77,7 @@ public class SetAO : Command
     string GetNumber(RobotSystem robotSystem)
     {
         var io = robotSystem.IO;
-        
+
         return io.UseControllerNumbering
          ? AO.ToString()
          : io.AO[AO];

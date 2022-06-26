@@ -62,14 +62,14 @@ public class ABBTests
             .SelectMany(p => new[] { (Vector3d)p.Origin, p.XAxis, p.YAxis })
             .SelectMany(v => new[] { v.X, v.Y, v.Z });
 
-        foreach(var (e, a) in expected.Zip(actual))
+        foreach (var (e, a) in expected.Zip(actual))
             Assert.AreEqual(e, a, 1e-14);
     }
 
     [Test]
     public void AbbCorrectCode()
     {
-        const string expected  = @"MODULE TestProgram_T_ROB1
+        const string expected = @"MODULE TestProgram_T_ROB1
 VAR extjoint extj := [9E9,9E9,9E9,9E9,9E9,9E9];
 VAR confdata conf := [0,0,0,0];
 PERS tooldata DefaultTool:=[TRUE,[[0,0,0],[1,0,0,0]],[0.001,[0,0,0.001],[1,0,0,0],0,0,0]];

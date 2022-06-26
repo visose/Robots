@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using static Robots.Util;
 using static System.Math;
 
@@ -14,7 +14,7 @@ class SphericalWristKinematics : RobotKinematics
     /// </summary>
     /// <param name="target">Cartesian target</param>
     /// <returns>Returns the 6 rotation values in radians.</returns>
-    override protected double[] InverseKinematics(Transform transform, RobotConfigurations configuration, out List<string> errors)
+    protected override double[] InverseKinematics(Transform transform, RobotConfigurations configuration, out List<string> errors)
     {
         errors = new List<string>();
 
@@ -134,7 +134,7 @@ class SphericalWristKinematics : RobotKinematics
         return joints;
     }
 
-    override protected Transform[] ForwardKinematics(double[] joints)
+    protected override Transform[] ForwardKinematics(double[] joints)
     {
         var t = new Transform[6];
 

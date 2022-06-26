@@ -1,4 +1,4 @@
-﻿namespace Robots;
+namespace Robots;
 
 #if NETSTANDARD2_0
 public class RemoteAbb : IRemote
@@ -9,6 +9,7 @@ public class RemoteAbb : IRemote
     public void Pause() => throw NotImplemented();
     public void Upload(IProgram p) => throw NotImplemented();
 
+#pragma warning disable IDE0060
     internal RemoteAbb(RobotCellAbb cell) { }
 
     Exception NotImplemented() => new NotImplementedException(" ABB SDK not supported in .NET Standard.");

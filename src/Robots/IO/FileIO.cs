@@ -1,4 +1,4 @@
-﻿using System.Xml;
+using System.Xml;
 using System.Xml.Linq;
 using Rhino.FileIO;
 using Rhino.Geometry;
@@ -127,7 +127,9 @@ public static class FileIO
 
         if (!Enum.TryParse<ElementType>(typeName, out var type)
             || type != ElementType.RobotCell)
+        {
             throw new ArgumentException($" Element '{typeName}' should be 'RobotCell'", nameof(typeName));
+        }
 
         var name = element.GetAttribute("name");
         var manufacturerAttribute = element.GetAttribute("manufacturer");
@@ -284,10 +286,10 @@ public static class FileIO
         var name = element.GetAttribute("name");
         var useController = element.GetBoolAttributeOrDefault("useController");
         var number = element.GetIntAttributeOrDefault("number");
-        
+
         var baseElement = element.GetElement("Base");
         var plane = CreatePlane(baseElement);
-        
+
         var couplingElement = element.GetElementOrDefault("Coupling");
         var mechanism = couplingElement?.GetIntAttributeOrDefault("mechanism") ?? -1;
         var group = couplingElement?.GetIntAttributeOrDefault("group") ?? -1;
@@ -316,7 +318,9 @@ public static class FileIO
         if (!element.AttributeExists("x")
             && !element.AttributeExists("y")
             && !element.AttributeExists("z"))
+        {
             return null;
+        }
 
         double x = element.GetDoubleAttribute("x");
         double y = element.GetDoubleAttribute("y");
