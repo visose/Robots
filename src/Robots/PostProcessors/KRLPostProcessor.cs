@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using static System.Math;
 using static Rhino.RhinoMath;
 using static Robots.Util;
@@ -40,8 +40,7 @@ class KRLPostProcessor
                 {
                     $@"&ACCESS RVP
 &REL 1
-DEFDAT {_program.Name}_{groupName} PUBLIC
-"
+DEFDAT {_program.Name}_{groupName} PUBLIC"
                 };
 
         // Attribute declarations
@@ -82,8 +81,7 @@ DEFDAT {_program.Name}_{groupName} PUBLIC
 DEF {_program.Name}_{groupName}()
 BAS (#INITMOV,0)
 $ADVANCE = 5
-$APO.CPTP = 100
-"
+$APO.CPTP = 100"
                 };
 
         // Init commands
@@ -109,8 +107,7 @@ $APO.CPTP = 100
                 {
                     $@"&ACCESS RVP
 &REL 1
-DEF {_program.Name}_{groupName}_{file:000}()
-"
+DEF {_program.Name}_{groupName}_{file:000}()"
                 };
 
         Tool? currentTool = null;
@@ -303,7 +300,7 @@ DEF {_program.Name}_{groupName}_{file:000}()
         double[] euler = RobotCellKuka.PlaneToEuler(tool.Tcp);
         var toolTxt = $"DECL GLOBAL FRAME {tool.Name} = {{{GetXyzAbc(euler)}}}";
         Point3d centroid = tool.Centroid;
-        var loadTxt = $"DECL GLOBAL LOAD {tool.Name}_L = {{M: {tool.Weight},CM: {{{GetXyzAbc(centroid.X, centroid.Y, centroid.Z, 0, 0, 0)}}},J {{X 0,Y 0,Z 0}}}}";
+        var loadTxt = $"DECL GLOBAL LOAD {tool.Name}_L = {{M {tool.Weight:0.####},CM {{{GetXyzAbc(centroid.X, centroid.Y, centroid.Z, 0, 0, 0)}}},J {{X 0,Y 0,Z 0}}}}";
         return $"{toolTxt}\r\n{loadTxt}";
     }
 

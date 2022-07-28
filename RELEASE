@@ -1,3 +1,7 @@
+- version: 1.5.2
+  changes:
+  - Fixed bug in KUKA code generation.
+
 - version: 1.5.1
   changes:
   - Fixed PulseDo command now works with UR.
