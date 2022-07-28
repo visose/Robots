@@ -1,10 +1,11 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots;
 
 class PositionerKinematics : MechanismKinematics
 {
-    internal PositionerKinematics(Positioner positioner, Target target, double[]? prevJoints, Plane? basePlane) : base(positioner, target, prevJoints, basePlane) { }
+    internal PositionerKinematics(Positioner positioner, Target target, double[]? prevJoints, Plane? basePlane)
+        : base(positioner, target, prevJoints, basePlane) { }
 
     protected override void SetJoints(Target target, double[]? prevJoints)
     {

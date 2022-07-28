@@ -1,4 +1,4 @@
-﻿using static System.Math;
+using static System.Math;
 using static Robots.Util;
 
 namespace Robots;
@@ -9,7 +9,9 @@ public class JointTarget : Target
 
     public JointTarget(double[] joints, Tool? tool = null, Speed? speed = null, Zone? zone = null, Command? command = null, Frame? frame = null, IEnumerable<double>? external = null) : base(tool, speed, zone, command, frame, external)
     {
-        Array.Resize(ref joints, 6);
+        if (joints.Length != 6 && joints.Length != 7)
+            Array.Resize(ref joints, 6);
+
         Joints = joints;
     }
 

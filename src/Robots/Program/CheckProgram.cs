@@ -44,7 +44,7 @@ class CheckProgram
                     _program.Errors.AddRange(kinematic.Errors);
                 }
 
-                programTarget.Target = new JointTarget(kinematic.Joints.RangeSubset(0, 6), programTarget.Target);
+                programTarget.Target = new JointTarget(kinematic.Joints.RangeSubset(0, _robotSystem.RobotJointCount), programTarget.Target);
                 _program.Warnings.Add($"First target in robot {programTarget.Group} changed to a joint motion using axis rotations");
             }
         }
@@ -56,6 +56,7 @@ class CheckProgram
 
         int resizeCount = 0;
         ProgramTarget? resizeTarget = null;
+        int jointCount = _robotSystem.RobotJointCount;
 
         foreach (var cellTarget in cellTargets)
         {
@@ -63,12 +64,12 @@ class CheckProgram
             {
                 int externalCount = 0;
                 if (_robotSystem is RobotCell cell)
-                    externalCount = cell.MechanicalGroups[programTarget.Group].Joints.Count - 6;
+                    externalCount = cell.MechanicalGroups[programTarget.Group].Joints.Count - jointCount;
 
                 if (programTarget.Target.External.Length != externalCount)
                 {
                     double[] external = programTarget.Target.External;
-                    Array.Resize<double>(ref external, externalCount);
+                    Array.Resize(ref external, externalCount);
                     programTarget.Target.External = external;
                     resizeCount++;
 
@@ -439,20 +440,21 @@ class CheckProgram
         double deltaExternalTime = 0;
         int externalLeadingJoint = -1;
         int deltaIndex = -1;
+        int jointCount = _robotSystem.RobotJointCount;
 
         for (int i = 0; i < target.Target.External.Length; i++)
         {
-            var joint = joints[i + 6];
+            var joint = joints[i + jointCount];
             double jointSpeed = joint.MaxSpeed;
             if (joint is PrismaticJoint) jointSpeed = Min(jointSpeed, target.Target.Speed.TranslationExternal);
             else if (joint is RevoluteJoint) jointSpeed = Min(jointSpeed, target.Target.Speed.RotationExternal);
 
-            double deltaCurrentExternalTime = Abs(target.Kinematics.Joints[i + 6] - prevTarget.Kinematics.Joints[i + 6]) / jointSpeed;
+            double deltaCurrentExternalTime = Abs(target.Kinematics.Joints[i + jointCount] - prevTarget.Kinematics.Joints[i + jointCount]) / jointSpeed;
 
             if (deltaCurrentExternalTime > deltaExternalTime)
             {
                 deltaExternalTime = deltaCurrentExternalTime;
-                externalLeadingJoint = i + 6;
+                externalLeadingJoint = i + jointCount;
             }
         }
 

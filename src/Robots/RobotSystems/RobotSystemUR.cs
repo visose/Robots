@@ -179,12 +179,6 @@ public class RobotSystemUR : RobotSystem
         return degree.ToRadians();
     }
 
-    public KinematicSolution Kinematics(Target target, double[]? prevJoints = null)
-    {
-        var kinematics = Kinematics(new Target[] { target }, new double[]?[] { prevJoints });
-        return kinematics[0];
-    }
-
     public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]?>? prevJoints = null)
     {
         var target = targets.First();

@@ -1,10 +1,11 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots;
 
 class TrackKinematics : MechanismKinematics
 {
-    internal TrackKinematics(Track track, Target target, Plane? basePlane) : base(track, target, null, basePlane) { }
+    internal TrackKinematics(Track track, Target target, Plane? basePlane)
+        : base(track, target, null, basePlane) { }
 
     protected override void SetJoints(Target target, double[]? prevJoints)
     {

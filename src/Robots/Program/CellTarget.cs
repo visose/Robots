@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots;
 
@@ -31,11 +31,6 @@ public class CellTarget
 
         cellTarget.ProgramTargets = cellTarget.ProgramTargets.MapToList(x => x.ShallowClone(cellTarget));
         return cellTarget;
-    }
-
-    internal IEnumerable<Target> KineTargets()
-    {
-        return ProgramTargets.Select(x => x.ToKineTarget());
     }
 
     internal IEnumerable<Target> Lerp(CellTarget prevTarget, RobotSystem robot, double t, double start, double end)

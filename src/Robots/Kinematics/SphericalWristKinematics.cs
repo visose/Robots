@@ -6,7 +6,8 @@ namespace Robots;
 
 class SphericalWristKinematics : RobotKinematics
 {
-    public SphericalWristKinematics(RobotArm robot, Target target, double[]? prevJoints, Plane? basePlane) : base(robot, target, prevJoints, basePlane) { }
+    public SphericalWristKinematics(RobotArm robot, Target target, double[]? prevJoints, Plane? basePlane)
+        : base(robot, target, prevJoints, basePlane) { }
 
     /// <summary>
     /// Inverse kinematics for a spherical wrist 6 axis robot.

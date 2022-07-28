@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using static Robots.Util;
 using static System.Math;
 
@@ -6,7 +6,8 @@ namespace Robots;
 
 abstract class RobotKinematics : MechanismKinematics
 {
-    protected RobotKinematics(RobotArm robot, Target target, double[]? prevJoints = null, Plane? basePlane = null) : base(robot, target, prevJoints, basePlane) { }
+    protected RobotKinematics(RobotArm robot, Target target, double[]? prevJoints = null, Plane? basePlane = null)
+        : base(robot, target, prevJoints, basePlane) { }
 
     protected override void SetJoints(Target target, double[]? prevJoints)
     {
@@ -57,7 +58,9 @@ abstract class RobotKinematics : MechanismKinematics
             Configuration = difference < AngleTol ? configuration : RobotConfigurations.Undefined;
         }
 
-        for (int i = 0; i < 6; i++)
+        int jointCount = _mechanism.Joints.Length;
+
+        for (int i = 0; i < jointCount; i++)
         {
             var plane = jointTransforms[i].ToPlane();
             plane.Rotate(PI, plane.ZAxis);
@@ -82,6 +85,8 @@ abstract class RobotKinematics : MechanismKinematics
         double[]? closestSolution = null;
         List<string>? closestErrors = null;
         double closestDifference = double.MaxValue;
+        int jointCount = _mechanism.Joints.Length;
+
 
         for (int i = 0; i < 8; i++)
         {
@@ -90,7 +95,7 @@ abstract class RobotKinematics : MechanismKinematics
 
             double currentDifference = 0;
 
-            for (int j = 0; j < 6; j++)
+            for (int j = 0; j < jointCount; j++)
                 currentDifference += SquaredDifference(prevJoints[j], currentSolution[j]);
 
             if (currentDifference < closestDifference)

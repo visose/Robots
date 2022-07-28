@@ -6,7 +6,8 @@ namespace Robots;
 
 class OffsetWristKinematics : RobotKinematics
 {
-    public OffsetWristKinematics(RobotArm robot, Target target, double[]? prevJoints, Plane? basePlane) : base(robot, target, prevJoints, basePlane) { }
+    public OffsetWristKinematics(RobotArm robot, Target target, double[]? prevJoints, Plane? basePlane)
+        : base(robot, target, prevJoints, basePlane) { }
 
     /// <summary>
     /// Inverse kinematics for a offset wrist 6 axis robot.
@@ -46,7 +47,7 @@ class OffsetWristKinematics : RobotKinematics
             double arccos = Acos(d[3] / Sqrt(R));
             if (double.IsNaN(arccos))
             {
-                errors.Add($"Overhead singularity.");
+                errors.Add("Overhead singularity.");
                 arccos = 0;
             }
 
@@ -63,7 +64,7 @@ class OffsetWristKinematics : RobotKinematics
             double arccos = Acos(div);
             if (double.IsNaN(arccos))
             {
-                errors.Add($"Overhead singularity 2.");
+                errors.Add("Overhead singularity 2.");
                 arccos = PI;
                 isUnreachable = true;
             }
@@ -112,7 +113,7 @@ class OffsetWristKinematics : RobotKinematics
         }
 
         if (isUnreachable)
-            errors.Add($"Target out of reach.");
+            errors.Add("Target out of reach.");
 
         //   joints[5] += PI / 2;
 
@@ -134,7 +135,6 @@ class OffsetWristKinematics : RobotKinematics
 
         var c = Vector6d.Map(joints, j => Cos(j));
         var s = Vector6d.Map(joints, j => Sin(j));
-
         var a = Vector6d.Map(_mechanism.Joints, j => j.A);
         var d = Vector6d.Map(_mechanism.Joints, j => j.D);
 

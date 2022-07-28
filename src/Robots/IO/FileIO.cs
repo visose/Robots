@@ -152,6 +152,7 @@ public static class FileIO
             Manufacturers.UR => new RobotSystemUR(name, (RobotUR)mechanicalGroups[0].Robot, io, basePlane, environment),
             Manufacturers.FANUC => new RobotCellFanuc(name, mechanicalGroups, io, basePlane, environment),
             Manufacturers.Staubli => new RobotCellStaubli(name, mechanicalGroups, io, basePlane, environment),
+            Manufacturers.FrankaEmika => new CobotCellFranka(name, (RobotFranka)mechanicalGroups[0].Robot, io, basePlane, environment),
             _ => throw new ArgumentException($" Manufacturer '{manufacturer} is not supported.", nameof(manufacturer))
         };
     }
@@ -220,6 +221,7 @@ public static class FileIO
                 Manufacturers.KUKA => new RobotKuka(model, payload, basePlane, baseMesh, joints),
                 Manufacturers.UR => new RobotUR(model, payload, basePlane, baseMesh, joints),
                 Manufacturers.Staubli => new RobotStaubli(model, payload, basePlane, baseMesh, joints),
+                Manufacturers.FrankaEmika => new RobotFranka(model, payload, basePlane, baseMesh, joints),
                 // Manufacturers.FANUC => new RobotFanuc(modelName, payload, basePlane, baseMesh, joints);
                 _ => throw new ArgumentException($" Manufacturer '{manufacturer}' not supported.", nameof(manufacturer)),
             },

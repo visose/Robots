@@ -1,10 +1,10 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Rhino.Geometry;
 using static Robots.Util;
 
 namespace Robots;
 
-public enum Manufacturers { ABB, KUKA, UR, FANUC, Staubli, Other, All };
+public enum Manufacturers { ABB, KUKA, UR, FANUC, Staubli, FrankaEmika, Other, All };
 
 public class DefaultPose
 {
@@ -29,6 +29,7 @@ public abstract class RobotSystem
     public Mesh DisplayMesh { get; } = new();
     public DefaultPose DefaultPose { get; }
     public IRemote? Remote { get; protected set; }
+    public int RobotJointCount { get; protected set; } = 6;
 
     static RobotSystem()
     {

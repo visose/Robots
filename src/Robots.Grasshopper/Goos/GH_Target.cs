@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
@@ -30,10 +30,13 @@ public class GH_Target : GH_Goo<Target>
             case GH_String text:
                 {
                     string[] jointsText = text.Value.Split(',');
-                    if (jointsText.Length != 6) return false;
 
-                    var joints = new double[6];
-                    for (int i = 0; i < 6; i++)
+                    if (jointsText.Length != 6 && jointsText.Length != 7)
+                        return false;
+
+                    var joints = new double[jointsText.Length];
+
+                    for (int i = 0; i < jointsText.Length; i++)
                         if (!GH_Convert.ToDouble_Secondary(jointsText[i], ref joints[i])) return false;
 
                     Value = new JointTarget(joints);

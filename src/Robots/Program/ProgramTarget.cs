@@ -99,30 +99,15 @@ public class ProgramTarget
         return prevPlane;
     }
 
-    public Target ToKineTarget()
-    {
-        var external = Kinematics.Joints.RangeSubset(6, Target.External.Length);
-
-        if (IsJointTarget)
-        {
-            var joints = Kinematics.Joints.RangeSubset(0, 6);
-            return new JointTarget(joints, Target, external);
-        }
-        else
-        {
-            var target = (CartesianTarget)Target;
-            return new CartesianTarget(Plane, Target, Kinematics.Configuration, target.Motion, external);
-        }
-    }
-
     public Target Lerp(ProgramTarget prevTarget, RobotSystem robot, double t, double start, double end)
     {
+        int jointCount = robot.RobotJointCount;
         double[] allJoints = JointTarget.Lerp(prevTarget.Kinematics.Joints, Kinematics.Joints, t, start, end);
-        var external = allJoints.RangeSubset(6, Target.External.Length);
+        var external = allJoints.RangeSubset(jointCount, Target.External.Length);
 
         if (IsJointMotion)
         {
-            var joints = allJoints.RangeSubset(0, 6);
+            var joints = allJoints.RangeSubset(0, jointCount);
             return new JointTarget(joints, Target, external);
         }
         else
