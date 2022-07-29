@@ -14,9 +14,7 @@ public class RobotFranka : RobotArm
 
     protected override JointTarget GetStartPose()
     {
-        //double[] joints = new[] { 0, -HalfPI, HalfPI, HalfPI, -HalfPI, HalfPI, HalfPI };
-        double[] joints = new double[] { HalfPI, 0, 0, 0, -HalfPI, 0, 0 };
-
+        double[] joints = new double[] { HalfPI, 0, 0, 0, -HalfPI, 0, -HalfPI / 2 };
         return new(joints);
     }
     public override double DegreeToRadian(double degree, int i) => degree * (PI / 180.0);

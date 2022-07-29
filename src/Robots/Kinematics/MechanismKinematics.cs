@@ -1,4 +1,5 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
+using static System.Math;
 
 namespace Robots;
 
@@ -45,5 +46,57 @@ abstract class MechanismKinematics : KinematicSolution
         .Where(x => !x.Range.IncludesParameter(Joints[x.Index]))
         .Select(x => $"Axis {x.Number + 1} is outside the permitted range.");
         Errors.AddRange(outofRangeErrors);
+    }
+
+    protected Transform[] ModifiedDH(double[] joints, double[] α)
+    {
+        var t = new Transform[7];
+
+        var a = _mechanism.Joints.Map(joint => joint.A);
+        var d = _mechanism.Joints.Map(joint => joint.D);
+        var c = joints.Map(x => Cos(x));
+        var s = joints.Map(x => Sin(x));
+        var cα = α.Map(x => Cos(x));
+        var sα = α.Map(x => Sin(x));
+
+        for (int i = 0; i < joints.Length; i++)
+        {
+            t[i].Set(
+            c[i], -s[i], 0, a[i],
+            s[i] * cα[i], c[i] * cα[i], -sα[i], -d[i] * sα[i],
+            s[i] * sα[i], c[i] * sα[i], cα[i], d[i] * cα[i]
+            );
+        }
+
+        for (int i = 1; i < joints.Length; i++)
+            t[i] = t[i - 1] * t[i];
+
+        return t;
+    }
+
+    protected Transform[] DH(double[] joints, double[] α)
+    {
+        var t = new Transform[7];
+
+        var a = _mechanism.Joints.Map(joint => joint.A);
+        var d = _mechanism.Joints.Map(joint => joint.D);
+        var c = joints.Map(x => Cos(x));
+        var s = joints.Map(x => Sin(x));
+        var cα = α.Map(x => Cos(x));
+        var sα = α.Map(x => Sin(x));
+
+        for (int i = 0; i < joints.Length; i++)
+        {
+            t[i].Set(
+                c[i], -s[i] * cα[i], s[i] * sα[i], a[i] * c[i],
+                s[i], c[i] * cα[i], -c[i] * sα[i], a[i] * s[i],
+                   0, sα[i], cα[i], d[i]
+                );
+        }
+
+        for (int i = 1; i < joints.Length; i++)
+            t[i] = t[i - 1] * t[i];
+
+        return t;
     }
 }

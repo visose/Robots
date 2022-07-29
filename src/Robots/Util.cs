@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Rhino.Geometry;
 using static System.Math;
 
@@ -172,11 +172,24 @@ static class Util
 
     // Transform
 
+    public static Vector3d GetColumn3d(this ref Transform t, int col)
+    {
+        return new(t[0, col], t[1, col], t[2, col]);
+    }
+
     public static void Set(this ref Transform t, double m00, double m01, double m02, double m03, double m10, double m11, double m12, double m13, double m20, double m21, double m22, double m23)
     {
         t.M00 = m00; t.M01 = m01; t.M02 = m02; t.M03 = m03;
         t.M10 = m10; t.M11 = m11; t.M12 = m12; t.M13 = m13;
         t.M20 = m20; t.M21 = m21; t.M22 = m22; t.M23 = m23;
+        t.M33 = 1;
+    }
+
+    public static void SetRotation(this ref Transform t, double m00, double m01, double m02, double m10, double m11, double m12, double m20, double m21, double m22)
+    {
+        t.M00 = m00; t.M01 = m01; t.M02 = m02;
+        t.M10 = m10; t.M11 = m11; t.M12 = m12;
+        t.M20 = m20; t.M21 = m21; t.M22 = m22;
         t.M33 = 1;
     }
 
