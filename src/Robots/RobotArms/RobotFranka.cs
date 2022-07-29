@@ -14,11 +14,8 @@ public class RobotFranka : RobotArm
 
     protected override JointTarget GetStartPose()
     {
-        double[] joints = new[] { 0, -HalfPI, HalfPI, HalfPI, -HalfPI, HalfPI, HalfPI };
-        double[] offsetDegs = new[] { -32.0, 170.0, 0, 0, 0, 0, 0 };
-
-        for (int i = 0; i < joints.Length; i++)
-            joints[i] += offsetDegs[i].ToRadians();
+        //double[] joints = new[] { 0, -HalfPI, HalfPI, HalfPI, -HalfPI, HalfPI, HalfPI };
+        double[] joints = new double[] { HalfPI, 0, 0, 0, -HalfPI, 0, 0 };
 
         return new(joints);
     }
