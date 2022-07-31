@@ -11,7 +11,7 @@ public class RobotFranka : RobotArm
 
     internal override int SolutionCount => 4;
     public override KinematicSolution Kinematics(Target target, double[]? prevJoints, Plane? basePlane = null) =>
-        new FrankaKinematics(this, target, prevJoints, basePlane);
+        new FrankaNumericalKinematics(this, target, prevJoints, basePlane);
 
     protected override JointTarget GetStartPose()
     {

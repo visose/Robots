@@ -4,9 +4,9 @@ using static System.Math;
 
 namespace Robots;
 
-class FrankaKinematics : RobotKinematics
+class FrankaAnalyticalKinematics : RobotKinematics
 {
-    public FrankaKinematics(RobotArm robot, Target target, double[]? prevJoints, Plane? basePlane)
+    public FrankaAnalyticalKinematics(RobotArm robot, Target target, double[]? prevJoints, Plane? basePlane)
         : base(robot, target, prevJoints, basePlane) { }
 
     /// <summary>

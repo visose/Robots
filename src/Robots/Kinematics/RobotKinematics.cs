@@ -18,6 +18,7 @@ abstract class RobotKinematics : MechanismKinematics
         else if (target is CartesianTarget cartesianTarget)
         {
             Plane tcp = target.Tool.Tcp;
+
             tcp.Rotate(PI, Vector3d.ZAxis, Point3d.Origin);
 
             Plane targetPlane = cartesianTarget.Plane;
@@ -47,7 +48,7 @@ abstract class RobotKinematics : MechanismKinematics
             Errors.AddRange(errors);
         }
     }
-    
+
     protected override void SetPlanes(Target target)
     {
         var jointTransforms = ForwardKinematics(Joints);
