@@ -31,11 +31,11 @@ abstract class RobotKinematics : MechanismKinematics
             if (cartesianTarget.Configuration is not null || prevJoints is null)
             {
                 Configuration = cartesianTarget.Configuration ?? RobotConfigurations.None;
-                joints = InverseKinematics(transform, Configuration, out errors);
+                joints = InverseKinematics(transform, Configuration, target.External, prevJoints, out errors);
             }
             else
             {
-                joints = GetClosestSolution(transform, prevJoints, out var configuration, out errors, out _);
+                joints = GetClosestSolution(transform, target.External, prevJoints, out var configuration, out errors, out _);
                 Configuration = configuration;
             }
 
@@ -47,14 +47,14 @@ abstract class RobotKinematics : MechanismKinematics
             Errors.AddRange(errors);
         }
     }
-
+    
     protected override void SetPlanes(Target target)
     {
         var jointTransforms = ForwardKinematics(Joints);
 
         if (target is JointTarget)
         {
-            _ = GetClosestSolution(jointTransforms[jointTransforms.Length - 1], Joints, out var configuration, out _, out var difference);
+            _ = GetClosestSolution(jointTransforms[jointTransforms.Length - 1], target.External, Joints, out var configuration, out _, out var difference);
             Configuration = difference < AngleTol ? configuration : RobotConfigurations.Undefined;
         }
 
@@ -68,7 +68,7 @@ abstract class RobotKinematics : MechanismKinematics
         }
     }
 
-    protected abstract double[] InverseKinematics(Transform transform, RobotConfigurations configuration, out List<string> errors);
+    protected abstract double[] InverseKinematics(Transform transform, RobotConfigurations configuration, double[] external, double[]? prevJoints, out List<string> errors);
     protected abstract Transform[] ForwardKinematics(double[] joints);
 
     double SquaredDifference(double a, double b)
@@ -79,18 +79,18 @@ abstract class RobotKinematics : MechanismKinematics
         return difference * difference;
     }
 
-    double[] GetClosestSolution(Transform transform, double[] prevJoints, out RobotConfigurations configuration, out List<string> errors, out double difference)
+    double[] GetClosestSolution(Transform transform, double[] external, double[] prevJoints, out RobotConfigurations configuration, out List<string> errors, out double difference)
     {
         int closestSolutionIndex = 0;
         double[]? closestSolution = null;
         List<string>? closestErrors = null;
         double closestDifference = double.MaxValue;
         int jointCount = _mechanism.Joints.Length;
+        var solutionCount = ((RobotArm)_mechanism).SolutionCount;
 
-
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < solutionCount; i++)
         {
-            var currentSolution = InverseKinematics(transform, (RobotConfigurations)i, out var currentErrors);
+            var currentSolution = InverseKinematics(transform, (RobotConfigurations)i, external, prevJoints, out var currentErrors);
             currentSolution = JointTarget.GetAbsoluteJoints(currentSolution, prevJoints);
 
             double currentDifference = 0;

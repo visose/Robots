@@ -12,27 +12,36 @@ class FrankaKinematics : RobotKinematics
     /// <summary>
     /// Code adapted from https://github.com/ffall007/franka_analytical_ik
     /// </summary>
-    protected override double[] InverseKinematics(Transform transform, RobotConfigurations configuration, out List<string> errors)
+    protected override double[] InverseKinematics(Transform transform, RobotConfigurations configuration, double[] external, double[]? prevJoints, out List<string> errors)
     {
         double M_PI_4 = 0;
-        double M_PI = PI;
-        double M_PI_2 = PI / 2.0;
+
+        var joints = _mechanism.Joints;
+        var a = joints.Map(j => j.A);
+        var d = joints.Map(j => j.D);
+        var q_min = joints.Map(j => j.Range.Min);
+        var q_max = joints.Map(j => j.Range.Max);
 
         errors = new List<string>();
-        var a = _mechanism.Joints.Map(j => j.A);
-        var d = _mechanism.Joints.Map(j => j.D);
+        bool isUnreachable = false;
 
-        var q_min = new double[] { -2.8973, -1.7628, -2.8973, -3.0718, -2.8973, -0.0175, -2.8973 };
-        var q_max = new double[] { 2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 3.7525, 2.8973 };
+        double[] q_actual_array;
+        if (prevJoints is null)
+        {
+            q_actual_array = new double[7];
 
-        // TODO: supply prevJoints
-        var q_actual_array = new double[7];
+            for (int i = 0; i < 7; i++)
+                q_actual_array[i] = (q_min[i] + q_max[i]) * 0.5;
+        }
+        else
+        {
+            q_actual_array = prevJoints;
+        }
 
-        for (int i = 0; i < 7; i++)
-            q_actual_array[i] = (q_min[i] + q_max[i]) * 0.5;
-
-        // TODO: supply q7
-        double q7 = q_actual_array[6];
+        double q7 =
+             external.Length > 0
+            ? external[0]
+            : q_actual_array[6];
 
         var zeroes = new double[] { 0, 0, 0, 0, 0, 0, 0 };
 
@@ -60,11 +69,8 @@ class FrankaKinematics : RobotKinematics
         double theta342 = Atan(d3 / a4);
         double theta46H = Atan2(1, d5 / a4);
 
-        if (q7 <= q_min[6] || q7 >= q_max[6])
-            return zeroes;
-        else
-            for (int i = 0; i < 4; i++)
-                q_all[i][6] = q7;
+        for (int i = 0; i < 4; i++)
+            q_all[i][6] = q7;
 
         // compute p_6
         Vector3d z_EE = transform.GetColumn3d(2);
@@ -84,20 +90,30 @@ class FrankaKinematics : RobotKinematics
         double LL26 = V26[0] * V26[0] + V26[1] * V26[1] + V26[2] * V26[2];
         double L26 = Sqrt(LL26);
 
-        if (L24 + L46 < L26 || L24 + L26 < L46 || L26 + L46 < L24)
-            return zeroes;
+        //if (L24 + L46 < L26 || L24 + L26 < L46 || L26 + L46 < L24)
 
         double theta246 = Acos((LL24 + LL46 - LL26) / 2.0 / L24 / L46);
-        double q4 = theta246 + thetaH46 + theta342 - 2.0 * M_PI;
 
-        if (q4 <= q_min[3] || q4 >= q_max[3])
-            return zeroes;
-        else
-            for (int i = 0; i < 4; i++)
-                q_all[i][3] = q4;
+        if (double.IsNaN(theta246))
+        {
+            theta246 = Math.PI;
+            isUnreachable = true;
+        }
+
+        double q4 = theta246 + thetaH46 + theta342 - 2.0 * PI;
+
+        for (int i = 0; i < 4; i++)
+            q_all[i][3] = q4;
 
         // compute q6
         double theta462 = Acos((LL26 + LL46 - LL24) / 2.0 / L26 / L46);
+
+        if (double.IsNaN(theta462))
+        {
+            theta462 = 0;
+            isUnreachable = true;
+        }
+
         double theta26H = theta46H + theta462;
         double D26 = -L26 * Cos(theta26H);
 
@@ -119,27 +135,34 @@ class FrankaKinematics : RobotKinematics
         double Phi6 = Atan2(V_6_62[1], V_6_62[0]);
         double Theta6 = Asin(D26 / Sqrt(V_6_62[0] * V_6_62[0] + V_6_62[1] * V_6_62[1]));
 
+        if (double.IsNaN(Theta6))
+        {
+            Theta6 = 0;
+
+            if (!isUnreachable)
+                errors.Add("Target not reachable.");
+        }
+
         var q6 = new double[2];
-        q6[0] = M_PI - Theta6 - Phi6;
+        q6[0] = PI - Theta6 - Phi6;
         q6[1] = Theta6 - Phi6;
 
         for (int i = 0; i < 2; i++)
         {
             if (q6[i] <= q_min[5])
-                q6[i] += 2.0 * M_PI;
+                q6[i] += 2.0 * PI;
             else if (q6[i] >= q_max[5])
-                q6[i] -= 2.0 * M_PI;
+                q6[i] -= 2.0 * PI;
 
             q_all[2 * i][5] = q6[i];
             q_all[2 * i + 1][5] = q6[i];
         }
 
-        if (double.IsNaN(q_all[0][5]) && double.IsNaN(q_all[2][5]))
-            return zeroes;
+        //if (double.IsNaN(q_all[0][5]) && double.IsNaN(q_all[2][5]))
 
         // compute q1 & q2
-        double thetaP26 = 3.0 * M_PI_2 - theta462 - theta246 - theta342;
-        double thetaP = M_PI - thetaP26 - theta26H;
+        double thetaP26 = 3.0 * HalfPI - theta462 - theta246 - theta342;
+        double thetaP = PI - thetaP26 - theta26H;
         double LP6 = L26 * Sin(thetaP26) / Sin(thetaP);
 
         var z_5_all = new Vector3d[4];
@@ -170,22 +193,15 @@ class FrankaKinematics : RobotKinematics
                 q_all[2 * i][0] = Atan2(V2P[1], V2P[0]);
                 q_all[2 * i][1] = Acos(V2P[2] / L2P);
                 if (q_all[2 * i][0] < 0)
-                    q_all[2 * i + 1][0] = q_all[2 * i][0] + M_PI;
+                    q_all[2 * i + 1][0] = q_all[2 * i][0] + PI;
                 else
-                    q_all[2 * i + 1][0] = q_all[2 * i][0] - M_PI;
+                    q_all[2 * i + 1][0] = q_all[2 * i][0] - PI;
                 q_all[2 * i + 1][1] = -q_all[2 * i][1];
             }
         }
 
         for (int i = 0; i < 4; i++)
         {
-            if (q_all[i][0] <= q_min[0] || q_all[i][0] >= q_max[0]
-                 || q_all[i][1] <= q_min[1] || q_all[i][1] >= q_max[1])
-            {
-                q_all[i] = zeroes;
-                continue;
-            }
-
             // compute q3
             Vector3d z_3 = V2P_all[i];
             z_3.Normalize();
@@ -219,12 +235,6 @@ class FrankaKinematics : RobotKinematics
             Vector3d x_2_3 = R_2.Transpose() * x_3;
             q_all[i][2] = Atan2(x_2_3[2], x_2_3[0]);
 
-            if (q_all[i][2] <= q_min[2] || q_all[i][2] >= q_max[2])
-            {
-                q_all[i] = zeroes;
-                continue;
-            }
-
             // compute q5
             Vector3d VH4 = p_2 + d3 * z_3 + a4 * x_3 - p_6 + d5 * z_5_all[i];
 
@@ -241,16 +251,15 @@ class FrankaKinematics : RobotKinematics
             Transform R_5 = R_6 * R_5_6.Transpose();
             var V_5_H4 = R_5.Transpose() * VH4;
             q_all[i][4] = -Atan2(V_5_H4[1], V_5_H4[0]);
-
-            if (q_all[i][4] <= q_min[4] || q_all[i][4] >= q_max[4])
-            {
-                q_all[i] = zeroes;
-                continue;
-            }
         }
 
-        var joints = q_all[0];
-        return joints;
+        if (isUnreachable)
+            errors.Add("Target out of reach.");
+
+        if (configuration.HasFlag(RobotConfigurations.Wrist))
+            configuration &= ~RobotConfigurations.Wrist;
+
+        return q_all[(int)configuration];
     }
 
     protected override Transform[] ForwardKinematics(double[] joints)

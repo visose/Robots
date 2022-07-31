@@ -15,7 +15,7 @@ class OffsetWristKinematics : RobotKinematics
     /// </summary>
     /// <param name="target">Cartesian target</param>
     /// <returns>Returns the 6 rotation values in radians.</returns>
-    protected override double[] InverseKinematics(Transform transform, RobotConfigurations configuration, out List<string> errors)
+    protected override double[] InverseKinematics(Transform transform, RobotConfigurations configuration, double[] external, double[]? prevJoints, out List<string> errors)
     {
         errors = new List<string>();
 

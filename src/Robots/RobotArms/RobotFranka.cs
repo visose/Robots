@@ -9,12 +9,13 @@ public class RobotFranka : RobotArm
     internal RobotFranka(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints)
         : base(model, Manufacturers.UR, payload, basePlane, baseMesh, joints) { }
 
+    internal override int SolutionCount => 4;
     public override KinematicSolution Kinematics(Target target, double[]? prevJoints, Plane? basePlane = null) =>
         new FrankaKinematics(this, target, prevJoints, basePlane);
 
     protected override JointTarget GetStartPose()
     {
-        double[] joints = new double[] { HalfPI, 0, 0, 0, -HalfPI, 0, -HalfPI / 2 };
+        var joints = new double[] { HalfPI, 0, 0, 0, -HalfPI, 0, -HalfPI / 2 };
         return new(joints);
     }
     public override double DegreeToRadian(double degree, int i) => degree * (PI / 180.0);
