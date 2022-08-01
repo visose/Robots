@@ -49,41 +49,56 @@ class FrankaNumericalKinematics : RobotKinematics
     /// </summary>
     protected override double[] InverseKinematics(Transform transform, RobotConfigurations configuration, double[] external, double[]? prevJoints, out List<string> errors)
     {
+        const int redundant = 2;
+
+        const double tolerance = 1e-10;
+
         var M = Matrix<double>.Build;
         var V = Vector<double>.Build;
         var joints = _mechanism.Joints;
 
-        const int redundant = 2;
-
-       transform *= Transform.Rotation(PI, Point3d.Origin);
+        errors = new List<string>();
+        transform *= Transform.Rotation(PI, Point3d.Origin);
         var x_target = ToEuler(transform);
 
-        errors = new List<string>();
+        double? redudantValue =
+            external.Length > 0
+            ? external[0] : null;
 
-        const double tolerance = 1e-10;
         var eye = M.DenseIdentity(7, 7);
 
         Vector<double> q_current = prevJoints is not null
-            ? V.Dense(prevJoints)
+            ? V.Dense(prevJoints.Map(j => j))
             : V.Dense(joints.Map(j => j.Range.Mid));
 
-        Vector<double> x_current;
+        var j = M.Dense(6, 7);
+        var m77 = M.Dense(7, 7);
+
+        var dq = V.Dense(7);
+        var v7 = V.Dense(7);
+        var v6 = V.Dense(6);
+
+        var zero = V.Dense(7);
 
         for (int i = 0; i < 100; ++i)
         {
-            x_current = ForwardEuler(q_current);
-
-            var j = Jacobian(q_current);
+            ForwardEuler(q_current, v6);
+            Jacobian(q_current, j);
             var j_inv = j.PseudoInverse();
 
             // Null-space handling
-            var dq_0 = V.Dense(7, 0);
-            if (external.Length > 0)
+            zero.CopyTo(dq);
+            if (redudantValue is not null)
             {
-                dq_0[redundant] = 5.0 * (external[0] - q_current[redundant]);
+                dq[redundant] = 5.0 * (redudantValue.Value - q_current[redundant]);
+                j_inv.Multiply(j, m77);
+                eye.Subtract(m77, m77);
+                m77.Multiply(dq, dq);
             }
 
-            var dq = j_inv * (x_target - x_current) + (eye - j_inv * j) * dq_0;
+            x_target.Subtract(v6, v6);
+            j_inv.Multiply(v6, v7);
+            v7.Add(dq, dq);
 
             // Line search
             double alpha_min = 1.0;
@@ -91,12 +106,17 @@ class FrankaNumericalKinematics : RobotKinematics
             for (int ii = 0; ii < 20; ++ii)
             {
                 double alpha = 0.1 * ii;
-                var x_new = ForwardEuler(q_current + alpha * dq);
-                double new_dis = SquaredLength(x_target - x_new);
 
-                if (external.Length > 0)
+                dq.Multiply(alpha, v7);
+                q_current.Add(v7, v7);
+                ForwardEuler(v7, v6);
+                x_target.Subtract(v6, v6);
+                double new_dis = SquaredLength(v6);
+
+                if (redudantValue is not null)
                 {
-                    new_dis += Pow(external[0] - q_current[redundant], 2);
+                    var y = redudantValue.Value - q_current[redundant];
+                    new_dis += y * y;
                 }
 
                 if (new_dis < dis_min)
@@ -106,19 +126,18 @@ class FrankaNumericalKinematics : RobotKinematics
                 }
             }
 
-            q_current += alpha_min * dq;
+            dq.Multiply(alpha_min, v7);
+            q_current.Add(v7, q_current);
 
             if (dis_min < tolerance)
-            {
                 return q_current.ToArray();
-            }
         }
 
         errors.Add("Target unreachable.");
         return q_current.ToArray();
     }
 
-    Vector<double> ForwardEuler(Vector<double> q)
+    void ForwardEuler(Vector<double> q, Vector<double> result)
     {
         double s0 = Sin(q[0]), c0 = Cos(q[0]);
         double s1 = Sin(q[1]), c1 = Cos(q[1]);
@@ -164,18 +183,15 @@ class FrankaNumericalKinematics : RobotKinematics
         double e2 = Asin(a31);
         double e3 = Atan(a32 / a33);
 
-        return Vector<double>.Build.Dense(new[]
-        {
-        c0* t19 + s0* t23,
-        s0*t19 - c0* t23,
-        0.333 - s1* s2*s4* t8 + c2* s1*t9 + c1* t7,
-        e1,
-        e2,
-        e3
-        });
+        result[0] = c0 * t19 + s0 * t23;
+        result[1] = s0 * t19 - c0 * t23;
+        result[2] = 0.333 - s1 * s2 * s4 * t8 + c2 * s1 * t9 + c1 * t7;
+        result[3] = e1;
+        result[4] = e2;
+        result[5] = e3;
     }
 
-    Matrix<double> Jacobian(Vector<double> q)
+    void Jacobian(Vector<double> q, Matrix<double> result)
     {
         double s0 = Sin(q[0]), c0 = Cos(q[0]);
         double s1 = Sin(q[1]), c1 = Cos(q[1]);
@@ -204,7 +220,6 @@ class FrankaNumericalKinematics : RobotKinematics
         double t3 = t5 * t5;
         double t4 = Sqrt(1 - Pow(c5 * (c6 - s6) * s1 * s2 * s4 + c1 * (c6 + s6) * s3 * s4 + c1 * c3 * (c6 - s6) * s5 - c4 * ((c6 + s6) * s1 * s2 - c1 * c5 * c6 * s3 + c1 * c5 * s3 * s6) - c2 * s1 * p4, 2) / 2.0);
 
-        var result = Matrix<double>.Build.Dense(6, 7);
         result[0, 0] = c0 * (s2 * (-0.0825 + c3 * (-p5) + s3 * (-p1)) - c2 * s4 * p0) - s0 * (c1 * (c2 * p6 - s2 * s4 * p0) + s1 * (0.316 - c3 * p1 + s3 * p5));
         result[1, 0] = c0 * c1 * (c2 * p6 - s2 * s4 * p0) - s0 * (s2 * p6 + c2 * s4 * p0) + c0 * s1 * (0.316 - c3 * p1 + s3 * p5);
         result[2, 0] = 0;
@@ -247,7 +262,6 @@ class FrankaNumericalKinematics : RobotKinematics
         result[3, 6] = ((c0 * (-(c2 * (c4 * (c6 - s6) + c5 * s4 * (c6 + s6))) + s2 * (c3 * (c4 * c5 * (-c6 - s6) + s4 * (c6 - s6)) + s3 * s5 * (c6 + s6))) + s0 * t8) / t6 - ((s0 * (c2 * (c4 * (c6 - s6) + c5 * s4 * (c6 + s6)) - s2 * (c3 * (c4 * c5 * (-c6 - s6) + s4 * (c6 - s6)) + s3 * s5 * (c6 + s6))) + c0 * t8) * t5) / t2) / (1 + t3 / t2);
         result[4, 6] = -((-(c5 * c6 * s1 * s2 * s4) + c1 * c6 * s3 * s4 - c1 * c3 * c6 * s5 - c5 * s1 * s2 * s4 * s6 - c1 * s3 * s4 * s6 - c1 * c3 * s5 * s6 - c4 * (c6 * s1 * s2 + c1 * c5 * c6 * s3 - s1 * s2 * s6 + c1 * c5 * s3 * s6) - c2 * s1 * (c3 * (c4 * c5 * (-c6 - s6) + s4 * (c6 - s6)) + s3 * s5 * (c6 + s6))) / (Sqrt(2) * t4));
         result[5, 6] = (c5 * c6 * s1 * s2 * s4 + c1 * c6 * s3 * s4 + c1 * c3 * c6 * s5 - c5 * s1 * s2 * s4 * s6 + c1 * s3 * s4 * s6 - c1 * c3 * s5 * s6 + c4 * (-(c6 * s1 * s2) + c1 * c5 * c6 * s3 - s1 * s2 * s6 - c1 * c5 * s3 * s6) + c2 * s1 * (s3 * s5 * (c6 - s6) - c3 * p2)) / (Sqrt(2) * (c1 * (c3 * c5 - c4 * s3 * s5) + s1 * (-(s2 * s4 * s5) + c2 * (c5 * s3 + c3 * c4 * s5))) * (1 + t1 / (2.0 * t2)));
-        return result;
     }
 
     protected override Transform[] ForwardKinematics(double[] joints)
@@ -255,8 +269,8 @@ class FrankaNumericalKinematics : RobotKinematics
         double[] α = new[] { 0, -HalfPI, HalfPI, HalfPI, -HalfPI, HalfPI, HalfPI };
         var t = ModifiedDH(joints, α);
 
-        //t[6] *= Transform.Rotation(-PI * 0.75, Point3d.Origin);
-        //t[6] *= Transform.Rotation(PI, Vector3d.XAxis, Point3d.Origin);
+        t[6] *= Transform.Rotation(-PI * 0.75, Point3d.Origin);
+        t[6] *= Transform.Rotation(PI, Vector3d.XAxis, Point3d.Origin);
         return t;
     }
 }
