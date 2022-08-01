@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots;
 
@@ -32,7 +32,7 @@ public class CartesianTarget : Target
         string tool = $", {Tool}";
         string speed = $", {Speed}";
         string zone = $", {Zone}";
-        string commands = Command is not null ? ", Contains commands" : "";
+        string commands = Command != Command.Default ? ", Contains commands" : "";
         string external = External.Length > 0 ? $", {External.Length.ToString():0} external axes" : "";
         return $"Target ({type}{motion}{configuration}{frame}{tool}{speed}{zone}{commands}{external})";
     }
