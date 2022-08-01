@@ -207,7 +207,7 @@ class CheckProgram
     int FixTargetMotions(List<CellTarget> cellTargets, double stepSize)
     {
         double time = 0;
-        int groups = cellTargets[0].ProgramTargets.Count;
+        //int groups = cellTargets[0].ProgramTargets.Count;
 
         for (int i = 0; i < cellTargets.Count; i++)
         {
@@ -217,10 +217,10 @@ class CheckProgram
             // first target
             if (i == 0)
             {
-                var firstKinematics = _robotSystem.Kinematics(cellTargets[0].ProgramTargets.Select(x => x.Target));
-                cellTargets[0].SetTargetKinematics(firstKinematics, _program.Errors, _program.Warnings);
+                var firstKinematics = _robotSystem.Kinematics(cellTarget.ProgramTargets.Select(x => x.Target));
+                cellTarget.SetTargetKinematics(firstKinematics, _program.Errors, _program.Warnings);
                 CheckUndefined(cellTarget, cellTargets);
-                Keyframes.Add(cellTargets[0].ShallowClone());
+                Keyframes.Add(cellTarget.ShallowClone());
             }
             else
             {

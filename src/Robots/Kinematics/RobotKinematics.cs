@@ -6,14 +6,16 @@ namespace Robots;
 
 abstract class RobotKinematics : MechanismKinematics
 {
-    protected RobotKinematics(RobotArm robot, Target target, double[]? prevJoints = null, Plane? basePlane = null)
-        : base(robot, target, prevJoints, basePlane) { }
+    protected RobotKinematics(RobotArm robot)
+        : base(robot) { }
 
-    protected override void SetJoints(Target target, double[]? prevJoints)
+    protected virtual int SolutionCount => 8;
+
+    protected override void SetJoints(KinematicSolution solution, Target target, double[]? prevJoints)
     {
         if (target is JointTarget jointTarget)
         {
-            Joints = jointTarget.Joints;
+            solution.Joints = jointTarget.Joints;
         }
         else if (target is CartesianTarget cartesianTarget)
         {
@@ -24,39 +26,39 @@ abstract class RobotKinematics : MechanismKinematics
             Plane targetPlane = cartesianTarget.Plane;
             targetPlane.Orient(ref target.Frame.Plane);
 
-            var transform = Planes[0].ToInverseTransform() * Transform.PlaneToPlane(tcp, targetPlane);
+            var transform = solution.Planes[0].ToInverseTransform() * Transform.PlaneToPlane(tcp, targetPlane);
 
-            List<string> errors;
-            double[] joints;
+            List<string> robErrors;
+            double[] robJoints;
 
             if (cartesianTarget.Configuration is not null || prevJoints is null)
             {
-                Configuration = cartesianTarget.Configuration ?? RobotConfigurations.None;
-                joints = InverseKinematics(transform, Configuration, target.External, prevJoints, out errors);
+                solution.Configuration = cartesianTarget.Configuration ?? RobotConfigurations.None;
+                robJoints = InverseKinematics(transform, solution.Configuration, target.External, prevJoints, out robErrors);
             }
             else
             {
-                joints = GetClosestSolution(transform, target.External, prevJoints, out var configuration, out errors, out _);
-                Configuration = configuration;
+                robJoints = GetClosestSolution(transform, target.External, prevJoints, out var configuration, out robErrors, out _);
+                solution.Configuration = configuration;
             }
 
-            if (prevJoints is not null)
-                Joints = JointTarget.GetAbsoluteJoints(joints, prevJoints);
-            else
-                Joints = joints;
+            solution.Joints = prevJoints is not null
+                ? JointTarget.GetAbsoluteJoints(robJoints, prevJoints)
+                : robJoints;
 
-            Errors.AddRange(errors);
+            solution.Errors.AddRange(robErrors);
         }
     }
 
-    protected override void SetPlanes(Target target)
+    protected override void SetPlanes(KinematicSolution solution, Target target)
     {
-        var jointTransforms = ForwardKinematics(Joints);
+        var (joints, planes, _, _) = solution;
+        var jointTransforms = ForwardKinematics(joints);
 
         if (target is JointTarget)
         {
-            _ = GetClosestSolution(jointTransforms[jointTransforms.Length - 1], target.External, Joints, out var configuration, out _, out var difference);
-            Configuration = difference < AngleTol ? configuration : RobotConfigurations.Undefined;
+            _ = GetClosestSolution(jointTransforms[jointTransforms.Length - 1], target.External, joints, out var configuration, out _, out var difference);
+            solution.Configuration = difference < AngleTol ? configuration : RobotConfigurations.Undefined;
         }
 
         int jointCount = _mechanism.Joints.Length;
@@ -65,7 +67,7 @@ abstract class RobotKinematics : MechanismKinematics
         {
             var plane = jointTransforms[i].ToPlane();
             plane.Rotate(PI, plane.ZAxis);
-            Planes[i + 1] = plane;
+            planes[i + 1] = plane;
         }
     }
 
@@ -87,9 +89,8 @@ abstract class RobotKinematics : MechanismKinematics
         List<string>? closestErrors = null;
         double closestDifference = double.MaxValue;
         int jointCount = _mechanism.Joints.Length;
-        var solutionCount = ((RobotArm)_mechanism).SolutionCount;
 
-        for (int i = 0; i < solutionCount; i++)
+        for (int i = 0; i < SolutionCount; i++)
         {
             var currentSolution = InverseKinematics(transform, (RobotConfigurations)i, external, prevJoints, out var currentErrors);
             currentSolution = JointTarget.GetAbsoluteJoints(currentSolution, prevJoints);

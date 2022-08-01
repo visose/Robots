@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots;
 
@@ -80,7 +80,8 @@ public abstract class RobotCell : RobotSystem
         }
     }
 
-    public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]>? prevJoints = null) => new RobotCellKinematics(this, targets, prevJoints).Solutions;
+    public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]>? prevJoints = null) =>
+        new RobotCellKinematics(this, targets, prevJoints).Solutions;
 
     public override double DegreeToRadian(double degree, int i, int group = 0) => MechanicalGroups[group].DegreeToRadian(degree, i);
 }

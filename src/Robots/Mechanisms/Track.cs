@@ -1,10 +1,11 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots;
 
 public class Track : Mechanism
 {
-    internal Track(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints, bool movesRobot) : base(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot) { }
+    internal Track(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints, bool movesRobot)
+        : base(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot) { }
 
     protected override void SetStartPlanes()
     {
@@ -25,8 +26,7 @@ public class Track : Mechanism
         */
     }
 
+    private protected override MechanismKinematics CreateSolver() => new TrackKinematics(this);
     public override double DegreeToRadian(double degree, int i) => degree;
     public override double RadianToDegree(double radian, int i) => radian;
-
-    public override KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? basePlane = null) => new TrackKinematics(this, target, basePlane);
 }

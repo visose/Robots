@@ -16,6 +16,8 @@ public abstract class Mechanism
     public Mesh DisplayMesh { get; }
     public string Model => $"{Manufacturer}.{_model}";
 
+     MechanismKinematics? _solver;
+    
     internal Mechanism(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh baseMesh, IEnumerable<Joint> joints, bool movesRobot)
     {
         _model = model;
@@ -33,6 +35,7 @@ public abstract class Mechanism
             Joints[i].Range = new Interval(DegreeToRadian(Joints[i].Range.T0, i), DegreeToRadian(Joints[i].Range.T1, i));
 
         SetStartPlanes();
+        //_solver = CreateSolver();
     }
 
     Mesh CreateDisplayMesh()
@@ -51,8 +54,10 @@ public abstract class Mechanism
         return mesh;
     }
 
-    public abstract KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? basePlane = null);
+    public KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? basePlane = null) =>
+        (_solver ??= CreateSolver()).Solve(target, prevJoints, basePlane);
 
+    private protected abstract MechanismKinematics CreateSolver();
     protected abstract void SetStartPlanes();
     public abstract double DegreeToRadian(double degree, int i);
     public abstract double RadianToDegree(double radian, int i);

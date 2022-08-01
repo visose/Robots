@@ -10,6 +10,8 @@ public class MechanicalGroup
     public List<Mechanism> Externals { get; }
     public List<Joint> Joints { get; }
 
+    readonly MechanicalGroupKinematics _kinematics;
+
     internal MechanicalGroup(int index, List<Mechanism> mechanisms)
     {
         Index = index;
@@ -18,9 +20,12 @@ public class MechanicalGroup
         Robot = mechanisms.OfType<RobotArm>().FirstOrDefault();
         mechanisms.Remove(Robot);
         Externals = mechanisms;
+
+        _kinematics = new(this);
     }
 
-    public KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? coupledPlane = null, Plane? basePlane = null) => new MechanicalGroupKinematics(this, target, prevJoints, coupledPlane, basePlane);
+    public KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? coupledPlane = null, Plane? basePlane = null) =>
+        _kinematics.Solve(target, prevJoints, coupledPlane, basePlane);
 
     public double DegreeToRadian(double degree, int i)
     {

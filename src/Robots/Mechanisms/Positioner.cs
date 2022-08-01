@@ -1,11 +1,12 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using static System.Math;
 
 namespace Robots;
 
 public class Positioner : Mechanism
 {
-    internal Positioner(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints, bool movesRobot) : base(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot) { }
+    internal Positioner(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints, bool movesRobot)
+        : base(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot) { }
 
     protected override void SetStartPlanes()
     {
@@ -20,7 +21,8 @@ public class Positioner : Mechanism
         }
     }
 
+    private protected override MechanismKinematics CreateSolver() => new PositionerKinematics(this);
+
     public override double DegreeToRadian(double degree, int i) => degree * (PI / 180);
     public override double RadianToDegree(double radian, int i) => radian * (180 / PI);
-    public override KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? basePlane = null) => new PositionerKinematics(this, target, prevJoints, basePlane);
 }

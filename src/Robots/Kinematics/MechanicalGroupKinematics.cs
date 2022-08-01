@@ -1,20 +1,30 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots;
 
-class MechanicalGroupKinematics : KinematicSolution
+class MechanicalGroupKinematics
 {
-    internal MechanicalGroupKinematics(MechanicalGroup group, Target target, double[]? prevJoints, Plane? coupledPlane, Plane? basePlane)
+    readonly MechanicalGroup _group;
+
+    internal MechanicalGroupKinematics(MechanicalGroup group)
     {
+        _group = group;
+    }
+
+    internal KinematicSolution Solve(Target target, double[]? prevJoints, Plane? coupledPlane, Plane? basePlane)
+    {
+        KinematicSolution solution = new();
+        var errors = solution.Errors;
+        var group = _group;
         var jointCount = group.Joints.Count;
 
         if (prevJoints is not null && prevJoints.Length != jointCount)
         {
-            Errors.Add($"Previous joints set but contain {prevJoints.Length} value(s), should contain {jointCount} values.");
+            solution.Errors.Add($"Previous joints set but contain {prevJoints.Length} value(s), should contain {jointCount} values.");
             prevJoints = null;
         }
 
-        Joints = new double[jointCount];
+        solution.Joints = new double[jointCount];
         var planes = new List<Plane>(jointCount + 2);
 
         Plane? robotBase = basePlane;
@@ -34,10 +44,10 @@ class MechanicalGroupKinematics : KinematicSolution
             var externalKinematics = external.Kinematics(target, externalPrevJoints, basePlane);
 
             for (int i = 0; i < external.Joints.Length; i++)
-                Joints[external.Joints[i].Number] = externalKinematics.Joints[i];
+                solution.Joints[external.Joints[i].Number] = externalKinematics.Joints[i];
 
             planes.AddRange(externalKinematics.Planes);
-            Errors.AddRange(externalKinematics.Errors);
+            solution.Errors.AddRange(externalKinematics.Errors);
 
             if (external == coupledMech)
                 coupledPlane = externalKinematics.Planes[externalKinematics.Planes.Length - 1];
@@ -69,12 +79,12 @@ class MechanicalGroupKinematics : KinematicSolution
             var robotKinematics = robot.Kinematics(target, robotPrevJoints, robotBase);
 
             for (int j = 0; j < robot.Joints.Length; j++)
-                Joints[robot.Joints[j].Number] = robotKinematics.Joints[j];
+                solution.Joints[robot.Joints[j].Number] = robotKinematics.Joints[j];
 
             planes.AddRange(robotKinematics.Planes);
-            Configuration = robotKinematics.Configuration;
+            solution.Configuration = robotKinematics.Configuration;
 
-            Errors.AddRange(robotKinematics.Errors);
+            errors.AddRange(robotKinematics.Errors);
         }
 
         // Tool
@@ -83,6 +93,7 @@ class MechanicalGroupKinematics : KinematicSolution
         toolPlane.Orient(ref lastPlane);
         planes.Add(toolPlane);
 
-        Planes = planes.ToArray();
+        solution.Planes = planes.ToArray();
+        return solution;
     }
 }

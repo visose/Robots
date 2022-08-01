@@ -4,32 +4,36 @@ namespace Robots;
 
 class CustomKinematics : MechanismKinematics
 {
-    internal CustomKinematics(Custom custom, Target target, double[]? prevJoints, Plane? basePlane)
-        : base(custom, target, prevJoints, basePlane) { }
+    internal CustomKinematics(Custom custom)
+        : base(custom) { }
 
-    protected override void SetJoints(Target target, double[]? prevJoints)
+    protected override void SetJoints(KinematicSolution solution, Target target, double[]? prevJoints)
     {
+        var (joints, _, errors, _) = solution;
+
         for (int i = 0; i < _mechanism.Joints.Length; i++)
         {
             int externalNum = _mechanism.Joints[i].Number - 6;
 
             if (target.External.Length < externalNum + 1)
             {
-                Errors.Add("Custom external axis not configured on this target.");
+                errors.Add("Custom external axis not configured on this target.");
             }
             else
             {
                 double value = target.External[externalNum];
-                Joints[i] = prevJoints is null ? value : value;
+                joints[i] = prevJoints is null ? value : value;
             }
         }
     }
 
-    protected override void SetPlanes(Target target)
+    protected override void SetPlanes(KinematicSolution solution, Target target)
     {
-        for (int i = 0; i < Planes.Length; i++)
+        var planes = solution.Planes;
+
+        for (int i = 0; i < planes.Length; i++)
         {
-            Planes[i] = Plane.WorldXY;
+            planes[i] = Plane.WorldXY;
         }
     }
 }

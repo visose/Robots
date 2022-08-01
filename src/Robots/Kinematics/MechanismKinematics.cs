@@ -3,49 +3,56 @@ using static System.Math;
 
 namespace Robots;
 
-abstract class MechanismKinematics : KinematicSolution
+abstract class MechanismKinematics
 {
     protected Mechanism _mechanism;
-
-    internal MechanismKinematics(Mechanism mechanism, Target target, double[]? prevJoints, Plane? basePlane)
+    internal MechanismKinematics(Mechanism mechanism)
     {
         _mechanism = mechanism;
-        int jointCount = mechanism.Joints.Length;
+    }
+
+    internal KinematicSolution Solve(Target target, double[]? prevJoints, Plane? basePlane)
+    {
+        var solution = new KinematicSolution();
+
+        int jointCount = _mechanism.Joints.Length;
 
         // Init properties
-        Joints = new double[jointCount];
-        Planes = new Plane[jointCount + 1];
+        solution.Joints = new double[jointCount];
+        solution.Planes = new Plane[jointCount + 1];
 
         // Base plane
-        Planes[0] = mechanism.BasePlane;
+        solution.Planes[0] = _mechanism.BasePlane;
 
         if (basePlane is not null)
         {
             var plane = (Plane)basePlane;
-            Planes[0].Orient(ref plane);
+            solution.Planes[0].Orient(ref plane);
         }
 
-        SetJoints(target, prevJoints);
-        JointsOutOfRange();
+        SetJoints(solution, target, prevJoints);
+        JointsOutOfRange(solution);
 
-        SetPlanes(target);
+        SetPlanes(solution, target);
 
         // Move planes to base
-        var transform = Planes[0].ToTransform();
+        var transform = solution.Planes[0].ToTransform();
 
         for (int i = 1; i < jointCount + 1; i++)
-            Planes[i].Transform(transform);
+            solution.Planes[i].Transform(transform);
+
+        return solution;
     }
 
-    protected abstract void SetJoints(Target target, double[]? prevJoints);
-    protected abstract void SetPlanes(Target target);
+    protected abstract void SetJoints(KinematicSolution solution, Target target, double[]? prevJoints);
+    protected abstract void SetPlanes(KinematicSolution solution, Target target);
 
-    protected virtual void JointsOutOfRange()
+    void JointsOutOfRange(KinematicSolution solution)
     {
         var outofRangeErrors = _mechanism.Joints
-        .Where(x => !x.Range.IncludesParameter(Joints[x.Index]))
+        .Where(x => !x.Range.IncludesParameter(solution.Joints[x.Index]))
         .Select(x => $"Axis {x.Number + 1} is outside the permitted range.");
-        Errors.AddRange(outofRangeErrors);
+        solution.Errors.AddRange(outofRangeErrors);
     }
 
     protected Transform[] ModifiedDH(double[] joints, double[] α)

@@ -6,8 +6,10 @@ namespace Robots;
 
 class FrankaAnalyticalKinematics : RobotKinematics
 {
-    public FrankaAnalyticalKinematics(RobotArm robot, Target target, double[]? prevJoints, Plane? basePlane)
-        : base(robot, target, prevJoints, basePlane) { }
+    public FrankaAnalyticalKinematics(RobotArm robot)
+        : base(robot) { }
+
+    protected override int SolutionCount => 4;
 
     /// <summary>
     /// Code adapted from https://github.com/ffall007/franka_analytical_ik

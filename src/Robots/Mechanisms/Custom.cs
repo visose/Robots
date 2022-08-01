@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots;
 
@@ -15,9 +15,7 @@ public class Custom : Mechanism
             joint.Plane = plane;
     }
 
+    private protected override MechanismKinematics CreateSolver() => new CustomKinematics(this);
     public override double DegreeToRadian(double degree, int i) => degree;
     public override double RadianToDegree(double radian, int i) => radian;
-
-    public override KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? basePlane = null)
-        => new CustomKinematics(this, target, prevJoints, basePlane);
 }

@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using static System.Math;
 using static Robots.Util;
 
@@ -6,11 +6,11 @@ namespace Robots;
 
 public class RobotKuka : RobotArm
 {
-    internal RobotKuka(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints) : base(model, Manufacturers.KUKA, payload, basePlane, baseMesh, joints) { }
+    internal RobotKuka(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints)
+        : base(model, Manufacturers.KUKA, payload, basePlane, baseMesh, joints) { }
 
+    private protected override MechanismKinematics CreateSolver() => new SphericalWristKinematics(this);
     protected override JointTarget GetStartPose() => new(new double[] { 0, HalfPI, 0, 0, 0, -PI });
-
-    public override KinematicSolution Kinematics(Target target, double[]? prevJoints, Plane? basePlane = null) => new SphericalWristKinematics(this, target, prevJoints, basePlane);
 
     public override double DegreeToRadian(double degree, int i)
     {

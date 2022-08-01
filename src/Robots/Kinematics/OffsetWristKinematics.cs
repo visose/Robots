@@ -6,8 +6,8 @@ namespace Robots;
 
 class OffsetWristKinematics : RobotKinematics
 {
-    public OffsetWristKinematics(RobotArm robot, Target target, double[]? prevJoints, Plane? basePlane)
-        : base(robot, target, prevJoints, basePlane) { }
+    public OffsetWristKinematics(RobotArm robot)
+        : base(robot) { }
 
     /// <summary>
     /// Inverse kinematics for a offset wrist 6 axis robot.

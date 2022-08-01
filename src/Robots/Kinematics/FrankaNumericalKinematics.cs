@@ -7,8 +7,10 @@ namespace Robots;
 
 class FrankaNumericalKinematics : RobotKinematics
 {
-    public FrankaNumericalKinematics(RobotArm robot, Target target, double[]? prevJoints, Plane? basePlane)
-        : base(robot, target, prevJoints, basePlane) { }
+    public FrankaNumericalKinematics(RobotArm robot)
+        : base(robot) { }
+
+    protected override int SolutionCount => 1;
 
     static double SquaredLength(Vector<double> vector)
     {
