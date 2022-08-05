@@ -1,4 +1,6 @@
-﻿namespace Robots.Grasshopper;
+using Grasshopper;
+
+namespace Robots.Grasshopper;
 
 public class Remote : GH_Component
 {
@@ -35,6 +37,11 @@ public class Remote : GH_Component
         {
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $" No remote functionality for this robot.");
             return;
+        }
+
+        if (remote is RemoteFranka remoteFranka)
+        {
+            remoteFranka.Update = () => Instances.ActiveCanvas.Invoke(() => ExpireSolution(true));
         }
 
         DA.GetData(1, ref ip);

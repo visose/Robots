@@ -23,31 +23,6 @@ class FrankaNumericalKinematics : RobotKinematics
         return length;
     }
 
-    static Vector<double> ToEuler(Transform t)
-    {
-        double a = Atan2(-t.M10, t.M00);
-        double mult = 1.0 - t.M20 * t.M20;
-        if (Abs(mult) < UnitTol) mult = 0.0;
-        double b = Atan2(t.M20, Sqrt(mult));
-        double c = Atan2(-t.M21, t.M22);
-
-        if (t.M20 < (-1.0 + UnitTol))
-        {
-            a = Atan2(t.M01, t.M11);
-            b = -PI / 2;
-            c = 0;
-        }
-        else if (t.M20 > (1.0 - UnitTol))
-        {
-            a = Atan2(t.M01, t.M11);
-            b = PI / 2;
-            c = 0;
-        }
-
-        var p = new Vector3d(t.M03, t.M13, t.M23) / 1000.0;
-        return Vector<double>.Build.Dense(new[] { p.X, p.Y, p.Z, -a, -b, -c });
-    }
-
     /// <summary>
     /// Code adapted from https://github.com/pantor/frankx
     /// </summary>
@@ -62,7 +37,8 @@ class FrankaNumericalKinematics : RobotKinematics
 
         errors = new List<string>();
         transform *= Transform.Rotation(PI, Point3d.Origin);
-        var x_target = ToEuler(transform);
+        var euler = transform.ToEulerZYX();
+        var x_target = V.Dense(new[] { euler.A1 / 1000.0, euler.A2 / 1000.0, euler.A3 / 1000.0, euler.A4, euler.A5, euler.A6 });
 
         double? redudantValue =
             external.Length > 0

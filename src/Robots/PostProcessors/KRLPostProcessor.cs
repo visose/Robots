@@ -200,7 +200,6 @@ DEF {_program.Name}_{groupName}_{file:000}()"
             {
                 var cartesian = (CartesianTarget)target;
                 var plane = cartesian.Plane;
-                var euler = RobotCellKuka.PlaneToEuler(plane);
 
                 switch (cartesian.Motion)
                 {
@@ -229,14 +228,14 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                                 bits = $",S'B{status:000}',T'B{turn:000000}'";
                             }
 
-                            moveText = $"PTP {{{GetXyzAbc(euler)}{external}{bits}}}";
+                            moveText = $"PTP {{{GetXyzAbc(plane)}{external}{bits}}}";
                             if (target.Zone.IsFlyBy) moveText += " C_PTP";
                             break;
                         }
 
                     case Motions.Linear:
                         {
-                            moveText = $"LIN {{{GetXyzAbc(euler)}{external}}}";
+                            moveText = $"LIN {{{GetXyzAbc(plane)}{external}}}";
                             if (target.Zone.IsFlyBy) moveText += " C_DIS";
                             break;
                         }
@@ -297,8 +296,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
 
     string Tool(Tool tool)
     {
-        double[] euler = RobotCellKuka.PlaneToEuler(tool.Tcp);
-        var toolTxt = $"DECL GLOBAL FRAME {tool.Name} = {{{GetXyzAbc(euler)}}}";
+        var toolTxt = $"DECL GLOBAL FRAME {tool.Name} = {{{GetXyzAbc(tool.Tcp)}}}";
         Point3d centroid = tool.Centroid;
         var loadTxt = $"DECL GLOBAL LOAD {tool.Name}_L = {{M {tool.Weight:0.####},CM {{{GetXyzAbc(centroid.X, centroid.Y, centroid.Z, 0, 0, 0)}}},J {{X 0,Y 0,Z 0}}}}";
         return $"{toolTxt}\r\n{loadTxt}";
@@ -326,8 +324,13 @@ DEF {_program.Name}_{groupName}_{file:000}()"
         Plane plane = frame.Plane;
         plane.InverseOrient(ref _cell.BasePlane);
 
-        double[] euler = RobotCellKuka.PlaneToEuler(plane);
-        return $"DECL GLOBAL FRAME {frame.Name} = {{{GetXyzAbc(euler)}}}";
+        return $"DECL GLOBAL FRAME {frame.Name} = {{{GetXyzAbc(plane)}}}";
+    }
+
+    string GetXyzAbc(Plane plane)
+    {
+        var values = _cell.PlaneToNumbers(plane);
+        return GetXyzAbc(values);
     }
 
     string GetXyzAbc(params double[] values)

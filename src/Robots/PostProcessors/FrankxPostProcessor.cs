@@ -26,7 +26,7 @@ class FrankxPostProcessor
     string Affine(Plane plane)
     {
         double[] n = _cell.PlaneToNumbers(plane);
-        return $"Affine({n[0]:0.#####}, {n[1]:0.#####}, {n[2]:0.#####}, {n[3]:0.#####}, {n[4]:0.#####}, {n[5]:0.#####})";
+        return $"Affine({n[0]:0.#####}, {n[1]:0.#####}, {n[2]:0.#####}, {n[3]:0.#####}, {n[4]:0.#####}, {n[5]:0.#####}, {n[6]:0.#####})";
     }
 
     List<string> Program()
@@ -34,8 +34,9 @@ class FrankxPostProcessor
         double dynamicRel = 1.0;
         string indent = "  ";
         var code = new List<string>
-                {
-                    $@"from argparse import ArgumentParser
+        {
+            $@"from argparse import ArgumentParser
+from time import sleep
 from frankx import Affine, Robot, JointMotion, PathMotion, WaypointMotion, Waypoint, MotionData
 
 def program():
@@ -47,7 +48,7 @@ def program():
   robot.recover_from_errors()
   robot.set_dynamic_rel({dynamicRel:0.#####})
 "
-                };
+        };
 
         // robot.velocity_rel = 0.2
         // robot.acceleration_rel = 0.1
@@ -138,18 +139,7 @@ def program():
 
                 if (currentMotion is null)
                 {
-                    switch (motion)
-                    {
-                        case Motions.Joint:
-                            code.Add($"  motion = WaypointMotion([])");
-                            break;
-                        case Motions.Linear:
-                            code.Add($"  motion = PathMotion([], {currentZone.Name})");
-                            break;
-                        default:
-                            throw new NotSupportedException($"Motion {motion} not supported");
-                    }
-
+                    code.Add($"  path = []");
                     currentMotion = motion;
                 }
 
@@ -167,13 +157,24 @@ def program():
                 //var transform = _cell.BasePlane.ToInverseTransform() * Transform.PlaneToPlane(tcp, plane);
                 //plane = transform.ToPlane();
 
-                //Elbow
-                var elbow = target.External.Length > 0
-                    ? $", {target.External[0]:0.#####}" : "";
+                switch (currentMotion)
+                {
+                    case Motions.Joint:
+                        //Elbow
+                        var elbow = target.External.Length > 0
+                            ? $", {target.External[0]:0.#####}" : "";
 
-                code.Add($"  waypoint = Waypoint({Affine(plane)}{elbow})");
-                code.Add($"  waypoint.velocity_rel = {speed:0.#####}");
-                code.Add($"  motion.waypoints.append(waypoint)");
+                        code.Add($"  waypoint = Waypoint({Affine(plane)}{elbow})");
+                        code.Add($"  waypoint.velocity_rel = {speed:0.#####}");
+                        code.Add($"  path.append(waypoint)");
+                        break;
+                    case Motions.Linear:
+                        code.Add($"  target = {Affine(plane)}");
+                        code.Add($"  path.append(target)");
+                        break;
+                    default:
+                        throw new NotSupportedException($"Motion {currentMotion} not supported");
+                }
             }
 
             var afterCommands = programTarget.Commands.Where(c => !c.RunBefore);
@@ -192,14 +193,27 @@ def program():
             MotionMove();
 
         code.Add(@"
-program()");
+program()
+");
 
         return code;
 
         void MotionMove()
         {
-            if (currentTool is null)
+            if (currentTool is null || currentZone is null)
                 throw new ArgumentNullException(nameof(currentTool));
+
+            switch (currentMotion)
+            {
+                case Motions.Joint:
+                    code.Add($"  motion = WaypointMotion(path)");
+                    break;
+                case Motions.Linear:
+                    code.Add($"  motion = PathMotion(path, {currentZone.Name})");
+                    break;
+                default:
+                    throw new NotSupportedException($"Motion {currentMotion} not supported");
+            }
 
             code.Add($"  robot.move({currentTool.Name}, motion)");
             currentMotion = null;

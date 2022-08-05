@@ -3,11 +3,12 @@ using System.Text;
 
 namespace Robots;
 
-class RemoteFranka : IRemote
+public class RemoteFranka : IRemote
 {
     User? _user;
     string? _uploadedFile;
 
+    public Action? Update { get; set; }
     public List<string> Log { get; } = new();
 
     public string? IP
@@ -41,6 +42,8 @@ class RemoteFranka : IRemote
             return;
         }
 
+        AddLog("Uploading program...");
+
         try
         {
             var code = string.Join("\n", program.Code[0].SelectMany(c => c));
@@ -55,7 +58,8 @@ class RemoteFranka : IRemote
         }
     }
 
-    public void Pause() => AddLog($"Error: Pause is not supported.");
+    public void Pause() => AddLog("Pause is not supported.");
+
     public void Play()
     {
         if (_user is null)
@@ -70,7 +74,8 @@ class RemoteFranka : IRemote
             return;
         }
 
-        Send($"python {_user.ProgramsDir}/{_uploadedFile}.py");
+        AddLog("Starting program...");
+        Send($"python {_user.ProgramsDir}/{_uploadedFile}");
     }
 
     public void Send(string message)
@@ -98,11 +103,24 @@ class RemoteFranka : IRemote
             Timeout = TimeSpan.FromSeconds(5)
         };
 
-        using SshClient client = new(connectionInfo);
-        client.Connect();
+        _ = Task.Run(() =>
+        {
+            using SshClient client = new(connectionInfo);
+            client.Connect();
+            var result = client.RunCommand(message);
 
-        _ = Task.Run(() => client.RunCommand(message))
-            .ContinueWith(t => AddLog(t.Result.Result));
+            if (result.ExitStatus == 0)
+            {
+                if (!string.IsNullOrEmpty(result.Result))
+                    AddLog(result.Result);
+            }
+            else
+            {
+                AddLog($"Error: {result.Error}");
+            }
+
+            Update?.Invoke();
+        });
     }
 
     void AddLog(string message) => Log.Add(message);

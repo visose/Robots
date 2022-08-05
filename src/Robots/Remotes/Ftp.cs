@@ -17,8 +17,6 @@ class Ftp
         using SftpClient client = new(connectionInfo);
         client.Connect();
 
-        var root = client.ListDirectory("/");
-
         if (!client.Exists(programsDir))
             throw new DirectoryNotFoundException($"\"{programsDir}\" folder not found.");
 

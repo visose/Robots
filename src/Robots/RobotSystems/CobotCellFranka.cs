@@ -7,6 +7,7 @@ public class CobotCellFranka : CobotCell
     internal CobotCellFranka(string name, RobotFranka robot, IO io, Plane basePlane, Mesh? environment)
         : base(name, Manufacturers.FrankaEmika, robot, io, basePlane, environment)
     {
+        Remote = new RemoteFranka();
         RobotJointCount = 7;
     }
 

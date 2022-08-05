@@ -1,6 +1,5 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using static Robots.Util;
-using static System.Math;
 
 namespace Robots;
 
@@ -8,55 +7,19 @@ public class RobotCellKuka : RobotCell
 {
     internal RobotCellKuka(string name, List<MechanicalGroup> mechanicalGroup, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.KUKA, mechanicalGroup, io, basePlane, environment) { }
 
-    public static Plane EulerToPlane(double x, double y, double z, double aDeg, double bDeg, double cDeg)
+    public override double[] PlaneToNumbers(Plane plane)
     {
-        double a = -aDeg.ToRadians();
-        double b = -bDeg.ToRadians();
-        double c = -cDeg.ToRadians();
-        double ca = Cos(a);
-        double sa = Sin(a);
-        double cb = Cos(b);
-        double sb = Sin(b);
-        double cc = Cos(c);
-        double sc = Sin(c);
-        Transform t = default;
-        t.M00 = ca * cb; t.M01 = sa * cc + ca * sb * sc; t.M02 = sa * sc - ca * sb * cc;
-        t.M10 = -sa * cb; t.M11 = ca * cc - sa * sb * sc; t.M12 = ca * sc + sa * sb * cc;
-        t.M20 = sb; t.M21 = -cb * sc; t.M22 = cb * cc;
-        t.M33 = 1;
-
-        var plane = t.ToPlane();
-        plane.Origin = new Point3d(x, y, z);
-        return plane;
+        var t = plane.ToTransform();
+        var e = t.ToEulerZYX();
+        return new[] { e.A1, e.A2, e.A3, e.A4.ToDegrees(), e.A5.ToDegrees(), e.A6.ToDegrees() };
     }
 
-    public static double[] PlaneToEuler(Plane plane)
+    public override Plane NumbersToPlane(double[] numbers)
     {
-        Transform t = plane.ToTransform();
-        double a = Atan2(-t.M10, t.M00);
-        double mult = 1.0 - t.M20 * t.M20;
-        if (Abs(mult) < UnitTol) mult = 0.0;
-        double b = Atan2(t.M20, Sqrt(mult));
-        double c = Atan2(-t.M21, t.M22);
-
-        if (t.M20 < (-1.0 + UnitTol))
-        {
-            a = Atan2(t.M01, t.M11);
-            b = -PI / 2;
-            c = 0;
-        }
-        else if (t.M20 > (1.0 - UnitTol))
-        {
-            a = Atan2(t.M01, t.M11);
-            b = PI / 2;
-            c = 0;
-        }
-
-        return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, -a.ToDegrees(), -b.ToDegrees(), -c.ToDegrees() };
+        var euler = new Vector6d(numbers[0], numbers[1], numbers[2], numbers[3].ToRadians(), numbers[4].ToRadians(), numbers[5].ToRadians());
+        var t = euler.EulerZYXToTransform();
+        return t.ToPlane();
     }
-
-    public override double[] PlaneToNumbers(Plane plane) => PlaneToEuler(plane);
-    public override Plane NumbersToPlane(double[] numbers) => EulerToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5]);
 
     public override Plane CartesianLerp(Plane a, Plane b, double t, double min, double max)
     {

@@ -214,6 +214,52 @@ static class Util
         return result;
     }
 
+    public static Vector6d ToEulerZYX(this ref Transform t)
+    {
+        double a = Atan2(-t.M10, t.M00);
+        double mult = 1.0 - t.M20 * t.M20;
+        if (Abs(mult) < UnitTol) mult = 0.0;
+        double b = Atan2(t.M20, Sqrt(mult));
+        double c = Atan2(-t.M21, t.M22);
+
+        if (t.M20 < (-1.0 + UnitTol))
+        {
+            a = Atan2(t.M01, t.M11);
+            b = -PI / 2;
+            c = 0;
+        }
+        else if (t.M20 > (1.0 - UnitTol))
+        {
+            a = Atan2(t.M01, t.M11);
+            b = PI / 2;
+            c = 0;
+        }
+
+        return new(t.M03, t.M13, t.M23, -a, -b, -c);
+    }
+
+    public static Transform EulerZYXToTransform(this Vector6d euler)
+    {
+        double a = -euler.A4;
+        double b = -euler.A5;
+        double c = -euler.A6;
+        double ca = Cos(a);
+        double sa = Sin(a);
+        double cb = Cos(b);
+        double sb = Sin(b);
+        double cc = Cos(c);
+        double sc = Sin(c);
+
+        Transform t = default;
+        t.M00 = ca * cb; t.M01 = sa * cc + ca * sb * sc; t.M02 = sa * sc - ca * sb * cc;
+        t.M10 = -sa * cb; t.M11 = ca * cc - sa * sb * sc; t.M12 = ca * sc + sa * sb * cc;
+        t.M20 = sb; t.M21 = -cb * sc; t.M22 = cb * cc;
+        t.M33 = 1;
+        t.M03 = euler.A1; t.M13 = euler.A2; t.M23 = euler.A3;
+
+        return t;
+    }
+
     // Vector3d
 
     public static void Normalize(this ref Vector3d v)
