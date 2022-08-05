@@ -1,4 +1,4 @@
-﻿
+
 namespace Robots;
 
 interface IRemoteURBackend
@@ -23,8 +23,8 @@ public class RemoteUR : IRemote
 
             try
             {
-                var uri = new Uri(value);
-                _backend = new RemoteURFtp(uri, AddLog);
+                var user = new User(value);
+                _backend = new RemoteURFtp(user, AddLog);
             }
             catch
             {

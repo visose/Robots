@@ -16,8 +16,8 @@ public abstract class Mechanism
     public Mesh DisplayMesh { get; }
     public string Model => $"{Manufacturer}.{_model}";
 
-     MechanismKinematics? _solver;
-    
+    MechanismKinematics? _solver;
+
     internal Mechanism(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh baseMesh, IEnumerable<Joint> joints, bool movesRobot)
     {
         _model = model;

@@ -1,4 +1,3 @@
-using Renci.SshNet;
 using System.Net.Sockets;
 using System.Text;
 
@@ -7,36 +6,13 @@ namespace Robots;
 class RemoteURFtp : IRemoteURBackend
 {
     const int _dashboardPort = 29999;
-    readonly string _ip;
-    readonly string _username;
-    readonly string _password;
-    readonly string _programsDir;
     readonly Action<string> _log;
+    readonly User _user;
 
-    public RemoteURFtp(Uri uri, Action<string> log)
+    public RemoteURFtp(User user, Action<string> log)
     {
         _log = log;
-
-        // ftp://username:password@hostname/dir
-
-        _ip = uri.Host;
-        _username = "root";
-        _password = "easybot";
-        _programsDir = "/programs";
-
-        if (!string.IsNullOrWhiteSpace(uri.UserInfo))
-        {
-            var split = uri.UserInfo.Split(':');
-
-            if (split is not null && split.Length == 2)
-            {
-                _username = split[0];
-                _password = split[1];
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(uri.PathAndQuery) && uri.PathAndQuery != "/")
-            _programsDir = uri.PathAndQuery;
+        _user = user;
     }
 
     public void Upload(IProgram program)
@@ -72,7 +48,7 @@ class RemoteURFtp : IRemoteURBackend
     void SendPrivate(string message)
     {
         using var client = new TcpClient();
-        client.Connect(_ip, _dashboardPort);
+        client.Connect(_user.IP, _dashboardPort);
 
         using var stream = client.GetStream();
         string first = GetMessage(stream);
@@ -95,25 +71,11 @@ class RemoteURFtp : IRemoteURBackend
 
     void UploadFtp(IProgram program)
     {
-        ConnectionInfo connectionInfo = new(_ip, _username,
-            new PasswordAuthenticationMethod(_username, _password))
-        {
-            Timeout = TimeSpan.FromSeconds(5)
-        };
-
-        using SftpClient client = new(connectionInfo);
-        client.Connect();
-
-        var root = client.ListDirectory("/");
-
-        if (!client.Exists(_programsDir))
-            throw new DirectoryNotFoundException($"\"{_programsDir}\" folder not found.");
-
         var urp = RobotSystemUR.CreateUrp(program);
-        using MemoryStream stream = new(Encoding.ASCII.GetBytes(urp));
-        string fileName = $"{_programsDir}/{program.Name}.urp";
-        client.UploadFile(stream, fileName, true);
-        client.Disconnect();
+        var bytes = Encoding.ASCII.GetBytes(urp);
+        string fileName = $"{program.Name}.urp";
+
+        Ftp.Upload(bytes, fileName, _user);
     }
 
     void AddLog(string message) => _log(message);

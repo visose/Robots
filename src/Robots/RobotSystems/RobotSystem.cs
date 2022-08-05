@@ -68,7 +68,7 @@ public abstract class RobotSystem
 
         return q.ToPlane(newOrigin);
     }
-    
+
     public abstract List<KinematicSolution> Kinematics(IEnumerable<Target> target, IEnumerable<double[]>? prevJoints = null);
     internal abstract void SaveCode(IProgram program, string folder);
     internal abstract List<List<List<string>>> Code(Program program);
