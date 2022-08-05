@@ -184,8 +184,7 @@ def program():
             foreach (var command in afterCommands)
             {
                 string commands = command.Code(_program, target);
-                commands = indent + commands;
-                code.Add(commands);
+                code.Add(indent + commands);
             }
         }
 
@@ -209,9 +208,6 @@ program()");
         double GetSpeed(CellTarget cellTarget)
         {
             var programTarget = cellTarget.ProgramTargets[0];
-
-            //if (speed.Time > 0)
-            //    return $"t={speed.Time:0.####}";
 
             if (cellTarget.DeltaTime > 0)
             {

@@ -8,7 +8,7 @@ namespace Robots;
 class FrankaNumericalKinematics : RobotKinematics
 {
     readonly double _sq2 = 1.0 / Sqrt(2);
-    
+
     public FrankaNumericalKinematics(RobotArm robot)
         : base(robot) { }
 
@@ -54,7 +54,7 @@ class FrankaNumericalKinematics : RobotKinematics
     protected override double[] InverseKinematics(Transform transform, RobotConfigurations configuration, double[] external, double[]? prevJoints, out List<string> errors)
     {
         const int redundant = 2;
-        const double tolerance = 1e-10;
+        const double tolerance = 1e-7;
 
         var M = Matrix<double>.Build;
         var V = Vector<double>.Build;

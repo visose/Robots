@@ -1,4 +1,4 @@
-﻿namespace Robots.Commands;
+namespace Robots.Commands;
 
 public class Wait : Command
 {
@@ -13,13 +13,15 @@ public class Wait : Command
     {
         _commands.Add(Manufacturers.ABB, CodeAbb);
         _commands.Add(Manufacturers.KUKA, CodeKuka);
-        _commands.Add(Manufacturers.UR, CodeUR);
+        _commands.Add(Manufacturers.UR, CodePython);
         _commands.Add(Manufacturers.Staubli, CodeStaubli);
+        _commands.Add(Manufacturers.FrankaEmika, CodePython);
 
         _declarations.Add(Manufacturers.ABB, DeclarationAbb);
         _declarations.Add(Manufacturers.KUKA, DeclarationKuka);
-        _declarations.Add(Manufacturers.UR, DeclarationUR);
+        _declarations.Add(Manufacturers.UR, DeclarationPython);
         _declarations.Add(Manufacturers.Staubli, DeclarationStaubli);
+        _declarations.Add(Manufacturers.FrankaEmika, DeclarationPython);
     }
 
     string DeclarationAbb(RobotSystem robotSystem)
@@ -32,7 +34,7 @@ public class Wait : Command
         return $"DECL GLOBAL REAL {Name} = {Seconds:0.###}";
     }
 
-    string DeclarationUR(RobotSystem robotSystem)
+    string DeclarationPython(RobotSystem robotSystem)
     {
         return $"{Name} = {Seconds:0.###}";
     }
@@ -58,7 +60,7 @@ public class Wait : Command
             return $"WAIT SEC {Name}";
     }
 
-    string CodeUR(RobotSystem robotSystem, Target target)
+    string CodePython(RobotSystem robotSystem, Target target)
     {
         return $"sleep({Name})";
     }

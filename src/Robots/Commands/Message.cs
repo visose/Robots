@@ -1,4 +1,4 @@
-﻿namespace Robots.Commands;
+namespace Robots.Commands;
 
 public class Message : Command
 {
@@ -15,6 +15,7 @@ public class Message : Command
         _commands.Add(Manufacturers.KUKA, (_, __) => $"; \"{_message}\"");
         _commands.Add(Manufacturers.UR, (_, __) => $"textmsg(\"{_message}\")");
         _commands.Add(Manufacturers.Staubli, (_, __) => $"putln(\"{_message}\")");
+        _commands.Add(Manufacturers.FrankaEmika, (_, __) => $"print(\"{_message}\")");
     }
 
     public override string ToString() => $"Command (Message \"{_message}\")";
