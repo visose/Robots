@@ -7,6 +7,8 @@ namespace Robots;
 
 class FrankaNumericalKinematics : RobotKinematics
 {
+    readonly double _sq2 = 1.0 / Sqrt(2);
+    
     public FrankaNumericalKinematics(RobotArm robot)
         : base(robot) { }
 
@@ -52,7 +54,6 @@ class FrankaNumericalKinematics : RobotKinematics
     protected override double[] InverseKinematics(Transform transform, RobotConfigurations configuration, double[] external, double[]? prevJoints, out List<string> errors)
     {
         const int redundant = 2;
-
         const double tolerance = 1e-10;
 
         var M = Matrix<double>.Build;
@@ -69,18 +70,19 @@ class FrankaNumericalKinematics : RobotKinematics
 
         var eye = M.DenseIdentity(7, 7);
 
-        Vector<double> q_current = prevJoints is not null
-            ? V.Dense(prevJoints.Map(j => j))
-            : V.Dense(joints.Map(j => j.Range.Mid));
-
+        var q_current = V.Dense(7);
         var j = M.Dense(6, 7);
         var m77 = M.Dense(7, 7);
-
         var dq = V.Dense(7);
         var v7 = V.Dense(7);
         var v6 = V.Dense(6);
-
         var zero = V.Dense(7);
+
+        q_current.SetValues(
+    prevJoints is not null
+    ? prevJoints.Map(j => j)
+    : joints.Map(j => j.Range.Mid)
+    );
 
         for (int i = 0; i < 100; ++i)
         {
@@ -173,12 +175,10 @@ class FrankaNumericalKinematics : RobotKinematics
         double t19 = c1 * (-c2 * t9 + s2 * s4 * t8) + s1 * t7;
         double t23 = s2 * t9 + c2 * s4 * t8;
 
-        double sq2 = 1.0 / Sqrt(2);
-
         double a21 = (-c0 * t16 + s0 * t5);
         double a22 = (c0 * t15 + s0 * t4);
         double a31 = c5 * (c0 * t24 + s3 * s0 * s2) + c4 * s5 * (c3 * s0 * s2 - c0 * t17) + (c2 * s0 + c0 * c1 * s2) * s4 * s5;
-        double a32 = (t14 + c4 * (s1 * s2 * c_m_s6 + c1 * c5 * s3 * c_p_s6) - c2 * s1 * t3) * sq2;
+        double a32 = (t14 + c4 * (s1 * s2 * c_m_s6 + c1 * c5 * s3 * c_p_s6) - c2 * s1 * t3) * _sq2;
         double a33 = c1 * (c3 * c5 - s3 * c4 * s5) + s1 * (c2 * (c5 * s3 + c3 * c4 * s5) - s2 * s4 * s5);
 
         double e1 = Atan(a21 / a22);
@@ -232,38 +232,38 @@ class FrankaNumericalKinematics : RobotKinematics
         result[1, 1] = s0 * (-(s1 * (c2 * p6 - s2 * s4 * p0)) + c1 * (0.316 - c3 * p1 + s3 * p5));
         result[2, 1] = s1 * (-0.316 + 0.0825 * s3 - 0.088 * c4 * c5 * s3 + c3 * p1 - 0.107 * c4 * s3 * s5) + c1 * (s2 * s4 * p0 + c2 * (-0.0825 + 0.384 * s3 - 0.107 * c5 * s3 + 0.088 * s3 * s5 + c3 * (0.0825 - 0.088 * c4 * c5 - 0.107 * c4 * s5)));
         result[3, 1] = ((s0 * (c1 * (c6 * s3 * s4 + c3 * c6 * s5 + c4 * c5 * s3 * (c6 - s6) + s3 * s4 * s6 - c3 * s5 * s6) - s1 * (s2 * p3 + c2 * p4))) / t6 - (c0 * (c1 * (c6 * s3 * s4 + c3 * c6 * s5 + c4 * c5 * s3 * (c6 - s6) + s3 * s4 * s6 - c3 * s5 * s6) - s1 * (s2 * p3 + c2 * p4)) * t5) / t2) / (1 + t3 / t2);
-        result[4, 1] = -((c1 * c5 * c6 * s2 * s4 - c6 * s1 * s3 * s4 - c3 * c6 * s1 * s5 - c1 * c5 * s2 * s4 * s6 - s1 * s3 * s4 * s6 + c3 * s1 * s5 * s6 - c4 * (c1 * c6 * s2 + c5 * c6 * s1 * s3 + c1 * s2 * s6 - c5 * s1 * s3 * s6) - c1 * c2 * p4) / (Sqrt(2) * t4));
-        result[5, 1] = ((c1 * c5 * c6 * s2 * s4 + c6 * s1 * s3 * s4 - c3 * c6 * s1 * s5 + c1 * c5 * s2 * s4 * s6 - s1 * s3 * s4 * s6 - c3 * s1 * s5 * s6 + c4 * (c1 * c6 * s2 - c5 * c6 * s1 * s3 - c1 * s2 * s6 - c5 * s1 * s3 * s6) + c1 * c2 * (s3 * s5 * (c6 + s6) - c3 * (s4 * (-c6 + s6) + c4 * c5 * (c6 + s6)))) / (Sqrt(2) * (c1 * (c3 * c5 - c4 * s3 * s5) + s1 * (-(s2 * s4 * s5) + c2 * (c5 * s3 + c3 * c4 * s5)))) - ((-(s1 * (c3 * c5 - c4 * s3 * s5)) + c1 * (-(s2 * s4 * s5) + c2 * (c5 * s3 + c3 * c4 * s5))) * t7) / (Sqrt(2) * t2)) / (1 + t1 / (2.0 * t2));
+        result[4, 1] = -((c1 * c5 * c6 * s2 * s4 - c6 * s1 * s3 * s4 - c3 * c6 * s1 * s5 - c1 * c5 * s2 * s4 * s6 - s1 * s3 * s4 * s6 + c3 * s1 * s5 * s6 - c4 * (c1 * c6 * s2 + c5 * c6 * s1 * s3 + c1 * s2 * s6 - c5 * s1 * s3 * s6) - c1 * c2 * p4) / (_sq2 * t4));
+        result[5, 1] = ((c1 * c5 * c6 * s2 * s4 + c6 * s1 * s3 * s4 - c3 * c6 * s1 * s5 + c1 * c5 * s2 * s4 * s6 - s1 * s3 * s4 * s6 - c3 * s1 * s5 * s6 + c4 * (c1 * c6 * s2 - c5 * c6 * s1 * s3 - c1 * s2 * s6 - c5 * s1 * s3 * s6) + c1 * c2 * (s3 * s5 * (c6 + s6) - c3 * (s4 * (-c6 + s6) + c4 * c5 * (c6 + s6)))) / (_sq2 * (c1 * (c3 * c5 - c4 * s3 * s5) + s1 * (-(s2 * s4 * s5) + c2 * (c5 * s3 + c3 * c4 * s5)))) - ((-(s1 * (c3 * c5 - c4 * s3 * s5)) + c1 * (-(s2 * s4 * s5) + c2 * (c5 * s3 + c3 * c4 * s5))) * t7) / (_sq2 * t2)) / (1 + t1 / (2.0 * t2));
         result[0, 2] = c0 * c1 * (-(s2 * p6) - c2 * s4 * p0) + s0 * (c2 * (-0.0825 + c3 * (-p5) - s3 * p1) + s2 * s4 * p0);
         result[1, 2] = c1 * s0 * (-(s2 * p6) - c2 * s4 * p0) + c0 * (c2 * p6 - s2 * s4 * p0);
         result[2, 2] = 0.088 * c2 * c5 * s1 * s4 - s1 * s2 * (-0.0825 + c3 * (-p5) + s3 * (-p1)) + 0.107 * c2 * s1 * s4 * s5;
         result[3, 2] = ((c0 * (s2 * p3 + c2 * p4) + c1 * s0 * (c2 * p3 - s2 * p4)) / t6 - ((s0 * (-(s2 * p3) - c2 * p4) + c0 * c1 * (c2 * p3 - s2 * p4)) * t5) / t2) / (1 + t3 / t2);
-        result[4, 2] = -((c2 * c5 * c6 * s1 * s4 - c2 * c5 * s1 * s4 * s6 - c4 * (c2 * c6 * s1 + c2 * s1 * s6) + s1 * s2 * p4) / (Sqrt(2) * t4));
-        result[5, 2] = (-((s1 * (-(c2 * s4 * s5) - s2 * (c5 * s3 + c3 * c4 * s5)) * t7) / (Sqrt(2) * t2)) + (c2 * c5 * c6 * s1 * s4 + c2 * c5 * s1 * s4 * s6 + c4 * (c2 * c6 * s1 - c2 * s1 * s6) - s1 * s2 * (s3 * s5 * (c6 + s6) - c3 * (s4 * (-c6 + s6) + c4 * c5 * (c6 + s6)))) / (Sqrt(2) * (c1 * (c3 * c5 - c4 * s3 * s5) + s1 * (-(s2 * s4 * s5) + c2 * (c5 * s3 + c3 * c4 * s5))))) / (1 + t1 / (2.0 * t2));
+        result[4, 2] = -((c2 * c5 * c6 * s1 * s4 - c2 * c5 * s1 * s4 * s6 - c4 * (c2 * c6 * s1 + c2 * s1 * s6) + s1 * s2 * p4) / (_sq2 * t4));
+        result[5, 2] = (-((s1 * (-(c2 * s4 * s5) - s2 * (c5 * s3 + c3 * c4 * s5)) * t7) / (_sq2 * t2)) + (c2 * c5 * c6 * s1 * s4 + c2 * c5 * s1 * s4 * s6 + c4 * (c2 * c6 * s1 - c2 * s1 * s6) - s1 * s2 * (s3 * s5 * (c6 + s6) - c3 * (s4 * (-c6 + s6) + c4 * c5 * (c6 + s6)))) / (_sq2 * (c1 * (c3 * c5 - c4 * s3 * s5) + s1 * (-(s2 * s4 * s5) + c2 * (c5 * s3 + c3 * c4 * s5))))) / (1 + t1 / (2.0 * t2));
         result[0, 3] = s0 * s2 * (s3 * p5 - c3 * p1) + c0 * (c1 * c2 * (-(s3 * p5) + c3 * p1) + s1 * (s3 * p1 + c3 * p5));
         result[1, 3] = c1 * c2 * s0 * (-(s3 * p5) + c3 * p1) + c0 * s2 * (-(s3 * p5) + c3 * p1) + s0 * s1 * (s3 * p1 + c3 * p5);
         result[2, 3] = c2 * s1 * (s3 * p5 - c3 * p1) + c1 * (-(s3 * (-p1)) + c3 * p5);
         result[3, 3] = ((c0 * s2 * (c3 * s5 * (-c6 + s6) - s3 * p2) + s0 * (s1 * (c3 * c6 * s4 - c6 * s3 * s5 + c3 * c4 * c5 * (c6 - s6) + c3 * s4 * s6 + s3 * s5 * s6) + c1 * c2 * (c3 * s5 * (-c6 + s6) - s3 * p2))) / t6 - ((-(s0 * s2 * (c3 * s5 * (-c6 + s6) - s3 * p2)) + c0 * (s1 * (c3 * c6 * s4 - c6 * s3 * s5 + c3 * c4 * c5 * (c6 - s6) + c3 * s4 * s6 + s3 * s5 * s6) + c1 * c2 * (c3 * s5 * (-c6 + s6) - s3 * p2))) * t5) / t2) / (1 + t3 / t2);
-        result[4, 3] = -((c1 * c3 * (c6 + s6) * s4 + c1 * s3 * s5 * (s6 - c6) - c4 * c1 * c3 * c5 * (s6 - c6) - c2 * s1 * (c3 * s5 * (-c6 + s6) - s3 * p2)) / (Sqrt(2) * t4));
-        result[5, 3] = (-(((c1 * (-(c5 * s3) - c3 * c4 * s5) + c2 * s1 * (c3 * c5 - c4 * s3 * s5)) * t7) / (Sqrt(2) * 2)) + (-(c1 * c3 * c6 * s4) - c1 * c6 * s3 * s5 + c1 * c3 * s4 * s6 - c1 * s3 * s5 * s6 + c4 * (c1 * c3 * c5 * c6 + c1 * c3 * c5 * s6) + c2 * s1 * (c3 * s5 * (c6 + s6) + s3 * (s4 * (-c6 + s6) + c4 * c5 * (c6 + s6)))) / (Sqrt(2) * (c1 * (c3 * c5 - c4 * s3 * s5) + s1 * (-(s2 * s4 * s5) + c2 * (c5 * s3 + c3 * c4 * s5))))) / (1 + t1 / (2.0 * t2));
+        result[4, 3] = -((c1 * c3 * (c6 + s6) * s4 + c1 * s3 * s5 * (s6 - c6) - c4 * c1 * c3 * c5 * (s6 - c6) - c2 * s1 * (c3 * s5 * (-c6 + s6) - s3 * p2)) / (_sq2 * t4));
+        result[5, 3] = (-(((c1 * (-(c5 * s3) - c3 * c4 * s5) + c2 * s1 * (c3 * c5 - c4 * s3 * s5)) * t7) / (_sq2 * 2)) + (-(c1 * c3 * c6 * s4) - c1 * c6 * s3 * s5 + c1 * c3 * s4 * s6 - c1 * s3 * s5 * s6 + c4 * (c1 * c3 * c5 * c6 + c1 * c3 * c5 * s6) + c2 * s1 * (c3 * s5 * (c6 + s6) + s3 * (s4 * (-c6 + s6) + c4 * c5 * (c6 + s6)))) / (_sq2 * (c1 * (c3 * c5 - c4 * s3 * s5) + s1 * (-(s2 * s4 * s5) + c2 * (c5 * s3 + c3 * c4 * s5))))) / (1 + t1 / (2.0 * t2));
         result[0, 4] = s0 * (c2 * c4 * (-p0) + c3 * s2 * s4 * p0) + c0 * (c1 * (c4 * s2 * (-p0) - c2 * c3 * s4 * p0) + s1 * s3 * (-0.088 * c5 * s4 - 0.107 * s4 * s5));
         result[1, 4] = c1 * s0 * (c4 * s2 * (-p0) - c2 * c3 * s4 * p0) + c0 * (c2 * c4 * p0 - c3 * s2 * s4 * p0) + s0 * s1 * s3 * (-0.088 * c5 * s4 - 0.107 * s4 * s5);
         result[2, 4] = 0.088 * c4 * c5 * s1 * s2 - c2 * c3 * s1 * s4 * (-p0) + 0.107 * c4 * s1 * s2 * s5 + c1 * s3 * (-0.088 * c5 * s4 - 0.107 * s4 * s5);
         result[3, 4] = ((c0 * (c3 * s2 * (-(c5 * s4 * (c6 - s6)) + c4 * (c6 + s6)) - c2 * (c4 * c5 * (-c6 + s6) - s4 * (c6 + s6))) + s0 * t9) / t6 - ((s0 * (-(c3 * s2 * (-(c5 * s4 * (c6 - s6)) + c4 * (c6 + s6))) + c2 * (c4 * c5 * (-c6 + s6) - s4 * (c6 + s6))) + c0 * t9) * t5) / t2) / (1 + t3 / t2);
-        result[4, 4] = -((c4 * c5 * c6 * s1 * s2 + c1 * c4 * c6 * s3 - c4 * c5 * s1 * s2 * s6 + c1 * c4 * s3 * s6 + s4 * (c6 * s1 * s2 - c1 * c5 * c6 * s3 + s1 * s2 * s6 + c1 * c5 * s3 * s6) - c2 * c3 * s1 * (-(c5 * s4 * (c6 - s6)) + c4 * (c6 + s6))) / (Sqrt(2) * t4));
-        result[5, 4] = ((c4 * c5 * c6 * s1 * s2 - c1 * c4 * c6 * s3 + c4 * c5 * s1 * s2 * s6 + c1 * c4 * s3 * s6 - s4 * (c6 * s1 * s2 + c1 * c5 * c6 * s3 - s1 * s2 * s6 + c1 * c5 * s3 * s6) - c2 * c3 * s1 * (c4 * (-c6 + s6) - c5 * s4 * (c6 + s6))) / (Sqrt(2) * (c1 * (c3 * c5 - c4 * s3 * s5) + s1 * (-(s2 * s4 * s5) + c2 * (c5 * s3 + c3 * c4 * s5)))) - ((c1 * s3 * s4 * s5 + s1 * (-(c4 * s2 * s5) - c2 * c3 * s4 * s5)) * t7) / (Sqrt(2) * t2)) / (1 + t1 / (2.0 * t2));
+        result[4, 4] = -((c4 * c5 * c6 * s1 * s2 + c1 * c4 * c6 * s3 - c4 * c5 * s1 * s2 * s6 + c1 * c4 * s3 * s6 + s4 * (c6 * s1 * s2 - c1 * c5 * c6 * s3 + s1 * s2 * s6 + c1 * c5 * s3 * s6) - c2 * c3 * s1 * (-(c5 * s4 * (c6 - s6)) + c4 * (c6 + s6))) / (_sq2 * t4));
+        result[5, 4] = ((c4 * c5 * c6 * s1 * s2 - c1 * c4 * c6 * s3 + c4 * c5 * s1 * s2 * s6 + c1 * c4 * s3 * s6 - s4 * (c6 * s1 * s2 + c1 * c5 * c6 * s3 - s1 * s2 * s6 + c1 * c5 * s3 * s6) - c2 * c3 * s1 * (c4 * (-c6 + s6) - c5 * s4 * (c6 + s6))) / (_sq2 * (c1 * (c3 * c5 - c4 * s3 * s5) + s1 * (-(s2 * s4 * s5) + c2 * (c5 * s3 + c3 * c4 * s5)))) - ((c1 * s3 * s4 * s5 + s1 * (-(c4 * s2 * s5) - c2 * c3 * s4 * s5)) * t7) / (_sq2 * t2)) / (1 + t1 / (2.0 * t2));
         result[0, 5] = s0 * (s2 * (c3 * c4 * (-0.107 * c5 + 0.088 * s5) + s3 * p0) + c2 * s4 * (-0.107 * c5 + 0.088 * s5)) + c0 * (c1 * (c2 * (-s3 * p0 + c3 * c4 * (0.107 * c5 - 0.088 * s5)) + s2 * s4 * (-0.107 * c5 + 0.088 * s5)) + s1 * (c3 * p0 + s3 * (0.107 * c4 * c5 - 0.088 * c4 * s5)));
         result[1, 5] = c0 * (s2 * (s3 * (-p0) + c3 * c4 * (0.107 * c5 - 0.088 * s5)) + c2 * s4 * (0.107 * c5 - 0.088 * s5)) + c1 * s0 * (c2 * (-s3 * p0 + c3 * c4 * (0.107 * c5 - 0.088 * s5)) + s2 * s4 * (-0.107 * c5 + 0.088 * s5)) + s0 * s1 * (c3 * p0 + s3 * (0.107 * c4 * c5 - 0.088 * c4 * s5));
         result[2, 5] = 0.107 * c5 * s1 * s2 * s4 + c2 * s1 * (c3 * c4 * (-0.107 * c5 + 0.088 * s5) + s3 * p0) - 0.088 * s1 * s2 * s4 * s5 + c1 * (c3 * p0 + s3 * (0.107 * c4 * c5 - 0.088 * c4 * s5));
         result[3, 5] = ((c0 * (c2 * s4 * s5 * (-c6 + s6) + s2 * (-(c3 * c4 * s5 * (c6 - s6)) + c5 * s3 * (-c6 + s6))) + s0 * (s1 * (c3 * c5 * c6 - c4 * s3 * s5 * (c6 - s6) - c3 * c5 * s6) + c1 * (-(s2 * s4 * s5 * (-c6 + s6)) + c2 * (-(c3 * c4 * s5 * (c6 - s6)) + c5 * s3 * (-c6 + s6))))) / t6 - ((s0 * (-(c2 * s4 * s5 * (-c6 + s6)) - s2 * (-(c3 * c4 * s5 * (c6 - s6)) + c5 * s3 * (-c6 + s6))) + c0 * (s1 * (c3 * c5 * c6 - c4 * s3 * s5 * (c6 - s6) - c3 * c5 * s6) + c1 * (-(s2 * s4 * s5 * (-c6 + s6)) + c2 * (-(c3 * c4 * s5 * (c6 - s6)) + c5 * s3 * (-c6 + s6))))) * t5) / t2) / (1 + t3 / t2);
-        result[4, 5] = -((c1 * c3 * c5 * (c6 - s6) - c6 * s1 * s2 * s4 * s5 + s1 * s2 * s4 * s5 * s6 - c4 * c1 * (c6 - s6) * s3 * s5 - c2 * s1 * (-(c3 * c4 * s5 * (c6 - s6)) + c5 * s3 * (-c6 + s6))) / (Sqrt(2) * t4));
-        result[5, 5] = ((c1 * c3 * c5 * (c6 + s6) - c6 * s1 * s2 * s4 * s5 - s1 * s2 * s4 * s5 * s6 - c4 * c1 * (c6 + s6) * s3 * s5 + c2 * s1 * (c5 * s3 * (c6 + s6) + c3 * c4 * s5 * (c6 + s6))) / (Sqrt(2) * (c1 * (c3 * c5 - c4 * s3 * s5) + s1 * (-(s2 * s4 * s5) + c2 * (c5 * s3 + c3 * c4 * s5)))) - ((c1 * (-(c4 * c5 * s3) - c3 * s5) + s1 * (-(c5 * s2 * s4) + c2 * (c3 * c4 * c5 - s3 * s5))) * t7) / (Sqrt(2) * t2)) / (1 + t1 / (2.0 * t2));
+        result[4, 5] = -((c1 * c3 * c5 * (c6 - s6) - c6 * s1 * s2 * s4 * s5 + s1 * s2 * s4 * s5 * s6 - c4 * c1 * (c6 - s6) * s3 * s5 - c2 * s1 * (-(c3 * c4 * s5 * (c6 - s6)) + c5 * s3 * (-c6 + s6))) / (_sq2 * t4));
+        result[5, 5] = ((c1 * c3 * c5 * (c6 + s6) - c6 * s1 * s2 * s4 * s5 - s1 * s2 * s4 * s5 * s6 - c4 * c1 * (c6 + s6) * s3 * s5 + c2 * s1 * (c5 * s3 * (c6 + s6) + c3 * c4 * s5 * (c6 + s6))) / (_sq2 * (c1 * (c3 * c5 - c4 * s3 * s5) + s1 * (-(s2 * s4 * s5) + c2 * (c5 * s3 + c3 * c4 * s5)))) - ((c1 * (-(c4 * c5 * s3) - c3 * s5) + s1 * (-(c5 * s2 * s4) + c2 * (c3 * c4 * c5 - s3 * s5))) * t7) / (_sq2 * t2)) / (1 + t1 / (2.0 * t2));
         result[0, 6] = 0;
         result[1, 6] = 0;
         result[2, 6] = 0;
         result[3, 6] = ((c0 * (-(c2 * (c4 * (c6 - s6) + c5 * s4 * (c6 + s6))) + s2 * (c3 * (c4 * c5 * (-c6 - s6) + s4 * (c6 - s6)) + s3 * s5 * (c6 + s6))) + s0 * t8) / t6 - ((s0 * (c2 * (c4 * (c6 - s6) + c5 * s4 * (c6 + s6)) - s2 * (c3 * (c4 * c5 * (-c6 - s6) + s4 * (c6 - s6)) + s3 * s5 * (c6 + s6))) + c0 * t8) * t5) / t2) / (1 + t3 / t2);
-        result[4, 6] = -((-(c5 * c6 * s1 * s2 * s4) + c1 * c6 * s3 * s4 - c1 * c3 * c6 * s5 - c5 * s1 * s2 * s4 * s6 - c1 * s3 * s4 * s6 - c1 * c3 * s5 * s6 - c4 * (c6 * s1 * s2 + c1 * c5 * c6 * s3 - s1 * s2 * s6 + c1 * c5 * s3 * s6) - c2 * s1 * (c3 * (c4 * c5 * (-c6 - s6) + s4 * (c6 - s6)) + s3 * s5 * (c6 + s6))) / (Sqrt(2) * t4));
-        result[5, 6] = (c5 * c6 * s1 * s2 * s4 + c1 * c6 * s3 * s4 + c1 * c3 * c6 * s5 - c5 * s1 * s2 * s4 * s6 + c1 * s3 * s4 * s6 - c1 * c3 * s5 * s6 + c4 * (-(c6 * s1 * s2) + c1 * c5 * c6 * s3 - s1 * s2 * s6 - c1 * c5 * s3 * s6) + c2 * s1 * (s3 * s5 * (c6 - s6) - c3 * p2)) / (Sqrt(2) * (c1 * (c3 * c5 - c4 * s3 * s5) + s1 * (-(s2 * s4 * s5) + c2 * (c5 * s3 + c3 * c4 * s5))) * (1 + t1 / (2.0 * t2)));
+        result[4, 6] = -((-(c5 * c6 * s1 * s2 * s4) + c1 * c6 * s3 * s4 - c1 * c3 * c6 * s5 - c5 * s1 * s2 * s4 * s6 - c1 * s3 * s4 * s6 - c1 * c3 * s5 * s6 - c4 * (c6 * s1 * s2 + c1 * c5 * c6 * s3 - s1 * s2 * s6 + c1 * c5 * s3 * s6) - c2 * s1 * (c3 * (c4 * c5 * (-c6 - s6) + s4 * (c6 - s6)) + s3 * s5 * (c6 + s6))) / (_sq2 * t4));
+        result[5, 6] = (c5 * c6 * s1 * s2 * s4 + c1 * c6 * s3 * s4 + c1 * c3 * c6 * s5 - c5 * s1 * s2 * s4 * s6 + c1 * s3 * s4 * s6 - c1 * c3 * s5 * s6 + c4 * (-(c6 * s1 * s2) + c1 * c5 * c6 * s3 - s1 * s2 * s6 - c1 * c5 * s3 * s6) + c2 * s1 * (s3 * s5 * (c6 - s6) - c3 * p2)) / (_sq2 * (c1 * (c3 * c5 - c4 * s3 * s5) + s1 * (-(s2 * s4 * s5) + c2 * (c5 * s3 + c3 * c4 * s5))) * (1 + t1 / (2.0 * t2)));
     }
 
     protected override Transform[] ForwardKinematics(double[] joints)

@@ -26,19 +26,16 @@ class SphericalWristKinematics : RobotKinematics
 
         bool isUnreachable = false;
 
-        var a = Vector6d.Map(_mechanism.Joints, joint => joint.A);
-        var d = Vector6d.Map(_mechanism.Joints, joint => joint.D);
-
         var flange = transform.ToPlane();
 
         double[] joints = new double[6];
 
-        double l2 = Sqrt(a[2] * a[2] + d[3] * d[3]);
-        double ad2 = Atan2(a[2], d[3]);
-        Point3d center = flange.Origin - flange.Normal * d[5];
+        double l2 = Sqrt(_a[2] * _a[2] + _d[3] * _d[3]);
+        double ad2 = Atan2(_a[2], _d[3]);
+        Point3d center = flange.Origin - flange.Normal * _d[5];
         joints[0] = Atan2(center.Y, center.X);
         double ll = Sqrt(center.X * center.X + center.Y * center.Y);
-        var p1 = new Point3d(a[0] * center.X / ll, a[0] * center.Y / ll, d[0]);
+        var p1 = new Point3d(_a[0] * center.X / ll, _a[0] * center.Y / ll, _d[0]);
 
         if (shoulder)
         {
@@ -48,7 +45,7 @@ class SphericalWristKinematics : RobotKinematics
         }
 
         double l3 = (center - p1).Length;
-        double l1 = a[1];
+        double l1 = _a[1];
         double beta = Acos((l1 * l1 + l3 * l3 - l2 * l2) / (2 * l1 * l3));
 
         if (double.IsNaN(beta))
@@ -92,9 +89,9 @@ class SphericalWristKinematics : RobotKinematics
 
         Transform arr = default;
         arr.Set(
-            c[0] * (c[1] * c[2] - s[1] * s[2]), s[0], c[0] * (c[1] * s[2] + s[1] * c[2]), c[0] * (a[2] * (c[1] * c[2] - s[1] * s[2]) + a[1] * c[1]) + a[0] * c[0],
-            s[0] * (c[1] * c[2] - s[1] * s[2]), -c[0], s[0] * (c[1] * s[2] + s[1] * c[2]), s[0] * (a[2] * (c[1] * c[2] - s[1] * s[2]) + a[1] * c[1]) + a[0] * s[0],
-            s[1] * c[2] + c[1] * s[2], 0, s[1] * s[2] - c[1] * c[2], a[2] * (s[1] * c[2] + c[1] * s[2]) + a[1] * s[1] + d[0]
+            c[0] * (c[1] * c[2] - s[1] * s[2]), s[0], c[0] * (c[1] * s[2] + s[1] * c[2]), c[0] * (_a[2] * (c[1] * c[2] - s[1] * s[2]) + _a[1] * c[1]) + _a[0] * c[0],
+            s[0] * (c[1] * c[2] - s[1] * s[2]), -c[0], s[0] * (c[1] * s[2] + s[1] * c[2]), s[0] * (_a[2] * (c[1] * c[2] - s[1] * s[2]) + _a[1] * c[1]) + _a[0] * s[0],
+            s[1] * c[2] + c[1] * s[2], 0, s[1] * s[2] - c[1] * c[2], _a[2] * (s[1] * c[2] + c[1] * s[2]) + _a[1] * s[1] + _d[0]
             );
 
         arr.TryGetInverse(out var in123);
@@ -123,7 +120,7 @@ class SphericalWristKinematics : RobotKinematics
         if (Abs(1 - mr.M22) < 0.0001)
             errors.Add($"Near wrist singularity");
 
-        if (new Vector3d(center.X, center.Y, 0).Length < a[0] + SingularityTol)
+        if (new Vector3d(center.X, center.Y, 0).Length < _a[0] + SingularityTol)
             errors.Add($"Near overhead singularity");
 
         for (int i = 0; i < 6; i++)
@@ -141,15 +138,13 @@ class SphericalWristKinematics : RobotKinematics
 
         var c = Vector6d.Map(joints, x => Cos(x));
         var s = Vector6d.Map(joints, x => Sin(x));
-        var a = Vector6d.Map(_mechanism.Joints, joint => joint.A);
-        var d = Vector6d.Map(_mechanism.Joints, joint => joint.D);
 
-        t[0].Set(c[0], 0, s[0], a[0] * c[0], s[0], 0, -c[0], a[0] * s[0], 0, 1, 0, d[0]);
-        t[1].Set(c[1], -s[1], 0, a[1] * c[1], s[1], c[1], 0, a[1] * s[1], 0, 0, 1, 0);
-        t[2].Set(c[2], 0, s[2], a[2] * c[2], s[2], 0, -c[2], a[2] * s[2], 0, 1, 0, 0);
-        t[3].Set(c[3], 0, -s[3], 0, s[3], 0, c[3], 0, 0, -1, 0, d[3]);
+        t[0].Set(c[0], 0, s[0], _a[0] * c[0], s[0], 0, -c[0], _a[0] * s[0], 0, 1, 0, _d[0]);
+        t[1].Set(c[1], -s[1], 0, _a[1] * c[1], s[1], c[1], 0, _a[1] * s[1], 0, 0, 1, 0);
+        t[2].Set(c[2], 0, s[2], _a[2] * c[2], s[2], 0, -c[2], _a[2] * s[2], 0, 1, 0, 0);
+        t[3].Set(c[3], 0, -s[3], 0, s[3], 0, c[3], 0, 0, -1, 0, _d[3]);
         t[4].Set(c[4], 0, s[4], 0, s[4], 0, -c[4], 0, 0, 1, 0, 0);
-        t[5].Set(c[5], -s[5], 0, 0, s[5], c[5], 0, 0, 0, 0, 1, d[5]);
+        t[5].Set(c[5], -s[5], 0, 0, s[5], c[5], 0, 0, 0, 0, 1, _d[5]);
 
         t[1] = t[0] * t[1];
         t[2] = t[1] * t[2];

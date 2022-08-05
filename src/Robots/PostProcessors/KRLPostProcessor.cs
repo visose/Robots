@@ -178,7 +178,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
 
             double[] values = _cell.MechanicalGroups[group].RadiansToDegreesExternal(target);
 
-            for (int i = 0; i < target.External.Length; i++)
+            for (int i = 0; i < values.Length; i++)
             {
                 int num = i + 1;
                 external += $",E{num} {values[i]:0.####}";

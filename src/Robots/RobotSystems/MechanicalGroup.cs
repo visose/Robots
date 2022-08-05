@@ -43,17 +43,28 @@ public class MechanicalGroup
 
     public double[] RadiansToDegreesExternal(Target target)
     {
-        double[] values = new double[target.External.Length];
-        int jointCount = Robot.Joints.Length;
+        int externalCount = Externals.Sum(e => e.Joints.Length);
+        double[] values = new double[externalCount];
+        int robotJointCount = Robot.Joints.Length;
+
+        var external = target.External;
+        Array.Resize(ref external, externalCount);
 
         foreach (var mechanism in Externals)
         {
             foreach (var joint in mechanism.Joints)
             {
-                values[joint.Number - jointCount] = mechanism.RadianToDegree(target.External[joint.Number - jointCount], joint.Index);
+                values[joint.Number - robotJointCount] = mechanism.RadianToDegree(external[joint.Number - robotJointCount], joint.Index);
             }
         }
 
         return values;
+    }
+
+    public double[] ExternalOrDefault(double[] external)
+    {
+        int externalCount = Externals.Sum(e => e.Joints.Length);
+        Array.Resize(ref external, externalCount);
+        return external;
     }
 }

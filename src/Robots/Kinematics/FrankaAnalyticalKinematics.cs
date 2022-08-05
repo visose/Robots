@@ -31,12 +31,12 @@ class FrankaAnalyticalKinematics : RobotKinematics
 
         var q = new double[7];
 
-        double d1 = joints[0].D;
-        double d3 = joints[2].D;
-        double d5 = joints[4].D;
-        double d7e = joints[6].D;
-        double a4 = joints[3].A;
-        double a7 = joints[6].A;
+        double d1 = _d[0];
+        double d3 = _d[2];
+        double d5 = _d[4];
+        double d7e = _d[6];
+        double a4 = _a[3];
+        double a7 = _a[6];
 
         double LL24 = a4 * a4 + d3 * d3;
         double LL46 = a4 * a4 + d5 * d5;

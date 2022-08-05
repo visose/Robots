@@ -62,15 +62,16 @@ class CheckProgram
         {
             foreach (var programTarget in cellTarget.ProgramTargets)
             {
-                int externalCount = 0;
+                int externalCount = _robotSystem.RobotJointCount - 6;
+
                 if (_robotSystem is RobotCell cell)
                     externalCount = cell.MechanicalGroups[programTarget.Group].Joints.Count - jointCount;
 
                 if (programTarget.Target.External.Length != externalCount)
                 {
-                    double[] external = programTarget.Target.External;
-                    Array.Resize(ref external, externalCount);
-                    programTarget.Target.External = external;
+                    //double[] external = programTarget.Target.External;
+                    //Array.Resize(ref external, externalCount);
+                    //programTarget.Target.External = external;
                     resizeCount++;
 
                     if (resizeTarget is null)
@@ -81,7 +82,7 @@ class CheckProgram
 
         if (resizeTarget is not null)
         {
-            _program.Warnings.Add($"{resizeCount} targets had wrong number of external axes configured, the first one being target {resizeTarget.Index} of robot {resizeTarget.Group}.");
+            _program.Warnings.Add($"{resizeCount} targets have wrong number of external axes configured, the first one being target {resizeTarget.Index} of robot {resizeTarget.Group}.");
         }
 
         // Warn about defaults
@@ -442,7 +443,12 @@ class CheckProgram
         int deltaIndex = -1;
         int jointCount = _robotSystem.RobotJointCount;
 
-        for (int i = 0; i < target.Target.External.Length; i++)
+        double externalCount = 0;
+
+        if (_robotSystem is RobotCell cell)
+            externalCount = cell.MechanicalGroups[target.Group].Externals.Sum(e => e.Joints.Length);
+
+        for (int i = 0; i < externalCount; i++)
         {
             var joint = joints[i + jointCount];
             double jointSpeed = joint.MaxSpeed;

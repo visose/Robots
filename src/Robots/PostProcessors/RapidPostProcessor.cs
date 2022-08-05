@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using static System.Math;
 
 namespace Robots;
@@ -147,12 +147,12 @@ class RapidPostProcessor
 
                 if (target.ExternalCustom is null)
                 {
-                    for (int i = 0; i < target.External.Length; i++)
+                    for (int i = 0; i < values.Length; i++)
                         externals[i] = $"{values[i]:0.####}";
                 }
                 else
                 {
-                    for (int i = 0; i < target.External.Length; i++)
+                    for (int i = 0; i < target.ExternalCustom.Length; i++)
                     {
                         string e = target.ExternalCustom[i];
                         if (!string.IsNullOrEmpty(e))

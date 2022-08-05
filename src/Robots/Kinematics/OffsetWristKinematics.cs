@@ -35,16 +35,13 @@ class OffsetWristKinematics : RobotKinematics
 
         transform *= Transform.Rotation(HalfPI, Point3d.Origin);
 
-        var a = Vector6d.Map(_mechanism.Joints, j => j.A);
-        var d = Vector6d.Map(_mechanism.Joints, j => j.D);
-
         // shoulder
         {
-            double A = d[5] * transform.M12 - transform.M13;
-            double B = d[5] * transform.M02 - transform.M03;
+            double A = _d[5] * transform.M12 - transform.M13;
+            double B = _d[5] * transform.M02 - transform.M03;
             double R = A * A + B * B;
 
-            double arccos = Acos(d[3] / Sqrt(R));
+            double arccos = Acos(_d[3] / Sqrt(R));
             if (double.IsNaN(arccos))
             {
                 errors.Add("Overhead singularity.");
@@ -58,8 +55,8 @@ class OffsetWristKinematics : RobotKinematics
 
         // wrist 2
         {
-            double numer = (transform.M03 * Sin(joints[0]) - transform.M13 * Cos(joints[0]) - d[3]);
-            double div = numer / d[5];
+            double numer = (transform.M03 * Sin(joints[0]) - transform.M13 * Cos(joints[0]) - _d[3]);
+            double div = numer / _d[5];
 
             double arccos = Acos(div);
             if (double.IsNaN(arccos))
@@ -84,9 +81,9 @@ class OffsetWristKinematics : RobotKinematics
             double c6 = Cos(joints[5]), s6 = Sin(joints[5]);
             double x04x = -s5 * (transform.M02 * c1 + transform.M12 * s1) - c5 * (s6 * (transform.M01 * c1 + transform.M11 * s1) - c6 * (transform.M00 * c1 + transform.M10 * s1));
             double x04y = c5 * (transform.M20 * c6 - transform.M21 * s6) - transform.M22 * s5;
-            double p13x = d[4] * (s6 * (transform.M00 * c1 + transform.M10 * s1) + c6 * (transform.M01 * c1 + transform.M11 * s1)) - d[5] * (transform.M02 * c1 + transform.M12 * s1) + transform.M03 * c1 + transform.M13 * s1;
-            double p13y = transform.M23 - d[0] - d[5] * transform.M22 + d[4] * (transform.M21 * c6 + transform.M20 * s6);
-            double c3 = (p13x * p13x + p13y * p13y - a[1] * a[1] - a[2] * a[2]) / (2.0 * a[1] * a[2]);
+            double p13x = _d[4] * (s6 * (transform.M00 * c1 + transform.M10 * s1) + c6 * (transform.M01 * c1 + transform.M11 * s1)) - _d[5] * (transform.M02 * c1 + transform.M12 * s1) + transform.M03 * c1 + transform.M13 * s1;
+            double p13y = transform.M23 - _d[0] - _d[5] * transform.M22 + _d[4] * (transform.M21 * c6 + transform.M20 * s6);
+            double c3 = (p13x * p13x + p13y * p13y - _a[1] * _a[1] - _a[2] * _a[2]) / (2.0 * _a[1] * _a[2]);
 
             double arccos = Acos(c3);
             if (double.IsNaN(arccos))
@@ -97,10 +94,10 @@ class OffsetWristKinematics : RobotKinematics
 
             joints[2] = !elbow ? arccos : PI2 - arccos;
 
-            double denom = a[1] * a[1] + a[2] * a[2] + 2 * a[1] * a[2] * c3;
+            double denom = _a[1] * _a[1] + _a[2] * _a[2] + 2 * _a[1] * _a[2] * c3;
             double s3 = Sin(arccos);
-            double A = (a[1] + a[2] * c3);
-            double B = a[2] * s3;
+            double A = (_a[1] + _a[2] * c3);
+            double B = _a[2] * s3;
 
             joints[1] = !elbow
                 ? Atan2((A * p13y - B * p13x) / denom, (A * p13x + B * p13y) / denom)
@@ -135,20 +132,18 @@ class OffsetWristKinematics : RobotKinematics
 
         var c = Vector6d.Map(joints, j => Cos(j));
         var s = Vector6d.Map(joints, j => Sin(j));
-        var a = Vector6d.Map(_mechanism.Joints, j => j.A);
-        var d = Vector6d.Map(_mechanism.Joints, j => j.D);
 
         double s23 = Sin(joints[1] + joints[2]);
         double c23 = Cos(joints[1] + joints[2]);
         double s234 = Sin(joints[1] + joints[2] + joints[3]);
         double c234 = Cos(joints[1] + joints[2] + joints[3]);
 
-        transforms[0].Set(c[0], 0, s[0], 0, s[0], 0, -c[0], 0, 0, 1, 0, d[0]);
-        transforms[1].Set(c[0] * c[1], -c[0] * s[1], s[0], a[1] * c[0] * c[1], c[1] * s[0], -s[0] * s[1], -c[0], a[1] * c[1] * s[0], s[1], c[1], 0, d[0] + a[1] * s[1]);
-        transforms[2].Set(c23 * c[0], -s23 * c[0], s[0], c[0] * (a[2] * c23 + a[1] * c[1]), c23 * s[0], -s23 * s[0], -c[0], s[0] * (a[2] * c23 + a[1] * c[1]), s23, c23, 0, d[0] + a[2] * s23 + a[1] * s[1]);
-        transforms[3].Set(c234 * c[0], s[0], s234 * c[0], c[0] * (a[2] * c23 + a[1] * c[1]) + d[3] * s[0], c234 * s[0], -c[0], s234 * s[0], s[0] * (a[2] * c23 + a[1] * c[1]) - d[3] * c[0], s234, 0, -c234, d[0] + a[2] * s23 + a[1] * s[1]);
-        transforms[4].Set(s[0] * s[4] + c234 * c[0] * c[4], -s234 * c[0], c[4] * s[0] - c234 * c[0] * s[4], c[0] * (a[2] * c23 + a[1] * c[1]) + d[3] * s[0] + d[4] * s234 * c[0], c234 * c[4] * s[0] - c[0] * s[4], -s234 * s[0], -c[0] * c[4] - c234 * s[0] * s[4], s[0] * (a[2] * c23 + a[1] * c[1]) - d[3] * c[0] + d[4] * s234 * s[0], s234 * c[4], c234, -s234 * s[4], d[0] + a[2] * s23 + a[1] * s[1] - d[4] * c234);
-        transforms[5].Set(c[5] * (s[0] * s[4] + c234 * c[0] * c[4]) - s234 * c[0] * s[5], -s[5] * (s[0] * s[4] + c234 * c[0] * c[4]) - s234 * c[0] * c[5], c[4] * s[0] - c234 * c[0] * s[4], d[5] * (c[4] * s[0] - c234 * c[0] * s[4]) + c[0] * (a[2] * c23 + a[1] * c[1]) + d[3] * s[0] + d[4] * s234 * c[0], -c[5] * (c[0] * s[4] - c234 * c[4] * s[0]) - s234 * s[0] * s[5], s[5] * (c[0] * s[4] - c234 * c[4] * s[0]) - s234 * c[5] * s[0], -c[0] * c[4] - c234 * s[0] * s[4], s[0] * (a[2] * c23 + a[1] * c[1]) - d[3] * c[0] - d[5] * (c[0] * c[4] + c234 * s[0] * s[4]) + d[4] * s234 * s[0], c234 * s[5] + s234 * c[4] * c[5], c234 * c[5] - s234 * c[4] * s[5], -s234 * s[4], d[0] + a[2] * s23 + a[1] * s[1] - d[4] * c234 - d[5] * s234 * s[4]);
+        transforms[0].Set(c[0], 0, s[0], 0, s[0], 0, -c[0], 0, 0, 1, 0, _d[0]);
+        transforms[1].Set(c[0] * c[1], -c[0] * s[1], s[0], _a[1] * c[0] * c[1], c[1] * s[0], -s[0] * s[1], -c[0], _a[1] * c[1] * s[0], s[1], c[1], 0, _d[0] + _a[1] * s[1]);
+        transforms[2].Set(c23 * c[0], -s23 * c[0], s[0], c[0] * (_a[2] * c23 + _a[1] * c[1]), c23 * s[0], -s23 * s[0], -c[0], s[0] * (_a[2] * c23 + _a[1] * c[1]), s23, c23, 0, _d[0] + _a[2] * s23 + _a[1] * s[1]);
+        transforms[3].Set(c234 * c[0], s[0], s234 * c[0], c[0] * (_a[2] * c23 + _a[1] * c[1]) + _d[3] * s[0], c234 * s[0], -c[0], s234 * s[0], s[0] * (_a[2] * c23 + _a[1] * c[1]) - _d[3] * c[0], s234, 0, -c234, _d[0] + _a[2] * s23 + _a[1] * s[1]);
+        transforms[4].Set(s[0] * s[4] + c234 * c[0] * c[4], -s234 * c[0], c[4] * s[0] - c234 * c[0] * s[4], c[0] * (_a[2] * c23 + _a[1] * c[1]) + _d[3] * s[0] + _d[4] * s234 * c[0], c234 * c[4] * s[0] - c[0] * s[4], -s234 * s[0], -c[0] * c[4] - c234 * s[0] * s[4], s[0] * (_a[2] * c23 + _a[1] * c[1]) - _d[3] * c[0] + _d[4] * s234 * s[0], s234 * c[4], c234, -s234 * s[4], _d[0] + _a[2] * s23 + _a[1] * s[1] - _d[4] * c234);
+        transforms[5].Set(c[5] * (s[0] * s[4] + c234 * c[0] * c[4]) - s234 * c[0] * s[5], -s[5] * (s[0] * s[4] + c234 * c[0] * c[4]) - s234 * c[0] * c[5], c[4] * s[0] - c234 * c[0] * s[4], _d[5] * (c[4] * s[0] - c234 * c[0] * s[4]) + c[0] * (_a[2] * c23 + _a[1] * c[1]) + _d[3] * s[0] + _d[4] * s234 * c[0], -c[5] * (c[0] * s[4] - c234 * c[4] * s[0]) - s234 * s[0] * s[5], s[5] * (c[0] * s[4] - c234 * c[4] * s[0]) - s234 * c[5] * s[0], -c[0] * c[4] - c234 * s[0] * s[4], s[0] * (_a[2] * c23 + _a[1] * c[1]) - _d[3] * c[0] - _d[5] * (c[0] * c[4] + c234 * s[0] * s[4]) + _d[4] * s234 * s[0], c234 * s[5] + s234 * c[4] * c[5], c234 * c[5] - s234 * c[4] * s[5], -s234 * s[4], _d[0] + _a[2] * s23 + _a[1] * s[1] - _d[4] * c234 - _d[5] * s234 * s[4]);
 
         transforms[5] *= Transform.Rotation(-HalfPI, Point3d.Origin);
 

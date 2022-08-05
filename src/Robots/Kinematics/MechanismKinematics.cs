@@ -6,9 +6,15 @@ namespace Robots;
 abstract class MechanismKinematics
 {
     protected Mechanism _mechanism;
+
+    protected readonly double[] _a;
+    protected readonly double[] _d;
+
     internal MechanismKinematics(Mechanism mechanism)
     {
         _mechanism = mechanism;
+        _a = _mechanism.Joints.Map(joint => joint.A);
+        _d = _mechanism.Joints.Map(joint => joint.D);
     }
 
     internal KinematicSolution Solve(Target target, double[]? prevJoints, Plane? basePlane)
@@ -57,21 +63,19 @@ abstract class MechanismKinematics
 
     protected Transform[] ModifiedDH(double[] joints, double[] α)
     {
-        var t = new Transform[7];
+        var t = new Transform[joints.Length];
 
-        var a = _mechanism.Joints.Map(joint => joint.A);
-        var d = _mechanism.Joints.Map(joint => joint.D);
-        var c = joints.Map(x => Cos(x));
-        var s = joints.Map(x => Sin(x));
         var cα = α.Map(x => Cos(x));
         var sα = α.Map(x => Sin(x));
+        var c = joints.Map(x => Cos(x));
+        var s = joints.Map(x => Sin(x));
 
         for (int i = 0; i < joints.Length; i++)
         {
             t[i].Set(
-            c[i], -s[i], 0, a[i],
-            s[i] * cα[i], c[i] * cα[i], -sα[i], -d[i] * sα[i],
-            s[i] * sα[i], c[i] * sα[i], cα[i], d[i] * cα[i]
+            c[i], -s[i], 0, _a[i],
+            s[i] * cα[i], c[i] * cα[i], -sα[i], -_d[i] * sα[i],
+            s[i] * sα[i], c[i] * sα[i], cα[i], _d[i] * cα[i]
             );
         }
 
@@ -83,21 +87,19 @@ abstract class MechanismKinematics
 
     protected Transform[] DH(double[] joints, double[] α)
     {
-        var t = new Transform[7];
+        var t = new Transform[joints.Length];
 
-        var a = _mechanism.Joints.Map(joint => joint.A);
-        var d = _mechanism.Joints.Map(joint => joint.D);
-        var c = joints.Map(x => Cos(x));
-        var s = joints.Map(x => Sin(x));
         var cα = α.Map(x => Cos(x));
         var sα = α.Map(x => Sin(x));
+        var c = joints.Map(x => Cos(x));
+        var s = joints.Map(x => Sin(x));
 
         for (int i = 0; i < joints.Length; i++)
         {
             t[i].Set(
-                c[i], -s[i] * cα[i], s[i] * sα[i], a[i] * c[i],
-                s[i], c[i] * cα[i], -c[i] * sα[i], a[i] * s[i],
-                   0, sα[i], cα[i], d[i]
+                c[i], -s[i] * cα[i], s[i] * sα[i], _a[i] * c[i],
+                s[i], c[i] * cα[i], -c[i] * sα[i], _a[i] * s[i],
+                   0, sα[i], cα[i], _d[i]
                 );
         }
 

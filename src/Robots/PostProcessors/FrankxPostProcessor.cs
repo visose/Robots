@@ -1,3 +1,5 @@
+using Rhino.Geometry;
+using static System.Math;
 
 namespace Robots;
 
@@ -21,39 +23,48 @@ class FrankxPostProcessor
             program.Warnings.Add("Multi-file input not supported on Franka Emika robots");
     }
 
+    string Affine(Plane plane)
+    {
+        double[] n = _cell.PlaneToNumbers(plane);
+        return $"Affine({n[0]:0.#####}, {n[1]:0.#####}, {n[2]:0.#####}, {n[3]:0.#####}, {n[4]:0.#####}, {n[5]:0.#####})";
+    }
+
     List<string> Program()
     {
+        double dynamicRel = 1.0;
         string indent = "  ";
         var code = new List<string>
                 {
-                    @"def Program():
-  robot = Robot(""172.16.0.2"")
+                    $@"from argparse import ArgumentParser
+from frankx import Affine, Robot, JointMotion, PathMotion, WaypointMotion, Waypoint, MotionData
+
+def program():
+  parser = ArgumentParser()
+  parser.add_argument('--host', default='172.16.0.2', help='FCI IP of the robot')
+  args = parser.parse_args()
+  robot = Robot(args.host)
+  robot.set_default_behavior()
   robot.recover_from_errors()
-  robot.set_dynamic_rel(0.05)
-  robot.velocity_rel = 0.2
-  robot.acceleration_rel = 0.1
-  robot.jerk_rel = 0.01
+  robot.set_dynamic_rel({dynamicRel:0.#####})
 "
                 };
+
+        // robot.velocity_rel = 0.2
+        // robot.acceleration_rel = 0.1
+        // robot.jerk_rel = 0.01
 
         // Attribute declarations
         var attributes = _program.Attributes;
 
         foreach (var tool in attributes.OfType<Tool>())
         {
-            //TODO
-        }
-
-        foreach (var speed in attributes.OfType<Speed>())
-        {
-            double linearSpeed = speed.TranslationSpeed / 1000;
-            code.Add(indent + $"{speed.Name} = {linearSpeed:0.#####}");
+            code.Add($"  {tool.Name} = {Affine(tool.Tcp)}");
         }
 
         foreach (var zone in attributes.OfType<Zone>())
         {
-            double zoneDistance = zone.Distance / 1000;
-            code.Add(indent + $"{zone.Name} = {zoneDistance:0.#####}");
+            double zoneDistance = zone.Distance / 1000.0;
+            code.Add($"  {zone.Name} = {zoneDistance:0.#####}");
         }
 
         foreach (var command in attributes.OfType<Command>())
@@ -72,6 +83,8 @@ class FrankxPostProcessor
             code.Add(indent + commands);
         }
 
+        Motions? currentMotion = null;
+        Zone? currentZone = null;
         Tool? currentTool = null;
 
         // Targets
@@ -81,65 +94,94 @@ class FrankxPostProcessor
             var programTarget = cellTarget.ProgramTargets[0];
             var target = programTarget.Target;
 
-            if (currentTool is null || target.Tool != currentTool)
-            {
-                code.Add(Tool(target.Tool));
-                currentTool = target.Tool;
-            }
+            var beforeCommands = programTarget.Commands.Where(c => c.RunBefore);
 
-            string moveText;
-            string data;
-            string zoneDistance = target.Zone.Name;
+            if (currentMotion is not null && beforeCommands.Any())
+                MotionMove();
 
-            if (programTarget.IsJointTarget || (programTarget.IsJointMotion && programTarget.ForcedConfiguration))
-            {
-                double[] joints = programTarget.IsJointTarget
-                    ? ((JointTarget)programTarget.Target).Joints
-                    : programTarget.Kinematics.Joints;
-
-                data = $"  data = MotionData(0.2)"; // TODO
-                moveText = $"  motion = JointMotion([{joints[0]:0.#####}, {joints[1]:0.#####}, {joints[2]:0.#####}, {joints[3]:0.#####}, {joints[4]:0.#####}, {joints[5]:0.#####}, {joints[6]:0.#####}])";
-
-            }
-            else
-            {
-                var cartesian = (CartesianTarget)target;
-                var plane = cartesian.Plane;
-                plane.Orient(ref target.Frame.Plane);
-                plane.InverseOrient(ref _cell.BasePlane);
-                var numbers = _cell.PlaneToNumbers(plane);
-
-                switch (cartesian.Motion)
-                {
-                    case Motions.Joint:
-                        {
-                            data = $"  data = MotionData(0.2)"; // TODO
-                            moveText = $"  motion = JointMotion(Affine({numbers[0]:0.#####}, {numbers[1]:0.#####}, {numbers[2]:0.#####}, {numbers[3]:0.#####}, {numbers[4]:0.#####}, {numbers[5]:0.#####}))";
-                            break;
-                        }
-                        
-                    case Motions.Linear:
-                        {
-                            data = $"  data = MotionData(0.2)"; // TODO
-                            moveText = $"  motion = LinearMotion(Affine({numbers[0]:0.#####}, {numbers[1]:0.#####}, {numbers[2]:0.#####}, {numbers[3]:0.#####}, {numbers[4]:0.#####}, {numbers[5]:0.#####}))";
-                            break;
-                        }
-                    default:
-                        throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.", nameof(cartesian.Motion));
-                }
-            }
-
-            foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
+            foreach (var command in beforeCommands)
             {
                 string commands = command.Code(_program, target);
-                commands = indent + commands;
-                code.Add(commands);
+                code.Add(indent + commands);
             }
 
-            code.Add(moveText);
-            code.Add("  robot.move(motion, data)");
+            double speed = GetSpeed(cellTarget);
 
-            foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
+            if (target is JointTarget joint)
+            {
+                if (currentMotion is not null)
+                    MotionMove();
+
+                double[] j = joint.Joints;
+                code.Add($"  data = MotionData({dynamicRel:0.#####})");
+                code.Add($"  data.velocity_rel = {speed:0.#####}");
+                code.Add($"  motion = JointMotion([{j[0]:0.#####}, {j[1]:0.#####}, {j[2]:0.#####}, {j[3]:0.#####}, {j[4]:0.#####}, {j[5]:0.#####}, {j[6]:0.#####}])");
+                code.Add("  robot.move(motion, data)");
+            }
+            else if (target is CartesianTarget cartesian)
+            {
+                var motion = cartesian.Motion;
+                var tool = cartesian.Tool;
+
+                if (currentMotion is not null)
+                {
+                    if ((motion == Motions.Linear && currentZone != target.Zone)
+                        || currentTool != tool
+                        || currentMotion != motion)
+                    {
+                        MotionMove();
+                    }
+                }
+
+                currentTool = target.Tool;
+                currentZone = target.Zone;
+
+                if (currentMotion is null)
+                {
+                    switch (motion)
+                    {
+                        case Motions.Joint:
+                            code.Add($"  motion = WaypointMotion([])");
+                            break;
+                        case Motions.Linear:
+                            code.Add($"  motion = PathMotion([], {currentZone.Name})");
+                            break;
+                        default:
+                            throw new NotSupportedException($"Motion {motion} not supported");
+                    }
+
+                    currentMotion = motion;
+                }
+
+                var plane = cartesian.Plane;
+
+                // Bake frame
+                plane.Orient(ref target.Frame.Plane);
+
+                // Bake base
+                plane.InverseOrient(ref _cell.BasePlane);
+
+                // Bake tcp and base
+                //var tcp = target.Tool.Tcp;
+                //tcp.Rotate(PI, Vector3d.ZAxis, Point3d.Origin);
+                //var transform = _cell.BasePlane.ToInverseTransform() * Transform.PlaneToPlane(tcp, plane);
+                //plane = transform.ToPlane();
+
+                //Elbow
+                var elbow = target.External.Length > 0
+                    ? $", {target.External[0]:0.#####}" : "";
+
+                code.Add($"  waypoint = Waypoint({Affine(plane)}{elbow})");
+                code.Add($"  waypoint.velocity_rel = {speed:0.#####}");
+                code.Add($"  motion.waypoints.append(waypoint)");
+            }
+
+            var afterCommands = programTarget.Commands.Where(c => !c.RunBefore);
+
+            if (currentMotion is not null && afterCommands.Any())
+                MotionMove();
+
+            foreach (var command in afterCommands)
             {
                 string commands = command.Code(_program, target);
                 commands = indent + commands;
@@ -147,15 +189,41 @@ class FrankxPostProcessor
             }
         }
 
-        code.Add(@"end
+        if (currentMotion != null)
+            MotionMove();
 
-program()
-");
+        code.Add(@"
+program()");
+
         return code;
-    }
 
-    string Tool(Tool tool)
-    {
-        return ""; //TODO
+        void MotionMove()
+        {
+            if (currentTool is null)
+                throw new ArgumentNullException(nameof(currentTool));
+
+            code.Add($"  robot.move({currentTool.Name}, motion)");
+            currentMotion = null;
+        }
+
+        double GetSpeed(CellTarget cellTarget)
+        {
+            var programTarget = cellTarget.ProgramTargets[0];
+
+            //if (speed.Time > 0)
+            //    return $"t={speed.Time:0.####}";
+
+            if (cellTarget.DeltaTime > 0)
+            {
+                int leadIndex = programTarget.LeadingJoint;
+                double leadAxisSpeed = _robot.Joints[leadIndex].MaxSpeed;
+                double percentage = cellTarget.MinTime / cellTarget.DeltaTime;
+                return Min(percentage, 1);
+            }
+            else
+            {
+                return dynamicRel;
+            }
+        }
     }
 }

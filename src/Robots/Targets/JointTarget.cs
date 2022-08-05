@@ -7,7 +7,8 @@ public class JointTarget : Target
 {
     public double[] Joints { get; set; }
 
-    public JointTarget(double[] joints, Tool? tool = null, Speed? speed = null, Zone? zone = null, Command? command = null, Frame? frame = null, IEnumerable<double>? external = null) : base(tool, speed, zone, command, frame, external)
+    public JointTarget(double[] joints, Tool? tool = null, Speed? speed = null, Zone? zone = null, Command? command = null, Frame? frame = null, IEnumerable<double>? external = null)
+        : base(tool, speed, zone, command, frame, external)
     {
         if (joints.Length != 6 && joints.Length != 7)
             Array.Resize(ref joints, 6);
@@ -15,7 +16,8 @@ public class JointTarget : Target
         Joints = joints;
     }
 
-    public JointTarget(double[] joints, Target target, IEnumerable<double>? external = null) : this(joints, target.Tool, target.Speed, target.Zone, target.Command, target.Frame, external ?? target.External) { }
+    public JointTarget(double[] joints, Target target, IEnumerable<double>? external = null)
+        : this(joints, target.Tool, target.Speed, target.Zone, target.Command, target.Frame, external ?? target.External) { }
 
     public static double[] Lerp(double[] a, double[] b, double t, double min, double max)
     {

@@ -9,7 +9,7 @@ public class ProgramTarget
 
     public Target Target { get; internal set; }
     public int Group { get; internal set; }
-    public List<Command>? Commands { get; private set; }
+    public List<Command> Commands { get; private set; }
     internal bool ChangesConfiguration { get; set; } = false;
     internal int LeadingJoint { get; set; }
 
@@ -71,7 +71,7 @@ public class ProgramTarget
     {
         var target = (ProgramTarget)MemberwiseClone();
         target.CellTarget = cellTarget;
-        target.Commands = null;
+        target.Commands = new List<Command>(0);
         return target;
     }
 
@@ -103,7 +103,22 @@ public class ProgramTarget
     {
         int jointCount = robot.RobotJointCount;
         double[] allJoints = JointTarget.Lerp(prevTarget.Kinematics.Joints, Kinematics.Joints, t, start, end);
-        var external = allJoints.RangeSubset(jointCount, Target.External.Length);
+
+        double[] external;
+
+        if (robot is RobotCell cell)
+        {
+            int externalCount = cell.MechanicalGroups[Group].Externals.Sum(e => e.Joints.Length);
+            external = allJoints.RangeSubset(jointCount, externalCount);
+        }
+        else if (robot.RobotJointCount == 7 && Target.External.Length > 0)
+        {
+            external = new[] { allJoints[2] };
+        }
+        else
+        {
+            external = new double[0];
+        }
 
         if (IsJointMotion)
         {
