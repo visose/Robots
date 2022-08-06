@@ -5,7 +5,9 @@ namespace Robots;
 
 class FrankxPostProcessor
 {
-    readonly RobotArm _robot;
+    const double _dynamicRel = 1.0;
+    const string _indent = "  ";
+
     readonly CobotCellFranka _cell;
     readonly Program _program;
     internal List<List<List<string>>> Code { get; }
@@ -13,7 +15,6 @@ class FrankxPostProcessor
     internal FrankxPostProcessor(CobotCellFranka robotCell, Program program)
     {
         _cell = robotCell;
-        _robot = _cell.Robot;
         _program = program;
         var groupCode = new List<List<string>> { Program() };
         Code = new List<List<List<string>>> { groupCode };
@@ -23,16 +24,8 @@ class FrankxPostProcessor
             program.Warnings.Add("Multi-file input not supported on Franka Emika robots");
     }
 
-    string Affine(Plane plane)
-    {
-        double[] n = _cell.PlaneToNumbers(plane);
-        return $"Affine({n[0]:0.#####}, {n[1]:0.#####}, {n[2]:0.#####}, {n[3]:0.#####}, {n[4]:0.#####}, {n[5]:0.#####}, {n[6]:0.#####})";
-    }
-
     List<string> Program()
     {
-        double dynamicRel = 1.0;
-        string indent = "  ";
         var code = new List<string>
         {
             $@"from argparse import ArgumentParser
@@ -46,7 +39,7 @@ def program():
   robot = Robot(args.host)
   robot.set_default_behavior()
   robot.recover_from_errors()
-  robot.set_dynamic_rel({dynamicRel:0.#####})
+  robot.set_dynamic_rel({_dynamicRel:0.#####})
 "
         };
 
@@ -73,7 +66,7 @@ def program():
             string declaration = command.Declaration(_program);
 
             if (!string.IsNullOrWhiteSpace(declaration))
-                code.Add(indent + declaration);
+                code.Add(_indent + declaration);
         }
 
         // Init commands
@@ -81,7 +74,7 @@ def program():
         foreach (var command in _program.InitCommands)
         {
             string commands = command.Code(_program, Target.Default);
-            code.Add(indent + commands);
+            code.Add(_indent + commands);
         }
 
         Motions? currentMotion = null;
@@ -103,7 +96,7 @@ def program():
             foreach (var command in beforeCommands)
             {
                 string commands = command.Code(_program, target);
-                code.Add(indent + commands);
+                code.Add(_indent + commands);
             }
 
             double speed = GetSpeed(cellTarget);
@@ -114,7 +107,7 @@ def program():
                     MotionMove();
 
                 double[] j = joint.Joints;
-                code.Add($"  data = MotionData({dynamicRel:0.#####})");
+                code.Add($"  data = MotionData({_dynamicRel:0.#####})");
                 code.Add($"  data.velocity_rel = {speed:0.#####}");
                 code.Add($"  motion = JointMotion([{j[0]:0.#####}, {j[1]:0.#####}, {j[2]:0.#####}, {j[3]:0.#####}, {j[4]:0.#####}, {j[5]:0.#####}, {j[6]:0.#####}])");
                 code.Add("  robot.move(motion, data)");
@@ -169,8 +162,7 @@ def program():
                         code.Add($"  path.append(waypoint)");
                         break;
                     case Motions.Linear:
-                        code.Add($"  target = {Affine(plane)}");
-                        code.Add($"  path.append(target)");
+                        code.Add($"  path.append({Affine(plane)})");
                         break;
                     default:
                         throw new NotSupportedException($"Motion {currentMotion} not supported");
@@ -185,7 +177,7 @@ def program():
             foreach (var command in afterCommands)
             {
                 string commands = command.Code(_program, target);
-                code.Add(indent + commands);
+                code.Add(_indent + commands);
             }
         }
 
@@ -218,22 +210,28 @@ program()
             code.Add($"  robot.move({currentTool.Name}, motion)");
             currentMotion = null;
         }
+    }
 
-        double GetSpeed(CellTarget cellTarget)
+    string Affine(Plane plane)
+    {
+        double[] n = _cell.PlaneToNumbers(plane);
+        return $"Affine({n[0]:0.#####}, {n[1]:0.#####}, {n[2]:0.#####}, {n[3]:0.#####}, {n[4]:0.#####}, {n[5]:0.#####}, {n[6]:0.#####})";
+    }
+
+    double GetSpeed(CellTarget cellTarget)
+    {
+        //var programTarget = cellTarget.ProgramTargets[0];
+
+        if (cellTarget.DeltaTime > 0)
         {
-            var programTarget = cellTarget.ProgramTargets[0];
-
-            if (cellTarget.DeltaTime > 0)
-            {
-                int leadIndex = programTarget.LeadingJoint;
-                double leadAxisSpeed = _robot.Joints[leadIndex].MaxSpeed;
-                double percentage = cellTarget.MinTime / cellTarget.DeltaTime;
-                return Min(percentage, 1);
-            }
-            else
-            {
-                return dynamicRel;
-            }
+            // int leadIndex = programTarget.LeadingJoint;
+            // double leadAxisSpeed = _cell.Robot.Joints[leadIndex].MaxSpeed;
+            double percentage = cellTarget.MinTime / cellTarget.DeltaTime;
+            return Min(percentage, 1);
+        }
+        else
+        {
+            return 1;
         }
     }
 }

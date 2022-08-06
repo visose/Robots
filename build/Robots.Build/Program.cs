@@ -1,4 +1,4 @@
-﻿using RhinoPackager;
+using RhinoPackager;
 using RhinoPackager.Commands;
 
 var app = App.Create(args);
@@ -26,7 +26,8 @@ app.Add(new ICommand[]
                 "ABB.Robotics.Controllers.PC.dll",
                 "RobotStudio.Services.RobApi.Desktop.dll",
                 "RobotStudio.Services.RobApi.dll",
-                "Renci.SshNet.dll"
+                "Renci.SshNet.dll",
+                "MathNet.Numerics.dll"
             },
             tags: new []
             {

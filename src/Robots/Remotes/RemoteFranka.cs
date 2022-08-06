@@ -11,6 +11,9 @@ public class RemoteFranka : IRemote
     public Action? Update { get; set; }
     public List<string> Log { get; } = new();
 
+    CancellationTokenSource? _cancelToken;
+    Task? _task;
+
     public string? IP
     {
         get => _user?.IP;
@@ -23,7 +26,7 @@ public class RemoteFranka : IRemote
             catch
             {
                 _user = null;
-                AddLog($"Invalid address: {value}");
+                LogAdd($"Invalid address: {value}");
             }
         }
     }
@@ -32,17 +35,15 @@ public class RemoteFranka : IRemote
     {
         if (_user is null)
         {
-            AddLog($"Error: IP not set.");
+            LogAdd($"Error: IP not set.");
             return;
         }
 
         if (program.Code is null)
         {
-            AddLog($"Error: Program code not generated.");
+            LogAdd($"Error: Program code not generated.");
             return;
         }
-
-        AddLog("Uploading program...");
 
         try
         {
@@ -51,30 +52,45 @@ public class RemoteFranka : IRemote
             string fileName = $"{program.Name}.py";
             Ftp.Upload(bytes, fileName, _user);
             _uploadedFile = fileName;
+            LogAdd("Program uploaded.");
+
         }
         catch (Exception e)
         {
-            AddLog($"Error: FTP - {e.Message}");
+            LogAdd($"Error: FTP - {e.Message}");
         }
     }
 
-    public void Pause() => AddLog("Pause is not supported.");
+    public void Pause()
+    {
+        if (_cancelToken is null)
+        {
+            LogAdd("Program not running.");
+            return;
+        }
+
+        _cancelToken?.Cancel();
+    }
 
     public void Play()
     {
         if (_user is null)
         {
-            AddLog($"Error: IP not set.");
+            LogAdd($"Error: IP not set.");
             return;
         }
 
         if (_uploadedFile is null)
         {
-            AddLog($"Error: File not uploaded.");
+            LogAdd($"Error: File not uploaded.");
             return;
         }
 
-        AddLog("Starting program...");
+        if (_task?.IsCompleted == false)
+        {
+            return;
+        }
+
         Send($"python {_user.ProgramsDir}/{_uploadedFile}");
     }
 
@@ -86,7 +102,7 @@ public class RemoteFranka : IRemote
         }
         catch (Exception e)
         {
-            AddLog($"Error: {e.Message}");
+            LogAdd($"Error: {e.Message}");
         }
     }
 
@@ -103,25 +119,65 @@ public class RemoteFranka : IRemote
             Timeout = TimeSpan.FromSeconds(5)
         };
 
-        _ = Task.Run(() =>
+        _cancelToken = new();
+        var token = _cancelToken.Token;
+
+        _task = Task.Run(async () =>
         {
             using SshClient client = new(connectionInfo);
             client.Connect();
-            var result = client.RunCommand(message);
 
-            if (result.ExitStatus == 0)
+            using var command = client.CreateCommand(message);
+            var async = command.BeginExecute();
+
+            var reader = new StreamReader(command.OutputStream);
+
+            while (!async.IsCompleted)
             {
-                if (!string.IsNullOrEmpty(result.Result))
-                    AddLog(result.Result);
+                await Task.Delay(100);
+
+                if (token.IsCancellationRequested)
+                    command.CancelAsync();
+
+                string? text;
+
+                while ((text = await reader.ReadLineAsync()) is not null)
+                    LogUpdate(text);
+            }
+
+            var end = reader.ReadToEnd();
+
+            if (!string.IsNullOrEmpty(end))
+                LogUpdate(end);
+
+            if (command.ExitStatus != 0)
+            {
+                var error = string.IsNullOrEmpty(command.Error)
+                ? "Program canceled."
+                : command.Error;
+
+                LogUpdate($"Error: {error}");
             }
             else
             {
-                AddLog($"Error: {result.Error}");
+                LogUpdate("Program ended.");
             }
 
-            Update?.Invoke();
-        });
+            command.EndExecute(async);
+        }, token)
+            .ContinueWith(t =>
+            {
+                _cancelToken.Dispose();
+                _cancelToken = null;
+            });
     }
 
-    void AddLog(string message) => Log.Add(message);
+    void LogAdd(string text) =>
+        Log.Insert(0, $"{DateTime.Now.ToLongTimeString()} - {text}");
+
+    void LogUpdate(string text)
+    {
+        LogAdd(text);
+        Update?.Invoke();
+    }
 }
