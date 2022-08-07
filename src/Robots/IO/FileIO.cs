@@ -183,7 +183,7 @@ public static class FileIO
 
         var jointElements = element.GetElement("Joints").Descendants().ToList();
         var jointCount = jointElements.Count;
-        Joint[] joints = new Joint[jointCount];
+        var joints = new Joint[jointCount];
 
         var meshes = loadMeshes
             ? GetMechanismMeshes(cellName, mechanism, model, manufacturer, jointCount)
@@ -196,6 +196,7 @@ public static class FileIO
             var jointElement = jointElements[i];
             double a = jointElement.GetDoubleAttribute("a");
             double d = jointElement.GetDoubleAttribute("d");
+            double α = jointElement.GetDoubleAttributeOrDefault("α") ?? 0;
 
             double minRange = jointElement.GetDoubleAttribute("minrange");
             double maxRange = jointElement.GetDoubleAttribute("maxrange");
@@ -207,8 +208,8 @@ public static class FileIO
 
             joints[i] = jointElement.Name.LocalName switch
             {
-                "Revolute" => new RevoluteJoint { Index = i, Number = number, A = a, D = d, Range = range, MaxSpeed = maxSpeed.ToRadians(), Mesh = mesh },
-                "Prismatic" => new PrismaticJoint { Index = i, Number = number, A = a, D = d, Range = range, MaxSpeed = maxSpeed, Mesh = mesh },
+                "Revolute" => new RevoluteJoint { Index = i, Number = number, A = a, D = d, Alpha = α.ToRadians(), Range = range, MaxSpeed = maxSpeed.ToRadians(), Mesh = mesh },
+                "Prismatic" => new PrismaticJoint { Index = i, Number = number, A = a, D = d, Alpha = α.ToRadians(), Range = range, MaxSpeed = maxSpeed, Mesh = mesh },
                 _ => throw new ArgumentException(" Invalid joint type.", nameof(jointElement.Name.LocalName))
             };
         }
@@ -436,6 +437,12 @@ public static class FileIO
     {
         var s = element.GetAttribute(name);
         return XmlConvert.ToDouble(s);
+    }
+
+    static double? GetDoubleAttributeOrDefault(this XElement element, string name)
+    {
+        string? s = element.Attribute(XName.Get(name))?.Value;
+        return s is null ? null : XmlConvert.ToDouble(s);
     }
 
     static int GetIntAttribute(this XElement element, string name)

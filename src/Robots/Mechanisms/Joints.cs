@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots;
 
@@ -8,6 +8,7 @@ public abstract class Joint
     public int Number { get; set; }
     internal double A { get; set; }
     internal double D { get; set; }
+    internal double Alpha { get; set; }
     public Interval Range { get; internal set; }
     public double MaxSpeed { get; internal set; }
     public Plane Plane { get; set; }

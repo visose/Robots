@@ -215,8 +215,6 @@ class FrankaAnalyticalKinematics : RobotKinematics
 
     protected override Transform[] ForwardKinematics(double[] joints)
     {
-        double[] α = new[] { 0, -HalfPI, HalfPI, HalfPI, -HalfPI, HalfPI, HalfPI };
-        var t = ModifiedDH(joints, α);
-        return t;
+        return ModifiedDH(joints);
     }
 }

@@ -10,11 +10,20 @@ abstract class MechanismKinematics
     protected readonly double[] _a;
     protected readonly double[] _d;
 
+    readonly double[] _cα;
+    readonly double[] _sα;
+
     internal MechanismKinematics(Mechanism mechanism)
     {
         _mechanism = mechanism;
-        _a = _mechanism.Joints.Map(joint => joint.A);
-        _d = _mechanism.Joints.Map(joint => joint.D);
+
+        var joints = _mechanism.Joints;
+
+        _a = joints.Map(joint => joint.A);
+        _d = joints.Map(joint => joint.D);
+
+        _cα = joints.Map(joint => Cos(joint.Alpha));
+        _sα = joints.Map(joint => Sin(joint.Alpha));
     }
 
     internal KinematicSolution Solve(Target target, double[]? prevJoints, Plane? basePlane)
@@ -61,12 +70,10 @@ abstract class MechanismKinematics
         solution.Errors.AddRange(outofRangeErrors);
     }
 
-    protected Transform[] ModifiedDH(double[] joints, double[] α)
+    protected Transform[] ModifiedDH(double[] joints)
     {
         var t = new Transform[joints.Length];
 
-        var cα = α.Map(x => Cos(x));
-        var sα = α.Map(x => Sin(x));
         var c = joints.Map(x => Cos(x));
         var s = joints.Map(x => Sin(x));
 
@@ -74,8 +81,8 @@ abstract class MechanismKinematics
         {
             t[i].Set(
             c[i], -s[i], 0, _a[i],
-            s[i] * cα[i], c[i] * cα[i], -sα[i], -_d[i] * sα[i],
-            s[i] * sα[i], c[i] * sα[i], cα[i], _d[i] * cα[i]
+            s[i] * _cα[i], c[i] * _cα[i], -_sα[i], -_d[i] * _sα[i],
+            s[i] * _sα[i], c[i] * _sα[i], _cα[i], _d[i] * _cα[i]
             );
         }
 
@@ -85,21 +92,19 @@ abstract class MechanismKinematics
         return t;
     }
 
-    protected Transform[] DH(double[] joints, double[] α)
+    protected Transform[] DH(double[] joints)
     {
         var t = new Transform[joints.Length];
 
-        var cα = α.Map(x => Cos(x));
-        var sα = α.Map(x => Sin(x));
         var c = joints.Map(x => Cos(x));
         var s = joints.Map(x => Sin(x));
 
         for (int i = 0; i < joints.Length; i++)
         {
             t[i].Set(
-                c[i], -s[i] * cα[i], s[i] * sα[i], _a[i] * c[i],
-                s[i], c[i] * cα[i], -c[i] * sα[i], _a[i] * s[i],
-                   0, sα[i], cα[i], _d[i]
+                c[i], -s[i] * _cα[i], s[i] * _sα[i], _a[i] * c[i],
+                s[i], c[i] * _cα[i], -c[i] * _sα[i], _a[i] * s[i],
+                   0, _sα[i], _cα[i], _d[i]
                 );
         }
 

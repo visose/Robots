@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using System.Text.RegularExpressions;
 using static System.Math;
 
