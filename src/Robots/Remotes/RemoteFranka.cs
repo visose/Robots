@@ -91,7 +91,7 @@ public class RemoteFranka : IRemote
             return;
         }
 
-        Send($"python {_user.ProgramsDir}/{_uploadedFile}");
+        Send($"python -u {_user.ProgramsDir}/{_uploadedFile}");
     }
 
     public void Send(string message)

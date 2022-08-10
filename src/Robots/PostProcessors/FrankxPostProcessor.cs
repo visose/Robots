@@ -78,7 +78,6 @@ def program():
         }
 
         Motions? currentMotion = null;
-        Zone? currentZone = null;
         Tool? currentTool = null;
 
         // Targets
@@ -119,21 +118,26 @@ def program():
 
                 if (currentMotion is not null)
                 {
-                    if ((motion == Motions.Linear && currentZone != target.Zone)
-                        || currentTool != tool
-                        || currentMotion != motion)
-                    {
+                    if (currentTool != tool || currentMotion != motion)
                         MotionMove();
-                    }
                 }
-
-                currentTool = target.Tool;
-                currentZone = target.Zone;
 
                 if (currentMotion is null)
                 {
-                    code.Add($"  path = []");
+                    currentTool = target.Tool;
                     currentMotion = motion;
+
+                    switch (currentMotion)
+                    {
+                        case Motions.Joint:
+                            code.Add($"  motion = WaypointMotion([");
+                            break;
+                        case Motions.Linear:
+                            code.Add($"  motion = PathMotion([");
+                            break;
+                        default:
+                            throw new NotSupportedException($"Motion {currentMotion} not supported");
+                    }
                 }
 
                 var plane = cartesian.Plane;
@@ -150,23 +154,11 @@ def program():
                 //var transform = _cell.BasePlane.ToInverseTransform() * Transform.PlaneToPlane(tcp, plane);
                 //plane = transform.ToPlane();
 
-                switch (currentMotion)
-                {
-                    case Motions.Joint:
-                        //Elbow
-                        var elbow = target.External.Length > 0
+                var elbow = target.External.Length > 0
                             ? $", {target.External[0]:0.#####}" : "";
 
-                        code.Add($"  waypoint = Waypoint({Affine(plane)}{elbow})");
-                        code.Add($"  waypoint.velocity_rel = {speed:0.#####}");
-                        code.Add($"  path.append(waypoint)");
-                        break;
-                    case Motions.Linear:
-                        code.Add($"  path.append({Affine(plane)})");
-                        break;
-                    default:
-                        throw new NotSupportedException($"Motion {currentMotion} not supported");
-                }
+                var zone = target.Zone.Distance / 1000.0;
+                code.Add($"    Waypoint({Affine(plane)}, {speed:0.#####}, {target.Zone.Name}{elbow}),");
             }
 
             var afterCommands = programTarget.Commands.Where(c => !c.RunBefore);
@@ -192,21 +184,13 @@ program()
 
         void MotionMove()
         {
-            if (currentTool is null || currentZone is null)
+            if (currentTool is null)
                 throw new ArgumentNullException(nameof(currentTool));
 
-            switch (currentMotion)
-            {
-                case Motions.Joint:
-                    code.Add($"  motion = WaypointMotion(path)");
-                    break;
-                case Motions.Linear:
-                    code.Add($"  motion = PathMotion(path, {currentZone.Name})");
-                    break;
-                default:
-                    throw new NotSupportedException($"Motion {currentMotion} not supported");
-            }
+            if (currentMotion is null)
+                throw new ArgumentNullException(nameof(currentMotion));
 
+            code.Add($"  ])");
             code.Add($"  robot.move({currentTool.Name}, motion)");
             currentMotion = null;
         }
