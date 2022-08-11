@@ -1,4 +1,4 @@
-﻿
+
 namespace Robots;
 
 public struct Vector6d
@@ -77,5 +77,10 @@ public struct Vector6d
                     throw new ArgumentOutOfRangeException(nameof(i), " Invalid Vector6 index");
             }
         }
+    }
+
+    public double[] ToArray()
+    {
+        return new double[] { A1, A2, A3, A4, A5, A6 };
     }
 }

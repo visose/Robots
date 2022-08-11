@@ -1,4 +1,4 @@
-﻿using static System.Math;
+using static System.Math;
 
 namespace Robots;
 
@@ -23,11 +23,11 @@ public class Speed : TargetAttribute
     /// </summary>
     public double RotationExternal { get; set; }
     /// <summary>
-    /// Translation acceleration in mm/s² (used in UR)
+    /// Translation acceleration in mm/s² (used in UR, Doosan)
     /// </summary>
     public double TranslationAccel { get; set; } = 1000;
     /// <summary>
-    /// Axis/join acceleration in rads/s² (used in UR)
+    /// Axis/join acceleration in rads/s² (used in UR, Doosan)
     /// </summary>
     public double AxisAccel { get; set; } = PI;
 
