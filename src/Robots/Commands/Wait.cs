@@ -16,12 +16,14 @@ public class Wait : Command
         _commands.Add(Manufacturers.UR, CodePython);
         _commands.Add(Manufacturers.Staubli, CodeStaubli);
         _commands.Add(Manufacturers.FrankaEmika, CodePython);
+        _commands.Add(Manufacturers.Doosan, CodeDoosan);
 
         _declarations.Add(Manufacturers.ABB, DeclarationAbb);
         _declarations.Add(Manufacturers.KUKA, DeclarationKuka);
         _declarations.Add(Manufacturers.UR, DeclarationPython);
         _declarations.Add(Manufacturers.Staubli, DeclarationStaubli);
         _declarations.Add(Manufacturers.FrankaEmika, DeclarationPython);
+        _declarations.Add(Manufacturers.Doosan, DeclarationPython);
     }
 
     string DeclarationAbb(RobotSystem robotSystem)
@@ -68,6 +70,11 @@ public class Wait : Command
     string CodeStaubli(RobotSystem robotSystem, Target target)
     {
         return $"waitEndMove()\r\ndelay({Name})";
+    }
+
+    string CodeDoosan(RobotSystem robotSystem, Target target)
+    {
+        return $"wait({Name})";
     }
 
     public override string ToString() => $"Command (Wait {Seconds} secs)";

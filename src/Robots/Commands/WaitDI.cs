@@ -1,4 +1,4 @@
-﻿namespace Robots.Commands;
+namespace Robots.Commands;
 
 public class WaitDI : Command
 {
@@ -23,6 +23,7 @@ public class WaitDI : Command
         _commands.Add(Manufacturers.KUKA, CodeKuka);
         _commands.Add(Manufacturers.UR, CodeUR);
         _commands.Add(Manufacturers.Staubli, CodeStaubli);
+        _commands.Add(Manufacturers.Doosan, CodeDoosan);
     }
 
     string CodeAbb(RobotSystem robotSystem, Target target)
@@ -52,6 +53,13 @@ public class WaitDI : Command
         var number = GetNumber(robotSystem);
         string textValue = Value ? "true" : "false";
         return $"waitEndMove()\r\nwait(dis[{number}] == {textValue})";
+    }
+
+    string CodeDoosan(RobotSystem robotSystem, Target target)
+    {
+        var number = GetNumber(robotSystem);
+        var value = Value ? "ON" : "OFF";
+        return $"wait_digital_input({number}, {value})";
     }
 
     string GetNumber(RobotSystem robotSystem)

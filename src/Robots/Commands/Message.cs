@@ -11,11 +11,12 @@ public class Message : Command
 
     protected override void Populate()
     {
-        _commands.Add(Manufacturers.ABB, (_, __) => $"TPWrite \"{_message}\";");
-        _commands.Add(Manufacturers.KUKA, (_, __) => $"; \"{_message}\"");
-        _commands.Add(Manufacturers.UR, (_, __) => $"textmsg(\"{_message}\")");
-        _commands.Add(Manufacturers.Staubli, (_, __) => $"putln(\"{_message}\")");
-        _commands.Add(Manufacturers.FrankaEmika, (_, __) => $"print(\"{_message}\")");
+        _commands.Add(Manufacturers.ABB, (_, _) => $"TPWrite \"{_message}\";");
+        _commands.Add(Manufacturers.KUKA, (_, _) => $"; \"{_message}\"");
+        _commands.Add(Manufacturers.UR, (_, _) => $"textmsg(\"{_message}\")");
+        _commands.Add(Manufacturers.Staubli, (_, _) => $"putln(\"{_message}\")");
+        _commands.Add(Manufacturers.FrankaEmika, (_, _) => $"print(\"{_message}\")");
+        _commands.Add(Manufacturers.Doosan, (_, _) => $"tp_log(\"{_message}\")");
     }
 
     public override string ToString() => $"Command (Message \"{_message}\")";

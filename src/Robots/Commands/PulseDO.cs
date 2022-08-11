@@ -1,4 +1,4 @@
-﻿namespace Robots.Commands;
+namespace Robots.Commands;
 
 public class PulseDO : Command
 {
@@ -23,6 +23,7 @@ public class PulseDO : Command
         _commands.Add(Manufacturers.ABB, CodeAbb);
         _commands.Add(Manufacturers.KUKA, CodeKuka);
         _commands.Add(Manufacturers.UR, CodeUR);
+        _commands.Add(Manufacturers.Doosan, CodeDoosan);
 
         _declarations.Add(Manufacturers.UR, DeclarationUR);
     }
@@ -60,6 +61,12 @@ public class PulseDO : Command
     {
         var number = GetNumber(robotSystem);
         return $"set_digital_out({number},True)\r\n  run run{Name}()";
+    }
+
+    string CodeDoosan(RobotSystem robotSystem, Target target)
+    {
+        var number = GetNumber(robotSystem);
+        return $"set_digital_output({number}, ON, {_length:0.###}, OFF)";
     }
 
     string GetNumber(RobotSystem robotSystem)

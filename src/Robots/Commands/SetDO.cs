@@ -1,4 +1,4 @@
-﻿namespace Robots.Commands;
+namespace Robots.Commands;
 
 public class SetDO : Command
 {
@@ -23,6 +23,7 @@ public class SetDO : Command
         _commands.Add(Manufacturers.KUKA, CodeKuka);
         _commands.Add(Manufacturers.UR, CodeUR);
         _commands.Add(Manufacturers.Staubli, CodeStaubli);
+        _commands.Add(Manufacturers.Doosan, CodeDoosan);
     }
 
     string CodeAbb(RobotSystem robotSystem, Target target)
@@ -61,6 +62,14 @@ public class SetDO : Command
 
         string textValue = Value ? "true" : "false";
         return $"waitEndMove()\r\ndos[{number}] = {textValue}";
+    }
+
+    string CodeDoosan(RobotSystem robotSystem, Target target)
+    {
+        var number = GetNumber(robotSystem);
+
+        string textValue = Value ? "ON" : "OFF";
+        return $"set_digital_output({number}, {textValue})";
     }
 
     string GetNumber(RobotSystem robotSystem)

@@ -1,4 +1,4 @@
-﻿namespace Robots.Commands;
+namespace Robots.Commands;
 
 public class SetAO : Command
 {
@@ -23,11 +23,13 @@ public class SetAO : Command
         _commands.Add(Manufacturers.KUKA, CodeKuka);
         _commands.Add(Manufacturers.UR, CodeUR);
         _commands.Add(Manufacturers.Staubli, CodeStaubli);
+        _commands.Add(Manufacturers.Doosan, CodeDoosan);
 
         _declarations.Add(Manufacturers.ABB, DeclarationAbb);
         _declarations.Add(Manufacturers.KUKA, DeclarationKuka);
-        _declarations.Add(Manufacturers.UR, DeclarationUR);
+        _declarations.Add(Manufacturers.UR, DeclarationPython);
         _declarations.Add(Manufacturers.Staubli, DeclarationStaubli);
+        _declarations.Add(Manufacturers.Doosan, DeclarationDoosan);
     }
 
     string DeclarationAbb(RobotSystem robotSystem)
@@ -40,9 +42,19 @@ public class SetAO : Command
         return $"DECL GLOBAL REAL {Name} = {Value:0.###}";
     }
 
-    string DeclarationUR(RobotSystem robotSystem)
+    string DeclarationPython(RobotSystem robotSystem)
     {
         return $"{Name} = {Value:0.###}";
+    }
+
+    string DeclarationDoosan(RobotSystem robotSystem)
+    {
+        var number = GetNumber(robotSystem);
+        var value = Value * 10.0;
+
+        var mode = $"set_mode_analog_output(ch={number}, mod=DR_ANALOG_VOLTAGE)";
+        var variable = $"{Name} = {value:0.###}";
+        return $"{mode}\n{variable}";
     }
 
     string DeclarationStaubli(RobotSystem robotSystem)
@@ -72,6 +84,12 @@ public class SetAO : Command
     {
         var number = GetNumber(robotSystem);
         return $"aioSet(aos[{number}], {Name})";
+    }
+
+    string CodeDoosan(RobotSystem robotSystem, Target target)
+    {
+        var number = GetNumber(robotSystem);
+        return $"set_analog_output(ch={number}, val={Name})";
     }
 
     string GetNumber(RobotSystem robotSystem)

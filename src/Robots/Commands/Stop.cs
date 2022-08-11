@@ -1,4 +1,4 @@
-﻿namespace Robots.Commands;
+namespace Robots.Commands;
 
 public class Stop : Command
 {
@@ -6,9 +6,10 @@ public class Stop : Command
 
     protected override void Populate()
     {
-        _commands.Add(Manufacturers.ABB, (_, __) => "Stop;");
-        _commands.Add(Manufacturers.KUKA, (_, __) => "HALT");
-        _commands.Add(Manufacturers.UR, (_, __) => "pause program");
+        _commands.Add(Manufacturers.ABB, (_, _) => "Stop;");
+        _commands.Add(Manufacturers.KUKA, (_, _) => "HALT");
+        _commands.Add(Manufacturers.UR, (_, _) => "pause program");
+        _commands.Add(Manufacturers.Doosan, (_, _) => "wait_nudge()");
         //_commands.Add(Manufacturers.Staubli, (_, __) => "wait(true)");
     }
 
