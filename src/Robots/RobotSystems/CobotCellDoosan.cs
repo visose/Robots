@@ -38,9 +38,38 @@ public class CobotCellDoosan : CobotCell
         if (program.Code is null)
             throw new InvalidOperationException(" Program code not generated");
 
-        string filePath = Path.Combine(folder, $"{program.Name}.drl");
-        var code = program.Code[0][0];
-        var joinedCode = string.Join("\r\n", code);
+        bool isMultiProgram = program.MultiFileIndices.Count > 1;
+        var codes = program.Code[0];
+
+        if (!isMultiProgram)
+        {
+            WriteFile(codes[0], folder, program.Name);
+        }
+        else
+        {
+            var subFolder = Path.Combine(folder, program.Name);
+            Directory.CreateDirectory(subFolder);
+
+            WriteFile(codes[0], subFolder, program.Name);
+
+            for (int i = 1; i < codes.Count; i++)
+            {
+                var code = codes[i];
+                var name = SubProgramName(program.Name, i);
+                WriteFile(code, subFolder, name);
+            }
+        }
+    }
+
+    internal string SubProgramName(string programName, int i)
+    {
+        return $"{programName}_{i:000}";
+    }
+
+    void WriteFile(List<string> code, string folder, string name)
+    {
+        string filePath = Path.Combine(folder, $"{name}.drl");
+        var joinedCode = string.Join("\n", code);
         File.WriteAllText(filePath, joinedCode);
     }
 }

@@ -12,21 +12,61 @@ class DrlPostProcessor
     {
         _cell = robotCell;
         _program = program;
-        var groupCode = new List<List<string>> { Program() };
-        Code = new List<List<List<string>>> { groupCode };
 
-        // MultiFile warning
-        if (program.MultiFileIndices.Count > 1)
-            program.Warnings.Add("Multi-file input not supported on Doosan robots");
+        List<List<string>> groupCode = new();
+        Code = new() { groupCode };
+
+        var declaration = Declaration();
+        var initCommands = InitCommands();
+
+        bool isMultiProgram = program.MultiFileIndices.Count > 1;
+
+        if (!isMultiProgram)
+        {
+            List<string> code = new();
+            code.AddRange(declaration);
+            code.AddRange(initCommands);
+            code.AddRange(Program(_program.Targets));
+
+            groupCode.Add(code);
+        }
+        else
+        {
+            {
+                List<string> code = new();
+
+                for (int i = 1; i <= program.MultiFileIndices.Count; i++)
+                    code.Add($"sub_program_run(\"{_cell.SubProgramName(program.Name, i)}\")");
+
+                groupCode.Add(code);
+            }
+            for (int i = 0; i < program.MultiFileIndices.Count; i++)
+            {
+                var a = program.MultiFileIndices[i];
+                var b = i == program.MultiFileIndices.Count - 1
+                    ? program.Targets.Count
+                    : program.MultiFileIndices[i + 1];
+
+                var targets = program.Targets.Skip(a).Take(b - a);
+                List<string> code = new()
+                {
+                    "from DRCF import *"
+                };
+
+                if (i == 0)
+                    code.AddRange(initCommands);
+
+                code.AddRange(declaration);
+                code.AddRange(Program(targets));
+
+                groupCode.Add(code);
+            }
+        }
     }
 
-    List<string> Program()
+    List<string> Declaration()
     {
-        string indent = "  ";
-        var code = new List<string>
-                {
-                    "def program():"
-                };
+        List<string> code = new();
 
         // Attribute declarations
         var attributes = _program.Attributes;
@@ -40,35 +80,30 @@ class DrlPostProcessor
             var cog = (Vector3d)tool.Centroid;
             cog.Transform(originPlane.ToTransform());
 
-            var n = _cell.PlaneToNumbers(tcp);
-
-            code.Add(indent + $"{tool.Name}Tcp = {PosToList(n)}");
-            code.Add(indent + $"{tool.Name}Weight = {tool.Weight:0.###}");
-            code.Add(indent + $"{tool.Name}Cog = {VectorToList(cog)}");
+            code.Add($"{tool.Name}Tcp = {PosX(tcp)}");
+            code.Add($"{tool.Name}Weight = {tool.Weight:0.###}");
+            code.Add($"{tool.Name}Cog = {VectorToList(cog)}");
         }
 
         foreach (var frame in attributes.OfType<Frame>().Where(f => !f.UseController))
         {
             var plane = frame.Plane;
             plane.InverseOrient(ref _cell.BasePlane);
+            var posx = PosX(plane);
 
-            var vx = plane.XAxis;
-            var vy = plane.YAxis;
-            var p = (Vector3d)plane.Origin;
-
-            code.Add(indent + $"{frame.Name} = set_user_cart_coord({VectorToList(vx)}, {VectorToList(vy)}, {VectorToList(p)})");
+            code.Add($"{frame.Name} = set_user_cart_coord({posx}, ref=DR_WORLD)");
         }
 
         foreach (var speed in attributes.OfType<Speed>())
         {
             double linearSpeed = speed.TranslationSpeed;
-            code.Add(indent + $"{speed.Name} = {linearSpeed:0.#####}");
+            code.Add($"{speed.Name} = {linearSpeed:0.#####}");
         }
 
         foreach (var zone in attributes.OfType<Zone>())
         {
             double zoneDistance = zone.Distance;
-            code.Add(indent + $"{zone.Name} = {zoneDistance:0.#####}");
+            code.Add($"{zone.Name} = {zoneDistance:0.#####}");
         }
 
         foreach (var command in attributes.OfType<Command>())
@@ -76,22 +111,28 @@ class DrlPostProcessor
             string declaration = command.Declaration(_program);
 
             if (!string.IsNullOrWhiteSpace(declaration))
-                code.Add(indent + declaration);
+                code.Add(declaration);
         }
 
-        // Init commands
-
+        return code;
+    }
+    IEnumerable<string> InitCommands()
+    {
         foreach (var command in _program.InitCommands)
         {
             string commands = command.Code(_program, Target.Default);
-            code.Add(indent + commands);
+            yield return commands;
         }
+    }
 
+    List<string> Program(IEnumerable<CellTarget> cellTargets)
+    {
+        List<string> code = new();
         Tool? currentTool = null;
 
         // Targets
 
-        foreach (var cellTarget in _program.Targets)
+        foreach (var cellTarget in cellTargets)
         {
             var programTarget = cellTarget.ProgramTargets[0];
             var target = programTarget.Target;
@@ -99,15 +140,11 @@ class DrlPostProcessor
 
             if (currentTool is null || tool != currentTool)
             {
-                if (tool.UseController)
-                {
-                    code.Add(indent + $"set_tcp(\"{tool.Name}\")");
-                }
-                else
-                {
-                    code.Add(indent + $"set_workpiece_weight(weight={tool.Name}Weight, cog={tool.Name}Cog, cog_ref = DR_FLANGE)");
-                    code.Add(indent + $"activeTool = {tool.Name}Tcp");
-                }
+                code.Add(
+                    tool.UseController
+                    ? $"set_tcp(\"{tool.Name}\")"
+                    : $"#set_workpiece_weight(weight={tool.Name}Weight, cog={tool.Name}Cog, cog_ref=DR_FLANGE)"
+                    );
 
                 currentTool = target.Tool;
             }
@@ -124,16 +161,15 @@ class DrlPostProcessor
                     d[i] = _cell.Robot.RadianToDegree(r[i], i);
 
                 var speed = GetAxisSpeed();
-                moveText = $"  movej({PosToList(d)}, {speed}, r={zoneName})";
+                moveText = $"movej({NumbersToPose(d)}, {speed}, r={zoneName})";
             }
             else if (target is CartesianTarget cartesian)
             {
-                var n = _cell.PlaneToNumbers(cartesian.Plane);
-                var posList = PosToList(n);
+                var posx = PosX(cartesian.Plane);
 
                 var pos = tool.UseController
-                    ? $"trans({tool.Name}Tcp, {posList})"
-                    : posList;
+                    ? posx
+                    : $"trans({tool.Name}Tcp, {posx})";
 
                 var frame = target.Frame;
                 var @ref = frame.Number?.ToString() ?? frame.Name;
@@ -147,7 +183,7 @@ class DrlPostProcessor
                                 : $", sol={(int)cartesian.Configuration}";
 
                             var speed = GetAxisSpeed();
-                            moveText = $"  movejx({PosToList(n)}, {speed}, r={zoneName}, ref={@ref}{sol})";
+                            moveText = $"movejx({pos}, {speed}, r={zoneName}, ref={@ref}{sol})";
                             break;
                         }
 
@@ -159,7 +195,7 @@ class DrlPostProcessor
                                 $"t={target.Speed.Time: 0.####}" :
                                 $"a={linearAccel.ToDegrees():0.#####}, v={target.Speed.Name}";
 
-                            moveText = $"  movel({PosToList(n)}, {speed}, r={zoneName}, ref={@ref})";
+                            moveText = $"movel({pos}, {speed}, r={zoneName}, ref={@ref})";
                             break;
                         }
                     default:
@@ -174,7 +210,6 @@ class DrlPostProcessor
             foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
             {
                 string commands = command.Code(_program, target);
-                commands = indent + commands;
                 code.Add(commands);
             }
 
@@ -183,7 +218,6 @@ class DrlPostProcessor
             foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
             {
                 string commands = command.Code(_program, target);
-                commands = indent + commands;
                 code.Add(commands);
             }
 
@@ -218,16 +252,19 @@ class DrlPostProcessor
             }
         }
 
-        code.Add(@"
-program()
-");
         return code;
     }
 
-    string PosToList(double[] d)
+    string PosX(Plane plane)
     {
-        return $"[{d[0]:0.####}, {d[1]:0.####}, {d[2]:0.####}, {d[3]:0.####}, {d[4]:0.####}, {d[5]:0.####}]";
+        var n = _cell.PlaneToNumbers(plane);
+        return NumbersToPose(n);
     }
-    string VectorToList(Vector3d v) => $"[{v.X:0.####}, {v.Y:0.####}, {v.Z:0.####}]";
 
+    string NumbersToPose(double[] n)
+    {
+        return $"[{n[0]:0.####}, {n[1]:0.####}, {n[2]:0.####}, {n[3]:0.####}, {n[4]:0.####}, {n[5]:0.####}]";
+    }
+
+    string VectorToList(Vector3d v) => $"[{v.X:0.####}, {v.Y:0.####}, {v.Z:0.####}]";
 }
