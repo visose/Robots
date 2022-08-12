@@ -39,7 +39,6 @@ class DoosanKinematics : RobotKinematics
 
         var flange = t.ToPlane();
         Point3d c = flange.Origin - c4 * flange.Normal;
-
         var nx1 = Sqrt(c.X * c.X + c.Y * c.Y - b * b) - a1;
 
         var tmp1 = Atan2(c.Y, c.X);
@@ -57,71 +56,72 @@ class DoosanKinematics : RobotKinematics
         }
 
         var tmp3 = (c.Z - c1);
-        var s1_2 = nx1 * nx1 + tmp3 * tmp3;
-
-        var tmp4 = nx1 + 2.0 * a1;
-        var s2_2 = tmp4 * tmp4 + tmp3 * tmp3;
         var kappa_2 = a2 * a2 + c3 * c3;
-
         var c2_2 = c2 * c2;
 
-        var tmp5 = s1_2 + c2_2 - kappa_2;
+        var s1_2 = nx1 * nx1 + tmp3 * tmp3;
+        var tmp4 = nx1 + 2.0 * a1;
+        var s2_2 = tmp4 * tmp4 + tmp3 * tmp3;
 
-        var s1 = Sqrt(s1_2);
-        var s2 = Sqrt(s2_2);
-
-        var tmp13 = Acos(tmp5 / (2.0 * s1 * c2));
-        var tmp14 = Atan2(nx1, c.Z - c1);
-
-        if (!elbow && !shoulder)
+        if (!shoulder)
         {
-            joints[1] = -tmp13 + tmp14;
-        }
-        else if (!shoulder && elbow)
-        {
-            joints[1] = tmp13 + tmp14;
+            var s1 = Sqrt(s1_2);
+            var tmp5 = s1_2 + c2_2 - kappa_2;
+            var tmp13 = Acos(tmp5 / (2.0 * s1 * c2));
+            var tmp14 = Atan2(nx1, c.Z - c1);
+
+            if (double.IsNaN(tmp13))
+            {
+                tmp13 = 0;
+                isUnreachable = true;
+            }
+
+            joints[1] = !elbow ? -tmp13 + tmp14 : tmp13 + tmp14;
         }
         else
         {
+            var s2 = Sqrt(s2_2);
             var tmp6 = s2_2 + c2_2 - kappa_2;
             var tmp15 = Acos(tmp6 / (2.0 * s2 * c2));
             var tmp16 = Atan2(nx1 + 2.0 * a1, c.Z - c1);
 
-            if (shoulder && elbow)
+            if (double.IsNaN(tmp15))
             {
-                joints[1] = -tmp15 - tmp16;
+                tmp15 = 0;
+                isUnreachable = true;
             }
-            else //if (shoulder && !elbow)
-            {
-                joints[1] = tmp15 - tmp16;
-            }
+
+            joints[1] = !elbow ? tmp15 - tmp16 : -tmp15 - tmp16;
         }
 
-        var tmp7 = s1_2 - c2_2 - kappa_2;
-        var tmp8 = s2_2 - c2_2 - kappa_2;
         var tmp9 = 2.0 * c2 * Sqrt(kappa_2);
         var tmp10 = Atan2(a2, c3);
-        var tmp11 = Acos(tmp7 / tmp9);
 
-        if (!shoulder && !elbow)
+        if (!shoulder)
         {
-            joints[2] = tmp11 - tmp10;
-        }
-        else if (!shoulder && elbow)
-        {
-            joints[2] = -tmp11 - tmp10;
+            var tmp7 = s1_2 - c2_2 - kappa_2;
+            var tmp11 = Acos(tmp7 / tmp9);
+
+            if (double.IsNaN(tmp11))
+            {
+                tmp11 = 0;
+                isUnreachable = true;
+            }
+
+            joints[2] = !elbow ? tmp11 - tmp10 : -tmp11 - tmp10;
         }
         else
         {
+            var tmp8 = s2_2 - c2_2 - kappa_2;
             var tmp12 = Acos(tmp8 / tmp9);
-            if (shoulder && elbow)
+
+            if (double.IsNaN(tmp12))
             {
-                joints[2] = tmp12 - tmp10;
+                tmp12 = 0;
+                isUnreachable = true;
             }
-            else //if (shoulder && !elbow)
-            {
-                joints[2] = -tmp12 - tmp10;
-            }
+
+            joints[2] = !elbow ? -tmp12 - tmp10 : tmp12 - tmp10;
         }
 
         double sin = Sin(joints[0]);
