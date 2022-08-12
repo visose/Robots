@@ -11,9 +11,10 @@ namespace Robots;
 /// </summary>
 class FrankaNumericalKinematics : RobotKinematics
 {
+    readonly List<string> _empty = new(0);
     readonly double _sq2 = 1.0 / Sqrt(2);
     readonly double[] _midJoints;
-    readonly List<string> _empty = new(0);
+    readonly Transform _flangeRot;
 
     readonly Matrix _eye = new(7, 7);
     readonly Matrix _m77t = new(7, 7);
@@ -36,6 +37,7 @@ class FrankaNumericalKinematics : RobotKinematics
     {
         var joints = _mechanism.Joints;
         _midJoints = joints.Map(j => j.Range.Mid);
+        _flangeRot = Transform.Rotation(-PI * 0.75, Point3d.Origin) * Transform.Rotation(PI, Vector3d.XAxis, Point3d.Origin);
     }
 
     protected override int SolutionCount => 1;
@@ -127,8 +129,7 @@ class FrankaNumericalKinematics : RobotKinematics
     protected override Transform[] ForwardKinematics(double[] joints)
     {
         var t = ModifiedDH(joints);
-        t[6] *= Transform.Rotation(-PI * 0.75, Point3d.Origin);
-        t[6] *= Transform.Rotation(PI, Vector3d.XAxis, Point3d.Origin);
+        t[6] *= _flangeRot;
         return t;
     }
 

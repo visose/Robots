@@ -204,18 +204,21 @@ program()
 
     double GetSpeed(CellTarget cellTarget)
     {
-        //var programTarget = cellTarget.ProgramTargets[0];
+        var programTarget = cellTarget.ProgramTargets[0];
+        var speed = programTarget.Target.Speed;
+
+        double factor;
 
         if (cellTarget.DeltaTime > 0)
         {
-            // int leadIndex = programTarget.LeadingJoint;
-            // double leadAxisSpeed = _cell.Robot.Joints[leadIndex].MaxSpeed;
-            double percentage = cellTarget.MinTime / cellTarget.DeltaTime;
-            return Min(percentage, 1);
+            factor = cellTarget.MinTime / cellTarget.DeltaTime;
         }
         else
         {
-            return 1;
+            const double maxTranslationSpeed = 1000.0;
+            factor = speed.TranslationSpeed / maxTranslationSpeed;
         }
+
+        return Min(factor, 1);
     }
 }
