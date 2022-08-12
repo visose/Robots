@@ -160,6 +160,8 @@ static class Util
 
     // Geometry
 
+    public static double Sqr(double n) => n * n;
+
     public static double ToRadians(this double value)
     {
         return value * (PI / 180.0);

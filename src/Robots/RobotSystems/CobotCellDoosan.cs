@@ -1,4 +1,6 @@
 using Rhino.Geometry;
+using static System.Math;
+using static Robots.Util;
 
 namespace Robots;
 
@@ -6,27 +8,52 @@ public class CobotCellDoosan : CobotCell
 {
     internal CobotCellDoosan(string name, RobotDoosan robot, IO io, Plane basePlane, Mesh? environment)
         : base(name, Manufacturers.Doosan, robot, io, basePlane, environment)
-    {
-    }
+    { }
 
-    public static Plane QuaternionToPlane(double x, double y, double z, double q1, double q2, double q3, double q4)
+    public static Vector6d EulerZYZ(Transform t)
     {
-        var point = new Point3d(x, y, z) * 1000.0;
-        var quaternion = new Quaternion(q1, q2, q3, q4);
-        return quaternion.ToPlane(point);
+        double alpha, beta, gamma;
+
+        double epsilon = 1E-12;
+        if (Abs(t.M22) > 1 - epsilon)
+        {
+            gamma = 0.0;
+            if (t.M22 > 0)
+            {
+                beta = 0.0;
+                alpha = Atan2(t.M10, t.M00);
+            }
+            else
+            {
+                beta = PI;
+                alpha = Atan2(-t.M10, -t.M00);
+            }
+        }
+        else
+        {
+            alpha = Atan2(t.M12, t.M02);
+            beta = Atan2(Sqrt(Sqr(t.M20) + Sqr(t.M21)), t.M22);
+            gamma = Atan2(t.M21, -t.M20);
+        }
+
+        return new(t.M03, t.M13, t.M23, alpha, beta, gamma);
     }
 
     public override double[] PlaneToNumbers(Plane plane)
     {
         var t = plane.ToTransform();
-        var e = t.ToEulerZYX();
-        return e.ToArray();
+        var p = plane.Origin;
+        var e = EulerZYZ(t);
+        return new[] { e.A1, e.A2, e.A3, e.A4.ToDegrees(), e.A5.ToDegrees(), e.A6.ToDegrees() };
     }
 
     public override Plane NumbersToPlane(double[] numbers)
     {
-        var euler = new Vector6d(numbers);
-        var t = euler.EulerZYXToTransform();
+        var e = new Vector6d(numbers);
+        e.A4 = e.A4.ToRadians();
+        e.A5 = e.A5.ToRadians();
+        e.A6 = e.A6.ToRadians();
+        var t = e.EulerZYXToTransform();
         return t.ToPlane();
     }
 

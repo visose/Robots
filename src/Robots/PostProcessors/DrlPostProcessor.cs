@@ -74,11 +74,10 @@ class DrlPostProcessor
         foreach (var tool in attributes.OfType<Tool>().Where(t => !t.UseController))
         {
             Plane tcp = tool.Tcp;
-            var originPlane = new Plane(Point3d.Origin, Vector3d.YAxis, -Vector3d.XAxis);
-            tcp.Orient(ref originPlane);
+            var t = tcp.ToInverseTransform();
+            tcp = t.ToPlane();
 
             var cog = (Vector3d)tool.Centroid;
-            cog.Transform(originPlane.ToTransform());
 
             code.Add($"{tool.Name}Tcp = {PosX(tcp)}");
             code.Add($"{tool.Name}Weight = {tool.Weight:0.###}");
@@ -97,7 +96,9 @@ class DrlPostProcessor
         foreach (var speed in attributes.OfType<Speed>())
         {
             double linearSpeed = speed.TranslationSpeed;
-            code.Add($"{speed.Name} = {linearSpeed:0.#####}");
+            double rotationSpeed = speed.RotationSpeed.ToDegrees();
+            code.Add($"{speed.Name}Linear = {linearSpeed:0.#####}");
+            code.Add($"{speed.Name}Rotation = {rotationSpeed:0.#####}");
         }
 
         foreach (var zone in attributes.OfType<Zone>())
@@ -178,12 +179,22 @@ class DrlPostProcessor
                 {
                     case Motions.Joint:
                         {
-                            var sol = cartesian.Configuration is null
-                                ? ""
-                                : $", sol={(int)cartesian.Configuration}";
+                            var config = programTarget.Kinematics.Configuration;
+                            int sol = (int)config switch
+                            {
+                                0 => 7,
+                                1 => 3,
+                                2 => 5,
+                                3 => 1,
+                                4 => 6,
+                                5 => 2,
+                                6 => 4,
+                                7 => 0,
+                                _ => 7
+                            };
 
                             var speed = GetAxisSpeed();
-                            moveText = $"movejx({pos}, {speed}, r={zoneName}, ref={@ref}{sol})";
+                            moveText = $"movejx({pos}, {speed}, r={zoneName}, ref={@ref}, sol={sol})";
                             break;
                         }
 
@@ -193,7 +204,7 @@ class DrlPostProcessor
 
                             string speed = target.Speed.Time > 0 ?
                                 $"t={target.Speed.Time: 0.####}" :
-                                $"a={linearAccel.ToDegrees():0.#####}, v={target.Speed.Name}";
+                                $"a={linearAccel.ToDegrees():0.#####}, v=[{target.Speed.Name}Linear, {target.Speed.Name}Rotation]";
 
                             moveText = $"movel({pos}, {speed}, r={zoneName}, ref={@ref})";
                             break;
