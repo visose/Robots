@@ -22,8 +22,12 @@ abstract class MechanismKinematics
         _a = joints.Map(joint => joint.A);
         _d = joints.Map(joint => joint.D);
 
-        _cα = joints.Map(joint => Cos(joint.Alpha));
-        _sα = joints.Map(joint => Sin(joint.Alpha));
+        var α = joints.Any(j => j.Alpha is null)
+            ? AlphaValues
+            : joints.Map(joint => joint.Alpha!.Value);
+
+        _cα = α.Map(n => Cos(n));
+        _sα = α.Map(n => Sin(n));
     }
 
     internal KinematicSolution Solve(Target target, double[]? prevJoints, Plane? basePlane)
@@ -58,6 +62,8 @@ abstract class MechanismKinematics
 
         return solution;
     }
+
+    protected virtual double[] AlphaValues => Array.Empty<double>();
 
     protected abstract void SetJoints(KinematicSolution solution, Target target, double[]? prevJoints);
     protected abstract void SetPlanes(KinematicSolution solution, Target target);

@@ -12,10 +12,8 @@ class TrackKinematics : MechanismKinematics
         {
             int externalNum = _mechanism.Joints[i].Number - 6;
 
-            if (target.External.Length < externalNum + 1)
-                solution.Errors.Add($"Track external axis not configured on this target.");
-            else
-                solution.Joints[i] = target.External[externalNum];
+            solution.Joints[i] = target.External.Length < externalNum + 1
+                ? 0 : target.External[externalNum];
         }
     }
 

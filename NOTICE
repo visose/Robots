@@ -16,10 +16,6 @@ ROS-Industrial Support for Universal Robots (BSD, 3-Clause)
 * Copyright (с) Felix Messmer, Kelsey Hawkins, Shaun Edwards, Stuart Glaser, Wim Meeussen
 * https://opensource.org/licenses/BSD-3-Clause
 
-JavaKUKA (MIT)
-* Copyright (c) 2018 Hao Hua
-* https://github.com/whitegreen/JavaKUKA/blob/master/LICENSE
-
 ABB PC SDK
 * Copyright (c) 2021 ABB
 * https://developercenter.robotstudio.com/pc-sdk

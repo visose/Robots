@@ -11,10 +11,9 @@ class PositionerKinematics : MechanismKinematics
         for (int i = 0; i < _mechanism.Joints.Length; i++)
         {
             int externalNum = _mechanism.Joints[i].Number - 6;
-            if (target.External.Length - 1 < externalNum)
-                solution.Errors.Add($"Positioner external axis not configured on this target.");
-            else
-                solution.Joints[i] = target.External[externalNum];
+
+            solution.Joints[i] = target.External.Length - 1 < externalNum
+                ? 0 : target.External[externalNum];
         }
 
         if (prevJoints is not null)

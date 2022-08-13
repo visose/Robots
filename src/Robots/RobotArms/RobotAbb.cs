@@ -1,5 +1,6 @@
 using Rhino.Geometry;
 using static System.Math;
+using static Robots.Util;
 
 namespace Robots;
 
@@ -8,7 +9,7 @@ public class RobotAbb : RobotArm
     internal RobotAbb(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints)
         : base(model, Manufacturers.ABB, payload, basePlane, baseMesh, joints) { }
     private protected override MechanismKinematics CreateSolver() => new SphericalWristKinematics(this);
-    protected override JointTarget GetStartPose() => new(new double[] { 0, PI / 2, 0, 0, 0, 0 });
+    protected override JointTarget GetStartPose() => new(new double[] { 0, HalfPI, 0, 0, 0, 0 });
 
     public static double ABBDegreeToRadian(double degree, int i)
     {
