@@ -9,7 +9,6 @@ public class RobotStaubli : RobotArm
         : base(model, Manufacturers.Staubli, payload, basePlane, baseMesh, joints) { }
 
     private protected override MechanismKinematics CreateSolver() => new SphericalWristKinematics(this);
-    protected override JointTarget GetStartPose() => new(new double[] { 0, HalfPI, HalfPI, 0, 0, 0 });
 
     public override double DegreeToRadian(double degree, int i)
     {
@@ -29,4 +28,8 @@ public class RobotStaubli : RobotArm
         if (i == 4) radian *= -1;
         return radian.ToDegrees();
     }
+
+    protected override double[] DefaultAlpha => new[] { HalfPI, 0, HalfPI, -HalfPI, HalfPI, 0 };
+    protected override double[] DefaultTheta => new[] { 0, HalfPI, HalfPI, 0, 0, 0 };
+    protected override int[] DefaultSign => new[] { 1, -1, -1, 1, -1, 1 };
 }

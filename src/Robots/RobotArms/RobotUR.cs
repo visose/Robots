@@ -10,7 +10,9 @@ public class RobotUR : RobotArm
         : base(model, Manufacturers.UR, payload, basePlane, baseMesh, joints) { }
 
     private protected override MechanismKinematics CreateSolver() => new OffsetWristKinematics(this);
-    protected override JointTarget GetStartPose() => new(new double[] { 0, -HalfPI, 0, -HalfPI, 0, 0 });
     public override double DegreeToRadian(double degree, int i) => degree * (PI / 180.0);
     public override double RadianToDegree(double radian, int i) => radian * (180.0 / PI);
+    protected override double[] DefaultAlpha => new[] { HalfPI, 0, HalfPI, -HalfPI, HalfPI, 0 };
+    protected override double[] DefaultTheta => new[] { 0, -HalfPI, 0, -HalfPI, 0, 0 };
+    protected override int[] DefaultSign => new[] { 1, 1, 1, 1, 1, 1 };
 }

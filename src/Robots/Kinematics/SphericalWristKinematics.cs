@@ -13,11 +13,8 @@ class SphericalWristKinematics : RobotKinematics
         : base(robot) { }
 
     /// <summary>
-    /// Inverse kinematics for a spherical wrist 6 axis robot.
-    /// Code adapted from https://github.com/whitegreen/KinematikJava
+    /// Code adapted from https://github.com/Jmeyer1292/opw_kinematics
     /// </summary>
-    /// <param name="target">Cartesian target</param>
-    /// <returns>Returns the 6 rotation values in radians.</returns>
     protected override double[] InverseKinematics(Transform t, RobotConfigurations configuration, double[] external, double[]? prevJoints, out List<string> errors)
     {
         bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
@@ -203,7 +200,4 @@ class SphericalWristKinematics : RobotKinematics
         var t = DH(joints);
         return t;
     }
-
-    protected override double[] AlphaValues =>
-        new[] { HalfPI, 0, HalfPI, -HalfPI, HalfPI, 0 };
 }

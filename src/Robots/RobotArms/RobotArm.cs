@@ -9,7 +9,8 @@ public abstract class RobotArm : Mechanism
 
     protected override void SetStartPlanes()
     {
-        var startPose = GetStartPose();
+        var thetas = Joints.Map(j => j.Theta);
+        var startPose = new JointTarget(thetas);
         var kinematics = Kinematics(startPose);
 
         for (int i = 0; i < Joints.Length; i++)
@@ -20,5 +21,5 @@ public abstract class RobotArm : Mechanism
         }
     }
 
-    protected abstract JointTarget GetStartPose();
+    protected abstract override double[]? DefaultAlpha { get; }
 }

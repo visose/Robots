@@ -10,7 +10,6 @@ public class RobotKuka : RobotArm
         : base(model, Manufacturers.KUKA, payload, basePlane, baseMesh, joints) { }
 
     private protected override MechanismKinematics CreateSolver() => new SphericalWristKinematics(this);
-    protected override JointTarget GetStartPose() => new(new double[] { 0, HalfPI, 0, 0, 0, -PI });
 
     public override double DegreeToRadian(double degree, int i)
     {
@@ -26,4 +25,8 @@ public class RobotKuka : RobotArm
         if (i == 2) radian += HalfPI;
         return radian.ToDegrees();
     }
+
+    protected override double[] DefaultAlpha => new[] { HalfPI, 0, HalfPI, -HalfPI, HalfPI, 0 };
+    protected override double[] DefaultTheta => new[] { 0, HalfPI, 0, 0, 0, -PI };
+    protected override int[] DefaultSign => new[] { -1, -1, -1, -1, -1, -1 };
 }

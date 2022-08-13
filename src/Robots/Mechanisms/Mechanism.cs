@@ -18,24 +18,50 @@ public abstract class Mechanism
 
     MechanismKinematics? _solver;
 
-    internal Mechanism(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh baseMesh, IEnumerable<Joint> joints, bool movesRobot)
+    internal Mechanism(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints, bool movesRobot)
     {
         _model = model;
         Manufacturer = manufacturer;
         Payload = payload;
         BasePlane = basePlane;
         BaseMesh = baseMesh;
-        Joints = joints.TryCastArray();
         MovesRobot = movesRobot;
-
+        Joints = InitJoints(joints.TryCastArray());
         DisplayMesh = CreateDisplayMesh();
 
-        // Joints to radians
         for (int i = 0; i < Joints.Length; i++)
-            Joints[i].Range = new Interval(DegreeToRadian(Joints[i].Range.T0, i), DegreeToRadian(Joints[i].Range.T1, i));
+        {
+            var range = Joints[i].Range;
+            Joints[i].Range = new Interval(DegreeToRadian(range.T0, i), DegreeToRadian(range.T1, i));
+        }
 
         SetStartPlanes();
-        //_solver = CreateSolver();
+    }
+
+    Joint[] InitJoints(Joint[] joints)
+    {
+        var alphas = DefaultAlpha ?? new double[joints.Length];
+        var thetas = DefaultTheta ?? new double[joints.Length];
+        var signs = DefaultSign ?? Enumerable.Repeat(1, joints.Length).ToArray();
+
+        for (int i = 0; i < joints.Length; i++)
+        {
+            var joint = joints[i];
+
+            if (joint is RevoluteJoint)
+                joint.MaxSpeed = joint.MaxSpeed.ToRadians();
+
+            joint.Alpha = double.IsNaN(joint.Alpha)
+            ? alphas[i] : joint.Alpha.ToRadians();
+
+            joint.Theta = double.IsNaN(joint.Theta)
+                ? thetas[i] : joint.Theta.ToRadians();
+
+            if (joint.Sign == 0)
+                joint.Sign = signs[i];
+        }
+
+        return joints;
     }
 
     Mesh CreateDisplayMesh()
@@ -59,7 +85,12 @@ public abstract class Mechanism
 
     private protected abstract MechanismKinematics CreateSolver();
     protected abstract void SetStartPlanes();
+    protected virtual double[]? DefaultAlpha => null;
+    protected virtual double[]? DefaultTheta => null;
+    protected virtual int[]? DefaultSign => null;
+
     public abstract double DegreeToRadian(double degree, int i);
     public abstract double RadianToDegree(double radian, int i);
+
     public override string ToString() => $"{GetType().Name} ({Model})";
 }

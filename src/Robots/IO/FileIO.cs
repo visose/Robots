@@ -198,7 +198,9 @@ public static class FileIO
             var jointElement = jointElements[i];
             double a = jointElement.GetDoubleAttribute("a");
             double d = jointElement.GetDoubleAttribute("d");
-            double? α = jointElement.GetDoubleAttributeOrDefault("α");
+            double α = jointElement.GetDoubleAttributeOrDefault("α") ?? double.NaN;
+            double θ = jointElement.GetDoubleAttributeOrDefault("θ") ?? double.NaN;
+            int sign = jointElement.GetIntAttributeOrDefault("sign") ?? 0;
 
             double minRange = jointElement.GetDoubleAttribute("minrange");
             double maxRange = jointElement.GetDoubleAttribute("maxrange");
@@ -210,8 +212,8 @@ public static class FileIO
 
             joints[i] = jointElement.Name.LocalName switch
             {
-                "Revolute" => new RevoluteJoint { Index = i, Number = number, A = a, D = d, Alpha = α?.ToRadians(), Range = range, MaxSpeed = maxSpeed.ToRadians(), Mesh = mesh },
-                "Prismatic" => new PrismaticJoint { Index = i, Number = number, A = a, D = d, Alpha = α?.ToRadians(), Range = range, MaxSpeed = maxSpeed, Mesh = mesh },
+                "Revolute" => new RevoluteJoint { Index = i, Number = number, A = a, D = d, Alpha = α, Theta = θ, Sign = sign, Range = range, MaxSpeed = maxSpeed, Mesh = mesh },
+                "Prismatic" => new PrismaticJoint { Index = i, Number = number, A = a, D = d, Alpha = α, Theta = θ, Sign = sign, Range = range, MaxSpeed = maxSpeed, Mesh = mesh },
                 _ => throw new ArgumentException(" Invalid joint type.", nameof(jointElement.Name.LocalName))
             };
         }

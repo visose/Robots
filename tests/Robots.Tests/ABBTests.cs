@@ -63,7 +63,7 @@ public class ABBTests
             .SelectMany(v => new[] { v.X, v.Y, v.Z });
 
         foreach (var (e, a) in expected.Zip(actual))
-            Assert.AreEqual(e, a, 1e-14);
+            Assert.AreEqual(e, a, 1e-12);
     }
 
     [Test]
