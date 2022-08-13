@@ -7,7 +7,7 @@ public class Collision
 {
     public bool HasCollision => throw NotImplemented();
     public Mesh[] Meshes => throw NotImplemented();
-    public CellTarget CollisionTarget => throw NotImplemented();
+    public SystemTarget CollisionTarget => throw NotImplemented();
 
 #pragma warning disable IDE0060
     internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh? environment, int environmentPlane, double linearStep, double angularStep)
@@ -24,7 +24,7 @@ using static System.Math;
 public class Collision
 {
     readonly Program _program;
-    readonly RobotSystem _robotSystem;
+    readonly RobotSystem _system;
     readonly double _linearStep;
     readonly double _angularStep;
     readonly IEnumerable<int> _first;
@@ -33,14 +33,14 @@ public class Collision
     readonly int _environmentPlane;
 
     public Mesh[]? Meshes { get; private set; }
-    public CellTarget? CollisionTarget { get; private set; }
+    public SystemTarget? CollisionTarget { get; private set; }
     public bool HasCollision => CollisionTarget is not null;
 
     internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh? environment, int environmentPlane, double linearStep, double angularStep)
     {
 
         _program = program;
-        _robotSystem = program.RobotSystem;
+        _system = program.RobotSystem;
         _linearStep = linearStep;
         _angularStep = angularStep;
         _first = first;
@@ -53,21 +53,21 @@ public class Collision
 
     void Collide()
     {
-        Parallel.ForEach(_program.Targets, (cellTarget, state) =>
+        Parallel.ForEach(_program.Targets, (systemTarget, state) =>
         {
-            if (cellTarget.Index == 0)
+            if (systemTarget.Index == 0)
                 return;
 
-            var prevcellTarget = _program.Targets[cellTarget.Index - 1];
+            var prevsystemTarget = _program.Targets[systemTarget.Index - 1];
 
             double divisions = 1;
 
-            int groupCount = cellTarget.ProgramTargets.Count;
+            int groupCount = systemTarget.ProgramTargets.Count;
 
             for (int group = 0; group < groupCount; group++)
             {
-                var target = cellTarget.ProgramTargets[group];
-                var prevTarget = prevcellTarget.ProgramTargets[group];
+                var target = systemTarget.ProgramTargets[group];
+                var prevTarget = prevsystemTarget.ProgramTargets[group];
 
                 double distance = prevTarget.WorldPlane.Origin.DistanceTo(target.WorldPlane.Origin);
                 double linearDivisions = Ceiling(distance / _linearStep);
@@ -81,15 +81,15 @@ public class Collision
 
             var meshPoser = new RhinoMeshPoser(_program.RobotSystem);
 
-            int j = (cellTarget.Index == 1) ? 0 : 1;
+            int j = (systemTarget.Index == 1) ? 0 : 1;
 
             for (int i = j; i < divisions; i++)
             {
                 double t = (double)i / (double)divisions;
-                var kineTargets = cellTarget.Lerp(prevcellTarget, _robotSystem, t, 0.0, 1.0);
+                var kineTargets = systemTarget.Lerp(prevsystemTarget, _system, t, 0.0, 1.0);
                 var kinematics = _program.RobotSystem.Kinematics(kineTargets);
 
-                meshPoser.Pose(kinematics, cellTarget);
+                meshPoser.Pose(kinematics, systemTarget);
                 var meshes = meshPoser.Meshes.NotNull();
 
                 if (_environment is not null)
@@ -112,10 +112,10 @@ public class Collision
 
                 var meshClash = Rhino.Geometry.Intersect.MeshClash.Search(setA, setB, 1, 1);
 
-                if (meshClash.Length > 0 && (CollisionTarget is null || CollisionTarget.Index > cellTarget.Index))
+                if (meshClash.Length > 0 && (CollisionTarget is null || CollisionTarget.Index > systemTarget.Index))
                 {
                     Meshes = new Mesh[] { meshClash[0].MeshA, meshClash[0].MeshB };
-                    CollisionTarget = cellTarget;
+                    CollisionTarget = systemTarget;
                     state.Break();
                 }
             }

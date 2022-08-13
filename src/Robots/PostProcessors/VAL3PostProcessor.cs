@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Rhino.Geometry;
 
 namespace Robots;
@@ -28,7 +28,7 @@ internal static class VAL3Syntax
 
     public static string TrsfData(string name, Plane plane)
     {
-        var values = RobotCellStaubli.PlaneToEuler(plane);
+        var values = SystemStaubli.PlaneToEuler(plane);
         string value = $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}""";
         return Data(name, "trsf", value);
     }
@@ -41,18 +41,18 @@ internal static class VAL3Syntax
 
 class VAL3PostProcessor
 {
-    readonly RobotCellStaubli _cell;
+    readonly SystemStaubli _system;
     readonly Program _program;
 
     public List<List<List<string>>> Code { get; }
 
-    internal VAL3PostProcessor(RobotCellStaubli robotCell, Program program)
+    internal VAL3PostProcessor(SystemStaubli system, Program program)
     {
-        _cell = robotCell;
+        _system = system;
         _program = program;
         Code = new List<List<List<string>>>();
 
-        int groupCount = _cell.MechanicalGroups.Count;
+        int groupCount = _system.MechanicalGroups.Count;
 
         if (groupCount > 1)
         {
@@ -63,9 +63,9 @@ class VAL3PostProcessor
         if (!CheckNames())
             return;
 
-        for (int i = 0; i < _cell.MechanicalGroups.Count; i++)
+        for (int i = 0; i < _system.MechanicalGroups.Count; i++)
         {
-            //var group = _cell.MechanicalGroups[i];
+            //var group = _system.MechanicalGroups[i];
             //var name = $"{_program.Name}_{group.Name}";
             var name = $"{_program.Name}";
             var mdescs = CreateMdescs(i);
@@ -87,7 +87,7 @@ class VAL3PostProcessor
 
     bool CheckNames()
     {
-        foreach (var group in _cell.MechanicalGroups)
+        foreach (var group in _system.MechanicalGroups)
         {
             var name = $"{_program.Name}_{group.Name}";
 
@@ -122,9 +122,9 @@ class VAL3PostProcessor
         var mdescs = new Dictionary<(Speed speed, Zone zone), string>();
         int count = 0;
 
-        foreach (var cellTarget in _program.Targets)
+        foreach (var systemTarget in _program.Targets)
         {
-            var target = cellTarget.ProgramTargets[group].Target;
+            var target = systemTarget.ProgramTargets[group].Target;
             var key = (target.Speed, target.Zone);
 
             if (!mdescs.TryGetValue(key, out var value))
@@ -209,7 +209,7 @@ class VAL3PostProcessor
     List<string> IOData()
     {
         var datas = new List<string>();
-        var io = _cell.IO;
+        var io = _system.IO;
 
         AddIO("dos", "dio", io.DO);
         AddIO("dis", "dio", io.DI);
@@ -243,7 +243,7 @@ class VAL3PostProcessor
             if (programTarget.IsJointTarget)
             {
                 var jointTarget = (JointTarget)programTarget.Target;
-                var js = jointTarget.Joints.Map((x, j) => _cell.MechanicalGroups[group].RadianToDegree(x, j));
+                var js = jointTarget.Joints.Map((x, j) => _system.MechanicalGroups[group].RadianToDegree(x, j));
 
                 var value = $@"j1=""{js[0]:0.####}"" j2=""{js[1]:0.####}"" j3=""{js[2]:0.####}"" j4=""{js[3]:0.####}"" j5=""{js[4]:0.####}"" j6=""{js[5]:0.####}""";
 
@@ -270,7 +270,7 @@ class VAL3PostProcessor
                     config = $@"shoulder=""{shoulderT}"" elbow=""{elbowT}"" wrist=""{wristT}"" ";
                 }
 
-                var values = _cell.PlaneToNumbers(cartesian.Plane);
+                var values = _system.PlaneToNumbers(cartesian.Plane);
                 string value = $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}"" {config}fatherId=""{target.Frame.Name}[0]""";
 
                 indices.Add(points.Count);
@@ -286,7 +286,7 @@ class VAL3PostProcessor
 
     string Tool(Tool tool)
     {
-        var values = _cell.PlaneToNumbers(tool.Tcp);
+        var values = _system.PlaneToNumbers(tool.Tcp);
         double weight = (tool.Weight > 0.001) ? tool.Weight : 0.001;
 
         Point3d centroid = tool.Centroid;
@@ -309,8 +309,8 @@ class VAL3PostProcessor
         }
 
         Plane plane = frame.Plane;
-        plane.InverseOrient(ref _cell.BasePlane);
-        var values = _cell.PlaneToNumbers(plane);
+        plane.InverseOrient(ref _system.BasePlane);
+        var values = _system.PlaneToNumbers(plane);
 
         string frameName = frame.Name.NotNull();
         string code = VAL3Syntax.Data(frameName, "frame", $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}"" fatherId=""world[0]""");
@@ -419,7 +419,7 @@ putln(""Program '{name}' stopped."")";
             }
 
             // external
-            if (_cell.MechanicalGroups[group].Externals.Count > 0)
+            if (_system.MechanicalGroups[group].Externals.Count > 0)
             {
                 _program.Warnings.Add("External axes not implemented in Staubli.");
             }

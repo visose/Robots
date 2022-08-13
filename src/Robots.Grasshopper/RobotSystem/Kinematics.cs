@@ -1,10 +1,10 @@
-﻿using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
 public class Kinematics : GH_Component
 {
-    public Kinematics() : base("Kinematics", "K", "Inverse and forward kinematics for a single target, or list of targets when using a robot cell with coordinated robots.", "Robots", "Components") { }
+    public Kinematics() : base("Kinematics", "K", "Inverse and forward kinematics for a single target, or list of targets when using a robot system with coordinated robots.", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.quinary;
     public override Guid ComponentGuid => new("{EFDA05EB-B281-4703-9C9E-B5F98A9B2E1D}");
     protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconKinematics");

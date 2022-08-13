@@ -71,7 +71,7 @@ class RemoteURFtp : IRemoteURBackend
 
     void UploadFtp(IProgram program)
     {
-        var urp = RobotSystemUR.CreateUrp(program);
+        var urp = SystemUR.CreateUrp(program);
         var bytes = Encoding.ASCII.GetBytes(urp);
         string fileName = $"{program.Name}.urp";
 

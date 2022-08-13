@@ -2,11 +2,11 @@ using Rhino.Geometry;
 
 namespace Robots;
 
-public abstract class RobotCell : RobotSystem
+public abstract class IndustrialSystem : RobotSystem
 {
     public List<MechanicalGroup> MechanicalGroups { get; }
 
-    internal RobotCell(string name, Manufacturers manufacturer, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment)
+    internal IndustrialSystem(string name, Manufacturers manufacturer, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment)
         : base(name, manufacturer, io, basePlane, environment, GetDefaultPose(mechanicalGroups))
     {
         MechanicalGroups = mechanicalGroups;
@@ -81,7 +81,7 @@ public abstract class RobotCell : RobotSystem
     }
 
     public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]>? prevJoints = null) =>
-        new RobotCellKinematics(this, targets, prevJoints).Solutions;
+        new IndustrialSystemKinematics(this, targets, prevJoints).Solutions;
 
     public override double DegreeToRadian(double degree, int i, int group = 0) => MechanicalGroups[group].DegreeToRadian(degree, i);
 }

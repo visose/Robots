@@ -1,4 +1,4 @@
-﻿using Autodesk.DesignScript.Runtime;
+using Autodesk.DesignScript.Runtime;
 using Rhino.Geometry;
 
 namespace Robots.Dynamo;
@@ -9,22 +9,22 @@ public class Robot
     /// <summary>
     /// Load a robot system
     /// </summary>
-    /// <param name="cellName">Name of robot system</param>
+    /// <param name="name">Name of robot system</param>
     /// <returns>Robot system</returns>
-    public static Robot ByName(string cellName)
+    public static Robot ByName(string name)
     {
-        var cell = FileIO.LoadRobotSystem(cellName, Plane.WorldXY);
-        return new(cell);
+        var system = FileIO.LoadRobotSystem(name, Plane.WorldXY);
+        return new(system);
     }
 
     // instance
     [IsVisibleInDynamoLibrary(false)]
-    public RobotSystem Cell { get; }
+    public RobotSystem System { get; }
 
-    private Robot(RobotSystem cell)
+    private Robot(RobotSystem system)
     {
-        Cell = cell;
+        System = system;
     }
 
-    public override string ToString() => $"RobotSystem(Name = {Cell.Name})";
+    public override string ToString() => $"RobotSystem(Name = {System.Name})";
 }

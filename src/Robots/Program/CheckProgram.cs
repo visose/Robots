@@ -10,24 +10,24 @@ class CheckProgram
     readonly RobotSystem _robotSystem;
     int _lastIndex;
 
-    internal List<CellTarget> Keyframes { get; } = new List<CellTarget>();
-    internal List<CellTarget> FixedTargets { get; }
+    internal List<SystemTarget> Keyframes { get; } = new List<SystemTarget>();
+    internal List<SystemTarget> FixedTargets { get; }
 
-    internal CheckProgram(Program program, List<CellTarget> cellTargets, double stepSize)
+    internal CheckProgram(Program program, List<SystemTarget> systemTarget, double stepSize)
     {
         _robotSystem = program.RobotSystem;
         _program = program;
 
-        FixFirstTarget(cellTargets[0]);
-        FixTargetAttributes(cellTargets);
-        var indexError = FixTargetMotions(cellTargets, stepSize);
+        FixFirstTarget(systemTarget[0]);
+        FixTargetAttributes(systemTarget);
+        var indexError = FixTargetMotions(systemTarget, stepSize);
 
         FixedTargets = (indexError != -1)
-             ? cellTargets.GetRange(0, indexError + 1)
-             : cellTargets;
+             ? systemTarget.GetRange(0, indexError + 1)
+             : systemTarget;
     }
 
-    void FixFirstTarget(CellTarget firstTarget)
+    void FixFirstTarget(SystemTarget firstTarget)
     {
         var fix = firstTarget.ProgramTargets.Where(x => !x.IsJointTarget);
 
@@ -50,7 +50,7 @@ class CheckProgram
         }
     }
 
-    void FixTargetAttributes(List<CellTarget> cellTargets)
+    void FixTargetAttributes(List<SystemTarget> systemTargets)
     {
         // Fix externals
 
@@ -58,14 +58,14 @@ class CheckProgram
         ProgramTarget? resizeTarget = null;
         int jointCount = _robotSystem.RobotJointCount;
 
-        foreach (var cellTarget in cellTargets)
+        foreach (var systemTarget in systemTargets)
         {
-            foreach (var programTarget in cellTarget.ProgramTargets)
+            foreach (var programTarget in systemTarget.ProgramTargets)
             {
                 int externalCount = _robotSystem.RobotJointCount - 6;
 
-                if (_robotSystem is RobotCell cell)
-                    externalCount = cell.MechanicalGroups[programTarget.Group].Joints.Count - jointCount;
+                if (_robotSystem is IndustrialSystem industrialSystem)
+                    externalCount = industrialSystem.MechanicalGroups[programTarget.Group].Joints.Count - jointCount;
 
                 if (programTarget.Target.External.Length != externalCount)
                 {
@@ -87,21 +87,21 @@ class CheckProgram
 
         // Warn about defaults
 
-        var defaultTools = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target.Tool == Tool.Default).ToList();
+        var defaultTools = systemTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target.Tool == Tool.Default).ToList();
         if (defaultTools.Count > 0)
         {
             var first = defaultTools[0];
             _program.Warnings.Add($"{defaultTools.Count} targets have their tool set to default, the first one being target {first.Index} in robot {first.Group}");
         }
 
-        var defaultSpeeds = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target.Speed == Speed.Default).ToList();
+        var defaultSpeeds = systemTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target.Speed == Speed.Default).ToList();
         if (defaultSpeeds.Count > 0)
         {
             var first = defaultSpeeds[0];
             _program.Warnings.Add($"{defaultSpeeds.Count} targets have their speed set to default, the first one being target {first.Index} in robot {first.Group}");
         }
 
-        var linearForced = cellTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target is CartesianTarget cartesian && cartesian.Motion == Motions.Linear && cartesian.Configuration is not null).ToList();
+        var linearForced = systemTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target is CartesianTarget cartesian && cartesian.Motion == Motions.Linear && cartesian.Configuration is not null).ToList();
         if (linearForced.Count > 0)
         {
             var first = linearForced[0];
@@ -116,7 +116,7 @@ class CheckProgram
 
         // Check max payload
 
-        var tools = cellTargets.SelectMany(x => x.ProgramTargets.Select(y => new { y.Target.Tool, y.Group })).Distinct();
+        var tools = systemTargets.SelectMany(x => x.ProgramTargets.Select(y => new { y.Target.Tool, y.Group })).Distinct();
         foreach (var tool in tools)
         {
             double payload = _robotSystem.Payload(tool.Group);
@@ -126,13 +126,13 @@ class CheckProgram
         // Get unique attributes
 
         _program.Attributes.AddRange(tools.Select(x => x.Tool).Distinct());
-        _program.Attributes.AddRange(cellTargets.SelectMany(x => x.ProgramTargets.Select(y => y.Target.Frame)).Distinct());
-        _program.Attributes.AddRange(cellTargets.SelectMany(x => x.ProgramTargets.Select(y => y.Target.Speed)).Distinct());
-        _program.Attributes.AddRange(cellTargets.SelectMany(x => x.ProgramTargets.Select(y => y.Target.Zone)).Distinct());
+        _program.Attributes.AddRange(systemTargets.SelectMany(x => x.ProgramTargets.Select(y => y.Target.Frame)).Distinct());
+        _program.Attributes.AddRange(systemTargets.SelectMany(x => x.ProgramTargets.Select(y => y.Target.Speed)).Distinct());
+        _program.Attributes.AddRange(systemTargets.SelectMany(x => x.ProgramTargets.Select(y => y.Target.Zone)).Distinct());
 
         var commands = new List<Command>();
         commands.AddRange(_program.InitCommands);
-        commands.AddRange(cellTargets.SelectMany(x => x.ProgramTargets.SelectMany(y => y.Commands)));
+        commands.AddRange(systemTargets.SelectMany(x => x.ProgramTargets.SelectMany(y => y.Commands)));
         _program.Attributes.AddRange(commands.Distinct());
 
         // Name attributes with no name
@@ -147,7 +147,7 @@ class CheckProgram
                     types.Add(type);
                     int i = types.FindAll(x => x == type).Count;
                     string name = $"{type.Name}{i - 1:000}";
-                    SetAttributeName(attribute, cellTargets.SelectMany(x => x.ProgramTargets), name);
+                    SetAttributeName(attribute, systemTargets.SelectMany(x => x.ProgramTargets), name);
                 }
             }
         }
@@ -167,7 +167,7 @@ class CheckProgram
                 foreach (var attribute in group)
                 {
                     string name = $"{attribute.Name}{i++:000}";
-                    SetAttributeName(attribute, cellTargets.SelectMany(x => x.ProgramTargets), name);
+                    SetAttributeName(attribute, systemTargets.SelectMany(x => x.ProgramTargets), name);
                 }
             }
         }
@@ -188,49 +188,49 @@ class CheckProgram
 
                 if (frame.IsCoupled)
                 {
-                    var cell = (RobotCell)_robotSystem;
-                    if (frame.CoupledMechanicalGroup > cell.MechanicalGroups.Count - 1)
+                    var industrialSystem = (IndustrialSystem)_robotSystem;
+                    if (frame.CoupledMechanicalGroup > industrialSystem.MechanicalGroups.Count - 1)
                     {
                         throw new ArgumentException($" Frame {frame.Name} is set to couple an inexistent mechanical group.", nameof(frame));
                     }
 
-                    if (frame.CoupledMechanism > cell.MechanicalGroups[frame.CoupledMechanicalGroup].Externals.Count - 1)
+                    if (frame.CoupledMechanism > industrialSystem.MechanicalGroups[frame.CoupledMechanicalGroup].Externals.Count - 1)
                     {
                         throw new ArgumentException($" Frame {frame.Name} is set to couple an inexistent mechanism.", nameof(frame));
                     }
 
-                    frame.CoupledPlaneIndex = ((RobotCell)_robotSystem).GetPlaneIndex(frame);
+                    frame.CoupledPlaneIndex = ((IndustrialSystem)_robotSystem).GetPlaneIndex(frame);
                 }
             }
         }
     }
 
-    int FixTargetMotions(List<CellTarget> cellTargets, double stepSize)
+    int FixTargetMotions(List<SystemTarget> systemTargets, double stepSize)
     {
         double time = 0;
-        //int groups = cellTargets[0].ProgramTargets.Count;
+        //int groups = systemTargets[0].ProgramTargets.Count;
 
-        for (int i = 0; i < cellTargets.Count; i++)
+        for (int i = 0; i < systemTargets.Count; i++)
         {
-            var cellTarget = cellTargets[i];
+            var systemTarget = systemTargets[i];
             //int errorIndex = -1;
 
             // first target
             if (i == 0)
             {
-                var firstKinematics = _robotSystem.Kinematics(cellTarget.ProgramTargets.Select(x => x.Target));
-                cellTarget.SetTargetKinematics(firstKinematics, _program.Errors, _program.Warnings);
-                CheckUndefined(cellTarget, cellTargets);
-                Keyframes.Add(cellTarget.ShallowClone());
+                var firstKinematics = _robotSystem.Kinematics(systemTarget.ProgramTargets.Select(x => x.Target));
+                systemTarget.SetTargetKinematics(firstKinematics, _program.Errors, _program.Warnings);
+                CheckUndefined(systemTarget, systemTargets);
+                Keyframes.Add(systemTarget.ShallowClone());
             }
             else
             {
-                var prevTarget = cellTargets[i - 1];
+                var prevTarget = systemTargets[i - 1];
                 var prevJoints = prevTarget.ProgramTargets.Select(x => x.Kinematics.Joints);
 
                 // no interpolation
                 {
-                    var kineTargets = cellTarget.ProgramTargets.MapToList(x => x.Target.ShallowClone());
+                    var kineTargets = systemTarget.ProgramTargets.MapToList(x => x.Target.ShallowClone());
 
                     for (int j = 0; j < kineTargets.Count; j++)
                     {
@@ -241,12 +241,12 @@ class CheckProgram
                     }
 
                     var kinematics = _robotSystem.Kinematics(kineTargets, prevJoints);
-                    cellTarget.SetTargetKinematics(kinematics, _program.Errors, _program.Warnings, prevTarget);
-                    CheckUndefined(cellTarget, cellTargets);
+                    systemTarget.SetTargetKinematics(kinematics, _program.Errors, _program.Warnings, prevTarget);
+                    CheckUndefined(systemTarget, systemTargets);
                 }
 
                 double divisions = 1;
-                var linearTargets = cellTarget.ProgramTargets.Where(x => !x.IsJointMotion);
+                var linearTargets = systemTarget.ProgramTargets.Where(x => !x.IsJointMotion);
                 //   if (linearTargets.Count() > 0) program.Errors.Clear();
 
                 foreach (var target in linearTargets)
@@ -271,8 +271,8 @@ class CheckProgram
                 for (double j = 1; j <= divisions; j++)
                 {
                     double t = j / divisions;
-                    var interTarget = cellTarget.ShallowClone();
-                    var kineTargets = cellTarget.Lerp(prevTarget, _robotSystem, t, 0.0, 1.0);
+                    var interTarget = systemTarget.ShallowClone();
+                    var kineTargets = systemTarget.Lerp(prevTarget, _robotSystem, t, 0.0, 1.0);
                     var kinematics = _program.RobotSystem.Kinematics(kineTargets, prevJoints);
                     interTarget.SetTargetKinematics(kinematics, _program.Errors, null, prevInterTarget);
 
@@ -314,7 +314,7 @@ class CheckProgram
                 if (_program.Errors.Count == 0)
                 {
                     double longestWaitTime = 0;
-                    foreach (var target in cellTarget.ProgramTargets)
+                    foreach (var target in systemTarget.ProgramTargets)
                     {
                         double waitTime = target.Commands.OfType<Commands.Wait>().Select(x => x.Seconds).Sum();
                         if (waitTime > longestWaitTime) longestWaitTime = waitTime;
@@ -333,11 +333,11 @@ class CheckProgram
 
                 // set target kinematics
 
-                cellTarget.TotalTime = time;
-                cellTarget.DeltaTime = totalDeltaTime;
-                cellTarget.MinTime = totalMinTime;
+                systemTarget.TotalTime = time;
+                systemTarget.DeltaTime = totalDeltaTime;
+                systemTarget.MinTime = totalMinTime;
 
-                foreach (var programTarget in cellTarget.ProgramTargets)
+                foreach (var programTarget in systemTarget.ProgramTargets)
                 {
                     int group = programTarget.Group;
                     programTarget.Kinematics = prevInterTarget.ProgramTargets[group].Kinematics;
@@ -359,14 +359,14 @@ class CheckProgram
         return -1;
     }
 
-    void CheckUndefined(CellTarget cellTarget, List<CellTarget> cellTargets)
+    void CheckUndefined(SystemTarget systemTarget, List<SystemTarget> systemTargets)
     {
-        if (cellTarget.Index < cellTargets.Count - 1)
+        if (systemTarget.Index < systemTargets.Count - 1)
         {
-            int i = cellTarget.Index;
-            foreach (var target in cellTarget.ProgramTargets.Where(x => x.Kinematics.Configuration == RobotConfigurations.Undefined))
+            int i = systemTarget.Index;
+            foreach (var target in systemTarget.ProgramTargets.Where(x => x.Kinematics.Configuration == RobotConfigurations.Undefined))
             {
-                if (!cellTargets[i + 1].ProgramTargets[target.Group].IsJointMotion)
+                if (!systemTargets[i + 1].ProgramTargets[target.Group].IsJointMotion)
                 {
                     _program.Errors.Add($"Undefined configuration (probably due to a singularity) in target {target.Index} of robot {target.Group} before a linear motion");
                     //IndexError = i;
@@ -445,8 +445,8 @@ class CheckProgram
 
         double externalCount = 0;
 
-        if (_robotSystem is RobotCell cell)
-            externalCount = cell.MechanicalGroups[target.Group].Externals.Sum(e => e.Joints.Length);
+        if (_robotSystem is IndustrialSystem industrialSystem)
+            externalCount = industrialSystem.MechanicalGroups[target.Group].Externals.Sum(e => e.Joints.Length);
 
         for (int i = 0; i < externalCount; i++)
         {

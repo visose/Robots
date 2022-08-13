@@ -4,13 +4,13 @@ namespace Robots;
 
 class DrlPostProcessor
 {
-    readonly CobotCellDoosan _cell;
+    readonly SystemDoosan _system;
     readonly Program _program;
     internal List<List<List<string>>> Code { get; }
 
-    internal DrlPostProcessor(CobotCellDoosan robotCell, Program program)
+    internal DrlPostProcessor(SystemDoosan system, Program program)
     {
-        _cell = robotCell;
+        _system = system;
         _program = program;
 
         List<List<string>> groupCode = new();
@@ -36,7 +36,7 @@ class DrlPostProcessor
                 List<string> code = new();
 
                 for (int i = 1; i <= program.MultiFileIndices.Count; i++)
-                    code.Add($"sub_program_run(\"{_cell.SubProgramName(program.Name, i)}\")");
+                    code.Add($"sub_program_run(\"{_system.SubProgramName(program.Name, i)}\")");
 
                 groupCode.Add(code);
             }
@@ -87,7 +87,7 @@ class DrlPostProcessor
         foreach (var frame in attributes.OfType<Frame>().Where(f => !f.UseController))
         {
             var plane = frame.Plane;
-            plane.InverseOrient(ref _cell.BasePlane);
+            plane.InverseOrient(ref _system.BasePlane);
             var posx = PosX(plane);
 
             code.Add($"{frame.Name} = set_user_cart_coord({posx}, ref=DR_WORLD)");
@@ -126,16 +126,16 @@ class DrlPostProcessor
         }
     }
 
-    List<string> Program(IEnumerable<CellTarget> cellTargets)
+    List<string> Program(IEnumerable<SystemTarget> systemTargets)
     {
         List<string> code = new();
         Tool? currentTool = null;
 
         // Targets
 
-        foreach (var cellTarget in cellTargets)
+        foreach (var systemTarget in systemTargets)
         {
-            var programTarget = cellTarget.ProgramTargets[0];
+            var programTarget = systemTarget.ProgramTargets[0];
             var target = programTarget.Target;
             var tool = target.Tool;
 
@@ -159,7 +159,7 @@ class DrlPostProcessor
                 var d = new double[6];
 
                 for (int i = 0; i < 6; i++)
-                    d[i] = _cell.Robot.RadianToDegree(r[i], i);
+                    d[i] = _system.Robot.RadianToDegree(r[i], i);
 
                 var speed = GetAxisSpeed();
                 moveText = $"movej({NumbersToPose(d)}, {speed}, r={zoneName})";
@@ -240,13 +240,13 @@ class DrlPostProcessor
                     return $"t={speed.Time:0.####}";
 
                 double axisSpeed;
-                var joints = _cell.Robot.Joints;
+                var joints = _system.Robot.Joints;
 
-                if (cellTarget.DeltaTime > 0)
+                if (systemTarget.DeltaTime > 0)
                 {
                     int leadIndex = programTarget.LeadingJoint;
                     double leadAxisSpeed = joints[leadIndex].MaxSpeed;
-                    double percentage = cellTarget.MinTime / cellTarget.DeltaTime;
+                    double percentage = systemTarget.MinTime / systemTarget.DeltaTime;
                     axisSpeed = percentage * leadAxisSpeed;
                 }
                 else
@@ -268,7 +268,7 @@ class DrlPostProcessor
 
     string PosX(Plane plane)
     {
-        var n = _cell.PlaneToNumbers(plane);
+        var n = _system.PlaneToNumbers(plane);
         return NumbersToPose(n);
     }
 

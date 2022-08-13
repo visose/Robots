@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Rhino.Geometry;
 
 namespace Robots.Tests;
@@ -34,7 +34,7 @@ class Performance
     void PerfTestAbb()
     {
         _watch.Restart();
-        const string xml = "<RobotCell name=\"IRB120\" manufacturer=\"ABB\"><Mechanisms><RobotArm model=\"IRB120\" manufacturer=\"ABB\" payload=\"3\"><Base x=\"0.000\" y=\"0.000\" z=\"0.000\" q1=\"1.000\" q2=\"0.000\" q3=\"0.000\" q4=\"0.000\"/><Joints><Revolute number=\"1\" a =\"0\" d =\"290\" minrange = \"-165\" maxrange =\"165\" maxspeed =\"250\"/><Revolute number=\"2\" a =\"270\" d =\"0\" minrange = \"-110\" maxrange =\"110\" maxspeed =\"250\"/><Revolute number=\"3\" a =\"70\" d =\"0\" minrange = \"-110\" maxrange =\"70\" maxspeed =\"250\"/><Revolute number=\"4\" a =\"0\" d =\"302\" minrange = \"-160\" maxrange =\"160\" maxspeed =\"320\"/><Revolute number=\"5\" a =\"0\" d =\"0\" minrange = \"-120\" maxrange =\"120\" maxspeed =\"320\"/><Revolute number=\"6\" a =\"0\" d =\"72\" minrange = \"-400\" maxrange =\"400\" maxspeed =\"420\"/></Joints></RobotArm></Mechanisms><IO><DO names=\"DO10_1,DO10_2\"/><DI names=\"DI10_1,DI10_2\"/></IO></RobotCell>";
+        const string xml = "<RobotSystem name=\"IRB120\" manufacturer=\"ABB\"><Mechanisms><RobotArm model=\"IRB120\" manufacturer=\"ABB\" payload=\"3\"><Base x=\"0.000\" y=\"0.000\" z=\"0.000\" q1=\"1.000\" q2=\"0.000\" q3=\"0.000\" q4=\"0.000\"/><Joints><Revolute number=\"1\" a =\"0\" d =\"290\" minrange = \"-165\" maxrange =\"165\" maxspeed =\"250\"/><Revolute number=\"2\" a =\"270\" d =\"0\" minrange = \"-110\" maxrange =\"110\" maxspeed =\"250\"/><Revolute number=\"3\" a =\"70\" d =\"0\" minrange = \"-110\" maxrange =\"70\" maxspeed =\"250\"/><Revolute number=\"4\" a =\"0\" d =\"302\" minrange = \"-160\" maxrange =\"160\" maxspeed =\"320\"/><Revolute number=\"5\" a =\"0\" d =\"0\" minrange = \"-120\" maxrange =\"120\" maxspeed =\"320\"/><Revolute number=\"6\" a =\"0\" d =\"72\" minrange = \"-400\" maxrange =\"400\" maxspeed =\"420\"/></Joints></RobotArm></Mechanisms><IO><DO names=\"DO10_1,DO10_2\"/><DI names=\"DI10_1,DI10_2\"/></IO></RobotSystem>";
         var robot = FileIO.ParseRobotSystem(xml, Plane.WorldXY);
 
         Log("RobotSytem.Parse");
@@ -62,7 +62,7 @@ class Performance
     void PerfTestUR()
     {
         _watch.Restart();
-        const string xml = "<RobotCell name=\"UR10\" manufacturer=\"UR\"><Mechanisms><RobotArm model=\"UR10\" manufacturer=\"UR\" payload=\"10\"><Base x=\"0.000\" y=\"0.000\" z=\"0.000\" q1=\"1.000\" q2=\"0.000\" q3=\"0.000\" q4=\"0.000\"/><Joints><Revolute number=\"1\" a =\"0\" d =\"127.3\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"120\"/><Revolute number=\"2\" a =\"-612\" d =\"0\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"120\"/><Revolute number=\"3\" a =\"-572.3\" d =\"0\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"180\"/><Revolute number=\"4\" a =\"0\" d =\"163.941\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"180\"/><Revolute number=\"5\" a =\"0\" d =\"115.7\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"180\"/><Revolute number=\"6\" a =\"0\" d =\"92.2\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"180\"/></Joints></RobotArm></Mechanisms><IO><DO names=\"0,1\"/><DI names=\"0,1\"/><AO names=\"0,1\"/><AI names=\"0,1\"/></IO></RobotCell>";
+        const string xml = "<RobotSystem name=\"UR10\" manufacturer=\"UR\"><Mechanisms><RobotArm model=\"UR10\" manufacturer=\"UR\" payload=\"10\"><Base x=\"0.000\" y=\"0.000\" z=\"0.000\" q1=\"1.000\" q2=\"0.000\" q3=\"0.000\" q4=\"0.000\"/><Joints><Revolute number=\"1\" a =\"0\" d =\"127.3\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"120\"/><Revolute number=\"2\" a =\"-612\" d =\"0\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"120\"/><Revolute number=\"3\" a =\"-572.3\" d =\"0\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"180\"/><Revolute number=\"4\" a =\"0\" d =\"163.941\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"180\"/><Revolute number=\"5\" a =\"0\" d =\"115.7\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"180\"/><Revolute number=\"6\" a =\"0\" d =\"92.2\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"180\"/></Joints></RobotArm></Mechanisms><IO><DO names=\"0,1\"/><DI names=\"0,1\"/><AO names=\"0,1\"/><AI names=\"0,1\"/></IO></RobotSystem>";
         var robot = FileIO.ParseRobotSystem(xml, Plane.WorldXY);
 
         Log("RobotSytem.Parse");

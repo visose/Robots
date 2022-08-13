@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using Rhino.Geometry;
 
 namespace Robots.Grasshopper;
@@ -14,7 +14,7 @@ public class CreateFrame : GH_Component
     {
         pManager.AddPlaneParameter("Plane", "P", "Frame plane", GH_ParamAccess.item, Plane.WorldXY);
         pManager.AddIntegerParameter("Coupled mechanical group", "G", "Index of the mechanical group where the coupled mechanism or robot belongs, or -1 for no coupling.", GH_ParamAccess.item, -1);
-        pManager.AddIntegerParameter("Coupled mechanism", "M", "Index of coupled mechanism or -1 for coupling of a robot in a multi robot cell. If input G is -1 this has no effect.", GH_ParamAccess.item, -1);
+        pManager.AddIntegerParameter("Coupled mechanism", "M", "Index of coupled mechanism or -1 for coupling of a robot in a multi robot system. If input G is -1 this has no effect.", GH_ParamAccess.item, -1);
         pManager.AddTextParameter("Name", "N", "Optional name for the frame.", GH_ParamAccess.item);
         pManager[3].Optional = true;
     }

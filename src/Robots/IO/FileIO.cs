@@ -5,7 +5,7 @@ using Rhino.Geometry;
 
 namespace Robots;
 
-public enum ElementType { RobotCell, Tool, Frame }
+public enum ElementType { RobotSystem, Tool, Frame }
 
 public static class FileIO
 {
@@ -18,8 +18,9 @@ public static class FileIO
         foreach (var file in GetLibraries())
         {
             var root = XElement.Load(file);
+            var elements = GetTypeElements(root, type);
 
-            foreach (var element in root.Elements(XName.Get(type.ToString())))
+            foreach (var element in elements)
                 names.Add(element.GetAttribute("name"));
         }
 
@@ -34,19 +35,19 @@ public static class FileIO
 
     public static RobotSystem LoadRobotSystem(string name, Plane basePlane, bool loadMeshes = true)
     {
-        var element = LoadElement(name, ElementType.RobotCell);
+        var (element, _) = LoadElement(name, ElementType.RobotSystem);
         return CreateRobotSystem(element, basePlane, loadMeshes);
     }
 
     public static Tool LoadTool(string name)
     {
-        var element = LoadElement(name, ElementType.Tool);
+        var (element, _) = LoadElement(name, ElementType.Tool);
         return CreateTool(element);
     }
 
     public static Frame LoadFrame(string name)
     {
-        var element = LoadElement(name, ElementType.Frame);
+        var (element, _) = LoadElement(name, ElementType.Frame);
         return CreateFrame(element);
     }
 
@@ -106,16 +107,28 @@ public static class FileIO
         }
     }
 
-    static XElement LoadElement(string name, ElementType type)
+    static IEnumerable<XElement> GetTypeElements(XElement root, ElementType type)
+    {
+        var elements = root.Elements(XName.Get(type.ToString()));
+
+        if (type == ElementType.RobotSystem)
+            elements = elements.Concat(root.Elements(XName.Get("RobotCell")));
+
+        return elements;
+    }
+
+    static (XElement element, string file) LoadElement(string name, ElementType type)
     {
         foreach (var file in GetLibraries())
         {
             var root = XElement.Load(file);
-            var element = root.Elements(XName.Get(type.ToString()))
+            var elements = GetTypeElements(root, type);
+
+            var element = elements
                 ?.FirstOrDefault(e => e.GetAttribute("name").EqualsIgnoreCase(name));
 
             if (element is not null)
-                return element;
+                return (element, file);
         }
 
         throw new ArgumentException($" {type} \"{name}\" not found");
@@ -125,10 +138,11 @@ public static class FileIO
     {
         var typeName = element.Name.LocalName;
 
-        if (!Enum.TryParse<ElementType>(typeName, out var type)
-            || type != ElementType.RobotCell)
+        if (typeName != "RobotCell"
+            && (!Enum.TryParse<ElementType>(typeName, out var type)
+            || type != ElementType.RobotSystem))
         {
-            throw new ArgumentException($" Element '{typeName}' should be 'RobotCell'", nameof(typeName));
+            throw new ArgumentException($" Element '{typeName}' should be 'RobotSystem'", nameof(typeName));
         }
 
         var name = element.GetAttribute("name");
@@ -147,13 +161,12 @@ public static class FileIO
 
         return manufacturer switch
         {
-            Manufacturers.ABB => new RobotCellAbb(name, mechanicalGroups, io, basePlane, environment),
-            Manufacturers.KUKA => new RobotCellKuka(name, mechanicalGroups, io, basePlane, environment),
-            Manufacturers.UR => new RobotSystemUR(name, (RobotUR)mechanicalGroups[0].Robot, io, basePlane, environment),
-            Manufacturers.FANUC => new RobotCellFanuc(name, mechanicalGroups, io, basePlane, environment),
-            Manufacturers.Staubli => new RobotCellStaubli(name, mechanicalGroups, io, basePlane, environment),
-            Manufacturers.FrankaEmika => new CobotCellFranka(name, (RobotFranka)mechanicalGroups[0].Robot, io, basePlane, environment),
-            Manufacturers.Doosan => new CobotCellDoosan(name, (RobotDoosan)mechanicalGroups[0].Robot, io, basePlane, environment),
+            Manufacturers.ABB => new SystemAbb(name, mechanicalGroups, io, basePlane, environment),
+            Manufacturers.KUKA => new SystemKuka(name, mechanicalGroups, io, basePlane, environment),
+            Manufacturers.UR => new SystemUR(name, (RobotUR)mechanicalGroups[0].Robot, io, basePlane, environment),
+            Manufacturers.Staubli => new SystemStaubli(name, mechanicalGroups, io, basePlane, environment),
+            Manufacturers.FrankaEmika => new SystemFranka(name, (RobotFranka)mechanicalGroups[0].Robot, io, basePlane, environment),
+            Manufacturers.Doosan => new SystemDoosan(name, (RobotDoosan)mechanicalGroups[0].Robot, io, basePlane, environment),
 
             _ => throw new ArgumentException($" Manufacturer '{manufacturer} is not supported.", nameof(manufacturer))
         };
@@ -172,7 +185,7 @@ public static class FileIO
 
     static Mechanism CreateMechanism(XElement element, bool loadMeshes)
     {
-        var cellName = element.Parent.Parent.GetAttribute("name");
+        var systemName = element.Parent.Parent.GetAttribute("name");
         var mechanism = element.Name.LocalName;
         var model = element.GetAttribute("model");
         var manufacturer = (Manufacturers)Enum.Parse(typeof(Manufacturers), element.GetAttribute("manufacturer"));
@@ -188,7 +201,7 @@ public static class FileIO
         var joints = new Joint[jointCount];
 
         var meshes = loadMeshes
-            ? GetMechanismMeshes(cellName, mechanism, model, manufacturer, jointCount)
+            ? GetMechanismMeshes(systemName, mechanism, model, manufacturer, jointCount)
             : Enumerable.Repeat(_emptyMesh, jointCount + 1).ToList();
 
         Mesh baseMesh = meshes[0];
@@ -228,7 +241,6 @@ public static class FileIO
                 Manufacturers.Staubli => new RobotStaubli(model, payload, basePlane, baseMesh, joints),
                 Manufacturers.FrankaEmika => new RobotFranka(model, payload, basePlane, baseMesh, joints),
                 Manufacturers.Doosan => new RobotDoosan(model, payload, basePlane, baseMesh, joints),
-                // Manufacturers.FANUC => new RobotFanuc(modelName, payload, basePlane, baseMesh, joints);
                 _ => throw new ArgumentException($" Manufacturer '{manufacturer}' not supported.", nameof(manufacturer)),
             },
             "Positioner" => new Positioner(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
@@ -338,30 +350,19 @@ public static class FileIO
 
     static File3dm GetRhinoDoc(string name, ElementType type)
     {
-        foreach (var file in GetLibraries())
-        {
-            var root = XElement.Load(file);
-            var element = root.Elements(XName.Get(type.ToString()))
-                ?.FirstOrDefault(e => e.GetAttribute("name").EqualsIgnoreCase(name));
+        var (_, file) = LoadElement(name, type);
+        var path3dm = Path.ChangeExtension(file, ".3dm");
 
-            if (element is null)
-                continue;
+        if (!File.Exists(path3dm))
+            throw new FileNotFoundException($@" File ""{Path.GetFileName(path3dm)}"" not found");
 
-            var path3dm = Path.ChangeExtension(file, ".3dm");
-
-            if (!File.Exists(path3dm))
-                throw new FileNotFoundException($@" File ""{Path.GetFileName(path3dm)}"" not found");
-
-            return File3dm.Read(path3dm);
-        }
-
-        throw new ArgumentException($" {type} \"{name}\" not found");
+        return File3dm.Read(path3dm);
     }
 
-    static List<Mesh> GetMechanismMeshes(string cellName, string mechanism, string model, Manufacturers manufacturer, int jointCount)
+    static List<Mesh> GetMechanismMeshes(string systemName, string mechanism, string model, Manufacturers manufacturer, int jointCount)
     {
         var meshCount = jointCount + 1;
-        var doc = GetRhinoDoc(cellName, ElementType.RobotCell);
+        var doc = GetRhinoDoc(systemName, ElementType.RobotSystem);
         var parentName = $"{mechanism}.{manufacturer}.{model}";
         var parentLayer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(parentName));
 

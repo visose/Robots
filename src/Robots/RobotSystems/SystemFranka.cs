@@ -2,9 +2,9 @@ using Rhino.Geometry;
 
 namespace Robots;
 
-public class CobotCellFranka : CobotCell
+public class SystemFranka : CobotSystem
 {
-    internal CobotCellFranka(string name, RobotFranka robot, IO io, Plane basePlane, Mesh? environment)
+    internal SystemFranka(string name, RobotFranka robot, IO io, Plane basePlane, Mesh? environment)
         : base(name, Manufacturers.FrankaEmika, robot, io, basePlane, environment)
     {
         Remote = new RemoteFranka();

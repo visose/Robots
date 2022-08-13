@@ -4,9 +4,9 @@ using static Robots.Util;
 
 namespace Robots;
 
-public class CobotCellDoosan : CobotCell
+public class SystemDoosan : CobotSystem
 {
-    internal CobotCellDoosan(string name, RobotDoosan robot, IO io, Plane basePlane, Mesh? environment)
+    internal SystemDoosan(string name, RobotDoosan robot, IO io, Plane basePlane, Mesh? environment)
         : base(name, Manufacturers.Doosan, robot, io, basePlane, environment)
     { }
 

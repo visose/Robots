@@ -55,7 +55,7 @@ public class Program : IProgram
 
     public string Name { get; }
     public RobotSystem RobotSystem { get; }
-    public List<CellTarget> Targets { get; }
+    public List<SystemTarget> Targets { get; }
     public List<int> MultiFileIndices { get; }
     public List<TargetAttribute> Attributes { get; } = new List<TargetAttribute>();
     public List<Command> InitCommands { get; }
@@ -74,7 +74,7 @@ public class Program : IProgram
     {
         RobotSystem = robotSystem;
         InitCommands = initCommands?.Flatten().ToList() ?? new List<Command>(0);
-        var targets = CreateCellTargets(toolpaths);
+        var targets = CreateSystemTargets(toolpaths);
 
         if (targets.Count > 0)
         {
@@ -95,16 +95,16 @@ public class Program : IProgram
 
     void CheckName(string name, RobotSystem robotSystem)
     {
-        if (robotSystem is RobotCell cell)
+        if (robotSystem is IndustrialSystem system)
         {
-            var group = cell.MechanicalGroups.MaxBy(g => g.Name.Length).Name;
+            var group = system.MechanicalGroups.MaxBy(g => g.Name.Length).Name;
             name = $"{name}_{group}_000";
         }
 
         if (!IsValidIdentifier(name, out var error))
             Errors.Add("Program " + error);
 
-        if (robotSystem is RobotCellKuka)
+        if (robotSystem is SystemKuka)
         {
             var excess = name.Length - 24;
 
@@ -113,19 +113,19 @@ public class Program : IProgram
         }
     }
 
-    List<CellTarget> CreateCellTargets(IEnumerable<IToolpath> toolpaths)
+    List<SystemTarget> CreateSystemTargets(IEnumerable<IToolpath> toolpaths)
     {
-        var cellTargets = new List<CellTarget>();
+        var systemTargets = new List<SystemTarget>();
         var enumerators = toolpaths.Select(e => e.Targets.GetEnumerator()).ToList();
 
-        if (RobotSystem is RobotCell cell)
+        if (RobotSystem is IndustrialSystem industrialSystem)
         {
             var pathsCount = enumerators.Count;
-            var groupCount = cell.MechanicalGroups.Count;
+            var groupCount = industrialSystem.MechanicalGroups.Count;
 
             if (pathsCount != groupCount)
             {
-                Errors.Add($"You supplied {pathsCount} toolpath(s), this robot cell requires {groupCount} toolpath(s).");
+                Errors.Add($"You supplied {pathsCount} toolpath(s), this robot system requires {groupCount} toolpath(s).");
                 goto End;
             }
         }
@@ -137,12 +137,12 @@ public class Program : IProgram
 
             if (programTargets.Any(t => t.Target is null))
             {
-                Errors.Add($"Target index {cellTargets.Count} is null or invalid.");
+                Errors.Add($"Target index {systemTargets.Count} is null or invalid.");
                 goto End;
             }
 
-            var cellTarget = new CellTarget(programTargets, cellTargets.Count);
-            cellTargets.Add(cellTarget);
+            var systemTarget = new SystemTarget(programTargets, systemTargets.Count);
+            systemTargets.Add(systemTarget);
         }
 
         if (enumerators.Any(e => e.MoveNext()))
@@ -151,13 +151,13 @@ public class Program : IProgram
             goto End;
         }
 
-        if (cellTargets.Count == 0)
+        if (systemTargets.Count == 0)
         {
             Errors.Add("The program must contain at least 1 target.");
         }
 
     End:
-        return cellTargets;
+        return systemTargets;
     }
 
     List<int> FixMultiFileIndices(IEnumerable<int>? multiFileIndices, int targetCount)
@@ -197,9 +197,9 @@ public class Program : IProgram
             return;
 
         var current = _simulation.CurrentSimulationPose;
-        var cellTarget = Targets[current.TargetIndex];
+        var systemTarget = Targets[current.TargetIndex];
 
-        MeshPoser.Pose(current.Kinematics, cellTarget);
+        MeshPoser.Pose(current.Kinematics, systemTarget);
     }
 
     public Collision CheckCollisions(IEnumerable<int>? first = null, IEnumerable<int>? second = null, Mesh? environment = null, int environmentPlane = 0, double linearStep = 100, double angularStep = PI / 4.0)

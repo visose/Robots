@@ -1,12 +1,12 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots;
 
-public class RobotCellAbb : RobotCell
+public class SystemAbb : IndustrialSystem
 {
-    internal RobotCellAbb(string name, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.ABB, mechanicalGroups, io, basePlane, environment)
+    internal SystemAbb(string name, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.ABB, mechanicalGroups, io, basePlane, environment)
     {
-        Remote = new RemoteAbb(this);
+        Remote = new RemoteAbb();
     }
 
     public static Plane QuaternionToPlane(double x, double y, double z, double q1, double q2, double q3, double q4)

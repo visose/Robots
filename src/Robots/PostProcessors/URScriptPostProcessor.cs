@@ -1,18 +1,16 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots;
 
 class URScriptPostProcessor
 {
-    readonly RobotUR _robot;
-    readonly RobotSystemUR _cell;
+    readonly SystemUR _system;
     readonly Program _program;
     internal List<List<List<string>>> Code { get; }
 
-    internal URScriptPostProcessor(RobotSystemUR robotCell, Program program)
+    internal URScriptPostProcessor(SystemUR system, Program program)
     {
-        _cell = robotCell;
-        _robot = _cell.Robot;
+        _system = system;
         _program = program;
         var groupCode = new List<List<string>> { Program() };
         Code = new List<List<List<string>>> { groupCode };
@@ -40,7 +38,7 @@ class URScriptPostProcessor
             tcp.Orient(ref originPlane);
             Point3d tcpPoint = tcp.Origin / 1000;
             tcp.Origin = tcpPoint;
-            double[] axisAngle = RobotSystemUR.PlaneToAxisAngle(ref tcp);
+            double[] axisAngle = SystemUR.PlaneToAxisAngle(ref tcp);
 
             Point3d cog = tool.Centroid;
             cog.Transform(originPlane.ToTransform());
@@ -83,9 +81,9 @@ class URScriptPostProcessor
 
         // Targets
 
-        foreach (var cellTarget in _program.Targets)
+        foreach (var systemTarget in _program.Targets)
         {
-            var programTarget = cellTarget.ProgramTargets[0];
+            var programTarget = systemTarget.ProgramTargets[0];
             var target = programTarget.Target;
 
             if (currentTool is null || target.Tool != currentTool)
@@ -108,8 +106,8 @@ class URScriptPostProcessor
                 var cartesian = (CartesianTarget)target;
                 var plane = cartesian.Plane;
                 plane.Orient(ref target.Frame.Plane);
-                plane.InverseOrient(ref _cell.BasePlane);
-                var axisAngle = _cell.PlaneToNumbers(plane);
+                plane.InverseOrient(ref _system.BasePlane);
+                var axisAngle = _system.PlaneToNumbers(plane);
 
                 switch (cartesian.Motion)
                 {
@@ -159,19 +157,20 @@ class URScriptPostProcessor
                 if (speed.Time > 0)
                     return $"t={speed.Time:0.####}";
 
+                var joints = _system.Robot.Joints;
                 double axisSpeed;
 
-                if (cellTarget.DeltaTime > 0)
+                if (systemTarget.DeltaTime > 0)
                 {
                     int leadIndex = programTarget.LeadingJoint;
-                    double leadAxisSpeed = _robot.Joints[leadIndex].MaxSpeed;
-                    double percentage = cellTarget.MinTime / cellTarget.DeltaTime;
+                    double leadAxisSpeed = joints[leadIndex].MaxSpeed;
+                    double percentage = systemTarget.MinTime / systemTarget.DeltaTime;
                     axisSpeed = percentage * leadAxisSpeed;
                 }
                 else
                 {
                     const double maxTranslationSpeed = 1000.0;
-                    double leadAxisSpeed = _robot.Joints.Max(j => j.MaxSpeed);
+                    double leadAxisSpeed = joints.Max(j => j.MaxSpeed);
                     double percentage = speed.TranslationSpeed / maxTranslationSpeed;
                     axisSpeed = percentage * leadAxisSpeed;
                 }

@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Data;
 
@@ -37,8 +37,8 @@ public class DeconstructProgramTargets : GH_Component
         }
 
         var path = DA.ParameterTargetPath(0);
-        var cellTargets = p.Targets;
-        var groupCount = cellTargets[0].ProgramTargets.Count;
+        var systemTargets = p.Targets;
+        var groupCount = systemTargets[0].ProgramTargets.Count;
 
         var planes = new GH_Structure<GH_Plane>();
         var joints = new GH_Structure<GH_Number>();
@@ -48,12 +48,12 @@ public class DeconstructProgramTargets : GH_Component
         for (int i = 0; i < groupCount; i++)
         {
             var tempPath = path.AppendElement(i);
-            for (int j = 0; j < cellTargets.Count; j++)
+            for (int j = 0; j < systemTargets.Count; j++)
             {
-                planes.AppendRange(cellTargets[j].ProgramTargets[i].Kinematics.Planes.Select(x => new GH_Plane(x)), tempPath.AppendElement(j));
-                joints.AppendRange(cellTargets[j].ProgramTargets[i].Kinematics.Joints.Select(x => new GH_Number(x)), tempPath.AppendElement(j));
-                configuration.Append(new GH_String(cellTargets[j].ProgramTargets[i].Kinematics.Configuration.ToString()), tempPath);
-                deltaTime.Append(new GH_Number(cellTargets[j].DeltaTime), tempPath);
+                planes.AppendRange(systemTargets[j].ProgramTargets[i].Kinematics.Planes.Select(x => new GH_Plane(x)), tempPath.AppendElement(j));
+                joints.AppendRange(systemTargets[j].ProgramTargets[i].Kinematics.Joints.Select(x => new GH_Number(x)), tempPath.AppendElement(j));
+                configuration.Append(new GH_String(systemTargets[j].ProgramTargets[i].Kinematics.Configuration.ToString()), tempPath);
+                deltaTime.Append(new GH_Number(systemTargets[j].DeltaTime), tempPath);
             }
         }
 

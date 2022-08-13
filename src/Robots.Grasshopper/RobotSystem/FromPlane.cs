@@ -30,7 +30,7 @@ public class FromPlane : GH_Component
         DA.GetData(1, ref robotSystem);
 
         var numbers = robotSystem is null
-            ? RobotCellAbb.PlaneToQuaternion(plane)
+            ? SystemAbb.PlaneToQuaternion(plane)
             : robotSystem.PlaneToNumbers(plane);
 
         DA.SetDataList(0, numbers);

@@ -1,4 +1,4 @@
-﻿global using Grasshopper.Kernel;
+global using Grasshopper.Kernel;
 
 using System.Drawing;
 using System.Reflection;
@@ -82,7 +82,7 @@ public class RobotsInfo : GH_AssemblyInfo
             foreach (var valueList in valueLists)
                 doc.RemoveObject(valueList, true);
 
-            if (LibraryParam.CreateIfEmpty(doc, component, ElementType.RobotCell, selected))
+            if (LibraryParam.CreateIfEmpty(doc, component, ElementType.RobotSystem, selected))
                 count++;
         }
 

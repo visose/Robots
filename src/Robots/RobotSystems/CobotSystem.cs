@@ -2,11 +2,11 @@ using Rhino.Geometry;
 
 namespace Robots;
 
-public abstract class CobotCell : RobotSystem
+public abstract class CobotSystem : RobotSystem
 {
     public RobotArm Robot { get; }
 
-    internal CobotCell(string name, Manufacturers manufacturer, RobotArm robot, IO io, Plane basePlane, Mesh? environment)
+    internal CobotSystem(string name, Manufacturers manufacturer, RobotArm robot, IO io, Plane basePlane, Mesh? environment)
         : base(name, manufacturer, io, basePlane, environment, GetDefaultPose(robot))
     {
         Robot = robot;

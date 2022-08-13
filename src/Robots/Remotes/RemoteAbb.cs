@@ -10,7 +10,7 @@ public class RemoteAbb : IRemote
     public void Upload(IProgram p) => throw NotImplemented();
 
 #pragma warning disable IDE0060
-    internal RemoteAbb(RobotCellAbb cell) { }
+    internal RemoteAbb() { }
 
     Exception NotImplemented() => new NotImplementedException(" ABB SDK not supported in .NET Standard.");
 }
@@ -22,17 +22,14 @@ using ABB.Robotics.Controllers.Discovery;
 
 public class RemoteAbb : IRemote
 {
-    readonly RobotCellAbb _cell;
     Controller? _controller;
 
     public string? IP { get; set; }
     public List<string> Log { get; } = new List<string>();
     public bool Connected => _controller?.Connected == true;
 
-    internal RemoteAbb(RobotCellAbb cell)
-    {
-        _cell = cell;
-    }
+    internal RemoteAbb()
+    { }
 
     public void Play() => Command(StartCommand);
     public void Pause() => Command(StopCommand);

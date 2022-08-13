@@ -1,11 +1,10 @@
 using Rhino.Geometry;
-using static Robots.Util;
 
 namespace Robots;
 
-public class RobotCellKuka : RobotCell
+public class SystemKuka : IndustrialSystem
 {
-    internal RobotCellKuka(string name, List<MechanicalGroup> mechanicalGroup, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.KUKA, mechanicalGroup, io, basePlane, environment) { }
+    internal SystemKuka(string name, List<MechanicalGroup> mechanicalGroup, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.KUKA, mechanicalGroup, io, basePlane, environment) { }
 
     public override double[] PlaneToNumbers(Plane plane)
     {

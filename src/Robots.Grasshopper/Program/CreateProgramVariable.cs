@@ -1,4 +1,4 @@
-﻿using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Data;
 
 namespace Robots.Grasshopper;
@@ -36,10 +36,10 @@ public class CreateProgramVariable : GH_Component, IGH_VariableParameterComponen
 
     int GetRobotCount()
     {
-        if (_robotSystem is not RobotCell cell)
+        if (_robotSystem is not IndustrialSystem system)
             return 1;
 
-        return cell.MechanicalGroups.Count;
+        return system.MechanicalGroups.Count;
     }
 
     void SetTargetInputs()

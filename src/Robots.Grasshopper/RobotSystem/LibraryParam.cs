@@ -1,4 +1,4 @@
-﻿using System.Xml;
+using System.Xml;
 using System.Drawing;
 using System.Windows.Forms;
 using Eto.Forms;

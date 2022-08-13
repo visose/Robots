@@ -1,4 +1,4 @@
-﻿using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
@@ -75,7 +75,7 @@ public sealed class Simulation : GH_Component
 
         var currentPose = p.CurrentSimulationPose;
         var currentKinematics = currentPose.Kinematics;
-        var currentCellTarget = p.Targets[currentPose.TargetIndex];
+        var currentSystemTarget = p.Targets[currentPose.TargetIndex];
 
         var errors = currentKinematics.SelectMany(x => x.Errors);
         var joints = currentKinematics.SelectMany(x => x.Joints);

@@ -5,18 +5,18 @@ namespace Robots;
 
 class RapidPostProcessor
 {
-    readonly RobotCellAbb _cell;
+    readonly SystemAbb _system;
     readonly Program _program;
 
     internal List<List<List<string>>> Code { get; }
 
-    internal RapidPostProcessor(RobotCellAbb robotCell, Program program)
+    internal RapidPostProcessor(SystemAbb system, Program program)
     {
-        _cell = robotCell;
+        _system = system;
         _program = program;
         Code = new List<List<List<string>>>();
 
-        for (int i = 0; i < _cell.MechanicalGroups.Count; i++)
+        for (int i = 0; i < _system.MechanicalGroups.Count; i++)
         {
             var groupCode = new List<List<string>>
                     {
@@ -34,16 +34,16 @@ class RapidPostProcessor
     {
         var code = new List<string>();
         bool multiProgram = _program.MultiFileIndices.Count > 1;
-        string groupName = _cell.MechanicalGroups[group].Name;
+        string groupName = _system.MechanicalGroups[group].Name;
 
         code.Add($"MODULE {_program.Name}_{groupName}");
-        if (_cell.MechanicalGroups[group].Externals.Count == 0) code.Add("VAR extjoint extj := [9E9,9E9,9E9,9E9,9E9,9E9];");
+        if (_system.MechanicalGroups[group].Externals.Count == 0) code.Add("VAR extjoint extj := [9E9,9E9,9E9,9E9,9E9,9E9];");
         code.Add("VAR confdata conf := [0,0,0,0];");
 
         // Attribute declarations
         var attributes = _program.Attributes;
 
-        if (_cell.MechanicalGroups.Count > 1)
+        if (_system.MechanicalGroups.Count > 1)
         {
             code.Add("VAR syncident sync1;");
             code.Add("VAR syncident sync2;");
@@ -83,7 +83,7 @@ class RapidPostProcessor
                 code.Add(command.Code(_program, Target.Default));
         }
 
-        if (_cell.MechanicalGroups.Count > 1)
+        if (_system.MechanicalGroups.Count > 1)
         {
             code.Add($"SyncMoveOn sync1, all_tasks;");
         }
@@ -100,7 +100,7 @@ class RapidPostProcessor
 
         if (multiProgram)
         {
-            if (_cell.MechanicalGroups.Count > 1)
+            if (_system.MechanicalGroups.Count > 1)
             {
                 code.Add($"SyncMoveOff sync2;");
             }
@@ -115,7 +115,7 @@ class RapidPostProcessor
     List<string> SubModule(int file, int group)
     {
         bool multiProgram = _program.MultiFileIndices.Count > 1;
-        string groupName = _cell.MechanicalGroups[group].Name;
+        string groupName = _system.MechanicalGroups[group].Name;
 
         int start = _program.MultiFileIndices[file];
         int end = (file == _program.MultiFileIndices.Count - 1) ? _program.Targets.Count : _program.MultiFileIndices[file + 1];
@@ -134,12 +134,12 @@ class RapidPostProcessor
             var target = programTarget.Target;
             string moveText;
             string zone = (target.Zone.IsFlyBy ? target.Zone.Name : "fine").NotNull(" Zone name cannot be null.");
-            string id = (_cell.MechanicalGroups.Count > 1) ? id = $@"\ID:={programTarget.Index}" : "";
+            string id = (_system.MechanicalGroups.Count > 1) ? id = $@"\ID:={programTarget.Index}" : "";
             string external = "extj";
 
-            if (_cell.MechanicalGroups[group].Externals.Count > 0)
+            if (_system.MechanicalGroups[group].Externals.Count > 0)
             {
-                double[] values = _cell.MechanicalGroups[group].RadiansToDegreesExternal(target);
+                double[] values = _system.MechanicalGroups[group].RadiansToDegreesExternal(target);
                 var externals = new string[6];
 
                 for (int i = 0; i < 6; i++)
@@ -167,7 +167,7 @@ class RapidPostProcessor
             {
                 var jointTarget = (JointTarget)programTarget.Target;
                 double[] joints = jointTarget.Joints;
-                joints = joints.Map((x, i) => _cell.MechanicalGroups[group].RadianToDegree(x, i));
+                joints = joints.Map((x, i) => _system.MechanicalGroups[group].RadianToDegree(x, i));
                 moveText = $"MoveAbsJ [[{joints[0]:0.####},{joints[1]:0.####},{joints[2]:0.####},{joints[3]:0.####},{joints[4]:0.####},{joints[5]:0.####}],{external}]{id},{target.Speed.Name},{zone},{target.Tool.Name};";
             }
             else
@@ -234,7 +234,7 @@ class RapidPostProcessor
 
         if (!multiProgram)
         {
-            if (_cell.MechanicalGroups.Count > 1)
+            if (_system.MechanicalGroups.Count > 1)
             {
                 code.Add($"SyncMoveOff sync2;");
             }
@@ -264,7 +264,7 @@ class RapidPostProcessor
     string Frame(Frame frame)
     {
         Plane plane = frame.Plane;
-        plane.InverseOrient(ref _cell.BasePlane);
+        plane.InverseOrient(ref _system.BasePlane);
         Quaternion quaternion = plane.ToQuaternion();
         string pos = $"[{plane.OriginX:0.###},{plane.OriginY:0.###},{plane.OriginZ:0.###}]";
         string orient = $"[{quaternion.A:0.#####},{quaternion.B:0.#####},{quaternion.C:0.#####},{quaternion.D:0.#####}]";

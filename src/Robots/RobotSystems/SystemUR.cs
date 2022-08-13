@@ -3,34 +3,17 @@ using static System.Math;
 
 namespace Robots;
 
-public class RobotSystemUR : RobotSystem
+public class SystemUR : CobotSystem
 {
-    public RobotUR Robot { get; }
-    // public URRealTime URRealTime { get; set; }
-
-    internal RobotSystemUR(string name, RobotUR robot, IO io, Plane basePlane, Mesh? environment)
-        : base(name, Manufacturers.UR, io, basePlane, environment, GetDefaultPose(robot))
+    internal SystemUR(string name, RobotUR robot, IO io, Plane basePlane, Mesh? environment)
+        : base(name, Manufacturers.UR, robot, io, basePlane, environment)
     {
         Remote = new RemoteUR();
-        Robot = robot;
-        DisplayMesh.Append(robot.DisplayMesh);
-        DisplayMesh.Transform(BasePlane.ToTransform());
-    }
-
-    static DefaultPose GetDefaultPose(RobotUR robot)
-    {
-        return new DefaultPose(
-            planes: new() { robot.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY).ToList() },
-            meshes: new() { robot.Joints.Select(j => j.Mesh).Prepend(robot.BaseMesh).ToList() }
-            );
     }
 
     /// <summary>
     /// Code lifted from http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToAngle/
     /// </summary>
-    /// <param name="plane"></param>
-    /// <param name="originPlane"></param>
-    /// <returns></returns>
     public static double[] PlaneToAxisAngle(ref Plane plane)
     {
         Vector3d vector;
@@ -174,57 +157,8 @@ public class RobotSystemUR : RobotSystem
 
     public override Plane NumbersToPlane(double[] numbers) => AxisAngleToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5]);
 
-    public override double DegreeToRadian(double degree, int i, int group = 0)
-    {
-        return degree.ToRadians();
-    }
-
-    public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]?>? prevJoints = null)
-    {
-        var target = targets.First();
-        var prevJoint = prevJoints?.First();
-        string? error = null;
-
-        if (prevJoint is not null && prevJoint.Length != 6)
-        {
-            error = $"Previous joints set but contain {prevJoint.Length} value(s), should contain 6 values.";
-            prevJoint = null;
-        }
-
-        var kinematic = Robot.Kinematics(target, prevJoint, BasePlane);
-        var planes = kinematic.Planes.ToList();
-
-        // Tool
-        if (target.Tool is not null)
-        {
-            Plane toolPlane = target.Tool.Tcp;
-            toolPlane.Orient(ref kinematic.Planes[planes.Count - 1]);
-            planes.Add(toolPlane);
-        }
-        else
-        {
-            planes.Add(planes[planes.Count - 1]);
-        }
-
-        kinematic.Planes = planes.ToArray();
-
-        if (error is not null)
-            kinematic.Errors.Add(error);
-
-        return new List<KinematicSolution> { kinematic };
-    }
-
-    internal override double Payload(int group)
-    {
-        return Robot.Payload;
-    }
-
-    internal override IList<Joint> GetJoints(int group)
-    {
-        return Robot.Joints;
-    }
-
-    internal override List<List<List<string>>> Code(Program program) => new URScriptPostProcessor(this, program).Code;
+    internal override List<List<List<string>>> Code(Program program) =>
+        new URScriptPostProcessor(this, program).Code;
 
     internal override void SaveCode(IProgram program, string folder)
     {
@@ -239,7 +173,7 @@ public class RobotSystemUR : RobotSystem
             throw new InvalidOperationException("Program code not generated.");
 
         // e-Series or CB-Series
-        var ur = (RobotSystemUR)program.RobotSystem;
+        var ur = (SystemUR)program.RobotSystem;
         var isESeries = ur.Robot.Model.EndsWith("e", StringComparison.OrdinalIgnoreCase);
 
         // Version number does not appear to matter

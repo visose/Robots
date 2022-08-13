@@ -1,18 +1,18 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots;
 
-class RobotCellKinematics
+class IndustrialSystemKinematics
 {
     internal List<KinematicSolution> Solutions;
 
-    internal RobotCellKinematics(RobotCell cell, IEnumerable<Target> targets, IEnumerable<double[]>? prevJoints)
+    internal IndustrialSystemKinematics(IndustrialSystem system, IEnumerable<Target> targets, IEnumerable<double[]>? prevJoints)
     {
-        Solutions = new List<KinematicSolution>(new KinematicSolution[cell.MechanicalGroups.Count]);
+        Solutions = new List<KinematicSolution>(new KinematicSolution[system.MechanicalGroups.Count]);
         var targetsList = targets.TryCastIList();
         var prevJointsList = prevJoints?.TryCastIList();
 
-        var groupsCount = cell.MechanicalGroups.Count;
+        var groupsCount = system.MechanicalGroups.Count;
 
         if (targetsList.Count != groupsCount)
             throw new ArgumentException(" Incorrect number of targets.", nameof(targets));
@@ -20,13 +20,13 @@ class RobotCellKinematics
         if (prevJointsList is not null && prevJointsList.Count != groupsCount)
             throw new ArgumentException(" Incorrect number of previous joint values.", nameof(prevJoints));
 
-        var groups = cell.MechanicalGroups.ToList();
+        var groups = system.MechanicalGroups.ToList();
 
         foreach (var target in targetsList)
         {
             var index = target.Frame.CoupledMechanicalGroup;
             if (index == -1) continue;
-            var group = cell.MechanicalGroups[index];
+            var group = system.MechanicalGroups[index];
             groups.RemoveAt(index);
             groups.Insert(0, group);
         }
@@ -52,7 +52,7 @@ class RobotCellKinematics
                 coupledPlane = null;
             }
 
-            var kinematics = group.Kinematics(target, prevJoint, coupledPlane, cell.BasePlane);
+            var kinematics = group.Kinematics(target, prevJoint, coupledPlane, system.BasePlane);
             Solutions[i] = kinematics;
         }
     }

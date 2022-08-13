@@ -7,18 +7,18 @@ namespace Robots;
 
 class KRLPostProcessor
 {
-    readonly RobotCellKuka _cell;
+    readonly SystemKuka _system;
     readonly Program _program;
 
     internal List<List<List<string>>> Code { get; }
 
-    internal KRLPostProcessor(RobotCellKuka robotCell, Program program)
+    internal KRLPostProcessor(SystemKuka system, Program program)
     {
-        _cell = robotCell;
+        _system = system;
         _program = program;
         Code = new List<List<List<string>>>();
 
-        for (int i = 0; i < _cell.MechanicalGroups.Count; i++)
+        for (int i = 0; i < _system.MechanicalGroups.Count; i++)
         {
             var groupCode = new List<List<string>>
                     {
@@ -35,7 +35,7 @@ class KRLPostProcessor
 
     List<string> DatFile(int group)
     {
-        string groupName = _cell.MechanicalGroups[group].Name;
+        string groupName = _system.MechanicalGroups[group].Name;
         var code = new List<string>
                 {
                     $@"&ACCESS RVP
@@ -72,7 +72,7 @@ DEFDAT {_program.Name}_{groupName} PUBLIC"
 
     List<string> MainFile(int group)
     {
-        string groupName = _cell.MechanicalGroups[group].Name;
+        string groupName = _system.MechanicalGroups[group].Name;
 
         var code = new List<string>
                 {
@@ -99,7 +99,7 @@ $APO.CPTP = 100"
 
     List<string> SrcFile(int file, int group)
     {
-        string groupName = _cell.MechanicalGroups[group].Name;
+        string groupName = _system.MechanicalGroups[group].Name;
         int start = _program.MultiFileIndices[file];
         int end = (file == _program.MultiFileIndices.Count - 1) ? _program.Targets.Count : _program.MultiFileIndices[file + 1];
 
@@ -118,8 +118,8 @@ DEF {_program.Name}_{groupName}_{file:000}()"
 
         for (int j = start; j < end; j++)
         {
-            var cellTarget = _program.Targets[j];
-            var programTarget = cellTarget.ProgramTargets[group];
+            var systemTarget = _program.Targets[j];
+            var programTarget = systemTarget.ProgramTargets[group];
             var target = programTarget.Target;
 
             if (currentTool is null || target.Tool != currentTool)
@@ -160,12 +160,12 @@ DEF {_program.Name}_{groupName}_{file:000}()"
 
                     if (programTarget.IsJointMotion)
                     {
-                        double percentSpeed = cellTarget.MinTime / cellTarget.DeltaTime;
+                        double percentSpeed = systemTarget.MinTime / systemTarget.DeltaTime;
 
                         if (Abs(currentPercentSpeed - percentSpeed) > UnitTol)
                         {
                             code.Add("BAS(#VEL_PTP, 100)");
-                            if (cellTarget.DeltaTime > UnitTol) code.Add($"$VEL_AXIS[{programTarget.LeadingJoint + 1}] = {percentSpeed * 100:0.###}");
+                            if (systemTarget.DeltaTime > UnitTol) code.Add($"$VEL_AXIS[{programTarget.LeadingJoint + 1}] = {percentSpeed * 100:0.###}");
                             currentPercentSpeed = percentSpeed;
                         }
                     }
@@ -176,7 +176,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
 
             string external = string.Empty;
 
-            double[] values = _cell.MechanicalGroups[group].RadiansToDegreesExternal(target);
+            double[] values = _system.MechanicalGroups[group].RadiansToDegreesExternal(target);
 
             for (int i = 0; i < values.Length; i++)
             {
@@ -191,7 +191,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
             if (programTarget.IsJointTarget)
             {
                 var jointTarget = (JointTarget)target;
-                double[] jointDegrees = jointTarget.Joints.Map((x, i) => _cell.MechanicalGroups[group].Robot.RadianToDegree(x, i));
+                double[] jointDegrees = jointTarget.Joints.Map((x, i) => _system.MechanicalGroups[group].Robot.RadianToDegree(x, i));
 
                 moveText = $"PTP {{A1 {jointDegrees[0]:0.####},A2 {jointDegrees[1]:0.####},A3 {jointDegrees[2]:0.####},A4 {jointDegrees[3]:0.####},A5 {jointDegrees[4]:0.####},A6 {jointDegrees[5]:0.####}{external}}}";
                 if (target.Zone.IsFlyBy) moveText += " C_PTP";
@@ -208,7 +208,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                             string bits = string.Empty;
                             //  if (target.ChangesConfiguration)
                             {
-                                double[] jointDegrees = programTarget.Kinematics.Joints.Map((x, i) => _cell.MechanicalGroups[group].Robot.RadianToDegree(x, i));
+                                double[] jointDegrees = programTarget.Kinematics.Joints.Map((x, i) => _system.MechanicalGroups[group].Robot.RadianToDegree(x, i));
                                 int turnNum = 0;
                                 for (int i = 0; i < 6; i++) if (jointDegrees[i] < 0) turnNum += (int)Pow(2, i);
 
@@ -260,7 +260,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
 
     string ExternalSpeed(ProgramTarget target)
     {
-        var joints = _cell.GetJoints(target.Group);
+        var joints = _system.GetJoints(target.Group);
         var joint = joints[target.LeadingJoint];
         var speed = joint switch
         {
@@ -322,14 +322,14 @@ DEF {_program.Name}_{groupName}_{file:000}()"
     string Frame(Frame frame)
     {
         Plane plane = frame.Plane;
-        plane.InverseOrient(ref _cell.BasePlane);
+        plane.InverseOrient(ref _system.BasePlane);
 
         return $"DECL GLOBAL FRAME {frame.Name} = {{{GetXyzAbc(plane)}}}";
     }
 
     string GetXyzAbc(Plane plane)
     {
-        var values = _cell.PlaneToNumbers(plane);
+        var values = _system.PlaneToNumbers(plane);
         return GetXyzAbc(values);
     }
 

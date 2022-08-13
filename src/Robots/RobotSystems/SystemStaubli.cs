@@ -1,13 +1,13 @@
-﻿using System.Text;
+using System.Text;
 using Rhino.Geometry;
 using static System.Math;
 using static Robots.Util;
 
 namespace Robots;
 
-public class RobotCellStaubli : RobotCell
+public class SystemStaubli : IndustrialSystem
 {
-    internal RobotCellStaubli(string name, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.Staubli, mechanicalGroups, io, basePlane, environment)
+    internal SystemStaubli(string name, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.Staubli, mechanicalGroups, io, basePlane, environment)
     {
     }
 

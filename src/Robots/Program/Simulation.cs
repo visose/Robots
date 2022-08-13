@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using static Rhino.RhinoMath;
 
 namespace Robots;
@@ -24,13 +24,13 @@ public class SimulationPose
 class Simulation
 {
     readonly Program _program;
-    readonly List<CellTarget> _keyframes;
+    readonly List<SystemTarget> _keyframes;
     readonly double _duration;
 
     int _currentTarget = 0;
     internal SimulationPose CurrentSimulationPose;
 
-    public Simulation(Program program, List<CellTarget> keyframes)
+    public Simulation(Program program, List<SystemTarget> keyframes)
     {
         _program = program;
         _keyframes = keyframes;
@@ -72,13 +72,13 @@ class Simulation
             }
         }
 
-        var cellTarget = _keyframes[_currentTarget + 1];
-        var prevCellTarget = _keyframes[_currentTarget + 0];
-        var prevJoints = prevCellTarget.ProgramTargets.Select(x => x.Kinematics.Joints);
+        var systemTarget = _keyframes[_currentTarget + 1];
+        var prevSystemTarget = _keyframes[_currentTarget + 0];
+        var prevJoints = prevSystemTarget.ProgramTargets.Select(x => x.Kinematics.Joints);
 
-        var kineTargets = cellTarget.Lerp(prevCellTarget, _program.RobotSystem, time, prevCellTarget.TotalTime, cellTarget.TotalTime);
+        var kineTargets = systemTarget.Lerp(prevSystemTarget, _program.RobotSystem, time, prevSystemTarget.TotalTime, systemTarget.TotalTime);
         CurrentSimulationPose.Kinematics = _program.RobotSystem.Kinematics(kineTargets, prevJoints);
-        CurrentSimulationPose.TargetIndex = cellTarget.Index;
+        CurrentSimulationPose.TargetIndex = systemTarget.Index;
         CurrentSimulationPose.CurrentTime = time;
     }
 }

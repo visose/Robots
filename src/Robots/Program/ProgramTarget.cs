@@ -5,7 +5,7 @@ namespace Robots;
 public class ProgramTarget
 {
     KinematicSolution? _kinematics;
-    CellTarget? _cellTarget;
+    SystemTarget? _systemTarget;
 
     public Target Target { get; internal set; }
     public int Group { get; internal set; }
@@ -13,7 +13,7 @@ public class ProgramTarget
     internal bool ChangesConfiguration { get; set; } = false;
     internal int LeadingJoint { get; set; }
 
-    public int Index => CellTarget.Index;
+    public int Index => SystemTarget.Index;
     public bool IsJointMotion => IsJointTarget || ((CartesianTarget)Target).Motion == Motions.Joint;
     public Plane WorldPlane => Kinematics.Planes[Kinematics.Planes.Length - 1];
     internal bool IsJointTarget => Target is JointTarget;
@@ -24,10 +24,10 @@ public class ProgramTarget
         internal set => _kinematics = value;
     }
 
-    internal CellTarget CellTarget
+    internal SystemTarget SystemTarget
     {
-        get => _cellTarget.NotNull(" CellTarget should not be null.");
-        set => _cellTarget = value;
+        get => _systemTarget.NotNull(" SystemTarget should not be null.");
+        set => _systemTarget = value;
     }
 
     public Plane Plane
@@ -39,7 +39,7 @@ public class ProgramTarget
 
             if (Target.Frame.IsCoupled)
             {
-                var planes = CellTarget.Planes;
+                var planes = SystemTarget.Planes;
                 Plane coupledPlane = planes[Target.Frame.CoupledPlaneIndex];
                 framePlane.Orient(ref coupledPlane);
             }
@@ -67,10 +67,10 @@ public class ProgramTarget
         Commands = target.Command.Flatten().ToList();
     }
 
-    public ProgramTarget ShallowClone(CellTarget cellTarget)
+    public ProgramTarget ShallowClone(SystemTarget systemTarget)
     {
         var target = (ProgramTarget)MemberwiseClone();
-        target.CellTarget = cellTarget;
+        target.SystemTarget = systemTarget;
         target.Commands = new List<Command>(0);
         return target;
     }
@@ -91,7 +91,7 @@ public class ProgramTarget
 
         if (Target.Frame.IsCoupled)
         {
-            var planes = prevTarget.CellTarget.Planes;
+            var planes = prevTarget.SystemTarget.Planes;
             framePlane.Orient(ref planes[Target.Frame.CoupledPlaneIndex]);
         }
 
@@ -106,9 +106,9 @@ public class ProgramTarget
 
         double[] external;
 
-        if (robot is RobotCell cell)
+        if (robot is IndustrialSystem system)
         {
-            int externalCount = cell.MechanicalGroups[Group].Externals.Sum(e => e.Joints.Length);
+            int externalCount = system.MechanicalGroups[Group].Externals.Sum(e => e.Joints.Length);
             external = allJoints.RangeSubset(jointCount, externalCount);
         }
         else if (robot.RobotJointCount == 7 && Target.External.Length > 0)

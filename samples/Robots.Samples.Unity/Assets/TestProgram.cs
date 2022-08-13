@@ -24,11 +24,11 @@ namespace Robots.Samples.Unity
 
         static async Task<RobotSystem> GetRobotAsync()
         {
-            var cellName = "Bartlett-IRB120";
+            var name = "Bartlett-IRB120";
 
             try
             {
-                return FileIO.LoadRobotSystem(cellName, Plane.WorldXY);
+                return FileIO.LoadRobotSystem(name, Plane.WorldXY);
             }
             catch (ArgumentException e)
             {
@@ -37,7 +37,7 @@ namespace Robots.Samples.Unity
 
                 UnityEngine.Debug.Log("Bartlett robot library not found, installing...");
                 await DownloadLibraryAsync();
-                return FileIO.LoadRobotSystem(cellName, Plane.WorldXY);
+                return FileIO.LoadRobotSystem(name, Plane.WorldXY);
             }
         }
 

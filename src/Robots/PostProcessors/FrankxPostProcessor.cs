@@ -8,13 +8,13 @@ class FrankxPostProcessor
     const double _dynamicRel = 1.0;
     const string _indent = "  ";
 
-    readonly CobotCellFranka _cell;
+    readonly SystemFranka _system;
     readonly Program _program;
     internal List<List<List<string>>> Code { get; }
 
-    internal FrankxPostProcessor(CobotCellFranka robotCell, Program program)
+    internal FrankxPostProcessor(SystemFranka system, Program program)
     {
-        _cell = robotCell;
+        _system = system;
         _program = program;
         var groupCode = new List<List<string>> { Program() };
         Code = new List<List<List<string>>> { groupCode };
@@ -82,9 +82,9 @@ def program():
 
         // Targets
 
-        foreach (var cellTarget in _program.Targets)
+        foreach (var systemTarget in _program.Targets)
         {
-            var programTarget = cellTarget.ProgramTargets[0];
+            var programTarget = systemTarget.ProgramTargets[0];
             var target = programTarget.Target;
 
             var beforeCommands = programTarget.Commands.Where(c => c.RunBefore);
@@ -98,7 +98,7 @@ def program():
                 code.Add(_indent + commands);
             }
 
-            double speed = GetSpeed(cellTarget);
+            double speed = GetSpeed(systemTarget);
 
             if (target is JointTarget joint)
             {
@@ -146,12 +146,12 @@ def program():
                 plane.Orient(ref target.Frame.Plane);
 
                 // Bake base
-                plane.InverseOrient(ref _cell.BasePlane);
+                plane.InverseOrient(ref _system.BasePlane);
 
                 // Bake tcp and base
                 //var tcp = target.Tool.Tcp;
                 //tcp.Rotate(PI, Vector3d.ZAxis, Point3d.Origin);
-                //var transform = _cell.BasePlane.ToInverseTransform() * Transform.PlaneToPlane(tcp, plane);
+                //var transform = _system.BasePlane.ToInverseTransform() * Transform.PlaneToPlane(tcp, plane);
                 //plane = transform.ToPlane();
 
                 var elbow = target.External.Length > 0
@@ -198,20 +198,20 @@ program()
 
     string Affine(Plane plane)
     {
-        double[] n = _cell.PlaneToNumbers(plane);
+        double[] n = _system.PlaneToNumbers(plane);
         return $"Affine({n[0]:0.#####}, {n[1]:0.#####}, {n[2]:0.#####}, {n[3]:0.#####}, {n[4]:0.#####}, {n[5]:0.#####}, {n[6]:0.#####})";
     }
 
-    double GetSpeed(CellTarget cellTarget)
+    double GetSpeed(SystemTarget systemTarget)
     {
-        var programTarget = cellTarget.ProgramTargets[0];
+        var programTarget = systemTarget.ProgramTargets[0];
         var speed = programTarget.Target.Speed;
 
         double factor;
 
-        if (cellTarget.DeltaTime > 0)
+        if (systemTarget.DeltaTime > 0)
         {
-            factor = cellTarget.MinTime / cellTarget.DeltaTime;
+            factor = systemTarget.MinTime / systemTarget.DeltaTime;
         }
         else
         {

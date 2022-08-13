@@ -1,4 +1,4 @@
-﻿using System.Xml;
+using System.Xml;
 using Rhino.Geometry;
 
 namespace Robots.Grasshopper;
@@ -26,7 +26,7 @@ public class LoadRobotSystem : GH_Component
     public override void AddedToDocument(GH_Document document)
     {
         base.AddedToDocument(document);
-        LibraryParam.CreateIfEmpty(document, this, ElementType.RobotCell);
+        LibraryParam.CreateIfEmpty(document, this, ElementType.RobotSystem);
     }
 
     protected override void SolveInstance(IGH_DataAccess DA)

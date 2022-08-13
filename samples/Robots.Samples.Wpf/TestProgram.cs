@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using Plane = Rhino.Geometry.Plane;
 
 namespace Robots.Samples.Wpf;
@@ -23,11 +23,11 @@ class TestProgram
 
     static async Task<RobotSystem> GetRobotAsync()
     {
-        var cellName = "Bartlett-IRB120";
+        var name = "Bartlett-IRB120";
 
         try
         {
-            return FileIO.LoadRobotSystem(cellName, Plane.WorldXY);
+            return FileIO.LoadRobotSystem(name, Plane.WorldXY);
         }
         catch (ArgumentException e)
         {
@@ -35,7 +35,7 @@ class TestProgram
                 throw;
 
             await DownloadLibraryAsync();
-            return FileIO.LoadRobotSystem(cellName, Plane.WorldXY);
+            return FileIO.LoadRobotSystem(name, Plane.WorldXY);
         }
     }
 

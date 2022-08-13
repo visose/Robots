@@ -1,4 +1,4 @@
-﻿namespace Robots;
+namespace Robots;
 
 public interface IMeshPoser
 {
@@ -7,9 +7,9 @@ public interface IMeshPoser
 
 public static class IMeshPoserExtensions
 {
-    public static void Pose(this IMeshPoser poser, List<KinematicSolution> solutions, CellTarget cellTarget)
+    public static void Pose(this IMeshPoser poser, List<KinematicSolution> solutions, SystemTarget systemTarget)
     {
-        var tools = cellTarget.ProgramTargets.Map(t => t.Target.Tool);
+        var tools = systemTarget.ProgramTargets.Map(t => t.Target.Tool);
         poser.Pose(solutions, tools);
     }
 }
