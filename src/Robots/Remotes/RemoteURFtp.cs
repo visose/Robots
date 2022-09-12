@@ -27,7 +27,7 @@ class RemoteURFtp : IRemoteURBackend
             return;
         }
 
-        Send($"load {program.Name}.urp");
+        Send($"load {_user.ProgramsDir}/{program.Name}.urp");
     }
 
     public void Pause() => Send("pause");
