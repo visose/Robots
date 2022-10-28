@@ -1,4 +1,4 @@
-﻿using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
@@ -29,6 +29,12 @@ public class GH_Tool : GH_Goo<Tool>
         if (typeof(Q).IsAssignableFrom(typeof(Tool)))
         {
             target = (Q)(object)Value;
+            return true;
+        }
+
+        if (typeof(Q) == typeof(GH_Plane))
+        {
+            target = (Q)(object)new GH_Plane(Value.Tcp);
             return true;
         }
 

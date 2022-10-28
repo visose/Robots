@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
@@ -37,6 +37,12 @@ public class GH_Frame : GH_Goo<Frame>
         if (typeof(Q).IsAssignableFrom(typeof(Frame)))
         {
             target = (Q)(object)Value;
+            return true;
+        }
+
+        if (typeof(Q) == typeof(GH_Plane))
+        {
+            target = (Q)(object)new GH_Plane(Value.Plane);
             return true;
         }
 
