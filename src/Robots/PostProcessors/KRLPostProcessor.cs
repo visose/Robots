@@ -1,3 +1,4 @@
+using Newtonsoft.Json.Linq;
 using Rhino.Geometry;
 using static System.Math;
 using static Rhino.RhinoMath;
@@ -174,14 +175,20 @@ DEF {_program.Name}_{groupName}_{file:000}()"
 
             // external axes
 
-            string external = string.Empty;
+            string external = "";
+            var externalCustom = target.ExternalCustom;
 
-            double[] values = _system.MechanicalGroups[group].RadiansToDegreesExternal(target);
-
-            for (int i = 0; i < values.Length; i++)
+            if (externalCustom is null)
             {
-                int num = i + 1;
-                external += $",E{num} {values[i]:0.####}";
+                double[] values = _system.MechanicalGroups[group].RadiansToDegreesExternal(target);
+
+                for (int i = 0; i < values.Length; i++)
+                    external += $",E{i + 1} {values[i]:0.####}";
+            }
+            else
+            {
+                for (int i = 0; i < externalCustom.Length; i++)
+                    external += $",E{i + 1} {externalCustom[i]}";
             }
 
             // motion command

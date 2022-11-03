@@ -1,3 +1,13 @@
+- version: 1.6.0
+  changes:
+  - Preview support for Doosan.
+  - Preview support for Franka Emika.
+  - New IK for spherical wrist robots.
+  - Staubli robots with elbow offset are now supported.
+  - Added Frame and Tool cast to Plane.
+  - Alpha and theta values can be specified per robot in XML.
+  - Fixed UR sFTP program folder path.
+
 - version: 1.5.2
   changes:
   - Fixed bug in KUKA code generation.
