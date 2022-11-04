@@ -286,6 +286,7 @@ class CheckProgram
                         slowestDelta = Max(slowestDelta, speeds.Item1);
                         slowestMinTime = Max(slowestMinTime, speeds.Item2);
                         target.LeadingJoint = speeds.Item3;
+                        target.SpeedType = speeds.Item4;
                     }
 
                     if ((j > 1) && (Abs(slowestDelta - lastDeltaTime) > 1e-09))
@@ -343,6 +344,7 @@ class CheckProgram
                     programTarget.Kinematics = prevInterTarget.ProgramTargets[group].Kinematics;
                     programTarget.ChangesConfiguration = prevInterTarget.ProgramTargets[group].ChangesConfiguration;
                     programTarget.LeadingJoint = prevInterTarget.ProgramTargets[group].LeadingJoint;
+                    programTarget.SpeedType = prevInterTarget.ProgramTargets[group].SpeedType;
                 }
             }
 
@@ -416,7 +418,7 @@ class CheckProgram
         }
     }
 
-    (double, double, int) GetSpeeds(ProgramTarget target, ProgramTarget prevTarget)
+    (double, double, int, SpeedType) GetSpeeds(ProgramTarget target, ProgramTarget prevTarget)
     {
         Plane prevPlane = target.GetPrevPlane(prevTarget);
         var joints = _robotSystem.GetJoints(target.Group);
@@ -497,6 +499,8 @@ class CheckProgram
             }
         }
 
+        var speedType = SpeedType.Tcp;
+
         if (deltaTime < TimeTol)
         {
             _program.Warnings.Add($"Position and orientation do not change for {target.Index}");
@@ -505,19 +509,22 @@ class CheckProgram
         {
             if (target.Index != _lastIndex) _program.Warnings.Add($"Rotation speed limit reached in target {target.Index}");
             _lastIndex = target.Index;
+            speedType = SpeedType.Rotation;
         }
         else if (deltaIndex == 2)
         {
             if (target.Index != _lastIndex) _program.Warnings.Add($"Axis {leadingJoint + 1} speed limit reached in target {target.Index}");
             _lastIndex = target.Index;
+            speedType = SpeedType.Axis;
         }
         else if (deltaIndex == 3)
         {
             if (target.Index != _lastIndex) _program.Warnings.Add($"External axis {externalLeadingJoint + 1} speed limit reached in target {target.Index}");
             leadingJoint = externalLeadingJoint;
             _lastIndex = target.Index;
+            speedType = SpeedType.External;
         }
 
-        return (deltaTime, deltaAxisTime, leadingJoint);
+        return (deltaTime, deltaAxisTime, leadingJoint, speedType);
     }
 }

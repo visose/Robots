@@ -1,4 +1,3 @@
-using Newtonsoft.Json.Linq;
 using Rhino.Geometry;
 using static System.Math;
 using static Rhino.RhinoMath;
@@ -57,7 +56,13 @@ DEFDAT {_program.Name}_{groupName} PUBLIC"
             code.Add($"DECL GLOBAL REAL {speed.Name} = {speed.TranslationSpeed / 1000:0.#####}");
 
         foreach (var zone in attributes.OfType<Zone>())
-            code.Add($"DECL GLOBAL REAL {zone.Name} = {zone.Distance:0.###}");
+        {
+            var distance = zone.Distance;
+            if (distance == 0)
+                continue;
+
+            code.Add($"DECL GLOBAL REAL {zone.Name} = {distance:0.###}");
+        }
 
         foreach (var command in attributes.OfType<Command>())
         {
@@ -65,6 +70,14 @@ DEFDAT {_program.Name}_{groupName} PUBLIC"
 
             if (!string.IsNullOrWhiteSpace(declaration))
                 code.Add(declaration);
+        }
+
+        var first = _program.Targets[0].ProgramTargets[0].Target;
+
+        if (first.ExternalCustom is not null)
+        {
+            code.Add($"DECL GLOBAL E6AXIS A");
+            code.Add($"DECL GLOBAL E6POS P");
         }
 
         code.Add("ENDDAT");
@@ -114,8 +127,11 @@ DEF {_program.Name}_{groupName}_{file:000}()"
         Tool? currentTool = null;
         Frame? currentFrame = null;
         Speed? currentSpeed = null;
+        double currentOriSpeed = 0;
         double currentPercentSpeed = 0;
         Zone? currentZone = null;
+
+        bool shouldResetSpeed = false;
 
         for (int j = start; j < end; j++)
         {
@@ -143,9 +159,11 @@ DEF {_program.Name}_{groupName}_{file:000}()"
 
             if (programTarget.Index > 0)
             {
-                if (programTarget.LeadingJoint > 5)
+                if (programTarget.SpeedType == SpeedType.External)
                 {
+                    ResetSpeed(code);
                     code.Add(ExternalSpeed(programTarget));
+                    shouldResetSpeed = true;
                 }
                 else
                 {
@@ -153,8 +171,18 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                     {
                         if (!programTarget.IsJointMotion)
                         {
+                            ResetSpeed(code);
+
+                            var vel = $"$VEL.CP = {target.Speed.Name}";
+
                             double rotation = target.Speed.RotationSpeed.ToDegrees();
-                            code.Add($"$VEL.CP = {target.Speed.Name}\r\n$VEL.ORI1 = {rotation:0.###}\r\n$VEL.ORI2 = {rotation:0.####}");
+                            if (rotation != currentOriSpeed)
+                            {
+                                vel += $"\r\n$VEL.ORI1 = {rotation:0.###}\r\n$VEL.ORI2 = {rotation:0.####}";
+                                currentOriSpeed = rotation;
+                            }
+
+                            code.Add(vel);
                             currentSpeed = target.Speed;
                         }
                     }
@@ -165,30 +193,25 @@ DEF {_program.Name}_{groupName}_{file:000}()"
 
                         if (Abs(currentPercentSpeed - percentSpeed) > UnitTol)
                         {
-                            code.Add("BAS(#VEL_PTP, 100)");
-                            if (systemTarget.DeltaTime > UnitTol) code.Add($"$VEL_AXIS[{programTarget.LeadingJoint + 1}] = {percentSpeed * 100:0.###}");
+                            ResetSpeed(code);
+
+                            if (systemTarget.DeltaTime > UnitTol)
+                                code.Add($"$VEL_AXIS[{programTarget.LeadingJoint + 1}] = {percentSpeed * 100:0.###}");
+
                             currentPercentSpeed = percentSpeed;
+                            shouldResetSpeed = true;
                         }
                     }
                 }
-            }
 
-            // external axes
-
-            string external = "";
-            var externalCustom = target.ExternalCustom;
-
-            if (externalCustom is null)
-            {
-                double[] values = _system.MechanicalGroups[group].RadiansToDegreesExternal(target);
-
-                for (int i = 0; i < values.Length; i++)
-                    external += $",E{i + 1} {values[i]:0.####}";
-            }
-            else
-            {
-                for (int i = 0; i < externalCustom.Length; i++)
-                    external += $",E{i + 1} {externalCustom[i]}";
+                void ResetSpeed(List<string> code)
+                {
+                    if (shouldResetSpeed)
+                    {
+                        code.Add("BAS(#VEL_PTP, 100)");
+                        shouldResetSpeed = false;
+                    }
+                }
             }
 
             // motion command
@@ -200,8 +223,11 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                 var jointTarget = (JointTarget)target;
                 double[] jointDegrees = jointTarget.Joints.Map((x, i) => _system.MechanicalGroups[group].Robot.RadianToDegree(x, i));
 
-                moveText = $"PTP {{A1 {jointDegrees[0]:0.####},A2 {jointDegrees[1]:0.####},A3 {jointDegrees[2]:0.####},A4 {jointDegrees[3]:0.####},A5 {jointDegrees[4]:0.####},A6 {jointDegrees[5]:0.####}{external}}}";
-                if (target.Zone.IsFlyBy) moveText += " C_PTP";
+                var pos = $"A1 {jointDegrees[0]:0.####},A2 {jointDegrees[1]:0.####},A3 {jointDegrees[2]:0.####},A4 {jointDegrees[3]:0.####},A5 {jointDegrees[4]:0.####},A6 {jointDegrees[5]:0.####}";
+                moveText = Motion("PTP", "A", pos);
+
+                if (target.Zone.IsFlyBy)
+                    moveText += " C_PTP";
             }
             else
             {
@@ -212,7 +238,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                 {
                     case Motions.Joint:
                         {
-                            string bits = string.Empty;
+                            string bits = "";
                             //  if (target.ChangesConfiguration)
                             {
                                 double[] jointDegrees = programTarget.Kinematics.Joints.Map((x, i) => _system.MechanicalGroups[group].Robot.RadianToDegree(x, i));
@@ -235,15 +261,21 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                                 bits = $",S'B{status:000}',T'B{turn:000000}'";
                             }
 
-                            moveText = $"PTP {{{GetXyzAbc(plane)}{external}{bits}}}";
-                            if (target.Zone.IsFlyBy) moveText += " C_PTP";
+                            moveText = Motion("PTP", "P", GetXyzAbc(plane), bits);
+
+                            if (target.Zone.IsFlyBy)
+                                moveText += " C_PTP";
+
                             break;
                         }
 
                     case Motions.Linear:
                         {
-                            moveText = $"LIN {{{GetXyzAbc(plane)}{external}}}";
-                            if (target.Zone.IsFlyBy) moveText += " C_DIS";
+                            moveText = Motion("LIN", "P", GetXyzAbc(plane));
+
+                            if (target.Zone.IsFlyBy)
+                                moveText += " C_DIS";
+
                             break;
                         }
 
@@ -259,6 +291,38 @@ DEF {_program.Name}_{groupName}_{file:000}()"
 
             foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
                 code.Add(command.Code(_program, target));
+
+            string Motion(string motion, string name, string pos, string? bits = null)
+            {
+                var externalCustom = target.ExternalCustom;
+
+                if (externalCustom is null)
+                {
+                    double[] values = _system.MechanicalGroups[group].RadiansToDegreesExternal(target);
+                    string external = "";
+
+                    for (int i = 0; i < values.Length; i++)
+                        external += $",E{i + 1} {values[i]:0.####}";
+
+                    return $"{motion} {{{pos}{external}{bits}}}";
+                }
+                else
+                {
+                    var text = $"{name} = {{{pos}{bits}}}\r\n";
+
+                    for (int i = 0; i < externalCustom.Length; i++)
+                    {
+                        var value = externalCustom[i];
+                        if (string.IsNullOrWhiteSpace(value))
+                            continue;
+
+                        text += $"{name}.E{i + 1} = {value}\r\n";
+                    }
+
+                    text += $"{motion} {name}";
+                    return text;
+                }
+            }
         }
 
         code.Add("END");
@@ -277,9 +341,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
         };
 
         var percentSpeed = Clamp(speed / joint.MaxSpeed, 0.0, 1.0);
-
-        var externalSpeedCode = $"BAS(#VEL_PTP, 100)" + "\r\n";
-        externalSpeedCode += $"$VEL_EXTAX[{target.LeadingJoint + 1 - 6}] = {percentSpeed * 100:0.###}";
+        var externalSpeedCode = $"$VEL_EXTAX[{target.LeadingJoint + 1 - 6}] = {percentSpeed * 100:0.###}";
 
         return externalSpeedCode;
     }

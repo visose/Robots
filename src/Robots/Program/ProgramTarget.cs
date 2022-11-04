@@ -2,6 +2,8 @@ using Rhino.Geometry;
 
 namespace Robots;
 
+public enum SpeedType { Tcp, Rotation, Axis, External };
+
 public class ProgramTarget
 {
     KinematicSolution? _kinematics;
@@ -12,6 +14,7 @@ public class ProgramTarget
     public List<Command> Commands { get; private set; }
     internal bool ChangesConfiguration { get; set; } = false;
     internal int LeadingJoint { get; set; }
+    internal SpeedType SpeedType { get; set; }
 
     public int Index => SystemTarget.Index;
     public bool IsJointMotion => IsJointTarget || ((CartesianTarget)Target).Motion == Motions.Joint;
