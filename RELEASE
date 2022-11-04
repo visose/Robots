@@ -1,3 +1,7 @@
+- version: 1.6.1
+  changes:
+  - Fixed KRL custom external and speeds
+
 - version: 1.6.0
   changes:
   - Preview support for Doosan.
