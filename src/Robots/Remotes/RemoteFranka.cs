@@ -91,7 +91,7 @@ public class RemoteFranka : IRemote
             return;
         }
 
-        Send($"python -u {_user.ProgramsDir}/{_uploadedFile}");
+        Send($"echo -e '{_user.Password}\n' | sudo -S python -u {_user.ProgramsDir}/{_uploadedFile}");
     }
 
     public void Send(string message)
@@ -137,7 +137,10 @@ public class RemoteFranka : IRemote
                 await Task.Delay(100);
 
                 if (token.IsCancellationRequested)
+                {
                     command.CancelAsync();
+                    break;
+                }
 
                 string? text;
 

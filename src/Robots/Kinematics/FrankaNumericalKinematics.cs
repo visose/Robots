@@ -37,7 +37,7 @@ class FrankaNumericalKinematics : RobotKinematics
     {
         var joints = _mechanism.Joints;
         _midJoints = joints.Map(j => j.Range.Mid);
-        _flangeRot = Transform.Rotation(-PI * 0.75, Point3d.Origin) * Transform.Rotation(PI, Vector3d.XAxis, Point3d.Origin);
+        _flangeRot = Transform.Rotation(-PI, Point3d.Origin) * Transform.Rotation(-PI, Vector3d.XAxis, Point3d.Origin);
     }
 
     protected override int SolutionCount => 1;
@@ -45,7 +45,7 @@ class FrankaNumericalKinematics : RobotKinematics
     protected override double[] InverseKinematics(Transform transform, RobotConfigurations configuration, double[] external, double[]? prevJoints, out List<string> errors)
     {
         const int redundant = 2;
-        const double tolerance = 1e-7;
+        const double tolerance = 1e-9;
 
         errors = _empty;
         transform *= Transform.Rotation(PI, Point3d.Origin);
@@ -123,7 +123,9 @@ class FrankaNumericalKinematics : RobotKinematics
         };
 
     end:
-        return _q_current.Values;
+        var vals = _q_current.Values;
+        vals[6] += PI * 0.25;
+        return vals;
     }
 
     protected override Transform[] ForwardKinematics(double[] joints)

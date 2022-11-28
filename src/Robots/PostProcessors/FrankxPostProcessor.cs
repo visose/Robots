@@ -5,7 +5,6 @@ namespace Robots;
 
 class FrankxPostProcessor
 {
-    const double _dynamicRel = 1.0;
     const string _indent = "  ";
 
     readonly SystemFranka _system;
@@ -30,7 +29,7 @@ class FrankxPostProcessor
         {
             $@"from argparse import ArgumentParser
 from time import sleep
-from frankx import Affine, Robot, JointMotion, PathMotion, WaypointMotion, Waypoint, MotionData
+from frankx import Affine, Robot, JointMotion, PathMotion, WaypointMotion, Waypoint, MotionData, Reaction, Measure, StopMotion, LinearRelativeMotion
 
 def program():
   parser = ArgumentParser()
@@ -39,14 +38,11 @@ def program():
   robot = Robot(args.host)
   robot.set_default_behavior()
   robot.recover_from_errors()
-  robot.set_dynamic_rel({_dynamicRel:0.#####})
+  robot.velocity_rel = 1.0
 "
         };
 
-        // robot.velocity_rel = 0.2
-        // robot.acceleration_rel = 0.1
-        // robot.jerk_rel = 0.01
-
+        //robot.set_dynamic_rel(0.2)
         // Attribute declarations
         var attributes = _program.Attributes;
 
@@ -77,6 +73,8 @@ def program():
             code.Add(_indent + commands);
         }
 
+        code.Add("  robot.acceleration_rel = dynamic_rel\r\n  robot.jerk_rel = dynamic_rel");
+
         Motions? currentMotion = null;
         Tool? currentTool = null;
 
@@ -106,7 +104,7 @@ def program():
                     MotionMove();
 
                 double[] j = joint.Joints;
-                code.Add($"  data = MotionData({_dynamicRel:0.#####})");
+                code.Add($"  data = MotionData(dynamic_rel)");
                 code.Add($"  data.velocity_rel = {speed:0.#####}");
                 code.Add($"  motion = JointMotion([{j[0]:0.#####}, {j[1]:0.#####}, {j[2]:0.#####}, {j[3]:0.#####}, {j[4]:0.#####}, {j[5]:0.#####}, {j[6]:0.#####}])");
                 code.Add("  robot.move(motion, data)");
@@ -127,13 +125,13 @@ def program():
                     currentTool = target.Tool;
                     currentMotion = motion;
 
+                    code.Add($"  motion = WaypointMotion([");
+
                     switch (currentMotion)
                     {
                         case Motions.Joint:
-                            code.Add($"  motion = WaypointMotion([");
-                            break;
+                        //throw new("Joint catesian motions not supported in Franka Emika");
                         case Motions.Linear:
-                            code.Add($"  motion = PathMotion([");
                             break;
                         default:
                             throw new NotSupportedException($"Motion {currentMotion} not supported");
@@ -191,7 +189,7 @@ program()
                 throw new ArgumentNullException(nameof(currentMotion));
 
             code.Add($"  ])");
-            code.Add($"  robot.move({currentTool.Name}, motion)");
+            code.Add($"  robot.move({currentTool.Name}, motion, data)");
             currentMotion = null;
         }
     }
