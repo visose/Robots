@@ -42,7 +42,6 @@ def program():
 "
         };
 
-        //robot.set_dynamic_rel(0.2)
         // Attribute declarations
         var attributes = _program.Attributes;
 
@@ -130,11 +129,11 @@ def program():
                     switch (currentMotion)
                     {
                         case Motions.Joint:
-                        //throw new("Joint catesian motions not supported in Franka Emika");
+                            throw new(" Joint catesian motions not supported in Franka Emika");
                         case Motions.Linear:
                             break;
                         default:
-                            throw new NotSupportedException($"Motion {currentMotion} not supported");
+                            throw new NotSupportedException($" Motion {currentMotion} not supported");
                     }
                 }
 
