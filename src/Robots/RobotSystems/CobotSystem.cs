@@ -39,6 +39,9 @@ public abstract class CobotSystem : RobotSystem
 
     public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]?>? prevJoints = null)
     {
+        if (!targets.Any())
+            return new(0);
+
         var target = targets.First();
         var prevJoint = prevJoints?.First();
         string? error = null;
