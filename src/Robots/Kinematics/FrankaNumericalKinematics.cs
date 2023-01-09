@@ -60,7 +60,7 @@ class FrankaNumericalKinematics : RobotKinematics
             _q_current[i] = current[i];
 
         double? redudantValue =
-            external.Length > 0 ? external[0] : null;
+            external.Length > 0 ? external[0] : prevJoints?[redundant];
 
         for (int i = 0; i < 100; ++i)
         {
@@ -72,7 +72,7 @@ class FrankaNumericalKinematics : RobotKinematics
             _dq.Clear();
             if (redudantValue is not null)
             {
-                _dq[redundant] = 5.0 * (redudantValue.Value - _q_current[redundant]);
+                _dq[redundant] = redudantValue.Value - _q_current[redundant];
                 _j_inv.Multiply(_j, _m77t);
                 _identity.CopyTo(_eye);
                 _eye.Subtract(_m77t, _m77t);
