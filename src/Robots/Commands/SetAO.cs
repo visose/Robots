@@ -34,7 +34,7 @@ public class SetAO : Command
 
     string DeclarationAbb(RobotSystem robotSystem)
     {
-        return $"PERS num {Name};\r\n{Name} := {Value:0.###};";
+        return $"PERS num {Name} := {Value:0.###};";
     }
 
     string DeclarationKuka(RobotSystem robotSystem)
