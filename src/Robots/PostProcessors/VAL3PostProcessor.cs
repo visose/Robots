@@ -311,7 +311,7 @@ class VAL3PostProcessor
         Plane plane = frame.Plane;
         var basePlane = _system.BasePlane;
         var offset = _system.MechanicalGroups[0].Joints[0].D;
-        plane.Origin += basePlane.Normal * offset;
+        basePlane.Origin += basePlane.Normal * offset;
         plane.InverseOrient(ref basePlane);
         var values = _system.PlaneToNumbers(plane);
 
