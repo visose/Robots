@@ -1,3 +1,8 @@
+- version: 1.6.4
+  changes:
+  - Fixes Franka Emika inverse kinematics
+  - Fixes Staubli robot base can be place at origin in library
+
 - version: 1.6.2
   changes:
   - Franka Emika fixes
