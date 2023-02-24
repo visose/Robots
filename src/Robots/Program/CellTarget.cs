@@ -38,7 +38,7 @@ public class SystemTarget
         return ProgramTargets.Select((x, i) => x.Lerp(prevTarget.ProgramTargets[i], robot, t, start, end));
     }
 
-    internal void SetTargetKinematics(List<KinematicSolution> kinematics, List<string> errors, List<string>? warnings, SystemTarget? prevTarget = null)
+    internal void SetTargetKinematics(List<KinematicSolution> kinematics, List<string> errors, List<string> warnings, SystemTarget? prevTarget = null)
     {
         foreach (var target in ProgramTargets)
             target.SetTargetKinematics(kinematics[target.Group], errors, warnings, prevTarget?.ProgramTargets[target.Group]);

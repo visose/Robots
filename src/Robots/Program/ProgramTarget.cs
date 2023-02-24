@@ -138,17 +138,29 @@ public class ProgramTarget
         }
     }
 
-    internal void SetTargetKinematics(KinematicSolution kinematics, List<string> errors, List<string>? warnings, ProgramTarget? prevTarget)
+    internal void SetTargetKinematics(KinematicSolution kinematics, List<string> errors, List<string> warnings, ProgramTarget? prevTarget)
     {
         Kinematics = kinematics;
 
-        if (errors.Count == 0 && kinematics.Errors.Count > 0)
+        var kinematicErrors = kinematics.Errors;
+        var errorWarnings = kinematicErrors.Where(e => e.StartsWith("Warn")).ToList();
+
+        if (errorWarnings.Count > 0)
         {
-            errors.Add($"Errors in target {Index} of robot {Group}:");
-            errors.AddRange(kinematics.Errors);
+            kinematicErrors = kinematicErrors.ToList();
+            kinematicErrors.RemoveAll(e => e.StartsWith("Warn"));
+
+            if (!warnings.Any(w => w.StartsWith("Warn")))
+                warnings.AddRange(errorWarnings);
         }
 
-        if (warnings is not null && prevTarget is not null && prevTarget.Kinematics.Configuration != kinematics.Configuration)
+        if (errors.Count == 0 && kinematicErrors.Count > 0)
+        {
+            errors.Add($"Errors in target {Index} of robot {Group}:");
+            errors.AddRange(kinematicErrors);
+        }
+
+        if (prevTarget is not null && prevTarget.Kinematics.Configuration != kinematics.Configuration)
         {
             ChangesConfiguration = true;
             warnings.Add($"Configuration changed to \"{kinematics.Configuration}\" on target {Index} of robot {Group}");

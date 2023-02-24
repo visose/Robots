@@ -53,36 +53,35 @@ class CheckProgram
     void FixTargetAttributes(List<SystemTarget> systemTargets)
     {
         // Fix externals
-
-        int resizeCount = 0;
-        ProgramTarget? resizeTarget = null;
-        int jointCount = _robotSystem.RobotJointCount;
-
-        foreach (var systemTarget in systemTargets)
         {
-            foreach (var programTarget in systemTarget.ProgramTargets)
+            if (_robotSystem is IndustrialSystem industrialSystem)
             {
-                int externalCount = _robotSystem.RobotJointCount - 6;
+                int resizeCount = 0;
+                ProgramTarget? resizeTarget = null;
 
-                if (_robotSystem is IndustrialSystem industrialSystem)
-                    externalCount = industrialSystem.MechanicalGroups[programTarget.Group].Joints.Count - jointCount;
-
-                if (programTarget.Target.External.Length != externalCount)
+                foreach (var systemTarget in systemTargets)
                 {
-                    //double[] external = programTarget.Target.External;
-                    //Array.Resize(ref external, externalCount);
-                    //programTarget.Target.External = external;
-                    resizeCount++;
+                    foreach (var programTarget in systemTarget.ProgramTargets)
+                    {
+                        var mechGroup = industrialSystem.MechanicalGroups[programTarget.Group];
+                        int externalCount = mechGroup.Externals.Sum(e => e.Joints.Length);
 
-                    if (resizeTarget is null)
-                        resizeTarget = programTarget;
+                        if (programTarget.Target.External.Length != externalCount)
+                        {
+                            //double[] external = programTarget.Target.External;
+                            //Array.Resize(ref external, externalCount);
+                            //programTarget.Target.External = external;
+                            resizeCount++;
+                            resizeTarget ??= programTarget;
+                        }
+                    }
+                }
+
+                if (resizeTarget is not null)
+                {
+                    _program.Warnings.Add($"{resizeCount} targets have wrong number of external axes configured, the first one being target {resizeTarget.Index} of robot {resizeTarget.Group}.");
                 }
             }
-        }
-
-        if (resizeTarget is not null)
-        {
-            _program.Warnings.Add($"{resizeCount} targets have wrong number of external axes configured, the first one being target {resizeTarget.Index} of robot {resizeTarget.Group}.");
         }
 
         // Warn about defaults
@@ -186,9 +185,8 @@ class CheckProgram
                     throw new ArgumentException($" Frame {frame.Name} is set to couple the robot rather than a mechanism.", nameof(frame));
                 }
 
-                if (frame.IsCoupled)
+                if (frame.IsCoupled && _robotSystem is IndustrialSystem industrialSystem)
                 {
-                    var industrialSystem = (IndustrialSystem)_robotSystem;
                     if (frame.CoupledMechanicalGroup > industrialSystem.MechanicalGroups.Count - 1)
                     {
                         throw new ArgumentException($" Frame {frame.Name} is set to couple an inexistent mechanical group.", nameof(frame));
@@ -209,6 +207,7 @@ class CheckProgram
     {
         double time = 0;
         //int groups = systemTargets[0].ProgramTargets.Count;
+        double[][]? prevJoints = null;
 
         for (int i = 0; i < systemTargets.Count; i++)
         {
@@ -219,6 +218,7 @@ class CheckProgram
             if (i == 0)
             {
                 var firstKinematics = _robotSystem.Kinematics(systemTarget.ProgramTargets.Select(x => x.Target));
+                prevJoints = firstKinematics.Map(k => k.Joints);
                 systemTarget.SetTargetKinematics(firstKinematics, _program.Errors, _program.Warnings);
                 CheckUndefined(systemTarget, systemTargets);
                 Keyframes.Add(systemTarget.ShallowClone());
@@ -226,7 +226,6 @@ class CheckProgram
             else
             {
                 var prevTarget = systemTargets[i - 1];
-                var prevJoints = prevTarget.ProgramTargets.Select(x => x.Kinematics.Joints);
 
                 // no interpolation
                 {
@@ -241,7 +240,9 @@ class CheckProgram
                     }
 
                     var kinematics = _robotSystem.Kinematics(kineTargets, prevJoints);
+                    prevJoints = kinematics.Map(k => k.Joints);
                     systemTarget.SetTargetKinematics(kinematics, _program.Errors, _program.Warnings, prevTarget);
+
                     CheckUndefined(systemTarget, systemTargets);
                 }
 
@@ -274,7 +275,8 @@ class CheckProgram
                     var interTarget = systemTarget.ShallowClone();
                     var kineTargets = systemTarget.Lerp(prevTarget, _robotSystem, t, 0.0, 1.0);
                     var kinematics = _program.RobotSystem.Kinematics(kineTargets, prevJoints);
-                    interTarget.SetTargetKinematics(kinematics, _program.Errors, null, prevInterTarget);
+                    prevJoints = kinematics.Map(k => k.Joints);
+                    interTarget.SetTargetKinematics(kinematics, _program.Errors, _program.Warnings, prevInterTarget);
 
                     // Set speed
 
@@ -503,7 +505,9 @@ class CheckProgram
 
         if (deltaTime < TimeTol)
         {
-            _program.Warnings.Add($"Position and orientation do not change for {target.Index}");
+            var text = $"Position and orientation do not change for target {target.Index}";
+            if (!_program.Warnings.Contains(text))
+                _program.Warnings.Add(text);
         }
         else if (deltaIndex == 1)
         {

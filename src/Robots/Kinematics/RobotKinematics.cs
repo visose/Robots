@@ -28,17 +28,17 @@ abstract class RobotKinematics : MechanismKinematics
 
             var transform = solution.Planes[0].ToInverseTransform() * Transform.PlaneToPlane(tcp, targetPlane);
 
-            List<string> robErrors;
+            List<string> errors;
             double[] robJoints;
 
             if (cartesianTarget.Configuration is not null || prevJoints is null)
             {
                 solution.Configuration = cartesianTarget.Configuration ?? RobotConfigurations.None;
-                robJoints = InverseKinematics(transform, solution.Configuration, target.External, prevJoints, out robErrors);
+                robJoints = InverseKinematics(transform, solution.Configuration, target.External, prevJoints, out errors);
             }
             else
             {
-                robJoints = GetClosestSolution(transform, target.External, prevJoints, out var configuration, out robErrors, out _);
+                robJoints = GetClosestSolution(transform, target.External, prevJoints, out var configuration, out errors, out _);
                 solution.Configuration = configuration;
             }
 
@@ -46,7 +46,7 @@ abstract class RobotKinematics : MechanismKinematics
                 ? JointTarget.GetAbsoluteJoints(robJoints, prevJoints)
                 : robJoints;
 
-            solution.Errors.AddRange(robErrors);
+            solution.Errors.AddRange(errors);
         }
     }
 
@@ -57,8 +57,15 @@ abstract class RobotKinematics : MechanismKinematics
 
         if (target is JointTarget)
         {
-            _ = GetClosestSolution(jointTransforms[jointTransforms.Length - 1], target.External, joints, out var configuration, out _, out var difference);
-            solution.Configuration = difference < AngleTol ? configuration : RobotConfigurations.Undefined;
+            if (_mechanism.Joints.Length == 7)
+            {
+                solution.Configuration = RobotConfigurations.None;
+            }
+            else
+            {
+                _ = GetClosestSolution(jointTransforms[jointTransforms.Length - 1], target.External, joints, out var configuration, out _, out var difference);
+                solution.Configuration = difference < AngleTol ? configuration : RobotConfigurations.Undefined;
+            }
         }
 
         int jointCount = _mechanism.Joints.Length;
