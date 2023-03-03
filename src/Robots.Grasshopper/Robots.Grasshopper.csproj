@@ -24,14 +24,22 @@
     <None Include="$(TargetDir)$(Product).dll" Pack="true" PackagePath="lib\net48" />
   </ItemGroup>
 
-  <Target Name="Rename" AfterTargets="AfterBuild" Condition="'$(ContinuePackingAfterGeneratingNuspec)' != 'true'">
-    <Move SourceFiles="$(TargetPath)" DestinationFiles="$(TargetDir)$(Product).gha" />
-  </Target>
-
-  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows))">
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows)) and $(Configuration) == 'Debug'">
     <StartProgram>C:\Program Files\Rhino 7\System\Rhino.exe</StartProgram>
     <StartArguments>/nosplash /runscript="-grasshopper window show _enter"</StartArguments>
     <StartAction>Program</StartAction>
+
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <PackageDir>$(AppData)\McNeel\Rhinoceros\packages\7.0\$(Product)</PackageDir>
+    <OutputPath>$(PackageDir)\$(Version)</OutputPath>
   </PropertyGroup>
+
+  <Target Name="Manifest" BeforeTargets="Build" Condition="$(Configuration.Contains('Debug'))">
+    <WriteLinesToFile File="$(PackageDir)\manifest.txt" Overwrite="true" Lines="$(Version)" />
+  </Target>
+
+  <Target Name="Rename" AfterTargets="AfterBuild" Condition="'$(ContinuePackingAfterGeneratingNuspec)' != 'true'">
+    <Move SourceFiles="$(TargetPath)" DestinationFiles="$(TargetDir)$(Product).gha" />
+  </Target>
 
 </Project>
