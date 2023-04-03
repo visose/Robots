@@ -18,7 +18,21 @@ public class ProgramTarget
 
     public int Index => SystemTarget.Index;
     public bool IsJointMotion => IsJointTarget || ((CartesianTarget)Target).Motion == Motions.Joint;
-    public Plane WorldPlane => Kinematics.Planes[Kinematics.Planes.Length - 1];
+    public Plane WorldPlane
+    {
+        get
+        {
+            if (_kinematics is null && Target is CartesianTarget cartesianTarget)
+            {
+                Plane targetPlane = cartesianTarget.Plane;
+                targetPlane.Orient(ref cartesianTarget.Frame.Plane);
+                return targetPlane;
+            }
+
+            return Kinematics.Planes[Kinematics.Planes.Length - 1];
+        }
+    }
+
     internal bool IsJointTarget => Target is JointTarget;
 
     public KinematicSolution Kinematics
@@ -105,7 +119,20 @@ public class ProgramTarget
     public Target Lerp(ProgramTarget prevTarget, RobotSystem robot, double t, double start, double end)
     {
         int jointCount = robot.RobotJointCount;
-        double[] allJoints = JointTarget.Lerp(prevTarget.Kinematics.Joints, Kinematics.Joints, t, start, end);
+
+        var currentJoints = _kinematics?.Joints;
+        var prevJoints = prevTarget.Kinematics.Joints;
+
+        if (currentJoints is null)
+        {
+            var j = (Target is JointTarget jointTarget) ? jointTarget.Joints : new double[jointCount];
+            currentJoints = j.ToArray();
+
+            if (Target.External.Length == 1 && robot.RobotJointCount == 7)
+                currentJoints[2] = Target.External[0];
+        }
+
+        double[] allJoints = JointTarget.Lerp(prevJoints, currentJoints, t, start, end);
 
         double[] external;
 
@@ -114,13 +141,13 @@ public class ProgramTarget
             int externalCount = system.MechanicalGroups[Group].Externals.Sum(e => e.Joints.Length);
             external = allJoints.RangeSubset(jointCount, externalCount);
         }
-        else if (robot.RobotJointCount == 7 && Target.External.Length > 0)
+        else if (robot.RobotJointCount == 7 && Target.External.Length == 1)
         {
             external = new[] { allJoints[2] };
         }
         else
         {
-            external = new double[0];
+            external = Array.Empty<double>();
         }
 
         if (IsJointMotion)

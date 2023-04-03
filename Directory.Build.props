@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Product>Robots</Product>
-    <Version>1.6.4</Version>
+    <Version>1.6.5</Version>
     <Authors>Robots Authors</Authors>
     <Description>Create and simulate ABB, KUKA, UR, and Staubli robot programs.</Description>
     <PackageTags>Robots;ABB;KUKA;UR;Staubli;Robotics</PackageTags>
@@ -21,7 +21,10 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <ArtifactsDir>$(MSBuildThisFileDirectory)artifacts\</ArtifactsDir>
+    <!--<AnalysisLevel>latest</AnalysisLevel>-->
+    <NoWarn>MSB3270</NoWarn>
+    <RootDir>$(MSBuildThisFileDirectory)</RootDir>
+    <ArtifactsDir>$(RootDir)artifacts\</ArtifactsDir>
     <OutputPath>$(ArtifactsDir)bin\$(MSBuildProjectName)</OutputPath>
     <BaseIntermediateOutputPath>$(ArtifactsDir)obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
   </PropertyGroup>

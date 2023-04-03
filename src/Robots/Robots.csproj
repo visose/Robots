@@ -7,9 +7,11 @@
     <PackageId>Robots</PackageId>
     <PackageIcon>icon128.png</PackageIcon>
     <Description>$(Description)</Description>
+
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Kdl.NetStandard.x64" Version="2.0.6" />
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
     <PackageReference Include="SSH.NET" Version="2020.0.2" />
   </ItemGroup>

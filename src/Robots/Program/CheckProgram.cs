@@ -208,6 +208,7 @@ class CheckProgram
         double time = 0;
         //int groups = systemTargets[0].ProgramTargets.Count;
         double[][]? prevJoints = null;
+        bool is7dof = _robotSystem.RobotJointCount == 7;
 
         for (int i = 0; i < systemTargets.Count; i++)
         {
@@ -225,7 +226,7 @@ class CheckProgram
             }
             else
             {
-                var prevTarget = systemTargets[i - 1];
+                var prevSystemTarget = systemTargets[i - 1];
 
                 // no interpolation
                 {
@@ -235,30 +236,32 @@ class CheckProgram
                     {
                         if (kineTargets[j] is CartesianTarget target && target.Motion == Motions.Linear)
                         {
-                            target.Configuration = prevTarget.ProgramTargets[j].Kinematics.Configuration;
+                            target.Configuration = prevSystemTarget.ProgramTargets[j].Kinematics.Configuration;
                         }
                     }
 
-                    var kinematics = _robotSystem.Kinematics(kineTargets, prevJoints);
-                    prevJoints = kinematics.Map(k => k.Joints);
-                    systemTarget.SetTargetKinematics(kinematics, _program.Errors, _program.Warnings, prevTarget);
-
-                    CheckUndefined(systemTarget, systemTargets);
+                    if (!is7dof)
+                    {
+                        var kinematics = _robotSystem.Kinematics(kineTargets, prevJoints);
+                        prevJoints = kinematics.Map(k => k.Joints);
+                        systemTarget.SetTargetKinematics(kinematics, _program.Errors, _program.Warnings, prevSystemTarget);
+                    }
                 }
 
                 double divisions = 1;
-                var linearTargets = systemTarget.ProgramTargets.Where(x => !x.IsJointMotion);
+                var linearTargets = systemTarget.ProgramTargets.Where(x => !x.IsJointMotion).ToList();
                 //   if (linearTargets.Count() > 0) program.Errors.Clear();
 
                 foreach (var target in linearTargets)
                 {
-                    var prevPlane = target.GetPrevPlane(prevTarget.ProgramTargets[target.Group]);
+                    var prevProgramTarget = prevSystemTarget.ProgramTargets[target.Group];
+                    var prevPlane = target.GetPrevPlane(prevProgramTarget);
                     double distance = prevPlane.Origin.DistanceTo(target.Plane.Origin);
                     double divisionsTemp = Ceiling(distance / stepSize);
                     if (divisionsTemp > divisions) divisions = divisionsTemp;
                 }
 
-                var prevInterTarget = prevTarget.ShallowClone();
+                var prevInterTarget = prevSystemTarget.ShallowClone();
                 prevInterTarget.DeltaTime = 0;
                 prevInterTarget.TotalTime = 0;
                 prevInterTarget.MinTime = 0;
@@ -273,7 +276,7 @@ class CheckProgram
                 {
                     double t = j / divisions;
                     var interTarget = systemTarget.ShallowClone();
-                    var kineTargets = systemTarget.Lerp(prevTarget, _robotSystem, t, 0.0, 1.0);
+                    var kineTargets = systemTarget.Lerp(prevSystemTarget, _robotSystem, t, 0.0, 1.0);
                     var kinematics = _program.RobotSystem.Kinematics(kineTargets, prevJoints);
                     prevJoints = kinematics.Map(k => k.Joints);
                     interTarget.SetTargetKinematics(kinematics, _program.Errors, _program.Warnings, prevInterTarget);
@@ -291,7 +294,7 @@ class CheckProgram
                         target.SpeedType = speeds.Item4;
                     }
 
-                    if ((j > 1) && (Abs(slowestDelta - lastDeltaTime) > 1e-09))
+                    if ((j > 1) && (is7dof || (Abs(slowestDelta - lastDeltaTime) > 1e-09)))
                     {
                         Keyframes.Add(prevInterTarget.ShallowClone());
                         deltaTimeSinceLast = 0;
@@ -335,6 +338,13 @@ class CheckProgram
                 }
 
                 // set target kinematics
+                if (is7dof)
+                {
+                    var lastKinematics = prevInterTarget.ProgramTargets.MapToList(p => p.Kinematics);
+                    systemTarget.SetTargetKinematics(lastKinematics, _program.Errors, _program.Warnings, prevInterTarget);
+                }
+
+                CheckUndefined(systemTarget, systemTargets);
 
                 systemTarget.TotalTime = time;
                 systemTarget.DeltaTime = totalDeltaTime;

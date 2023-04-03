@@ -2,7 +2,8 @@ using RhinoPackager;
 using RhinoPackager.Commands;
 
 var app = App.Create(args);
-var github = new Github("visose", "Robots");
+Props props = new("Directory.Build.props");
+Github github = new("visose", "Robots");
 
 app.Add(new ICommand[]
     {
@@ -10,14 +11,18 @@ app.Add(new ICommand[]
         (
             testProject: "tests/Robots.Tests/Robots.Tests.csproj"
         ),
-        new CheckVersion(github),
+        new CheckVersion
+        (
+            props: props,
+            github: github
+        ),
         new Build
         (
             buildProject: "src/Robots.Grasshopper/Robots.Grasshopper.csproj"
         ),
         new Yak
         (
-            propsFile: "Directory.Build.props",
+            props: props,
             sourceFolder: "artifacts/bin/Robots.Grasshopper/net48",
             files: new []
             {
@@ -27,7 +32,9 @@ app.Add(new ICommand[]
                 "RobotStudio.Services.RobApi.Desktop.dll",
                 "RobotStudio.Services.RobApi.dll",
                 "Renci.SshNet.dll",
-                "MathNet.Numerics.dll"
+                "MathNet.Numerics.dll",
+                "Kdl.NetStandard.dll",
+                "kdl_wrap.dll"
             },
             tags: new []
             {
@@ -37,18 +44,21 @@ app.Add(new ICommand[]
         ),
         new Nuget
         (
+            props: props,
             project: "src/Robots/Robots.csproj",
             targets: "netstandard2.0"
         ),
          new Nuget
         (
+            props: props,
             project: "src/Robots.Grasshopper/Robots.Grasshopper.csproj",
             targets: "net48"
         ),
         new Release
         (
+            props: props,
             github: github,
-            file: "RELEASE",
+            notesFile: "RELEASE",
             message: "> This **release** can only be installed through the package manager in **Rhino 7** using the `_PackageManager` command.\n> Check the [readme](../../blob/master/.github/README.md) for more details."
         )
     });

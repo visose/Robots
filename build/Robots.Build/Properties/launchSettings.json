@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "Robots.Build": {
-      "commandName": "Project",
-      "commandLineArgs": "debug",
-      "workingDirectory": "../../"
-    }
-  }
-}

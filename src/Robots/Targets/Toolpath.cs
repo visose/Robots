@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 
 namespace Robots;
 
@@ -31,8 +31,7 @@ public class SimpleToolpath : IToolpath, IEnumerable<Target>
 
     public IToolpath ShallowClone(List<Target>? targets = null)
     {
-        if (targets is null)
-            targets = _targets.ToList();
+        targets ??= _targets.ToList();
 
         var clone = (SimpleToolpath)MemberwiseClone();
         clone._targets = targets;

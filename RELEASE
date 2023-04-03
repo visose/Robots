@@ -1,3 +1,7 @@
+- version: 1.6.5
+  changes:
+  - Added Orocos KDL solver for Franka Emika (Windows only)
+
 - version: 1.6.4
   changes:
   - Fixes Franka Emika inverse kinematics

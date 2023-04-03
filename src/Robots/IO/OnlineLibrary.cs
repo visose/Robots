@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using Newtonsoft.Json;
 
 namespace Robots;
@@ -82,10 +82,8 @@ public class OnlineLibrary
     {
         var uri = new Uri("https://api.github.com/repos/visose/robots/contents?ref=libraries");
         var json = await _http.GetStringAsync(uri);
-        var files = JsonConvert.DeserializeObject<List<FileDto>>(json);
-
-        if (files is null)
-            throw new ArgumentNullException(" Could not list libraries.");
+        var files = JsonConvert.DeserializeObject<List<FileDto>>(json)
+            ?? throw new ArgumentNullException(" Could not list libraries.");
 
         foreach (var file in files)
         {

@@ -394,10 +394,8 @@ public static class FileIO
         const ElementType type = ElementType.Tool;
         var doc = GetRhinoDoc(name, type);
         var layerName = $"{type}.{name}";
-        var layer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(layerName));
-
-        if (layer is null)
-            throw new ArgumentException($" \"{name}\" is not in the 3dm file.");
+        var layer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(layerName))
+            ?? throw new ArgumentException($" \"{name}\" is not in the 3dm file.");
 
         var objects = doc.Objects.Where(x => x.Attributes.LayerIndex == layer.Index);
         var meshes = objects.Select(o => o.Geometry).OfType<Mesh>();

@@ -47,7 +47,9 @@ def program():
 
         foreach (var tool in attributes.OfType<Tool>())
         {
-            code.Add($"  {tool.Name} = {Affine(tool.Tcp)}");
+            var tcp = tool.Tcp;
+            tcp = new(tcp.Origin, -tcp.XAxis, tcp.YAxis);
+            code.Add($"  {tool.Name} = {Affine(tcp)}");
         }
 
         foreach (var zone in attributes.OfType<Zone>())

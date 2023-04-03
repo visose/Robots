@@ -14,7 +14,6 @@ class FrankaNumericalKinematics : RobotKinematics
     readonly List<string> _empty = new(0);
     readonly double _sq2 = 1.0 / Sqrt(2);
     readonly double[] _midJoints;
-    readonly Transform _flangeRot;
 
     readonly Matrix _eye = new(7, 7);
     readonly Matrix _m77t = new(7, 7);
@@ -37,7 +36,6 @@ class FrankaNumericalKinematics : RobotKinematics
     {
         var joints = _mechanism.Joints;
         _midJoints = joints.Map(j => j.Range.Mid);
-        _flangeRot = Transform.Rotation(-PI, Point3d.Origin) * Transform.Rotation(-PI, Vector3d.XAxis, Point3d.Origin);
     }
 
     protected override int SolutionCount => 1;
@@ -48,7 +46,9 @@ class FrankaNumericalKinematics : RobotKinematics
         const double tolerance = 1e-12;
 
         errors = _empty;
-        transform *= Transform.Rotation(PI, Point3d.Origin);
+        var plane = transform.ToPlane();
+        plane = new(plane.Origin, plane.XAxis, -plane.YAxis);
+        transform = plane.ToTransform();
 
         var euler = transform.ToEulerZYX();
         SetValues(_x_target, euler);
@@ -56,10 +56,9 @@ class FrankaNumericalKinematics : RobotKinematics
         var current = prevJoints ?? _midJoints;
         _q_current.SetValues(current);
 
-        double? redudantValue =
+        double? redundantValue =
             external.Length > 0 ? external[0] : prevJoints?[redundant];
 
-        _q_current[6] *= -1;
         _q_current[6] -= PI * 0.25;
 
         double dis_min_all = double.MaxValue;
@@ -73,9 +72,9 @@ class FrankaNumericalKinematics : RobotKinematics
 
             // Null-space handling
             _dq.Clear();
-            if (redudantValue is not null)
+            if (redundantValue is not null)
             {
-                _dq[redundant] = redudantValue.Value - _q_current[redundant];
+                _dq[redundant] = redundantValue.Value - _q_current[redundant];
                 _j_inv.Multiply(_j, _m77t);
                 _identity.CopyTo(_eye);
                 _eye.Subtract(_m77t, _m77t);
@@ -101,9 +100,9 @@ class FrankaNumericalKinematics : RobotKinematics
                 _x_target.Subtract(_v6t, _v6t);
                 double new_dis = SquaredLength(_v6t);
 
-                if (redudantValue is not null)
+                if (redundantValue is not null)
                 {
-                    var y = redudantValue.Value - _q_current[redundant];
+                    var y = redundantValue.Value - _q_current[redundant];
                     new_dis += y * y;
                 }
 
@@ -128,27 +127,21 @@ class FrankaNumericalKinematics : RobotKinematics
         }
 
     error:
-        const double validTol = 1e-2;
-        var warn = dis_min_all < validTol ? "Warning" : "Error";
-
         errors = new List<string>(1)
         {
-            $"{warn}: Target unreachable ({dis_min_all:e2})"
+            $"Warning: Target unreachable ({dis_min_all:e2})"
         };
 
     end:
         var vals = _q_current.AsArray();
         vals[6] += PI * 0.25;
-        vals[6] *= -1;
         return vals;
     }
 
     protected override Transform[] ForwardKinematics(double[] joints)
     {
         joints = joints.ToArray();
-        joints[6] *= -1;
         var t = ModifiedDH(joints);
-        t[6] *= _flangeRot;
         return t;
     }
 

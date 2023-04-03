@@ -9,7 +9,6 @@ public class RemoteAbb : IRemote
     public void Pause() => throw NotImplemented();
     public void Upload(IProgram p) => throw NotImplemented();
 
-#pragma warning disable IDE0060
     internal RemoteAbb() { }
 
     Exception NotImplemented() => new NotImplementedException(" ABB SDK not supported in .NET Standard.");
