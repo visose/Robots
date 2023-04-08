@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework>
     <StartWorkingDirectory>$(RootDir)</StartWorkingDirectory>
-    <StartArguments>debug</StartArguments>
+    <StartArguments><!--debug--></StartArguments>
     <NoWarn>CA1852</NoWarn>
   </PropertyGroup>
 

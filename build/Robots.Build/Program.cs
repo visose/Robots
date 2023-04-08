@@ -34,7 +34,8 @@ app.Add(new ICommand[]
                 "Renci.SshNet.dll",
                 "MathNet.Numerics.dll",
                 "Kdl.NetStandard.dll",
-                "kdl_wrap.dll"
+                "kdl_wrap.dll",
+                "iconRobot.png"
             },
             tags: new []
             {

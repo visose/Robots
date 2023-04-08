@@ -7,7 +7,7 @@
     <Description>Create and simulate ABB, KUKA, UR, and Staubli robot programs.</Description>
     <PackageTags>Robots;ABB;KUKA;UR;Staubli;Robotics</PackageTags>
     <PackageProjectUrl>https://github.com/visose/robots</PackageProjectUrl>
-    <IconUrl>https://github.com/visose/robots/raw/master/build/Assets/iconRobot.png</IconUrl>
+    <Icon>iconRobot.png</Icon>
     <ReleaseNotes>RELEASE</ReleaseNotes>
 
     <CurrentYear>$([System.DateTime]::Now.Year)</CurrentYear>

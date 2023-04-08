@@ -19,7 +19,8 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Assets\Embed\**\*" />
-    <None Include="..\..\build\Assets\iconRhino128.png" Pack="true" PackagePath="" />
+    <None Include="$(RootDir)build\Assets\iconRhino128.png" Pack="true" PackagePath="" />
+    <None Include="$(RootDir)build\Assets\iconRobot.png" CopyToOutputDirectory="PreserveNewest" Visible="false" />
     <None Include="Build\Robots.Rhino.targets" Pack="true" PackagePath="buildTransitive" />
     <None Include="$(TargetDir)$(Product).dll" Pack="true" PackagePath="lib\net48" />
   </ItemGroup>
