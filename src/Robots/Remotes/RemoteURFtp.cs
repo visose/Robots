@@ -23,7 +23,7 @@ class RemoteURFtp : IRemoteURBackend
         }
         catch (Exception e)
         {
-            AddLog($"Error: FTP - {e.Message}");
+            AddLog($"Error: FTP - {e}");
             return;
         }
 

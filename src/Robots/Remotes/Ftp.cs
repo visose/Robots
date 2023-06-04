@@ -8,11 +8,19 @@ class Ftp
     {
         var (ip, username, password, programsDir) = user;
 
-        ConnectionInfo connectionInfo = new(ip, username,
-            new PasswordAuthenticationMethod(username, password))
+        ConnectionInfo connectionInfo = new(ip, username, new PasswordAuthenticationMethod(username, password))
         {
             Timeout = TimeSpan.FromSeconds(5)
         };
+
+        // Remove ecdsa algorithms not supported in mono (MacOS)
+        // https://github.com/sshnet/SSH.NET/issues/807
+        var algsToRemove = connectionInfo.HostKeyAlgorithms.Keys
+            .Where(algName => algName.StartsWith("ecdsa"))
+            .ToList();
+
+        foreach (var algName in algsToRemove)
+            connectionInfo.HostKeyAlgorithms.Remove(algName);
 
         using SftpClient client = new(connectionInfo);
         client.Connect();

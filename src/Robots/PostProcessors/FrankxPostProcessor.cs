@@ -47,8 +47,9 @@ def program():
 
         foreach (var tool in attributes.OfType<Tool>())
         {
+            Plane invert = new(Point3d.Origin, -Vector3d.XAxis, Vector3d.YAxis);
             var tcp = tool.Tcp;
-            tcp = new(tcp.Origin, -tcp.XAxis, tcp.YAxis);
+            tcp.Orient(ref invert);
             code.Add($"  {tool.Name} = {Affine(tcp)}");
         }
 
