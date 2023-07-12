@@ -485,10 +485,12 @@ putln(""Program '{name}' stopped."")";
         string midCode = @"    </Locals>
     <Code><![CDATA[begin ";
 
-        var code = new List<string>();
-        code.Add(startCode);
-        // code.AddRange(locals);
-        code.Add(midCode);
+        var code = new List<string>
+        {
+            startCode,
+            // code.AddRange(locals);
+            midCode
+        };
         code.AddRange(instructions);
         code.Add(ProgramFooter());
         return code;

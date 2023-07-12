@@ -52,7 +52,7 @@ public struct Vector6d
 
     public double this[int i]
     {
-        get => i switch
+        readonly get => i switch
         {
             0 => A1,
             1 => A2,
@@ -79,7 +79,7 @@ public struct Vector6d
         }
     }
 
-    public double[] ToArray()
+    public readonly double[] ToArray()
     {
         return new double[] { A1, A2, A3, A4, A5, A6 };
     }

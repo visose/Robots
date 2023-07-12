@@ -9,7 +9,6 @@ public class Collision
     public Mesh[] Meshes => throw NotImplemented();
     public SystemTarget CollisionTarget => throw NotImplemented();
 
-#pragma warning disable IDE0060
     internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh? environment, int environmentPlane, double linearStep, double angularStep)
     {
         throw NotImplemented();

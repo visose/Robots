@@ -314,7 +314,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                     {
                         var value = externalCustom[i];
                         if (string.IsNullOrWhiteSpace(value))
-                            continue;
+                            value = "0";
 
                         text += $"{name}.E{i + 1} = {value}\r\n";
                     }
