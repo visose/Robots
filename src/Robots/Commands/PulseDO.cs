@@ -32,7 +32,7 @@ public class PulseDO : Command
     {
         var number = GetNumber(robotSystem);
 
-        string time = $"{Name} = {_length:0.###}";
+        string time = $"global {Name} = {_length:0.###}";
         string thread = $@"  thread run{Name}():
     sleep({Name})
     set_digital_out({number}, False)
