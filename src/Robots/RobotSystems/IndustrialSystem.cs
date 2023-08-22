@@ -80,8 +80,8 @@ public abstract class IndustrialSystem : RobotSystem
         }
     }
 
-    public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]>? prevJoints = null) =>
-        new IndustrialSystemKinematics(this, targets, prevJoints).Solutions;
+    public override List<KinematicSolution> Kinematics(IEnumerable<Target> target, IEnumerable<double[]>? prevJoints = null) =>
+        new IndustrialSystemKinematics(this, target, prevJoints).Solutions;
 
     public override double DegreeToRadian(double degree, int i, int group = 0) => MechanicalGroups[group].DegreeToRadian(degree, i);
 }

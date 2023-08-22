@@ -11,7 +11,7 @@ public abstract class Command : TargetAttribute
 
     protected virtual void ErrorChecking(RobotSystem robotSystem) { }
     protected virtual void Populate() { }
-    public bool RunBefore { get; set; } = false;
+    public bool RunBefore { get; set; }
     internal virtual IEnumerable<Command> Flatten()
     {
         if (this != Default)

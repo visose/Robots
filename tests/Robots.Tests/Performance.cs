@@ -24,10 +24,11 @@ class Performance
     {
         _watch.Stop();
         long ms = _watch.ElapsedMilliseconds;
-        _times[key] = _times.ContainsKey(key)
-            ? _times[key] + ms
-            : 0;
 
+        if (_times.TryGetValue(key, out var value))
+            value += ms;
+
+        _times[key] = value;
         _watch.Restart();
     }
 

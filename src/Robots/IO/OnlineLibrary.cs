@@ -110,7 +110,7 @@ public class OnlineLibrary
         }
     }
 
-    string? GetValidExtension(string fileName)
+    static string? GetValidExtension(string fileName)
     {
         foreach (var extension in new[] { ".xml", ".3dm" })
         {
@@ -145,20 +145,20 @@ public class OnlineLibrary
         }
     }
 
-    string GetLocalSha(string xmlPath)
+    static string GetLocalSha(string xmlPath)
     {
         var shaXml = GetSha1(xmlPath);
         var sha3dm = GetSha1(Path.ChangeExtension(xmlPath, ".3dm"));
         return shaXml + sha3dm;
     }
 
-    string GetSha1(string file)
+    static string GetSha1(string file)
     {
         var bytes = File.ReadAllBytes(file);
         return GetSha1(bytes);
     }
 
-    string GetSha1(byte[] contentBytes)
+    static string GetSha1(byte[] contentBytes)
     {
         var header = $"blob {contentBytes.Length}\0";
         var encoding = new System.Text.UTF8Encoding();

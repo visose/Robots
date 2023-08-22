@@ -37,12 +37,12 @@ public abstract class CobotSystem : RobotSystem
         return Robot.Joints;
     }
 
-    public override List<KinematicSolution> Kinematics(IEnumerable<Target> targets, IEnumerable<double[]?>? prevJoints = null)
+    public override List<KinematicSolution> Kinematics(IEnumerable<Target> target, IEnumerable<double[]?>? prevJoints = null)
     {
-        if (!targets.Any())
+        if (!target.Any())
             return new(0);
 
-        var target = targets.First();
+        var singleTarget = target.First();
         var prevJoint = prevJoints?.First();
         string? error = null;
 
@@ -52,13 +52,13 @@ public abstract class CobotSystem : RobotSystem
             prevJoint = null;
         }
 
-        var kinematic = Robot.Kinematics(target, prevJoint, BasePlane);
+        var kinematic = Robot.Kinematics(singleTarget, prevJoint, BasePlane);
         var planes = kinematic.Planes.ToList();
 
         // Tool
-        if (target.Tool is not null)
+        if (singleTarget.Tool is not null)
         {
-            Plane toolPlane = target.Tool.Tcp;
+            Plane toolPlane = singleTarget.Tool.Tcp;
             toolPlane.Orient(ref kinematic.Planes[planes.Count - 1]);
             planes.Add(toolPlane);
         }

@@ -90,7 +90,7 @@ public class URRealTimeDataExchange : IDisposable
         TypeCode.UInt64 => 8,
         TypeCode.Int32 => 4,
         TypeCode.Double => 8,
-        _ => throw new ArgumentException(nameof(type))
+        _ => throw new ArgumentException($"TypeCode {type} not supported", nameof(type))
     };
 
     // instance
@@ -99,7 +99,7 @@ public class URRealTimeDataExchange : IDisposable
     readonly BinaryReader _reader;
     readonly byte[] _buffer = new byte[_bufferLength];
 
-    bool _isDisposed = false;
+    bool _isDisposed;
 
     public VariableOutput[] Outputs { get; }
     public List<string> Log { get; } = new();
@@ -157,6 +157,7 @@ public class URRealTimeDataExchange : IDisposable
 
         _client.Dispose();
         _isDisposed = true;
+        GC.SuppressFinalize(this);
     }
 
     void AddLog(string message)
@@ -164,7 +165,7 @@ public class URRealTimeDataExchange : IDisposable
         Log.Add($"{DateTime.Now.ToLongTimeString()} - {message}");
     }
 
-    IEnumerable<VariableOutput> CreateOutputs(IList<string> variables)
+    static IEnumerable<VariableOutput> CreateOutputs(IList<string> variables)
     {
         var set = new HashSet<string>(variables, StringComparer.OrdinalIgnoreCase);
 
@@ -184,7 +185,7 @@ public class URRealTimeDataExchange : IDisposable
         });
     }
 
-    TcpClient CreateClient() => new()
+    static TcpClient CreateClient() => new()
     {
         NoDelay = true,
         ReceiveBufferSize = _bufferLength,

@@ -1,9 +1,9 @@
-﻿namespace Robots.Grasshopper.Commands;
+namespace Robots.Grasshopper.Commands;
 
-[Obsolete]
+[Obsolete("Replace with new Custom Command component")]
 public class Custom : GH_Component
 {
-    public Custom() : base(" command", "CustomCmd", "Custom command written in the manufacturer specific language", "Robots", "Commands") { }
+    public Custom() : base("Custom command", "CustomCmd", "Custom command written in the manufacturer specific language", "Robots", "Commands") { }
     public override GH_Exposure Exposure => GH_Exposure.hidden;
     public override bool Obsolete => true;
     public override Guid ComponentGuid => new("{D15B1F9D-B3B9-4105-A365-234C1329B092}");

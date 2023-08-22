@@ -42,14 +42,7 @@ class SphericalWristKinematics : RobotKinematics
 
         var joints = new double[6];
 
-        if (!shoulder)
-        {
-            joints[0] = tmp1 - tmp2;
-        }
-        else
-        {
-            joints[0] = tmp1 + tmp2 - PI;
-        }
+        joints[0] = !shoulder ? tmp1 - tmp2 : tmp1 + tmp2 - PI;
 
         var tmp3 = (c.Z - c1);
         var kappa_2 = a2 * a2 + c3 * c3;

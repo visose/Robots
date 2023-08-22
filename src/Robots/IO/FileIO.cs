@@ -142,14 +142,14 @@ public static class FileIO
             && (!Enum.TryParse<ElementType>(typeName, out var type)
             || type != ElementType.RobotSystem))
         {
-            throw new ArgumentException($" Element '{typeName}' should be 'RobotSystem'", nameof(typeName));
+            throw new ArgumentException($" Element '{typeName}' should be 'RobotSystem'");
         }
 
         var name = element.GetAttribute("name");
         var manufacturerAttribute = element.GetAttribute("manufacturer");
 
         if (!Enum.TryParse<Manufacturers>(manufacturerAttribute, out var manufacturer))
-            throw new ArgumentException($" Manufacturer '{manufacturerAttribute}' not valid.", nameof(manufacturerAttribute));
+            throw new ArgumentException($" Manufacturer '{manufacturerAttribute}' not valid.");
 
         var mechanicalGroups = new List<MechanicalGroup>();
 
@@ -168,7 +168,7 @@ public static class FileIO
             Manufacturers.FrankaEmika => new SystemFranka(name, (RobotFranka)mechanicalGroups[0].Robot, io, basePlane, environment),
             Manufacturers.Doosan => new SystemDoosan(name, (RobotDoosan)mechanicalGroups[0].Robot, io, basePlane, environment),
 
-            _ => throw new ArgumentException($" Manufacturer '{manufacturer} is not supported.", nameof(manufacturer))
+            _ => throw new ArgumentException($" Manufacturer '{manufacturer} is not supported.")
         };
     }
 
@@ -227,7 +227,7 @@ public static class FileIO
             {
                 "Revolute" => new RevoluteJoint { Index = i, Number = number, A = a, D = d, Alpha = α, Theta = θ, Sign = sign, Range = range, MaxSpeed = maxSpeed, Mesh = mesh },
                 "Prismatic" => new PrismaticJoint { Index = i, Number = number, A = a, D = d, Alpha = α, Theta = θ, Sign = sign, Range = range, MaxSpeed = maxSpeed, Mesh = mesh },
-                _ => throw new ArgumentException(" Invalid joint type.", nameof(jointElement.Name.LocalName))
+                _ => throw new ArgumentException(" Invalid joint type.")
             };
         }
 
@@ -241,12 +241,12 @@ public static class FileIO
                 Manufacturers.Staubli => new RobotStaubli(model, payload, basePlane, baseMesh, joints),
                 Manufacturers.FrankaEmika => new RobotFranka(model, payload, basePlane, baseMesh, joints),
                 Manufacturers.Doosan => new RobotDoosan(model, payload, basePlane, baseMesh, joints),
-                _ => throw new ArgumentException($" Manufacturer '{manufacturer}' not supported.", nameof(manufacturer)),
+                _ => throw new ArgumentException($" Manufacturer '{manufacturer}' not supported."),
             },
             "Positioner" => new Positioner(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
             "Track" => new Track(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
             "Custom" => new Custom(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
-            _ => throw new ArgumentException($" Unknown mechanism type '{element.Name}'.", nameof(element.Name))
+            _ => throw new ArgumentException($" Unknown mechanism type '{element.Name}'.")
         };
     }
 
@@ -277,7 +277,7 @@ public static class FileIO
         var type = element.Name.LocalName;
 
         if (type != "Tool")
-            throw new ArgumentException($" Element '{type}' should be 'Tool'", nameof(type));
+            throw new ArgumentException($" Element '{type}' should be 'Tool'");
 
         var name = element.GetAttribute("name");
 
@@ -301,7 +301,7 @@ public static class FileIO
         var type = element.Name.LocalName;
 
         if (type != "Frame")
-            throw new ArgumentException($" Element '{type}' should be 'Frame'", nameof(type));
+            throw new ArgumentException($" Element '{type}' should be 'Frame'");
 
         var name = element.GetAttribute("name");
         var useController = element.GetBoolAttributeOrDefault("useController");

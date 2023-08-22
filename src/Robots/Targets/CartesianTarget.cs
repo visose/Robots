@@ -33,7 +33,7 @@ public class CartesianTarget : Target
         string speed = $", {Speed}";
         string zone = $", {Zone}";
         string commands = Command != Command.Default ? ", Contains commands" : "";
-        string external = External.Length > 0 ? $", {External.Length.ToString():0} external axes" : "";
+        string external = External.Length > 0 ? $", {External.Length:0} external axes" : "";
         return $"Target ({type}{motion}{configuration}{frame}{tool}{speed}{zone}{commands}{external})";
     }
 }

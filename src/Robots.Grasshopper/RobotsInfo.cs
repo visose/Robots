@@ -27,13 +27,13 @@ public class RobotsInfo : GH_AssemblyInfo
     public override string AuthorContact => GetCompany()[1];
     public override Guid Id => new("0c4dd17f-db66-4895-9565-412eb167503f");
 
-    T GetInfo<T>() where T : Attribute
+    static T GetInfo<T>() where T : Attribute
     {
         var assembly = Assembly.GetExecutingAssembly();
         return assembly.GetCustomAttribute<T>();
     }
 
-    string[] GetCompany()
+    static string[] GetCompany()
     {
         var company = GetInfo<AssemblyCompanyAttribute>().Company;
         return company.Split(new[] { " - " }, StringSplitOptions.None);
@@ -90,7 +90,7 @@ public class RobotsInfo : GH_AssemblyInfo
             Rhino.RhinoApp.WriteLine($"Updated {count} robot library value list(s).");
     }
 
-    string GetRobotsPath()
+    static string GetRobotsPath()
     {
         var robotsLib = Instances.ComponentServer.Libraries.FirstOrDefault(l => l.Name == "Robots");
 

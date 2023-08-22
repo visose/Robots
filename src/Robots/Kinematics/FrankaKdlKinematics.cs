@@ -121,9 +121,9 @@ class FrankaKdlKinematics : RobotKinematics, IDisposable
         return _ts;
     }
 
-    Vector3d ToVector3d(K.Vector v) => new(v.x(), v.y(), v.z());
+    static Vector3d ToVector3d(K.Vector v) => new(v.x(), v.y(), v.z());
 
-    K.Frame ToFrame(Transform t)
+    static K.Frame ToFrame(Transform t)
     {
         using K.Rotation rotation = new(
             t.M00, t.M01, t.M02,
@@ -135,7 +135,7 @@ class FrankaKdlKinematics : RobotKinematics, IDisposable
         return new(rotation, vector);
     }
 
-    double[] FromJntArray(K.JntArray ja)
+    static double[] FromJntArray(K.JntArray ja)
     {
         int count = (int)ja.rows();
         var vals = new double[count];
@@ -146,7 +146,7 @@ class FrankaKdlKinematics : RobotKinematics, IDisposable
         return vals;
     }
 
-    K.JntArray ToJntArray(double[] joints)
+    static K.JntArray ToJntArray(double[] joints)
     {
         var ja = new K.JntArray((uint)joints.Length);
 

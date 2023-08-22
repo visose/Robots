@@ -6,8 +6,8 @@ public sealed class Simulation : GH_Component
 {
     SimulationForm? _form;
     DateTime? _lastTime;
-    double _time = 0;
-    double _lastInputTime = 0;
+    double _time;
+    double _lastInputTime;
 
     internal double Speed = 1;
 

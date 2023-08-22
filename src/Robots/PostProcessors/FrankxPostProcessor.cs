@@ -202,7 +202,7 @@ program()
         return $"Affine({n[0]:0.#####}, {n[1]:0.#####}, {n[2]:0.#####}, {n[3]:0.#####}, {n[4]:0.#####}, {n[5]:0.#####}, {n[6]:0.#####})";
     }
 
-    double GetSpeed(SystemTarget systemTarget)
+    static double GetSpeed(SystemTarget systemTarget)
     {
         var programTarget = systemTarget.ProgramTargets[0];
         var speed = programTarget.Target.Speed;

@@ -16,8 +16,8 @@ public class Group : Command, IList<Command>
     // IList implementation
     public Command this[int index]
     {
-        get { return _commandList[index]; }
-        set { _commandList[index] = value; }
+        get => _commandList[index];
+        set => _commandList[index] = value;
     }
 
     public int IndexOf(Command item) => _commandList.IndexOf(item);

@@ -1,4 +1,4 @@
-﻿using static Robots.Util;
+using static Robots.Util;
 
 namespace Robots;
 
@@ -24,16 +24,8 @@ public class Zone : TargetAttribute
     public Zone(double distance, double? rotation = null, double? rotationExternal = null, string? name = null) : base(name)
     {
         Distance = distance;
-
-        if (rotation.HasValue)
-            Rotation = rotation.Value;
-        else
-            Rotation = (distance / 10).ToRadians();
-
-        if (rotationExternal.HasValue)
-            RotationExternal = rotationExternal.Value;
-        else
-            RotationExternal = Rotation;
+        Rotation = rotation ?? (distance / 10).ToRadians();
+        RotationExternal = rotationExternal ?? Rotation;
     }
 
     public override string ToString() => HasName

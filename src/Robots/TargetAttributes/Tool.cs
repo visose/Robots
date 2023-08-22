@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots;
 
@@ -45,7 +45,7 @@ public class Tool : TargetAttribute
         }
     }
 
-    Point3d FourPointCalibration(IList<Plane> calibrationPlanes)
+    static Point3d FourPointCalibration(IList<Plane> calibrationPlanes)
     {
         var p = calibrationPlanes;
         var calibrate = new Geometry.CircumcentreSolver(p[0].Origin, p[1].Origin, p[2].Origin, p[3].Origin);

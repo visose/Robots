@@ -9,11 +9,9 @@ namespace Robots.Geometry;
 class CircumcentreSolver
 {
     double _x, _y, _z;
-    double _radius;
     readonly double[,] _p = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
 
     internal Point3d Center => new(_x, _y, _z);
-    internal double Radius => _radius;
 
     /// <summary>
     /// Computes the center of a sphere such that all four specified points in
@@ -25,10 +23,10 @@ class CircumcentreSolver
     /// <param name="d">The fourth point (array of 3 doubles for X, Y, Z).</param>
     internal CircumcentreSolver(Point3d pa, Point3d pb, Point3d pc, Point3d pd)
     {
-        double[] a = new double[] { pa.X, pa.Y, pa.Z };
-        double[] b = new double[] { pb.X, pb.Y, pb.Z };
-        double[] c = new double[] { pc.X, pc.Y, pc.Z };
-        double[] d = new double[] { pd.X, pd.Y, pd.Z };
+        double[] a = { pa.X, pa.Y, pa.Z };
+        double[] b = { pb.X, pb.Y, pb.Z };
+        double[] c = { pc.X, pc.Y, pc.Z };
+        double[] d = { pd.X, pd.Y, pd.Z };
         Compute(a, b, c, d);
     }
 
@@ -56,7 +54,7 @@ class CircumcentreSolver
 
     void Sphere()
     {
-        double m11, m12, m13, m14, m15;
+        double m11, m12, m13, m14;
         double[,] a = { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } };
 
         // Find minor 1, 1.
@@ -107,7 +105,6 @@ class CircumcentreSolver
             a[i, 2] = _p[i, 1];
             a[i, 3] = _p[i, 2];
         }
-        m15 = Determinant(a, 4);
 
         // Calculate result.
         if (m11 == 0)
@@ -115,14 +112,12 @@ class CircumcentreSolver
             _x = 0;
             _y = 0;
             _z = 0;
-            _radius = 0;
         }
         else
         {
             _x = 0.5 * m12 / m11;
             _y = -0.5 * m13 / m11;
             _z = 0.5 * m14 / m11;
-            _radius = Sqrt(_x * _x + _y * _y + _z * _z - m15 / m11);
         }
     }
 

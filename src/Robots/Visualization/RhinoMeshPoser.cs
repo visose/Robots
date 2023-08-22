@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots;
 
@@ -36,7 +36,7 @@ public class RhinoMeshPoser : IMeshPoser
         }
     }
 
-    void AddGroupPose(List<Mesh> meshes, Plane[] planes, Mesh tool, List<Plane> defaultPlanes, List<Mesh> defaultMeshes)
+    static void AddGroupPose(List<Mesh> meshes, Plane[] planes, Mesh tool, List<Plane> defaultPlanes, List<Mesh> defaultMeshes)
     {
         for (int i = 0; i < planes.Length - 1; i++)
         {

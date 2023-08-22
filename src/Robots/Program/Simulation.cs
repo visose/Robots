@@ -27,7 +27,7 @@ class Simulation
     readonly List<SystemTarget> _keyframes;
     readonly double _duration;
 
-    int _currentTarget = 0;
+    int _currentTarget;
     internal SimulationPose CurrentSimulationPose;
 
     public Simulation(Program program, List<SystemTarget> keyframes)

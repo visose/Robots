@@ -1,9 +1,9 @@
-﻿using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Data;
 
 namespace Robots.Grasshopper;
 
-[Obsolete]
+[Obsolete("Replace with the new CreateProgram component")]
 public class CreateProgram : GH_Component
 {
     public CreateProgram() : base("Create program", "Program", "Creates a program, checks for possible issues and fixes common mistakes.", "Robots", "Components") { }

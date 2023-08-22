@@ -219,7 +219,7 @@ class RapidPostProcessor
                             break;
                         }
                     default:
-                        throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.", nameof(cartesian.Motion));
+                        throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.");
                 }
             }
 
@@ -245,7 +245,7 @@ class RapidPostProcessor
         return code;
     }
 
-    string Tool(Tool tool)
+    static string Tool(Tool tool)
     {
         var tcp = tool.Tcp;
         Quaternion quaternion = tcp.ToQuaternion();
@@ -272,21 +272,19 @@ class RapidPostProcessor
         string coupledBool = frame.IsCoupled ? "FALSE" : "TRUE";
         if (frame.IsCoupled)
         {
-            if (frame.CoupledMechanism == -1)
-                coupledMech = $"ROB_{frame.CoupledMechanicalGroup + 1}";
-            else
-                coupledMech = $"STN_{frame.CoupledMechanism + 1}";
+            coupledMech = frame.CoupledMechanism == -1
+                ? $"ROB_{frame.CoupledMechanicalGroup + 1}" : $"STN_{frame.CoupledMechanism + 1}";
         }
         return $@"TASK PERS wobjdata {frame.Name}:=[FALSE,{coupledBool},""{coupledMech}"",[{pos},{orient}],[[0,0,0],[1,0,0,0]]];";
     }
-    string Speed(Speed speed)
+    static string Speed(Speed speed)
     {
         double rotation = speed.RotationSpeed.ToDegrees();
         double rotationExternal = speed.RotationExternal.ToDegrees();
         return $"TASK PERS speeddata {speed.Name}:=[{speed.TranslationSpeed:0.###},{rotation:0.###},{speed.TranslationExternal:0.###},{rotationExternal:0.###}];";
     }
 
-    string Zone(Zone zone)
+    static string Zone(Zone zone)
     {
         double angle = zone.Rotation.ToDegrees();
         double angleExternal = zone.RotationExternal.ToDegrees();

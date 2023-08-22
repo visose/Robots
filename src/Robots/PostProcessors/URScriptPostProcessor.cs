@@ -185,7 +185,7 @@ class URScriptPostProcessor
         return code;
     }
 
-    string Tool(Tool tool)
+    static string Tool(Tool tool)
     {
         string pos = $"  set_tcp({tool.Name}Tcp)";
         string mass = $"  set_payload({tool.Name}Weight, {tool.Name}Cog)";

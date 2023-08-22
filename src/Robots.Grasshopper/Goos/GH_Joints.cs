@@ -24,7 +24,7 @@ public class GH_Joints : GH_Goo<double[]>
                 {
                     if (string.IsNullOrWhiteSpace(text.Value))
                     {
-                        Value = new double[0];
+                        Value = Array.Empty<double>();
                         return true;
                     }
 

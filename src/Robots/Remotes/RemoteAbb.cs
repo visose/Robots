@@ -7,11 +7,11 @@ public class RemoteAbb : IRemote
     public List<string> Log { get; } = new List<string>();
     public void Play() => throw NotImplemented();
     public void Pause() => throw NotImplemented();
-    public void Upload(IProgram p) => throw NotImplemented();
+    public void Upload(IProgram program) => throw NotImplemented();
 
     internal RemoteAbb() { }
 
-    Exception NotImplemented() => new NotImplementedException(" ABB SDK not supported in .NET Standard.");
+    static Exception NotImplemented() => new NotImplementedException(" ABB SDK not supported in .NET Standard.");
 }
 
 #elif NET48
@@ -32,7 +32,7 @@ public class RemoteAbb : IRemote
 
     public void Play() => Command(StartCommand);
     public void Pause() => Command(StopCommand);
-    public void Upload(IProgram p) => Command(() => UploadCommand(p));
+    public void Upload(IProgram program) => Command(() => UploadCommand(program));
 
     void AddLog(string text)
     {

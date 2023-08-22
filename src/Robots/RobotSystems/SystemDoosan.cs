@@ -87,12 +87,12 @@ public class SystemDoosan : CobotSystem
         }
     }
 
-    internal string SubProgramName(string programName, int i)
+    internal static string SubProgramName(string programName, int i)
     {
         return $"{programName}_{i:000}";
     }
 
-    void WriteFile(List<string> code, string folder, string name)
+    static void WriteFile(List<string> code, string folder, string name)
     {
         string filePath = Path.Combine(folder, $"{name}.drl");
         var joinedCode = string.Join("\n", code);

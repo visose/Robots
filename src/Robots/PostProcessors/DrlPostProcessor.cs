@@ -36,7 +36,7 @@ class DrlPostProcessor
                 List<string> code = new();
 
                 for (int i = 1; i <= program.MultiFileIndices.Count; i++)
-                    code.Add($"sub_program_run(\"{_system.SubProgramName(program.Name, i)}\")");
+                    code.Add($"sub_program_run(\"{SystemDoosan.SubProgramName(program.Name, i)}\")");
 
                 groupCode.Add(code);
             }
@@ -210,7 +210,7 @@ class DrlPostProcessor
                             break;
                         }
                     default:
-                        throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.", nameof(cartesian.Motion));
+                        throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.");
                 }
             }
             else
@@ -272,10 +272,10 @@ class DrlPostProcessor
         return NumbersToPose(n);
     }
 
-    string NumbersToPose(double[] n)
+    static string NumbersToPose(double[] n)
     {
         return $"[{n[0]:0.####}, {n[1]:0.####}, {n[2]:0.####}, {n[3]:0.####}, {n[4]:0.####}, {n[5]:0.####}]";
     }
 
-    string VectorToList(Vector3d v) => $"[{v.X:0.####}, {v.Y:0.####}, {v.Z:0.####}]";
+    static string VectorToList(Vector3d v) => $"[{v.X:0.####}, {v.Y:0.####}, {v.Z:0.####}]";
 }

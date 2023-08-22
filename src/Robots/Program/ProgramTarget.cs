@@ -12,7 +12,7 @@ public class ProgramTarget
     public Target Target { get; internal set; }
     public int Group { get; internal set; }
     public List<Command> Commands { get; private set; }
-    internal bool ChangesConfiguration { get; set; } = false;
+    internal bool ChangesConfiguration { get; set; }
     internal int LeadingJoint { get; set; }
     internal SpeedType SpeedType { get; set; }
 
@@ -141,13 +141,10 @@ public class ProgramTarget
             int externalCount = system.MechanicalGroups[Group].Externals.Sum(e => e.Joints.Length);
             external = allJoints.RangeSubset(jointCount, externalCount);
         }
-        else if (robot.RobotJointCount == 7 && Target.External.Length == 1)
-        {
-            external = new[] { allJoints[2] };
-        }
         else
         {
-            external = Array.Empty<double>();
+            external = robot.RobotJointCount == 7 && Target.External.Length == 1 
+                ? (new[] { allJoints[2] }) : Array.Empty<double>();
         }
 
         if (IsJointMotion)

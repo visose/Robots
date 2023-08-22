@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using Rhino.Geometry;
 using Grasshopper;
 using Grasshopper.Kernel.Parameters;
@@ -140,7 +140,9 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
         {
             string motionText = "Joint";
             DA.GetData("Motion", ref motionText);
-            Enum.TryParse(motionText, out motion);
+
+            if (!Enum.TryParse(motionText, out motion))
+                throw new ArgumentException($"Motion {motionText} not valid.");
         }
         else if (sourceTarget is not null)
         {
@@ -216,7 +218,7 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
         else
         {
             if (joints is null)
-                throw new ArgumentNullException(nameof(joints));
+                throw new ArgumentException("Joints should not be null");
 
             target = new JointTarget(joints, tool, speed, zone, command, frame, external);
         }

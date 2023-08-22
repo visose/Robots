@@ -81,11 +81,13 @@ abstract class RobotKinematics : MechanismKinematics
     protected abstract double[] InverseKinematics(Transform transform, RobotConfigurations configuration, double[] external, double[]? prevJoints, out List<string> errors);
     protected abstract Transform[] ForwardKinematics(double[] joints);
 
-    double SquaredDifference(double a, double b)
+    static double SquaredDifference(double a, double b)
     {
         double difference = Abs(a - b);
+
         if (difference > PI)
             difference = PI * 2 - difference;
+
         return difference * difference;
     }
 

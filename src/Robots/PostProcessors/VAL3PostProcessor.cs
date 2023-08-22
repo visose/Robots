@@ -320,7 +320,7 @@ class VAL3PostProcessor
         return code;
     }
 
-    List<string> Speeds(Dictionary<(Speed speed, Zone zone), string> mdescs)
+    static List<string> Speeds(Dictionary<(Speed speed, Zone zone), string> mdescs)
     {
         var codes = new List<string>();
 
@@ -340,14 +340,14 @@ class VAL3PostProcessor
         return codes;
     }
 
-    string ProgramHeader(string name)
+    static string ProgramHeader(string name)
     {
         return $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
 <Programs xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Program/2"">
   <Program name=""{name}"">";
     }
 
-    string ProgramFooter()
+    static string ProgramFooter()
     {
         return @"end]]></Code>
   </Program>
@@ -380,7 +380,7 @@ putln(""Program '{name}' started..."")";
         return codes;
     }
 
-    List<string> Stop(string name)
+    static List<string> Stop(string name)
     {
         var codes = new List<string>();
 

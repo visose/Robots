@@ -280,7 +280,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                         }
 
                     default:
-                        throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.", nameof(cartesian.Motion));
+                        throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.");
                 }
             }
 
@@ -346,7 +346,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
         return externalSpeedCode;
     }
 
-    string SetTool(Tool tool)
+    static string SetTool(Tool tool)
     {
         if (tool.Number is null)
         {
@@ -371,7 +371,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
         return $"{toolTxt}\r\n{loadTxt}";
     }
 
-    string SetFrame(Frame frame)
+    static string SetFrame(Frame frame)
     {
         var name = frame.Number is null ? frame.Name : $"BASE_DATA[{frame.Number}]";
 
@@ -402,7 +402,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
         return GetXyzAbc(values);
     }
 
-    string GetXyzAbc(params double[] values)
+    static string GetXyzAbc(params double[] values)
     {
         return $"X {values[0]:0.###},Y {values[1]:0.###},Z {values[2]:0.###},A {values[3]:0.####},B {values[4]:0.####},C {values[5]:0.####}";
     }

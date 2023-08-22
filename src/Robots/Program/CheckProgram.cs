@@ -177,24 +177,24 @@ class CheckProgram
             {
                 if (frame.CoupledMechanicalGroup == -1 && frame.CoupledMechanism != -1)
                 {
-                    throw new ArgumentException($" Frame {frame.Name} has a coupled mechanism set but no mechanical group.", nameof(frame));
+                    throw new ArgumentException($" Frame {frame.Name} has a coupled mechanism set but no mechanical group.");
                 }
 
                 if (frame.CoupledMechanicalGroup == 0 && frame.CoupledMechanism == -1)
                 {
-                    throw new ArgumentException($" Frame {frame.Name} is set to couple the robot rather than a mechanism.", nameof(frame));
+                    throw new ArgumentException($" Frame {frame.Name} is set to couple the robot rather than a mechanism.");
                 }
 
                 if (frame.IsCoupled && _robotSystem is IndustrialSystem industrialSystem)
                 {
                     if (frame.CoupledMechanicalGroup > industrialSystem.MechanicalGroups.Count - 1)
                     {
-                        throw new ArgumentException($" Frame {frame.Name} is set to couple an inexistent mechanical group.", nameof(frame));
+                        throw new ArgumentException($" Frame {frame.Name} is set to couple an inexistent mechanical group.");
                     }
 
                     if (frame.CoupledMechanism > industrialSystem.MechanicalGroups[frame.CoupledMechanicalGroup].Externals.Count - 1)
                     {
-                        throw new ArgumentException($" Frame {frame.Name} is set to couple an inexistent mechanism.", nameof(frame));
+                        throw new ArgumentException($" Frame {frame.Name} is set to couple an inexistent mechanism.");
                     }
 
                     frame.CoupledPlaneIndex = ((IndustrialSystem)_robotSystem).GetPlaneIndex(frame);

@@ -34,7 +34,7 @@ public class Speed : TargetAttribute
     /// <summary>
     /// Time in seconds it takes to reach the target. Optional parameter (used in UR)
     /// </summary>
-    public double Time { get; set; } = 0;
+    public double Time { get; set; }
 
     public Speed(double translation = 100, double rotationSpeed = PI, double translationExternal = 5000, double rotationExternal = PI * 6, string? name = null) : base(name)
     {

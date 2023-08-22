@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Diagnostics;
 using Eto.Drawing;
 using Eto.Forms;
@@ -137,7 +137,7 @@ class LibraryForm : ComponentForm
         _grid.DataStore = _grid.DataStore;
     }
 
-    string ItemActions(LibraryItem item) => item switch
+    static string ItemActions(LibraryItem item) => item switch
     {
         { IsDownloaded: true, IsUpdateAvailable: true } => "Update",
         { IsUpdateAvailable: true } => "Install",
@@ -145,7 +145,7 @@ class LibraryForm : ComponentForm
         _ => ""
     };
 
-    GridView Grid() => new()
+    static GridView Grid() => new()
     {
         Size = new Size(300, 300),
         Border = BorderType.None,
@@ -205,7 +205,7 @@ class LibraryForm : ComponentForm
         }
     };
 
-    string Description(LibraryItem item) => item switch
+    static string Description(LibraryItem item) => item switch
     {
         { IsLocal: true, IsDownloaded: true } => "❕📁 Installed, local override",
         { IsLocal: true, IsOnline: true } => "📁 Local, available on-line",
@@ -226,7 +226,7 @@ class LibraryForm : ComponentForm
         return detailButton;
     }
 
-    StackLayout NewAsyncButton(Func<Task> actionAsync, string? label = null, bool runOnce = false)
+    static StackLayout NewAsyncButton(Func<Task> actionAsync, string? label = null, bool runOnce = false)
     {
         Button button = new()
         {

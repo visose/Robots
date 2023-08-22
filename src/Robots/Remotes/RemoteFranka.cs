@@ -109,7 +109,7 @@ public class RemoteFranka : IRemote
     void SendPrivate(string message)
     {
         if (_user is null)
-            throw new ArgumentNullException("IP not set.");
+            throw new ArgumentNullException(nameof(_user), "IP not set.");
 
         var (ip, username, password, _) = _user;
 
