@@ -161,16 +161,11 @@ static class Util
     // Geometry
 
     public static double Sqr(double n) => n * n;
-
-    public static double ToRadians(this double value)
-    {
-        return value * (PI / 180.0);
-    }
-
-    public static double ToDegrees(this double value)
-    {
-        return value * (180.0 / PI);
-    }
+    public static double ToRadians(this double n) => n * (PI / 180.0);
+    public static double ToDegrees(this double n) => n * (180.0 / PI);
+    public static double ToMeters(this double n) => n * 0.001;
+    public static Point3d ToMeters(this Point3d n) => n * 0.001;
+    public static double FromMeters(this double n) => n * 1000.0;
 
     // Transform
 

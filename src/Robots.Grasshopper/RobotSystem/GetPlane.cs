@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using Rhino.Geometry;
 
 namespace Robots.Grasshopper;
@@ -33,6 +33,8 @@ public class GetPlane : GH_Component
 
         if (robotSystem is null)
         {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, " No robot system supplied, defaulting to quaternion conversion");
+
             if (numbers.Count != 7)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, " The list should be made out of 7 numbers");

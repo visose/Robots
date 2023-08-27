@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 
 namespace Robots.Grasshopper;
 
@@ -29,9 +29,17 @@ public class FromPlane : GH_Component
         if (!DA.GetData(0, ref plane)) return;
         DA.GetData(1, ref robotSystem);
 
-        var numbers = robotSystem is null
-            ? SystemAbb.PlaneToQuaternion(plane)
-            : robotSystem.PlaneToNumbers(plane);
+        double[] numbers;
+
+        if (robotSystem is null)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, " No robot system supplied, defaulting to quaternion conversion");
+            numbers = SystemAbb.PlaneToQuaternion(plane);
+        }
+        else
+        {
+            numbers = robotSystem.PlaneToNumbers(plane);
+        }
 
         DA.SetDataList(0, numbers);
     }

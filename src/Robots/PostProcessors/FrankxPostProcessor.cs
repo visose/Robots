@@ -55,7 +55,7 @@ def program():
 
         foreach (var zone in attributes.OfType<Zone>())
         {
-            double zoneDistance = zone.Distance / 1000.0;
+            double zoneDistance = zone.Distance.ToMeters();
             code.Add($"  {zone.Name} = {zoneDistance:0.#####}");
         }
 
@@ -157,7 +157,7 @@ def program():
                 var elbow = target.External.Length > 0
                             ? $", {target.External[0]:0.#####}" : "";
 
-                var zone = target.Zone.Distance / 1000.0;
+                var zone = target.Zone.Distance.ToMeters();
                 code.Add($"    Waypoint({Affine(plane)}, {speed:0.#####}, {target.Zone.Name}{elbow}),");
             }
 

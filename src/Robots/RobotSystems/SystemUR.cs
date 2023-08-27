@@ -14,7 +14,7 @@ public class SystemUR : CobotSystem
     /// <summary>
     /// Code lifted from http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToAngle/
     /// </summary>
-    public static double[] PlaneToAxisAngle(ref Plane plane)
+    static double[] PlaneToAxisAngle(ref Plane plane)
     {
         Vector3d vector;
         var t = plane.ToTransform();
@@ -115,7 +115,7 @@ public class SystemUR : CobotSystem
         return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, vector.X, vector.Y, vector.Z }; // return 180 deg rotation
     }
 
-    public static Plane AxisAngleToPlane(double x, double y, double z, double vx, double vy, double vz)
+    static Plane AxisAngleToPlane(double x, double y, double z, double vx, double vy, double vz)
     {
         var matrix = Transform.Identity;
         var vector = new Vector3d(vx, vy, vz);
@@ -149,13 +149,20 @@ public class SystemUR : CobotSystem
 
     public override double[] PlaneToNumbers(Plane plane)
     {
-        Point3d point = plane.Origin / 1000.0;
+        Point3d point = plane.Origin.ToMeters();
         plane.Origin = point;
         double[] axisAngle = PlaneToAxisAngle(ref plane);
         return axisAngle;
     }
 
-    public override Plane NumbersToPlane(double[] numbers) => AxisAngleToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5]);
+    public override Plane NumbersToPlane(double[] numbers)
+    {
+        double n0 = numbers[0].FromMeters();
+        double n1 = numbers[1].FromMeters();
+        double n2 = numbers[2].FromMeters();
+
+        return AxisAngleToPlane(n0, n1, n2, numbers[3], numbers[4], numbers[5]);
+    }
 
     internal override List<List<List<string>>> Code(Program program) =>
         new URScriptPostProcessor(this, program).Code;

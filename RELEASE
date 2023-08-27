@@ -1,3 +1,8 @@
+- version: 1.6.7
+  changes:
+  - Fixed UR FromPlane wrong units
+  - Added remark when Get/FromPlane robot system input disconnected
+
 - version: 1.6.6
   changes:
   - Fixed UR pulseDO command
@@ -154,5 +159,5 @@
   - This and newer versions will be available only through Yak package manager.
   - Large refactor and project restructure, some bugs might have crept in.
   - Robot system can be loaded without meshes if not needed for improved performance (API only).
-  - Fixed rounding PulseDO value to 3 decimal places. 
+  - Fixed rounding PulseDO value to 3 decimal places.
   - Fixed unnecessary trailing zeros in generated programs.

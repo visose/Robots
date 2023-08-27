@@ -36,13 +36,11 @@ class URScriptPostProcessor
             Plane tcp = tool.Tcp;
             var originPlane = new Plane(Point3d.Origin, Vector3d.YAxis, -Vector3d.XAxis);
             tcp.Orient(ref originPlane);
-            Point3d tcpPoint = tcp.Origin / 1000;
-            tcp.Origin = tcpPoint;
-            double[] axisAngle = SystemUR.PlaneToAxisAngle(ref tcp);
+            double[] axisAngle = _system.PlaneToNumbers(tcp);
 
             Point3d cog = tool.Centroid;
             cog.Transform(originPlane.ToTransform());
-            cog /= 1000;
+            cog = cog.ToMeters();
 
             code.Add(indent + $"{tool.Name}Tcp = p[{axisAngle[0]:0.#####}, {axisAngle[1]:0.#####}, {axisAngle[2]:0.#####}, {axisAngle[3]:0.#####}, {axisAngle[4]:0.#####}, {axisAngle[5]:0.#####}]");
             code.Add(indent + $"{tool.Name}Weight = {tool.Weight:0.###}");
@@ -51,13 +49,13 @@ class URScriptPostProcessor
 
         foreach (var speed in attributes.OfType<Speed>())
         {
-            double linearSpeed = speed.TranslationSpeed / 1000;
+            double linearSpeed = speed.TranslationSpeed.ToMeters();
             code.Add(indent + $"{speed.Name} = {linearSpeed:0.#####}");
         }
 
         foreach (var zone in attributes.OfType<Zone>())
         {
-            double zoneDistance = zone.Distance / 1000;
+            double zoneDistance = zone.Distance.ToMeters();
             code.Add(indent + $"{zone.Name} = {zoneDistance:0.#####}");
         }
 
@@ -120,7 +118,7 @@ class URScriptPostProcessor
 
                     case Motions.Linear:
                         {
-                            double linearAccel = target.Speed.TranslationAccel / 1000;
+                            double linearAccel = target.Speed.TranslationAccel.ToMeters();
 
                             string speed = target.Speed.Time > 0 ?
                                 $"t={target.Speed.Time: 0.####}" :

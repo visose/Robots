@@ -53,7 +53,7 @@ DEFDAT {_program.Name}_{groupName} PUBLIC"
             code.Add(Frame(frame));
 
         foreach (var speed in attributes.OfType<Speed>())
-            code.Add($"DECL GLOBAL REAL {speed.Name} = {speed.TranslationSpeed / 1000:0.#####}");
+            code.Add($"DECL GLOBAL REAL {speed.Name} = {speed.TranslationSpeed.ToMeters():0.#####}");
 
         foreach (var zone in attributes.OfType<Zone>())
         {
