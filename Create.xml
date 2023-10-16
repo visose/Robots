@@ -37,7 +37,7 @@
       <Track model="KL4000" manufacturer="KUKA" payload="1000" movesRobot="true">
         <Base x="0" y="0" z="0.000" q1="0.000" q2="0.000" q3="0.000" q4="1.000" />
         <Joints>
-          <Prismatic number="7" a="0" d="689" minrange="0" maxrange="-6000" maxspeed="1890" />
+          <Prismatic number="7" a="0" d="689" minrange="0" maxrange="-5000" maxspeed="1890" />
           <!-- <Prismatic number="7" a="-531.93" d="689" minrange="0" maxrange="-6000" maxspeed="1890" /> -->
         </Joints>
       </Track>
