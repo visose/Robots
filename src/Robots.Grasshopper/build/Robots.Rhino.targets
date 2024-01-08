@@ -1,14 +1,14 @@
 <Project>
 
-	<Target Name="RemoveRobotsReferences" AfterTargets="AfterResolveReferences">
-		<ItemGroup>
-			<ReferenceCopyLocalPaths
-				Remove="@(ReferenceCopyLocalPaths)"
-				Condition="
-				%(ReferenceCopyLocalPaths.FileName) == 'Robots' 
-				or %(ReferenceCopyLocalPaths.FileName) == 'Robots.Grasshopper'"
-				/>
-		</ItemGroup>
-	</Target>
+  <Target Name="RemoveRobotsReferences" AfterTargets="AfterResolveReferences">
+    <ItemGroup>
+      <ReferenceCopyLocalPaths
+          Remove="@(ReferenceCopyLocalPaths)"
+          Condition="
+            %(ReferenceCopyLocalPaths.FileName) == 'Robots' 
+            or %(ReferenceCopyLocalPaths.FileName) == 'Robots.Grasshopper'"
+/>
+    </ItemGroup>
+  </Target>
 
 </Project>

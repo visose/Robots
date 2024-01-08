@@ -24,7 +24,7 @@
     <AnalysisLevel>latest</AnalysisLevel>
     <NoWarn>MSB3270</NoWarn>
     <RootDir>$(MSBuildThisFileDirectory)</RootDir>
-    <ArtifactsPath>$(RootDir)artifacts\</ArtifactsPath>
+    <ArtifactsPath>$(RootDir)artifacts</ArtifactsPath>
   </PropertyGroup>
 
 </Project>

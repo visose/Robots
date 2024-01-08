@@ -23,7 +23,7 @@ app.Add(
         new Yak
         (
             props: props,
-            sourceFolder: "artifacts/bin/Robots.Grasshopper/net48",
+            sourceFolder: "artifacts/bin/Robots.Grasshopper/release",
             files:
             [
                 "Robots.dll",

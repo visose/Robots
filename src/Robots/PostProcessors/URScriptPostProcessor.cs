@@ -12,7 +12,7 @@ class URScriptPostProcessor
     {
         _system = system;
         _program = program;
-        var groupCode = new List<List<string>> { Program() };
+        List<List<string>> groupCode = [Program()];
         Code = [groupCode];
 
         // MultiFile warning
@@ -23,10 +23,10 @@ class URScriptPostProcessor
     List<string> Program()
     {
         string indent = "  ";
-        var code = new List<string>
-                {
-                    "def Program():"
-                };
+        List<string> code =
+        [
+            "def Program():"
+        ];
 
         // Attribute declarations
         var attributes = _program.Attributes;

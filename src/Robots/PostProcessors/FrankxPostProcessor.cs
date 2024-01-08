@@ -1,3 +1,4 @@
+using Rhino;
 using Rhino.Geometry;
 using static System.Math;
 
@@ -75,10 +76,9 @@ def program():
             code.Add(_indent + commands);
         }
 
-        code.Add("  robot.acceleration_rel = dynamic_rel\r\n  robot.jerk_rel = dynamic_rel");
-
         Motions? currentMotion = null;
         Tool? currentTool = null;
+        double? currentAccel = null;
 
         // Targets
 
@@ -89,16 +89,30 @@ def program():
 
             var beforeCommands = programTarget.Commands.Where(c => c.RunBefore);
 
-            if (currentMotion is not null && beforeCommands.Any())
-                MotionMove();
-
-            foreach (var command in beforeCommands)
+            if (beforeCommands.Any())
             {
-                string commands = command.Code(_program, target);
-                code.Add(_indent + commands);
+                if (currentMotion is not null)
+                    MotionMove();
+
+                foreach (var command in beforeCommands)
+                {
+                    string commands = command.Code(_program, target);
+                    code.Add(_indent + commands);
+                }
             }
 
-            double speed = GetSpeed(systemTarget);
+            var accel = GetAccel(systemTarget);
+
+            if (accel != currentAccel)
+            {
+                if (currentMotion is not null)
+                    MotionMove();
+
+                code.Add($"  dynamic_rel = {accel:0.#####}\r\n  robot.acceleration_rel = dynamic_rel\r\n  robot.jerk_rel = dynamic_rel");
+                currentAccel = accel;
+            }
+
+            var speed = GetSpeed(systemTarget);
 
             if (target is JointTarget joint)
             {
@@ -200,6 +214,13 @@ program()
     {
         double[] n = _system.PlaneToNumbers(plane);
         return $"Affine({n[0]:0.#####}, {n[1]:0.#####}, {n[2]:0.#####}, {n[3]:0.#####}, {n[4]:0.#####}, {n[5]:0.#####}, {n[6]:0.#####})";
+    }
+
+    static double GetAccel(SystemTarget systemTarget)
+    {
+        var programTarget = systemTarget.ProgramTargets[0];
+        var speed = programTarget.Target.Speed;
+        return RhinoMath.Clamp(speed.AxisAccel / (4 * PI), 0, 1);
     }
 
     static double GetSpeed(SystemTarget systemTarget)

@@ -27,12 +27,12 @@ public class Speed(double translation = 100, double rotationSpeed = PI, double t
     /// </summary>
     public double TranslationAccel { get; set; } = 1000;
     /// <summary>
-    /// Axis/join acceleration in rads/s² (used in UR, Doosan)
+    /// Axis/joint acceleration in rads/s² (used in UR, Doosan, and Franka Emika)
     /// </summary>
     public double AxisAccel { get; set; } = PI;
 
     /// <summary>
-    /// Time in seconds it takes to reach the target. Optional parameter (used in UR)
+    /// Time in seconds it takes to reach the target. Optional parameter (used in UR and Doosan)
     /// </summary>
     public double Time { get; set; }
 

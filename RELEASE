@@ -2,6 +2,8 @@
   changes:
   - Fixed UR FromPlane wrong units
   - Added remark when Get/FromPlane robot system input disconnected
+  - New Speed component with accel inputs and a higher default accel.
+  - Franka Emika can use the axis accel input for dynamic_rel.
 
 - version: 1.6.6
   changes:

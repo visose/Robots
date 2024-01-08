@@ -1,12 +1,13 @@
-﻿using System.Drawing;
+using System.Drawing;
 using static System.Math;
 
 namespace Robots.Grasshopper;
 
+[Obsolete("Replace with the new CreateSpeed component")]
 public class CreateSpeed : GH_Component
 {
     public CreateSpeed() : base("Create speed", "Speed", "Creates a target speed.", "Robots", "Components") { }
-    public override GH_Exposure Exposure => GH_Exposure.tertiary;
+    public override GH_Exposure Exposure => GH_Exposure.hidden;
     public override Guid ComponentGuid => new("{BD11418C-74E1-4B13-BE1A-AF105906E1BC}");
     protected override Bitmap Icon => Util.GetIcon("iconSpeed");
 

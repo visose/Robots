@@ -19,10 +19,10 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Assets\Embed\**\*" />
-    <None Include="$(RootDir)build\Assets\iconRhino128.png" Pack="true" PackagePath="" />
+    <None Include="$(RootDir)build\Assets\iconRhino128.png" Pack="true" PackagePath="" Visible="false"/>
     <None Include="$(RootDir)build\Assets\iconRobot.png" CopyToOutputDirectory="PreserveNewest" Visible="false" />
     <None Include="Build\Robots.Rhino.targets" Pack="true" PackagePath="buildTransitive" />
-    <None Include="$(TargetDir)$(Product).dll" Pack="true" PackagePath="lib\net48" />
+    <None Include="$(TargetDir)$(Product).dll" Pack="true" PackagePath="lib\net48" Visible="false"/>
   </ItemGroup>
 
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows)) and $(Configuration) == 'Debug'">
