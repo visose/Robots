@@ -1,7 +1,7 @@
 <div align="center">
     
 # ![Robots](../docs/Images/iconRobot.svg)<br/>robots
-**Create and simulate ABB, KUKA, UR and Staubli robot programs**
+**Create and simulate ABB, KUKA, UR, Staubli, Doosan and Franka Emika robot programs**
 
 [![License](https://img.shields.io/github/license/visose/Robots?style=flat-square)](../LICENSE)
 [![NuGet package](https://img.shields.io/nuget/v/robots?style=flat-square)](https://www.nuget.org/packages?q=visose+robots)
@@ -19,13 +19,13 @@
 
 ## About
 
-**Robots** is a plugin for **[Rhino's](https://www.rhino3d.com/)** **Grasshopper** visual programming interface. It allows users to create and simulate robot programs for **ABB**, **KUKA**, **UR** and **Staubli** robots. It works in **Rhino 7** for **Windows** and **MacOS**.
+**Robots** is a plugin for **[Rhino's](https://www.rhino3d.com/)** **Grasshopper** visual programming interface. It allows users to create and simulate robot programs for **ABB**, **KUKA**, **UR**, **Staubli**, **Doosan**, and **Franka Emika** robots. It works in **Rhino 7** and **8** for **Windows** and **MacOS**.
 
 ## Install
 
 > If upgrading from an old version check [here](../../../wiki/home#Upgrading-from-an-older-version).
 
-1. Install in **Rhino 7** using the `_PackageManager` command, search for `Robots`.   
+1. Install in **Rhino 7** or **8** using the `_PackageManager` command, search for `Robots`.   
 1. Restart **Rhino** and open **Grasshopper**. There should be a new tab in **Grasshopper** named `Robots`.
 1. Install a robot library by clicking on the `Libraries` button of a `Load robot system` component.
    > The robots from the library should appear in a **value list** connected to a `Load robot system` component.

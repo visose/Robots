@@ -23,10 +23,12 @@ body:
     id: rhinoVersion
     attributes:
       label: What Rhino version are you using?
-      description: Only Rhino 7 for Windows and MacOS are supported.
+      description: Only Rhino 7 and 8 for Windows and MacOS are supported.
       options:
-        - Rhino 7 on Windows
-        - Rhino 7 on MacOS
+        - Rhino 7 for Windows
+        - Rhino 7 for MacOS
+        - Rhino 8 for Windows
+        - Rhino 8 for MacOS
         - Other
     validations:
       required: true
@@ -56,7 +58,7 @@ body:
     attributes:
       label: Anything else?
       description: |
-        Links, references, or anything that will give us more context about the issue you are encountering!        
+        Links, references, or anything that will give us more context about the issue you are encountering!
         Tip: You can attach images or log files by clicking this area to highlight it and then dragging files in.
     validations:
       required: false
