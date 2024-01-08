@@ -16,7 +16,7 @@ class FrankxPostProcessor
         _system = system;
         _program = program;
         var groupCode = new List<List<string>> { Program() };
-        Code = new List<List<List<string>>> { groupCode };
+        Code = [groupCode];
 
         // MultiFile warning
         if (program.MultiFileIndices.Count > 1)

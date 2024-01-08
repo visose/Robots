@@ -3,17 +3,11 @@ using System.Text;
 
 namespace Robots;
 
-class RemoteURSecondaryClient : IRemoteURBackend
+class RemoteURSecondaryClient(string ip, Action<string> log) : IRemoteURBackend
 {
     const int _secondaryPort = 30002;
-    readonly string _ip;
-    readonly Action<string> _log;
-
-    public RemoteURSecondaryClient(string ip, Action<string> log)
-    {
-        _ip = ip;
-        _log = log;
-    }
+    readonly string _ip = ip;
+    readonly Action<string> _log = log;
 
     public void Upload(IProgram program)
     {

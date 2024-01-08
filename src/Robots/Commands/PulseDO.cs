@@ -1,16 +1,10 @@
 namespace Robots.Commands;
 
-public class PulseDO : Command
+public class PulseDO(int @do, double length = 0.2) : Command
 {
-    public int DO { get; }
+    public int DO { get; } = @do;
 
-    readonly double _length;
-
-    public PulseDO(int @do, double length = 0.2)
-    {
-        DO = @do;
-        _length = length;
-    }
+    readonly double _length = length;
 
     protected override void ErrorChecking(RobotSystem robotSystem)
     {

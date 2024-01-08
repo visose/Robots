@@ -50,7 +50,7 @@ class VAL3PostProcessor
     {
         _system = system;
         _program = program;
-        Code = new List<List<List<string>>>();
+        Code = [];
 
         int groupCount = _system.MechanicalGroups.Count;
 
@@ -278,8 +278,8 @@ class VAL3PostProcessor
             }
         }
 
-        var jointsData = VAL3Syntax.Data("joints", "jointRx", joints.ToArray());
-        var pointsData = VAL3Syntax.Data("points", "pointRx", points.ToArray());
+        var jointsData = VAL3Syntax.Data("joints", "jointRx", [.. joints]);
+        var pointsData = VAL3Syntax.Data("points", "pointRx", [.. points]);
 
         return $"{jointsData}\r\n{pointsData}";
     }

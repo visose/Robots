@@ -1,24 +1,14 @@
 ﻿
 namespace Robots;
 
-public class IO
+public class IO(Manufacturers manufacturer, bool useControllerNumbering, string[] @do, string[] di, string[] ao, string[] ai)
 {
-    private readonly Manufacturers _manufacturer;
-    public string[] DO { get; }
-    public string[] DI { get; }
-    public string[] AO { get; }
-    public string[] AI { get; }
-    public bool UseControllerNumbering { get; }
-
-    public IO(Manufacturers manufacturer, bool useControllerNumbering, string[] @do, string[] di, string[] ao, string[] ai)
-    {
-        _manufacturer = manufacturer;
-        UseControllerNumbering = useControllerNumbering;
-        DO = @do;
-        DI = di;
-        AO = ao;
-        AI = ai;
-    }
+    private readonly Manufacturers _manufacturer = manufacturer;
+    public string[] DO { get; } = @do;
+    public string[] DI { get; } = di;
+    public string[] AO { get; } = ao;
+    public string[] AI { get; } = ai;
+    public bool UseControllerNumbering { get; } = useControllerNumbering;
 
     internal void CheckBounds(int index, string[] array)
     {

@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Rhino.FileIO;
 using Rhino.Geometry;
 using Rhino.DocObjects;
@@ -120,7 +120,7 @@ public static class File3dmCleaner
 
             // save
 
-            if (!delete.Any() && !modify.Any() && !blocks.Any() && !materials.Any() && !emptyLayers.Any())
+            if (delete.Count == 0 && modify.Count == 0 && blocks.Count == 0 && materials.Count == 0 && emptyLayers.Count == 0)
                 continue;
 
             var options = new File3dmWriteOptions();

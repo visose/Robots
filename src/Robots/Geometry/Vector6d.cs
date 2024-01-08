@@ -81,6 +81,6 @@ public struct Vector6d
 
     public readonly double[] ToArray()
     {
-        return new double[] { A1, A2, A3, A4, A5, A6 };
+        return [A1, A2, A3, A4, A5, A6];
     }
 }

@@ -4,7 +4,7 @@ namespace Robots;
 
 public abstract class Target : IToolpath
 {
-    public static Target Default { get; } = new JointTarget(new double[] { 0, HalfPI, 0, 0, 0, 0 });
+    public static Target Default { get; } = new JointTarget([0, HalfPI, 0, 0, 0, 0]);
 
     public Tool Tool { get; set; }
     public Frame Frame { get; set; }
@@ -23,7 +23,7 @@ public abstract class Target : IToolpath
         Zone = zone ?? Zone.Default;
         Frame = frame ?? Frame.Default;
         Command = command ?? Command.Default;
-        External = (external is not null) ? external.ToArray() : Array.Empty<double>();
+        External = (external is not null) ? external.ToArray() : [];
     }
 
     public void AppendCommand(Command command)

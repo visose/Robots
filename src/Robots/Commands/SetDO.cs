@@ -1,15 +1,9 @@
 namespace Robots.Commands;
 
-public class SetDO : Command
+public class SetDO(int @do, bool value) : Command
 {
-    public int DO { get; }
-    public bool Value { get; }
-
-    public SetDO(int @do, bool value)
-    {
-        DO = @do;
-        Value = value;
-    }
+    public int DO { get; } = @do;
+    public bool Value { get; } = value;
 
     protected override void ErrorChecking(RobotSystem robotSystem)
     {

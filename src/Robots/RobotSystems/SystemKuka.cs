@@ -10,7 +10,7 @@ public class SystemKuka : IndustrialSystem
     {
         var t = plane.ToTransform();
         var e = t.ToEulerZYX();
-        return new[] { e.A1, e.A2, e.A3, e.A4.ToDegrees(), e.A5.ToDegrees(), e.A6.ToDegrees() };
+        return [e.A1, e.A2, e.A3, e.A4.ToDegrees(), e.A5.ToDegrees(), e.A6.ToDegrees()];
     }
 
     public override Plane NumbersToPlane(double[] numbers)

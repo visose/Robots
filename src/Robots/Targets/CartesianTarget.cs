@@ -6,19 +6,11 @@ namespace Robots;
 public enum RobotConfigurations { None = 0, Shoulder = 1, Elbow = 2, Wrist = 4, Undefined = 8 }
 public enum Motions { Joint, Linear, Circular, Spline }
 
-public class CartesianTarget : Target
+public class CartesianTarget(Plane plane, RobotConfigurations? configuration = null, Motions motion = Motions.Joint, Tool? tool = null, Speed? speed = null, Zone? zone = null, Command? command = null, Frame? frame = null, IEnumerable<double>? external = null) : Target(tool, speed, zone, command, frame, external)
 {
-    public Plane Plane { get; set; }
-    public RobotConfigurations? Configuration { get; set; }
-    public Motions Motion { get; set; }
-
-    public CartesianTarget(Plane plane, RobotConfigurations? configuration = null, Motions motion = Motions.Joint, Tool? tool = null, Speed? speed = null, Zone? zone = null, Command? command = null, Frame? frame = null, IEnumerable<double>? external = null)
-        : base(tool, speed, zone, command, frame, external)
-    {
-        Plane = plane;
-        Motion = motion;
-        Configuration = configuration;
-    }
+    public Plane Plane { get; set; } = plane;
+    public RobotConfigurations? Configuration { get; set; } = configuration;
+    public Motions Motion { get; set; } = motion;
 
     public CartesianTarget(Plane plane, Target target, RobotConfigurations? configuration = null, Motions motion = Motions.Joint, IEnumerable<double>? external = null)
         : this(plane, configuration, motion, target.Tool, target.Speed, target.Zone, target.Command, target.Frame, external ?? target.External) { }

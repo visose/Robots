@@ -17,7 +17,7 @@ public class ToolpathParameter : GH_PersistentParam<GH_Toolpath>
 
     protected override GH_GetterResult Prompt_Plural(ref List<GH_Toolpath> values)
     {
-        values = new List<GH_Toolpath>();
+        values = [];
         return GH_GetterResult.success;
     }
 }

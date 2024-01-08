@@ -17,7 +17,7 @@ public class JointsParameter : GH_PersistentParam<GH_Joints>
 
     protected override GH_GetterResult Prompt_Plural(ref List<GH_Joints> values)
     {
-        values = new List<GH_Joints>();
+        values = [];
         return GH_GetterResult.success;
     }
 }

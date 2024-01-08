@@ -13,8 +13,8 @@ class DrlPostProcessor
         _system = system;
         _program = program;
 
-        List<List<string>> groupCode = new();
-        Code = new() { groupCode };
+        List<List<string>> groupCode = [];
+        Code = [groupCode];
 
         var declaration = Declaration();
         var initCommands = InitCommands();
@@ -23,17 +23,14 @@ class DrlPostProcessor
 
         if (!isMultiProgram)
         {
-            List<string> code = new();
-            code.AddRange(declaration);
-            code.AddRange(initCommands);
-            code.AddRange(Program(_program.Targets));
+            List<string> code = [.. declaration, .. initCommands, .. Program(_program.Targets)];
 
             groupCode.Add(code);
         }
         else
         {
             {
-                List<string> code = new();
+                List<string> code = [];
 
                 for (int i = 1; i <= program.MultiFileIndices.Count; i++)
                     code.Add($"sub_program_run(\"{SystemDoosan.SubProgramName(program.Name, i)}\")");
@@ -48,10 +45,10 @@ class DrlPostProcessor
                     : program.MultiFileIndices[i + 1];
 
                 var targets = program.Targets.Skip(a).Take(b - a);
-                List<string> code = new()
-                {
+                List<string> code =
+                [
                     "from DRCF import *"
-                };
+                ];
 
                 if (i == 0)
                     code.AddRange(initCommands);
@@ -66,7 +63,7 @@ class DrlPostProcessor
 
     List<string> Declaration()
     {
-        List<string> code = new();
+        List<string> code = [];
 
         // Attribute declarations
         var attributes = _program.Attributes;
@@ -128,7 +125,7 @@ class DrlPostProcessor
 
     List<string> Program(IEnumerable<SystemTarget> systemTargets)
     {
-        List<string> code = new();
+        List<string> code = [];
         Tool? currentTool = null;
 
         // Targets

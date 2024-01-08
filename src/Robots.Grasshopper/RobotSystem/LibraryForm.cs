@@ -98,7 +98,7 @@ class LibraryForm : ComponentForm
         var selected = _grid.SelectedItem as LibraryItem;
         _grid.DataStore = ordered;
 
-        if (!ordered.Any())
+        if (ordered.Count == 0)
             return;
 
         int index = selected is null

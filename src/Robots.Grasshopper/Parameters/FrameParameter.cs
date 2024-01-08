@@ -17,7 +17,7 @@ public class FrameParameter : GH_PersistentParam<GH_Frame>
 
     protected override GH_GetterResult Prompt_Plural(ref List<GH_Frame> values)
     {
-        values = new List<GH_Frame>();
+        values = [];
         return GH_GetterResult.success;
     }
 }

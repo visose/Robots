@@ -102,7 +102,7 @@ public class URRealTimeDataExchange : IDisposable
     bool _isDisposed;
 
     public VariableOutput[] Outputs { get; }
-    public List<string> Log { get; } = new();
+    public List<string> Log { get; } = [];
 
     public URRealTimeDataExchange(string IP, IList<string> variables)
     {
@@ -269,7 +269,7 @@ public class URRealTimeDataExchange : IDisposable
     void WriteStartPackage()
     {
         var type = PackageType.RTDE_CONTROL_PACKAGE_START;
-        WritePackage(type, Array.Empty<byte>());
+        WritePackage(type, []);
         bool accepted = _reader.ReadByte() == 1;
 
         AddLog($"{type}: {(accepted ? "accepted" : "denied")}");

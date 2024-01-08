@@ -1,15 +1,9 @@
 namespace Robots.Commands;
 
-public class SetAO : Command
+public class SetAO(int ao, double value) : Command
 {
-    public int AO { get; }
-    public double Value { get; }
-
-    public SetAO(int ao, double value)
-    {
-        AO = ao;
-        Value = value;
-    }
+    public int AO { get; } = ao;
+    public double Value { get; } = value;
 
     protected override void ErrorChecking(RobotSystem robotSystem)
     {

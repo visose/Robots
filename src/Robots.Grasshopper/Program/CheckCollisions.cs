@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using Grasshopper.Kernel.Types;
 using static System.Math;
 
@@ -14,8 +14,8 @@ public class CheckCollisions : GH_Component
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program", GH_ParamAccess.item);
-        pManager.AddIntegerParameter("First set", "A", "First set of objects. Input a list of index values that correspond to the first collision group. The order is the same as the meshes output of the kinematics component. The environment would be an additional last mesh.", GH_ParamAccess.list, new int[] { 7 });
-        pManager.AddIntegerParameter("Second set", "B", "Second set of objects. Input a list of index values that correspond to the second collision group. The order is the same as the meshes output of the kinematics component. The environment would be an additional last mesh.", GH_ParamAccess.list, new int[] { 4 });
+        pManager.AddIntegerParameter("First set", "A", "First set of objects. Input a list of index values that correspond to the first collision group. The order is the same as the meshes output of the kinematics component. The environment would be an additional last mesh.", GH_ParamAccess.list, [7]);
+        pManager.AddIntegerParameter("Second set", "B", "Second set of objects. Input a list of index values that correspond to the second collision group. The order is the same as the meshes output of the kinematics component. The environment would be an additional last mesh.", GH_ParamAccess.list, [4]);
         pManager.AddMeshParameter("Environment", "E", "Single mesh object representing the environment", GH_ParamAccess.item);
         pManager.AddIntegerParameter("Environment plane", "P", "If attached to the robot, plane index where the environment is attached to", GH_ParamAccess.item, -1);
         pManager.AddNumberParameter("Linear step size", "Ls", "Linear step size in mm to check for collisions", GH_ParamAccess.item, 100);

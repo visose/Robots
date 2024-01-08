@@ -10,15 +10,14 @@ public interface IToolpath
 
 public class SimpleToolpath : IToolpath, IEnumerable<Target>
 {
-    protected List<Target> _targets = new();
+    protected List<Target> _targets = [];
     public IEnumerable<Target> Targets => _targets;
 
     public SimpleToolpath() { }
 
     public SimpleToolpath(IEnumerable<IToolpath> toolpaths)
     {
-        _targets = new List<Target>();
-        _targets.AddRange(toolpaths.SelectMany(t => t.Targets));
+        _targets = [.. toolpaths.SelectMany(t => t.Targets)];
     }
 
     public void Add(Target target)
@@ -31,7 +30,7 @@ public class SimpleToolpath : IToolpath, IEnumerable<Target>
 
     public IToolpath ShallowClone(List<Target>? targets = null)
     {
-        targets ??= _targets.ToList();
+        targets ??= [.. _targets];
 
         var clone = (SimpleToolpath)MemberwiseClone();
         clone._targets = targets;

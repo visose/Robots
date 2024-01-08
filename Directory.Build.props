@@ -24,9 +24,7 @@
     <AnalysisLevel>latest</AnalysisLevel>
     <NoWarn>MSB3270</NoWarn>
     <RootDir>$(MSBuildThisFileDirectory)</RootDir>
-    <ArtifactsDir>$(RootDir)artifacts\</ArtifactsDir>
-    <OutputPath>$(ArtifactsDir)bin\$(MSBuildProjectName)</OutputPath>
-    <BaseIntermediateOutputPath>$(ArtifactsDir)obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <ArtifactsPath>$(RootDir)artifacts\</ArtifactsPath>
   </PropertyGroup>
 
 </Project>

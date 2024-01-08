@@ -14,7 +14,7 @@ public class Collision
         throw NotImplemented();
     }
 
-    Exception NotImplemented() => new NotImplementedException(" Collisions not implemented in standalone.");
+    static NotImplementedException NotImplemented() => new(" Collisions not implemented in standalone.");
 }
 
 #elif NET48
@@ -113,7 +113,7 @@ public class Collision
 
                 if (meshClash.Length > 0 && (CollisionTarget is null || CollisionTarget.Index > systemTarget.Index))
                 {
-                    Meshes = new Mesh[] { meshClash[0].MeshA, meshClash[0].MeshB };
+                    Meshes = [meshClash[0].MeshA, meshClash[0].MeshB];
                     CollisionTarget = systemTarget;
                     state.Break();
                 }

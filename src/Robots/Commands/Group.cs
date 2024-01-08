@@ -4,7 +4,7 @@ namespace Robots.Commands;
 
 public class Group : Command, IList<Command>
 {
-    readonly List<Command> _commandList = new();
+    readonly List<Command> _commandList = [];
 
     public Group() { }
 

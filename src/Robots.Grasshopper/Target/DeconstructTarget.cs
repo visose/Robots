@@ -6,8 +6,8 @@ namespace Robots.Grasshopper;
 public sealed class DeconstructTarget : GH_Component, IGH_VariableParameterComponent
 {
     // Variable outputs
-    readonly IGH_Param[] _parameters = new IGH_Param[10]
-    {
+    readonly IGH_Param[] _parameters =
+    [
             new JointsParameter() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false },
             new Param_Plane() { Name = "Plane", NickName = "P", Description = "Target plane", Optional = false },
             new Param_Integer() { Name = "RobConf", NickName = "Cf", Description = "Robot configuration", Optional = true },
@@ -18,7 +18,7 @@ public sealed class DeconstructTarget : GH_Component, IGH_VariableParameterCompo
             new CommandParameter() { Name = "Command", NickName = "C", Description = "Robot command", Optional = true },
             new FrameParameter() { Name = "Frame", NickName = "F", Description = "Base frame", Optional = true },
             new JointsParameter() { Name = "External", NickName = "E", Description = "External axes", Optional = true }
-    };
+    ];
 
     public DeconstructTarget() : base("Deconstruct target", "DeTarget", "Deconstructs a target. Right click for additional outputs.", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.secondary;

@@ -9,7 +9,7 @@ public class RemoteFranka : IRemote
     string? _uploadedFile;
 
     public Action? Update { get; set; }
-    public List<string> Log { get; } = new();
+    public List<string> Log { get; } = [];
 
     CancellationTokenSource? _cancelToken;
     Task? _task;
@@ -109,7 +109,7 @@ public class RemoteFranka : IRemote
     void SendPrivate(string message)
     {
         if (_user is null)
-            throw new ArgumentNullException(nameof(_user), "IP not set.");
+            throw new("IP not set.");
 
         var (ip, username, password, _) = _user;
 
@@ -130,7 +130,7 @@ public class RemoteFranka : IRemote
             using var command = client.CreateCommand(message);
             var async = command.BeginExecute();
 
-            var reader = new StreamReader(command.OutputStream);
+            StreamReader reader = new(command.OutputStream);
 
             while (!async.IsCompleted)
             {

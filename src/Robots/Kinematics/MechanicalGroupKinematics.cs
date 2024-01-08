@@ -93,7 +93,7 @@ class MechanicalGroupKinematics
         toolPlane.Orient(ref lastPlane);
         planes.Add(toolPlane);
 
-        solution.Planes = planes.ToArray();
+        solution.Planes = [.. planes];
         return solution;
     }
 }

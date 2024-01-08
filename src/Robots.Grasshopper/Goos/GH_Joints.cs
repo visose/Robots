@@ -4,7 +4,7 @@ namespace Robots.Grasshopper;
 
 public class GH_Joints : GH_Goo<double[]>
 {
-    public GH_Joints() { Value = Array.Empty<double>(); }
+    public GH_Joints() { Value = []; }
     public GH_Joints(GH_Joints goo) { Value = goo.Value; }
     public GH_Joints(double[] native) { Value = native; }
     public override IGH_Goo Duplicate() => new GH_Joints(this);
@@ -18,13 +18,13 @@ public class GH_Joints : GH_Goo<double[]>
         switch (source)
         {
             case GH_Number number:
-                Value = new[] { number.Value };
+                Value = [number.Value];
                 return true;
             case GH_String text:
                 {
                     if (string.IsNullOrWhiteSpace(text.Value))
                     {
-                        Value = Array.Empty<double>();
+                        Value = [];
                         return true;
                     }
 

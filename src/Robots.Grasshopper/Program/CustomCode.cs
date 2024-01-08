@@ -1,4 +1,4 @@
-﻿using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Data;
 
 namespace Robots.Grasshopper;
@@ -36,9 +36,9 @@ public class CustomCode : GH_Component
         }
 
         var code = new List<List<List<string>>>
-            {
-                new List<List<string>>()
-            };
+        {
+            new()
+        };
 
         foreach (var branch in codeTree.Branches)
         {

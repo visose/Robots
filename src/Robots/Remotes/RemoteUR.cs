@@ -33,7 +33,7 @@ public class RemoteUR : IRemote
         }
     }
 
-    public List<string> Log { get; } = new List<string>();
+    public List<string> Log { get; } = [];
 
     public void Pause()
     {

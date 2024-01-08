@@ -3,17 +3,11 @@ using System.Text;
 
 namespace Robots;
 
-class RemoteURFtp : IRemoteURBackend
+class RemoteURFtp(User user, Action<string> log) : IRemoteURBackend
 {
     const int _dashboardPort = 29999;
-    readonly Action<string> _log;
-    readonly User _user;
-
-    public RemoteURFtp(User user, Action<string> log)
-    {
-        _log = log;
-        _user = user;
-    }
+    readonly Action<string> _log = log;
+    readonly User _user = user;
 
     public void Upload(IProgram program)
     {

@@ -1,13 +1,8 @@
 namespace Robots.Commands;
 
-public class Message : Command
+public class Message(string message) : Command
 {
-    readonly string _message;
-
-    public Message(string message)
-    {
-        _message = message;
-    }
+    readonly string _message = message;
 
     protected override void Populate()
     {

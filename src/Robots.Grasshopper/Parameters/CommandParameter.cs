@@ -17,7 +17,7 @@ public class CommandParameter : GH_PersistentParam<GH_Command>
 
     protected override GH_GetterResult Prompt_Plural(ref List<GH_Command> values)
     {
-        values = new List<GH_Command>();
+        values = [];
         return GH_GetterResult.success;
     }
 }

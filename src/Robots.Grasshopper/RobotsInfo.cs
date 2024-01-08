@@ -36,7 +36,7 @@ public class RobotsInfo : GH_AssemblyInfo
     static string[] GetCompany()
     {
         var company = GetInfo<AssemblyCompanyAttribute>().Company;
-        return company.Split(new[] { " - " }, StringSplitOptions.None);
+        return company.Split([" - "], StringSplitOptions.None);
     }
 
     void FixScriptReferences(GH_DocumentServer sender, GH_Document doc)
@@ -50,7 +50,7 @@ public class RobotsInfo : GH_AssemblyInfo
             IList<string> references = script.ScriptSource.References;
             var robotsRefs = references.Where(f => f.Contains("Robots.dll")).ToList();
 
-            if (!robotsRefs.Any())
+            if (robotsRefs.Count == 0)
                 continue;
 
             foreach (var reference in robotsRefs)
@@ -77,7 +77,7 @@ public class RobotsInfo : GH_AssemblyInfo
                 .Where(v => v is not LibraryParam)
                 .ToList();
 
-            var selected = (valueLists.FirstOrDefault(v => v.SelectedItems.Any())?.FirstSelectedItem.Value as GH_String)?.Value;
+            var selected = (valueLists.FirstOrDefault(v => v.SelectedItems.Count != 0)?.FirstSelectedItem.Value as GH_String)?.Value;
 
             foreach (var valueList in valueLists)
                 doc.RemoveObject(valueList, true);

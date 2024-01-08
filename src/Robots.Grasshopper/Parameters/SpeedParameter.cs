@@ -17,7 +17,7 @@ public class SpeedParameter : GH_PersistentParam<GH_Speed>
 
     protected override GH_GetterResult Prompt_Plural(ref List<GH_Speed> values)
     {
-        values = new List<GH_Speed>();
+        values = [];
         return GH_GetterResult.success;
     }
 }

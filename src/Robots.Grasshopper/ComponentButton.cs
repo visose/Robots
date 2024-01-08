@@ -6,21 +6,15 @@ using Grasshopper.GUI.Canvas;
 
 namespace Robots.Grasshopper;
 
-class ComponentButton : GH_ComponentAttributes
+class ComponentButton(GH_Component owner, string label, Action action) : GH_ComponentAttributes(owner)
 {
     const int _buttonSize = 18;
 
-    readonly string _label;
-    readonly Action _action;
+    readonly string _label = label;
+    readonly Action _action = action;
 
     RectangleF _buttonBounds;
     bool _mouseDown;
-
-    public ComponentButton(GH_Component owner, string label, Action action) : base(owner)
-    {
-        _label = label;
-        _action = action;
-    }
 
     protected override void Layout()
     {

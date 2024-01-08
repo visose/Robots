@@ -2,23 +2,14 @@
 
 namespace Robots;
 
-public class SimpleTrail
+public class SimpleTrail(Program program, double maxLength, int mechanicalGroup = 0)
 {
-    readonly Program _program;
-    readonly int _mechanicalGroup;
-    double _time;
+    readonly Program _program = program;
+    readonly int _mechanicalGroup = mechanicalGroup;
+    double _time = program.CurrentSimulationPose.CurrentTime;
 
-    public double Length { get; set; }
-    public Polyline Polyline { get; }
-
-    public SimpleTrail(Program program, double maxLength, int mechanicalGroup = 0)
-    {
-        _program = program;
-        _mechanicalGroup = mechanicalGroup;
-        _time = program.CurrentSimulationPose.CurrentTime;
-        Length = maxLength;
-        Polyline = new Polyline();
-    }
+    public double Length { get; set; } = maxLength;
+    public Polyline Polyline { get; } = [];
 
     public void Update()
     {

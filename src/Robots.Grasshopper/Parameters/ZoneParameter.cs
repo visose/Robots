@@ -17,7 +17,7 @@ public class ZoneParameter : GH_PersistentParam<GH_Zone>
 
     protected override GH_GetterResult Prompt_Plural(ref List<GH_Zone> values)
     {
-        values = new List<GH_Zone>();
+        values = [];
         return GH_GetterResult.success;
     }
 }

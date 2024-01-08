@@ -3,21 +3,15 @@ using static Rhino.RhinoMath;
 
 namespace Robots;
 
-public class SimulationPose
+public class SimulationPose(List<KinematicSolution> kinematics, int index)
 {
-    public List<KinematicSolution> Kinematics { get; internal set; }
-    public int TargetIndex { get; internal set; }
+    public List<KinematicSolution> Kinematics { get; internal set; } = kinematics;
+    public int TargetIndex { get; internal set; } = index;
     public double CurrentTime { get; internal set; }
     public Plane GetLastPlane(int mechanicalGroupindex)
     {
         var planes = Kinematics[mechanicalGroupindex].Planes;
         return planes[planes.Length - 1];
-    }
-
-    public SimulationPose(List<KinematicSolution> kinematics, int index)
-    {
-        Kinematics = kinematics;
-        TargetIndex = index;
     }
 }
 

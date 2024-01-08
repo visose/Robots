@@ -38,7 +38,7 @@ public class SystemUR : CobotSystem
             && (Abs(t.M00 + t.M11 + t.M22 - 3) < epsilon2))
             {
                 // this singularity is identity matrix so angle = 0
-                return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, 0, 0, 0 }; // zero angle, arbitrary axis
+                return [plane.OriginX, plane.OriginY, plane.OriginZ, 0, 0, 0]; // zero angle, arbitrary axis
             }
             // otherwise this singularity is angle = 180
             angle = PI;
@@ -96,7 +96,7 @@ public class SystemUR : CobotSystem
             vector = new Vector3d(x, y, z);
             vector.Unitize();
             vector *= angle;
-            return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, vector.X, vector.Y, vector.Z }; // return 180 deg rotation
+            return [plane.OriginX, plane.OriginY, plane.OriginZ, vector.X, vector.Y, vector.Z]; // return 180 deg rotation
         }
         // as we have reached here there are no singularities so we can handle normally
         double s = Sqrt((t.M21 - t.M12) * (t.M21 - t.M12)
@@ -112,7 +112,7 @@ public class SystemUR : CobotSystem
         vector = new Vector3d(x, y, z);
         vector.Unitize();
         vector *= angle;
-        return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, vector.X, vector.Y, vector.Z }; // return 180 deg rotation
+        return [plane.OriginX, plane.OriginY, plane.OriginZ, vector.X, vector.Y, vector.Z]; // return 180 deg rotation
     }
 
     static Plane AxisAngleToPlane(double x, double y, double z, double vx, double vy, double vz)

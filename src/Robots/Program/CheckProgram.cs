@@ -10,7 +10,7 @@ class CheckProgram
     readonly RobotSystem _robotSystem;
     int _lastIndex;
 
-    internal List<SystemTarget> Keyframes { get; } = new List<SystemTarget>();
+    internal List<SystemTarget> Keyframes { get; } = [];
     internal List<SystemTarget> FixedTargets { get; }
 
     internal CheckProgram(Program program, List<SystemTarget> systemTarget, double stepSize)

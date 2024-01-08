@@ -4,13 +4,10 @@ using static System.Math;
 
 namespace Robots;
 
-class SphericalWristKinematics : RobotKinematics
+class SphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
 {
-    readonly double[] _start = new double[] { 0, HalfPI, HalfPI, 0, 0, PI };
-    readonly double[] _signs = new double[] { 1, -1, -1, 1, -1, 1 };
-
-    public SphericalWristKinematics(RobotArm robot)
-        : base(robot) { }
+    readonly double[] _start = [0, HalfPI, HalfPI, 0, 0, PI];
+    readonly double[] _signs = [1, -1, -1, 1, -1, 1];
 
     /// <summary>
     /// Code adapted from https://github.com/Jmeyer1292/opw_kinematics
@@ -21,7 +18,7 @@ class SphericalWristKinematics : RobotKinematics
         bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
         bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
 
-        errors = new List<string>();
+        errors = [];
         bool isUnreachable = false;
         bool isSingularity = false;
 
@@ -185,7 +182,7 @@ class SphericalWristKinematics : RobotKinematics
 
     protected override Transform[] ForwardKinematics(double[] joints)
     {
-        joints = joints.ToArray();
+        joints = [.. joints];
 
         for (int i = 0; i < 6; i++)
             joints[i] = joints[i];

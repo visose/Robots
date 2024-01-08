@@ -57,10 +57,10 @@ public class Program : IProgram
     public RobotSystem RobotSystem { get; }
     public List<SystemTarget> Targets { get; }
     public List<int> MultiFileIndices { get; }
-    public List<TargetAttribute> Attributes { get; } = new List<TargetAttribute>();
+    public List<TargetAttribute> Attributes { get; } = [];
     public List<Command> InitCommands { get; }
-    public List<string> Warnings { get; } = new List<string>();
-    public List<string> Errors { get; } = new List<string>();
+    public List<string> Warnings { get; } = [];
+    public List<string> Errors { get; } = [];
     public List<List<List<string>>>? Code { get; }
     public double Duration { get; internal set; }
 
@@ -162,10 +162,10 @@ public class Program : IProgram
 
     List<int> FixMultiFileIndices(IEnumerable<int>? multiFileIndices, int targetCount)
     {
-        if (Errors.Any())
-            return new List<int> { 0 };
+        if (Errors.Count != 0)
+            return [0];
 
-        var indices = multiFileIndices?.ToList() ?? new List<int> { 0 };
+        var indices = multiFileIndices?.ToList() ?? [0];
 
         if (indices.Count > 0)
         {
@@ -204,7 +204,7 @@ public class Program : IProgram
 
     public Collision CheckCollisions(IEnumerable<int>? first = null, IEnumerable<int>? second = null, Mesh? environment = null, int environmentPlane = 0, double linearStep = 100, double angularStep = PI / 4.0)
     {
-        return new Collision(this, first ?? new int[] { 7 }, second ?? new int[] { 4 }, environment, environmentPlane, linearStep, angularStep);
+        return new Collision(this, first ?? [7], second ?? [4], environment, environmentPlane, linearStep, angularStep);
     }
 
     public void Save(string folder) => RobotSystem.SaveCode(this, folder);
@@ -212,7 +212,7 @@ public class Program : IProgram
     public override string ToString()
     {
         int seconds = (int)Duration;
-        int milliseconds = (int)((Duration - (double)seconds) * 1000);
+        int milliseconds = (int)((Duration - seconds) * 1000);
         string format = @"hh\:mm\:ss";
         var span = new TimeSpan(0, 0, 0, seconds, milliseconds);
         return $"Program ({Name} with {Targets.Count} targets and {span.ToString(format)} (h:m:s) long)";

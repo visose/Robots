@@ -19,7 +19,7 @@ public class SystemAbb : IndustrialSystem
     public static double[] PlaneToQuaternion(Plane plane)
     {
         var q = plane.ToQuaternion();
-        return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, q.A, q.B, q.C, q.D };
+        return [plane.OriginX, plane.OriginY, plane.OriginZ, q.A, q.B, q.C, q.D];
     }
 
     public override double[] PlaneToNumbers(Plane plane) => PlaneToQuaternion(plane);
@@ -54,7 +54,7 @@ public class SystemAbb : IndustrialSystem
 
                 if (!multiProgram)
                 {
-                    code = code.ToList();
+                    code = [.. code];
                     code.AddRange(program.Code[i][1]);
                 }
 

@@ -22,7 +22,7 @@ public class SystemFranka : CobotSystem
     {
         var q = plane.ToQuaternion();
         var origin = plane.Origin.ToMeters();
-        return new double[] { origin.X, origin.Y, origin.Z, q.A, q.B, q.C, q.D };
+        return [origin.X, origin.Y, origin.Z, q.A, q.B, q.C, q.D];
     }
 
     public override Plane NumbersToPlane(double[] numbers)

@@ -1,13 +1,8 @@
 namespace Robots.Commands;
 
-public class Wait : Command
+public class Wait(double seconds) : Command
 {
-    public double Seconds { get; }
-
-    public Wait(double seconds)
-    {
-        Seconds = seconds;
-    }
+    public double Seconds { get; } = seconds;
 
     protected override void Populate()
     {

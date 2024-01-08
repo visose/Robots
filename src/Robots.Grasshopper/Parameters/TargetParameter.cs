@@ -17,7 +17,7 @@ public class TargetParameter : GH_PersistentParam<GH_Target>
 
     protected override GH_GetterResult Prompt_Plural(ref List<GH_Target> values)
     {
-        values = new List<GH_Target>();
+        values = [];
         return GH_GetterResult.success;
     }
 }

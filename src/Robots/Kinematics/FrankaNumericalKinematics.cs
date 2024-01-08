@@ -140,7 +140,7 @@ class FrankaNumericalKinematics : RobotKinematics
 
     protected override Transform[] ForwardKinematics(double[] joints)
     {
-        joints = joints.ToArray();
+        joints = [.. joints];
         var t = ModifiedDH(joints);
         return t;
     }

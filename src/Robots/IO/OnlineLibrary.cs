@@ -9,9 +9,9 @@ class FileDto
     public string Sha { get; set; } = default!;
 }
 
-public class LibraryItem
+public class LibraryItem(string name)
 {
-    public string Name { get; }
+    public string Name { get; } = name;
     public bool IsLocal { get; internal set; }
     internal string? OnlineSha { get; set; }
     internal string? DownloadedSha { get; set; }
@@ -19,16 +19,11 @@ public class LibraryItem
     public bool IsOnline => OnlineSha is not null;
     public bool IsDownloaded => DownloadedSha is not null;
     public bool IsUpdateAvailable => IsOnline && (OnlineSha != DownloadedSha);
-
-    public LibraryItem(string name)
-    {
-        Name = name;
-    }
 }
 
 public class OnlineLibrary
 {
-    readonly HttpClient _http = new();
+    readonly System.Net.Http.HttpClient _http = new();
     public Dictionary<string, LibraryItem> Libraries { get; } = new(StringComparer.OrdinalIgnoreCase);
     public event Action? LibraryChanged;
 

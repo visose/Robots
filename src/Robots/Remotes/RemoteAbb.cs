@@ -4,14 +4,14 @@ namespace Robots;
 public class RemoteAbb : IRemote
 {
     public string? IP { get; set; }
-    public List<string> Log { get; } = new List<string>();
+    public List<string> Log { get; } = [];
     public void Play() => throw NotImplemented();
     public void Pause() => throw NotImplemented();
     public void Upload(IProgram program) => throw NotImplemented();
 
     internal RemoteAbb() { }
 
-    static Exception NotImplemented() => new NotImplementedException(" ABB SDK not supported in .NET Standard.");
+    static NotImplementedException NotImplemented() => new(" ABB SDK not supported in .NET Standard.");
 }
 
 #elif NET48
@@ -24,7 +24,7 @@ public class RemoteAbb : IRemote
     Controller? _controller;
 
     public string? IP { get; set; }
-    public List<string> Log { get; } = new List<string>();
+    public List<string> Log { get; } = [];
     public bool Connected => _controller?.Connected == true;
 
     internal RemoteAbb()

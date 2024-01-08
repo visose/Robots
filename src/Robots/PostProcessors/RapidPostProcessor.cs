@@ -14,14 +14,14 @@ class RapidPostProcessor
     {
         _system = system;
         _program = program;
-        Code = new List<List<List<string>>>();
+        Code = [];
 
         for (int i = 0; i < _system.MechanicalGroups.Count; i++)
         {
             var groupCode = new List<List<string>>
-                    {
-                        MainModule(i)
-                    };
+            {
+                MainModule(i)
+            };
 
             for (int j = 0; j < program.MultiFileIndices.Count; j++)
                 groupCode.Add(SubModule(j, i));

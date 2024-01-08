@@ -1,15 +1,9 @@
 namespace Robots.Commands;
 
-public class WaitDI : Command
+public class WaitDI(int di, bool value = true) : Command
 {
-    public int DI { get; }
-    public bool Value { get; } = true;
-
-    public WaitDI(int di, bool value = true)
-    {
-        DI = di;
-        Value = value;
-    }
+    public int DI { get; } = di;
+    public bool Value { get; } = value;
 
     protected override void ErrorChecking(RobotSystem robotSystem)
     {

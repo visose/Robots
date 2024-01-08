@@ -65,7 +65,7 @@ public class GetPlane : GH_Component
                 }
             }
 
-            plane = robotSystem.NumbersToPlane(numbers.ToArray());
+            plane = robotSystem.NumbersToPlane([.. numbers]);
         }
 
         DA.SetData(0, plane);

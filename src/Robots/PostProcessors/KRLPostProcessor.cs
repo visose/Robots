@@ -16,7 +16,7 @@ class KRLPostProcessor
     {
         _system = system;
         _program = program;
-        Code = new List<List<List<string>>>();
+        Code = [];
 
         for (int i = 0; i < _system.MechanicalGroups.Count; i++)
         {

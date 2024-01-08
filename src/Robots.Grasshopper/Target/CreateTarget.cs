@@ -10,8 +10,8 @@ namespace Robots.Grasshopper;
 public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
 {
     // Variable inputs
-    readonly IGH_Param[] _parameters = new IGH_Param[11]
-    {
+    readonly IGH_Param[] _parameters =
+    [
             new TargetParameter() { Name = "Target", NickName = "T", Description = "Reference target", Optional = false },
             new JointsParameter() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false },
             new Param_Plane() { Name = "Plane", NickName = "P", Description = "Target plane", Optional = false },
@@ -23,7 +23,7 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
             new CommandParameter() { Name = "Command", NickName = "C", Description = "Robot command", Optional = true },
             new FrameParameter() { Name = "Frame", NickName = "F", Description = "Base frame", Optional = true },
             new JointsParameter() { Name = "External", NickName = "E", Description = "External axes", Optional = true }
-    };
+    ];
 
     bool _isCartesian = true;
 

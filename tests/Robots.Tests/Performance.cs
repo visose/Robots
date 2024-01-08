@@ -6,7 +6,7 @@ namespace Robots.Tests;
 class Performance
 {
     readonly Stopwatch _watch = new();
-    readonly Dictionary<string, long> _times = new();
+    readonly Dictionary<string, long> _times = [];
 
     public Performance()
     {
@@ -45,7 +45,7 @@ class Performance
         planeA.Origin = new Point3d(300, 200, 610);
         planeB.Origin = new Point3d(300, -200, 610);
         var speed = new Speed(300);
-        var targetA = new JointTarget(new[] { 0, Math.PI * 0.5, 0, 0, 0, 0 });
+        var targetA = new JointTarget([0, Math.PI * 0.5, 0, 0, 0, 0]);
         var targetB = new CartesianTarget(planeA, RobotConfigurations.Wrist, Motions.Joint);
         var targetC = new CartesianTarget(planeB, null, Motions.Linear, speed: speed);
         var toolpath = new SimpleToolpath() { targetA, targetB, targetC };

@@ -56,7 +56,7 @@ public class SystemStaubli : IndustrialSystem
             c = 0;
         }
 
-        return new double[] { plane.OriginX, plane.OriginY, plane.OriginZ, a.ToDegrees(), b.ToDegrees(), c.ToDegrees() };
+        return [plane.OriginX, plane.OriginY, plane.OriginZ, a.ToDegrees(), b.ToDegrees(), c.ToDegrees()];
     }
 
     public override double[] PlaneToNumbers(Plane plane) => PlaneToEuler(plane);

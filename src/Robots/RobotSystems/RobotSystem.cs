@@ -6,16 +6,10 @@ namespace Robots;
 
 public enum Manufacturers { ABB, KUKA, UR, Staubli, FrankaEmika, Doosan, Other, All };
 
-public class DefaultPose
+public class DefaultPose(List<List<Plane>> planes, List<List<Mesh>> meshes)
 {
-    public List<List<Plane>> Planes { get; }
-    public List<List<Mesh>> Meshes { get; }
-
-    public DefaultPose(List<List<Plane>> planes, List<List<Mesh>> meshes)
-    {
-        Planes = planes;
-        Meshes = meshes;
-    }
+    public List<List<Plane>> Planes { get; } = planes;
+    public List<List<Mesh>> Meshes { get; } = meshes;
 }
 
 public abstract class RobotSystem

@@ -266,7 +266,7 @@ public static class FileIO
             var e = ioElement?.GetElementOrDefault(element);
 
             if (e is null)
-                return Array.Empty<string>();
+                return [];
 
             return e.GetAttribute("names").Split(',');
         }

@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+using Rhino.Geometry;
 using static System.Math;
 
 namespace Robots.Geometry;
@@ -23,10 +23,10 @@ class CircumcentreSolver
     /// <param name="d">The fourth point (array of 3 doubles for X, Y, Z).</param>
     internal CircumcentreSolver(Point3d pa, Point3d pb, Point3d pc, Point3d pd)
     {
-        double[] a = { pa.X, pa.Y, pa.Z };
-        double[] b = { pb.X, pb.Y, pb.Z };
-        double[] c = { pc.X, pc.Y, pc.Z };
-        double[] d = { pd.X, pd.Y, pd.Z };
+        double[] a = [pa.X, pa.Y, pa.Z];
+        double[] b = [pb.X, pb.Y, pb.Z];
+        double[] c = [pc.X, pc.Y, pc.Z];
+        double[] d = [pd.X, pd.Y, pd.Z];
         Compute(a, b, c, d);
     }
 
@@ -124,7 +124,7 @@ class CircumcentreSolver
     /// <summary>
     /// Recursive definition of determinate using expansion by minors.
     /// </summary>
-    double Determinant(double[,] a, double n)
+    static double Determinant(double[,] a, double n)
     {
         int i, j, j1, j2;
         double d;

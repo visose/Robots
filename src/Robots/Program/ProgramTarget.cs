@@ -126,7 +126,7 @@ public class ProgramTarget
         if (currentJoints is null)
         {
             var j = (Target is JointTarget jointTarget) ? jointTarget.Joints : new double[jointCount];
-            currentJoints = j.ToArray();
+            currentJoints = [.. j];
 
             if (Target.External.Length == 1 && robot.RobotJointCount == 7)
                 currentJoints[2] = Target.External[0];
@@ -144,7 +144,7 @@ public class ProgramTarget
         else
         {
             external = robot.RobotJointCount == 7 && Target.External.Length == 1 
-                ? (new[] { allJoints[2] }) : Array.Empty<double>();
+                ? ([allJoints[2]]) : [];
         }
 
         if (IsJointMotion)
@@ -171,7 +171,7 @@ public class ProgramTarget
 
         if (errorWarnings.Count > 0)
         {
-            kinematicErrors = kinematicErrors.ToList();
+            kinematicErrors = [.. kinematicErrors];
             kinematicErrors.RemoveAll(e => e.StartsWith("Warn"));
 
             if (!warnings.Any(w => w.StartsWith("Warn")))

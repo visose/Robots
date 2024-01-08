@@ -4,15 +4,9 @@ using static Robots.Util;
 
 namespace Robots;
 
-class OffsetWristKinematics : RobotKinematics
+class OffsetWristKinematics(RobotArm robot) : RobotKinematics(robot)
 {
-    readonly Transform _flangeRot;
-
-    public OffsetWristKinematics(RobotArm robot)
-        : base(robot)
-    {
-        _flangeRot = Transform.Rotation(-HalfPI, Point3d.Origin);
-    }
+    readonly Transform _flangeRot = Transform.Rotation(-HalfPI, Point3d.Origin);
 
     /// <summary>
     /// Inverse kinematics for a offset wrist 6 axis robot.
@@ -22,7 +16,7 @@ class OffsetWristKinematics : RobotKinematics
     /// <returns>Returns the 6 rotation values in radians.</returns>
     protected override double[] InverseKinematics(Transform t, RobotConfigurations configuration, double[] external, double[]? prevJoints, out List<string> errors)
     {
-        errors = new List<string>();
+        errors = [];
 
         bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
         bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);

@@ -4,11 +4,8 @@ using static System.Math;
 
 namespace Robots;
 
-class FrankaAnalyticalKinematics : RobotKinematics
+class FrankaAnalyticalKinematics(RobotArm robot) : RobotKinematics(robot)
 {
-    public FrankaAnalyticalKinematics(RobotArm robot)
-        : base(robot) { }
-
     protected override int SolutionCount => 4;
 
     /// <summary>
@@ -20,7 +17,7 @@ class FrankaAnalyticalKinematics : RobotKinematics
         bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
         bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
 
-        errors = new List<string>();
+        errors = [];
         bool isUnreachable = false;
 
         double prevq1 = prevJoints?[0] ?? joints[0].Range.Mid;

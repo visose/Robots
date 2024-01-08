@@ -17,8 +17,8 @@ public abstract class CobotSystem : RobotSystem
     static DefaultPose GetDefaultPose(RobotArm robot)
     {
         return new DefaultPose(
-            planes: new() { robot.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY).ToList() },
-            meshes: new() { robot.Joints.Select(j => j.Mesh).Prepend(robot.BaseMesh).ToList() }
+            planes: [robot.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY).ToList()],
+            meshes: [robot.Joints.Select(j => j.Mesh).Prepend(robot.BaseMesh).ToList()]
             );
     }
 
@@ -67,11 +67,11 @@ public abstract class CobotSystem : RobotSystem
             planes.Add(planes[planes.Count - 1]);
         }
 
-        kinematic.Planes = planes.ToArray();
+        kinematic.Planes = [.. planes];
 
         if (error is not null)
             kinematic.Errors.Add(error);
 
-        return new List<KinematicSolution> { kinematic };
+        return [kinematic];
     }
 }
