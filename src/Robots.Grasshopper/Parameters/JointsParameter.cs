@@ -1,4 +1,4 @@
-﻿namespace Robots.Grasshopper;
+namespace Robots.Grasshopper;
 
 public class JointsParameter : GH_PersistentParam<GH_Joints>
 {

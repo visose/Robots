@@ -30,7 +30,6 @@
     <StartArguments>/nosplash /runscript="-grasshopper window show _enter"</StartArguments>
     <StartAction>Program</StartAction>
 
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <PackageDir>$(AppData)\McNeel\Rhinoceros\packages\7.0\$(Product)</PackageDir>
     <OutputPath>$(PackageDir)\$(Version)</OutputPath>
   </PropertyGroup>

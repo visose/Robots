@@ -1,3 +1,4 @@
+using GH_IO.Serialization;
 using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
@@ -19,6 +20,9 @@ public class GH_Joints : GH_Goo<double[]>
         {
             case GH_Number number:
                 Value = [number.Value];
+                return true;
+            case GH_Integer integer:
+                Value = [(double)integer.Value];
                 return true;
             case GH_String text:
                 {
@@ -54,5 +58,17 @@ public class GH_Joints : GH_Goo<double[]>
         }
 
         return false;
+    }
+
+    public override bool Write(GH_IWriter writer)
+    {
+        writer.SetDoubleArray("Value", Value);
+        return true;
+    }
+
+    public override bool Read(GH_IReader reader)
+    {
+        Value = reader.GetDoubleArray("Value");
+        return true;
     }
 }
