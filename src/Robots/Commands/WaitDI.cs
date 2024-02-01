@@ -18,6 +18,7 @@ public class WaitDI(int di, bool value = true) : Command
         _commands.Add(Manufacturers.UR, CodeUR);
         _commands.Add(Manufacturers.Staubli, CodeStaubli);
         _commands.Add(Manufacturers.Doosan, CodeDoosan);
+        _commands.Add(Manufacturers.Fanuc, CodeFanuc);
     }
 
     string CodeAbb(RobotSystem robotSystem, Target target)
@@ -54,6 +55,14 @@ public class WaitDI(int di, bool value = true) : Command
         var number = GetNumber(robotSystem);
         var value = Value ? "ON" : "OFF";
         return $"wait_digital_input({number}, {value})";
+    }
+
+    string CodeFanuc(RobotSystem robotSystem, Target target)
+    {
+        var number = GetNumber(robotSystem);
+        if (value) { return $":WAIT (DI[{number}]) ;"; }
+        else{ return $":WAIT (!DI[{number}]) ;"; }
+        
     }
 
     string GetNumber(RobotSystem robotSystem)

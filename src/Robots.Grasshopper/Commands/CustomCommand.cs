@@ -10,7 +10,7 @@ public class CustomCommand : GH_Component
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddTextParameter("Name", "N", "Name", GH_ParamAccess.item, "CustomCommand");
-        pManager.AddTextParameter("Manufacturer", "M", "Robot manufacturer, options:  ABB, KUKA, UR, Staubli, FrankaEmika, Doosan, Other, All. If you select 'All', the command will always be included irrespective of the manufacturer.", GH_ParamAccess.item, "All");
+        pManager.AddTextParameter("Manufacturer", "M", "Robot manufacturer, options:  ABB, KUKA, UR, Staubli, FrankaEmika, Doosan, Fanuc, Other, All. If you select 'All', the command will always be included irrespective of the manufacturer.", GH_ParamAccess.item, "All");
         pManager.AddTextParameter("Code", "C", "Command code", GH_ParamAccess.item);
         pManager.AddTextParameter("Declaration", "D", "Variable declaration and assignment", GH_ParamAccess.item);
         pManager[2].Optional = true;

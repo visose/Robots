@@ -34,8 +34,8 @@ public class Custom : GH_Component
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         string? name = null;
-        string? abbDeclaration = null, kukaDeclaration = null, urDeclaration = null;
-        string? abbCode = null, kukaCode = null, urCode = null;
+        string? abbDeclaration = null, kukaDeclaration = null, urDeclaration = null, fanucDeclaration = null;
+        string? abbCode = null, kukaCode = null, urCode = null, fanucCode = null;
 
         if (!DA.GetData(0, ref name) || name is null) { return; }
         DA.GetData(1, ref abbDeclaration);
@@ -44,11 +44,13 @@ public class Custom : GH_Component
         DA.GetData(4, ref abbCode);
         DA.GetData(5, ref kukaCode);
         DA.GetData(6, ref urCode);
+        DA.GetData(7, ref fanucCode);
 
         var command = new Robots.Commands.Custom(name);
         command.AddCommand(Manufacturers.ABB, abbCode, abbDeclaration);
         command.AddCommand(Manufacturers.KUKA, kukaCode, kukaDeclaration);
         command.AddCommand(Manufacturers.UR, urCode, urDeclaration);
+        command.AddCommand(Manufacturers.Fanuc, fanucCode, fanucDeclaration);
 
         DA.SetData(0, new GH_Command(command));
     }

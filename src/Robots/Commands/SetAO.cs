@@ -18,6 +18,7 @@ public class SetAO(int ao, double value) : Command
         _commands.Add(Manufacturers.UR, CodeUR);
         _commands.Add(Manufacturers.Staubli, CodeStaubli);
         _commands.Add(Manufacturers.Doosan, CodeDoosan);
+        _commands.Add(Manufacturers.Fanuc, CodeFanuc);
 
         _declarations.Add(Manufacturers.ABB, DeclarationAbb);
         _declarations.Add(Manufacturers.KUKA, DeclarationKuka);
@@ -84,6 +85,12 @@ public class SetAO(int ao, double value) : Command
     {
         var number = GetNumber(robotSystem);
         return $"set_analog_output(ch={number}, val={Name})";
+    }
+
+    string CodeFanuc(RobotSystem robotSystem, Target target)
+    {
+        var number = GetNumber(robotSystem);
+        return $":AO[{number}]={Value} ;";
     }
 
     string GetNumber(RobotSystem robotSystem)

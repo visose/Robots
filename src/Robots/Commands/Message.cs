@@ -12,6 +12,7 @@ public class Message(string message) : Command
         _commands.Add(Manufacturers.Staubli, (_, _) => $"putln(\"{_message}\")");
         _commands.Add(Manufacturers.FrankaEmika, (_, _) => $"print(\"{_message}\")");
         _commands.Add(Manufacturers.Doosan, (_, _) => $"tp_log(\"{_message}\")");
+        _commands.Add(Manufacturers.Fanuc, (_, _) => $":MESSAGE[\"{_message}\"] ;");
     }
 
     public override string ToString() => $"Command (Message \"{_message}\")";
