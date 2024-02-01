@@ -4,16 +4,18 @@ namespace Robots;
 
 public class Tool : TargetAttribute
 {
-    public static Tool Default { get; } = new Tool(Plane.WorldXY, "DefaultTool");
+    public static Tool Default { get; } = new(Plane.WorldXY, "DefaultTool");
 
     public Plane Tcp { get; }
     public double Weight { get; }
     public Point3d Centroid { get; }
     public Mesh Mesh { get; }
+
     /// <summary>
     /// Specifies that it will use a tool that exists in the controller and does not need to be defined in the generated program.
     /// </summary>
     public bool UseController { get; }
+
     /// <summary>
     /// Used only in KUKA to load from the TOOL_DATA array.
     /// </summary>
@@ -24,7 +26,7 @@ public class Tool : TargetAttribute
     {
         Weight = weight;
         Centroid = (centroid is null) ? tcp.Origin : (Point3d)centroid;
-        Mesh = mesh ?? new Mesh();
+        Mesh = mesh ?? FileIO.EmptyMesh;
         UseController = number is not null || useController;
         Number = number;
 

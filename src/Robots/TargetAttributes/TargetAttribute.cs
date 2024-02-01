@@ -1,8 +1,8 @@
-﻿namespace Robots;
+namespace Robots;
 
 public abstract class TargetAttribute
 {
-    string? _name;
+    protected string? _name;
 
     protected TargetAttribute(string? name)
     {

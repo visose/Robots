@@ -86,40 +86,42 @@ class CheckProgram
 
         // Warn about defaults
 
-        var defaultTools = systemTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target.Tool == Tool.Default).ToList();
-        if (defaultTools.Count > 0)
+        void CheckTargets(Func<Target, bool> condition, string message, Action<ProgramTarget>? action = null)
         {
-            var first = defaultTools[0];
-            _program.Warnings.Add($"{defaultTools.Count} targets have their tool set to default, the first one being target {first.Index} in robot {first.Group}");
+            var results = systemTargets.SelectMany(x => x.ProgramTargets).Where(x => condition(x.Target)).ToList();
+
+            if (results.Count > 0)
+            {
+                var first = results[0];
+                _program.Warnings.Add($"{results.Count} targets {message}, the first one being target {first.Index} in robot {first.Group}");
+
+                if (action is not null)
+                {
+                    foreach (var result in results)
+                        action(result);
+                }
+            }
         }
 
-        var defaultSpeeds = systemTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target.Speed == Speed.Default).ToList();
-        if (defaultSpeeds.Count > 0)
-        {
-            var first = defaultSpeeds[0];
-            _program.Warnings.Add($"{defaultSpeeds.Count} targets have their speed set to default, the first one being target {first.Index} in robot {first.Group}");
-        }
+        CheckTargets(t => t.Tool.Equals(Tool.Default), "have their tool set to default");
+        CheckTargets(t => t.Speed.Equals(Speed.Default), "have their speed set to default");
 
-        var linearForced = systemTargets.SelectMany(x => x.ProgramTargets).Where(x => x.Target is CartesianTarget cartesian && cartesian.Motion == Motions.Linear && cartesian.Configuration is not null).ToList();
-        if (linearForced.Count > 0)
-        {
-            var first = linearForced[0];
-            _program.Warnings.Add($"{linearForced.Count} targets are set to linear with a forced configuration, the first one being target {first.Index} in robot {first.Group}. Configuration setting is ignored for linear motions.");
-        }
+        // Fix linear with forced config
 
-        foreach (var target in linearForced)
-        {
-            var cartesian = (CartesianTarget)target.Target;
-            cartesian.Configuration = null;
-        }
+        CheckTargets(
+            t => t is CartesianTarget cartesian && cartesian.Motion == Motions.Linear && cartesian.Configuration is not null,
+            "are set to linear with a forced configuration (configuration is ignored for linear motions)",
+            t => ((CartesianTarget)t.Target).Configuration = null
+            );
 
-        // Check max payload
+        // Warn max payload
 
-        var tools = systemTargets.SelectMany(x => x.ProgramTargets.Select(y => new { y.Target.Tool, y.Group })).Distinct();
-        foreach (var tool in tools)
+        var tools = systemTargets.SelectMany(x => x.ProgramTargets.Select(y => (y.Target.Tool, y.Group))).Distinct();
+
+        foreach (var (tool, group) in tools)
         {
-            double payload = _robotSystem.Payload(tool.Group);
-            if (tool.Tool.Weight > payload) _program.Warnings.Add($"Weight of tool {tool.Tool.Name} exceeds the robot {tool.Group} rated payload of {payload} kg");
+            double payload = _robotSystem.Payload(group);
+            if (tool.Weight > payload) _program.Warnings.Add($"Weight of tool {tool.Name} exceeds the robot {group} rated payload of {payload} kg");
         }
 
         // Get unique attributes
@@ -406,7 +408,7 @@ class CheckProgram
         }
         else if (namedAttribute is Speed speed)
         {
-            foreach (var target in targets) if (target.Target.Speed == attribute as Speed) { target.Target = target.Target.ShallowClone(); target.Target.Speed = speed; }
+            foreach (var target in targets) if (target.Target.Speed.Equals(attribute)) { target.Target = target.Target.ShallowClone(); target.Target.Speed = speed; }
         }
         else if (namedAttribute is Zone zone)
         {

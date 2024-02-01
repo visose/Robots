@@ -9,7 +9,7 @@ public enum ElementType { RobotSystem, Tool, Frame }
 
 public static class FileIO
 {
-    static readonly Mesh _emptyMesh = new();
+    public static readonly Mesh EmptyMesh = new();
 
     public static List<string> List(ElementType type)
     {
@@ -203,7 +203,7 @@ public static class FileIO
 
         var meshes = loadMeshes
             ? GetMechanismMeshes(systemName, mechanism, model, manufacturer, jointCount)
-            : Enumerable.Repeat(_emptyMesh, jointCount + 1).ToList();
+            : Enumerable.Repeat(EmptyMesh, jointCount + 1).ToList();
 
         Mesh baseMesh = meshes[0];
 
@@ -369,7 +369,7 @@ public static class FileIO
         var parentLayer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(parentName));
 
         if (parentLayer is null)
-            return Enumerable.Repeat(_emptyMesh, meshCount).ToList();
+            return Enumerable.Repeat(EmptyMesh, meshCount).ToList();
 
         var meshes = new List<Mesh>(meshCount);
 
@@ -380,11 +380,11 @@ public static class FileIO
 
             if (jointLayer is null)
             {
-                meshes.Add(_emptyMesh);
+                meshes.Add(EmptyMesh);
                 continue;
             }
 
-            var mesh = doc.Objects.FirstOrDefault(x => x.Attributes.LayerIndex == jointLayer.Index && x.Geometry is Mesh)?.Geometry as Mesh ?? _emptyMesh;
+            var mesh = doc.Objects.FirstOrDefault(x => x.Attributes.LayerIndex == jointLayer.Index && x.Geometry is Mesh)?.Geometry as Mesh ?? EmptyMesh;
             meshes.Add(mesh);
         }
 
