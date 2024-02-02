@@ -1,0 +1,47 @@
+<RobotSystems>
+
+  <RobotCell name="Fanuc-M20iB/25S" manufacturer="Fanuc">
+    <Mechanisms>
+      <RobotArm model="M20iB/25S" manufacturer="Fanuc" payload="25">
+        <Base x="0.000" y="0.000" z="0" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Joints>
+          <Revolute number="1" a ="75" d ="0" minrange = "-180" maxrange ="180" maxspeed ="205"/>
+          <Revolute number="2" a ="905" d ="0" minrange = "-100" maxrange ="140" maxspeed ="205"/>
+          <Revolute number="3" a ="120" d ="0" minrange = "-149" maxrange ="320" maxspeed ="260"/>
+          <Revolute number="4" a ="0" d ="865" minrange = "-200" maxrange ="200" maxspeed ="415"/>
+          <Revolute number="5" a ="0" d ="0" minrange = "-145" maxrange ="145" maxspeed ="415"/>
+          <Revolute number="6" a ="0" d ="100" minrange = "-270" maxrange ="270" maxspeed ="880"/>
+        </Joints>
+      </RobotArm>
+    </Mechanisms>
+    <IO>
+      <DO names="11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27"/>
+      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
+      <AO names="1,2"/>
+      <AI names="1,2"/>
+    </IO>
+  </RobotCell>
+
+  <RobotCell name="Fanuc-M20iB/35S" manufacturer="Fanuc">
+    <Mechanisms>
+      <RobotArm model="M20iB/35S" manufacturer="Fanuc" payload="35">
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+        <Joints>
+          <Revolute number="1" a ="75" d ="0" minrange = "-170" maxrange ="170" maxspeed ="205"/>
+          <Revolute number="2" a ="637" d ="0" minrange = "-100" maxrange ="140" maxspeed ="205"/>
+          <Revolute number="3" a ="120" d ="0" minrange = "-149" maxrange ="320" maxspeed ="260"/>
+          <Revolute number="4" a ="0" d ="723" minrange = "-200" maxrange ="200" maxspeed ="415"/>
+          <Revolute number="5" a ="0" d ="0" minrange = "-130" maxrange ="130" maxspeed ="415"/>
+          <Revolute number="6" a ="0" d ="100" minrange = "-270" maxrange ="270" maxspeed ="880"/>
+        </Joints>
+      </RobotArm>
+    </Mechanisms>
+    <IO>
+      <DO names="11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27"/>
+      <DI names="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
+      <AO names="1,2"/>
+      <AI names="1,2"/>
+    </IO>
+  </RobotCell>
+
+</RobotSystems>
