@@ -125,7 +125,9 @@ class FanucPostProcessor
                 joints = joints.Map((x, i) => _system.MechanicalGroups[group].RadianToDegree(x, i));
                 joints[2] -= joints[1];
 
-                moveText = $"J P[{pointCounter}] {target.Speed.TranslationSpeed:0}% {zone} ;";
+                int percentSpeed = GetAxisSpeed(programTarget, _system.MechanicalGroups[group].Robot.Joints);
+
+                moveText = $"J P[{pointCounter}] {percentSpeed:0}% {zone} ;";
 
                 pointsText.Add($"P[{pointCounter}]{{");
                 pointsText.Add($"   GP1:");
@@ -156,7 +158,9 @@ class FanucPostProcessor
                             string cfe = (elbow ? "D" : "U");
                             string cfb = (shoulder ? "B" : "T");
 
-                            moveText = $"J P[{pointCounter}] {target.Speed.TranslationSpeed:0}% {zone} ;";
+                            int percentSpeed = GetAxisSpeed(programTarget, _system.MechanicalGroups[group].Robot.Joints);
+
+                            moveText = $"J P[{pointCounter}] {percentSpeed:0}% {zone} ;";
 
                             pointsText.Add($"P[{pointCounter}]{{");
                             pointsText.Add($"   GP1:");
@@ -205,7 +209,7 @@ class FanucPostProcessor
 
             foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
                 code.Add($":{command.Code(_program, target)}");
-            
+
 
         }
 
@@ -233,8 +237,8 @@ class FanucPostProcessor
 
         ToolCode.Add($"UTOOL_NUM=1 ;");
         ToolCode.Add($"! Tool 1 TCP Configuration ;");
-        ToolCode.Add($"! X: {-1*values[0]:0.000}, Y:{values[1]:0.000}, Z: {values[2]:0.000} ;");
-        ToolCode.Add($"! W: {values[5]:0.000}, P:{values[4]:0.000}, R: {-1*values[3]:0.000} ;");
+        ToolCode.Add($"! X: {-1 * values[0]:0.000}, Y:{values[1]:0.000}, Z: {values[2]:0.000} ;");
+        ToolCode.Add($"! W: {values[5]:0.000}, P:{values[4]:0.000}, R: {-1 * values[3]:0.000} ;");
 
         return ToolCode;
     }
@@ -255,7 +259,28 @@ class FanucPostProcessor
         FrameCode.Add($"PR[9,6]={values[3]:0.000} ;");
         FrameCode.Add($"UFRAME[9]=PR[9] ;");
         FrameCode.Add($"UFRAME_NUM=9 ;");
- 
+
         return FrameCode;
     }
+
+    static int GetAxisSpeed(Robots.ProgramTarget programTarget, Robots.Joint[] joints)
+    {
+        double percentSpeed;
+        var jointTarget = (JointTarget)programTarget.Target;
+
+        if (programTarget.SystemTarget.DeltaTime > 0)
+        {
+            percentSpeed = Math.Round((programTarget.SystemTarget.MinTime / programTarget.SystemTarget.DeltaTime) * 100.0, 0);
+        }
+        else
+        {
+            const double maxTranslationSpeed = 1000.0;
+            double leadAxisSpeed = joints.Max(j => j.MaxSpeed);
+            double percentage = Math.Min(jointTarget.Speed.TranslationSpeed / maxTranslationSpeed, 1);
+            percentSpeed = Math.Round(percentage * leadAxisSpeed, 0);
+        }
+
+        return (int)percentSpeed;
+    }
+
 }
