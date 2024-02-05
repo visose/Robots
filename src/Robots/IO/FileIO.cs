@@ -167,6 +167,7 @@ public static class FileIO
             Manufacturers.Staubli => new SystemStaubli(name, mechanicalGroups, io, basePlane, environment),
             Manufacturers.FrankaEmika => new SystemFranka(name, (RobotFranka)mechanicalGroups[0].Robot, io, basePlane, environment),
             Manufacturers.Doosan => new SystemDoosan(name, (RobotDoosan)mechanicalGroups[0].Robot, io, basePlane, environment),
+            Manufacturers.Fanuc => new SystemFanuc(name, mechanicalGroups, io, basePlane, environment),
 
             _ => throw new ArgumentException($" Manufacturer '{manufacturer} is not supported.")
         };
@@ -241,6 +242,7 @@ public static class FileIO
                 Manufacturers.Staubli => new RobotStaubli(model, payload, basePlane, baseMesh, joints),
                 Manufacturers.FrankaEmika => new RobotFranka(model, payload, basePlane, baseMesh, joints),
                 Manufacturers.Doosan => new RobotDoosan(model, payload, basePlane, baseMesh, joints),
+                Manufacturers.Fanuc => new RobotFanuc(model, payload, basePlane, baseMesh, joints),
                 _ => throw new ArgumentException($" Manufacturer '{manufacturer}' not supported."),
             },
             "Positioner" => new Positioner(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),

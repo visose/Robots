@@ -18,6 +18,7 @@ public class SetDO(int @do, bool value) : Command
         _commands.Add(Manufacturers.UR, CodeUR);
         _commands.Add(Manufacturers.Staubli, CodeStaubli);
         _commands.Add(Manufacturers.Doosan, CodeDoosan);
+        _commands.Add(Manufacturers.Fanuc, CodeFanuc);
     }
 
     string CodeAbb(RobotSystem robotSystem, Target target)
@@ -64,6 +65,14 @@ public class SetDO(int @do, bool value) : Command
 
         string textValue = Value ? "ON" : "OFF";
         return $"set_digital_output({number}, {textValue})";
+    }
+
+    string CodeFanuc(RobotSystem robotSystem, Target target)
+    {
+        var number = GetNumber(robotSystem);
+
+        string textValue = Value ? "ON" : "OFF";
+        return $":DO[{number}]={textValue} ;";
     }
 
     string GetNumber(RobotSystem robotSystem)
