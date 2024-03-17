@@ -52,6 +52,9 @@ class CheckProgram
 
     void FixTargetAttributes(List<SystemTarget> systemTargets)
     {
+        var allProgramTargets = systemTargets.SelectMany(x => x.ProgramTargets);
+        var allTargets = allProgramTargets.Select(t => t.Target);
+
         // Fix externals
         {
             if (_robotSystem is IndustrialSystem industrialSystem)
@@ -88,7 +91,7 @@ class CheckProgram
 
         void CheckTargets(Func<Target, bool> condition, string message, Action<ProgramTarget>? action = null)
         {
-            var results = systemTargets.SelectMany(x => x.ProgramTargets).Where(x => condition(x.Target)).ToList();
+            var results = allProgramTargets.Where(x => condition(x.Target)).ToList();
 
             if (results.Count > 0)
             {
@@ -115,8 +118,7 @@ class CheckProgram
             );
 
         // Warn max payload
-
-        var tools = systemTargets.SelectMany(x => x.ProgramTargets.Select(y => (y.Target.Tool, y.Group))).Distinct();
+        var tools = allProgramTargets.Select(y => (y.Target.Tool, y.Group)).Distinct();
 
         foreach (var (tool, group) in tools)
         {
@@ -125,37 +127,45 @@ class CheckProgram
         }
 
         // Get unique attributes
+        HashSet<TargetAttribute> attributes = [];
 
-        _program.Attributes.AddRange(tools.Select(x => x.Tool).Distinct());
-        _program.Attributes.AddRange(systemTargets.SelectMany(x => x.ProgramTargets.Select(y => y.Target.Frame)).Distinct());
-        _program.Attributes.AddRange(systemTargets.SelectMany(x => x.ProgramTargets.Select(y => y.Target.Speed)).Distinct());
-        _program.Attributes.AddRange(systemTargets.SelectMany(x => x.ProgramTargets.Select(y => y.Target.Zone)).Distinct());
+        foreach (var target in allTargets)
+        {
+            attributes.Add(target.Tool);
+            attributes.Add(target.Frame);
+            attributes.Add(target.Speed);
+            attributes.Add(target.Zone);
+        }
 
-        var commands = new List<Command>();
-        commands.AddRange(_program.InitCommands);
-        commands.AddRange(systemTargets.SelectMany(x => x.ProgramTargets.SelectMany(y => y.Commands)));
-        _program.Attributes.AddRange(commands.Distinct());
+        List<Command> commands = [.. _program.InitCommands, .. allProgramTargets.SelectMany(y => y.Commands)];
+
+        foreach (var command in commands)
+            attributes.Add(command);
 
         // Name attributes with no name
         {
-            var types = new List<Type>();
+            Dictionary<Type, int> types = [];
 
-            foreach (var attribute in _program.Attributes.ToList())
+            foreach (var attribute in attributes.ToList())
             {
                 if (!attribute.HasName)
                 {
                     var type = attribute.GetType();
-                    types.Add(type);
-                    int i = types.FindAll(x => x == type).Count;
+
+                    if (!types.TryGetValue(type, out int i))
+                        i = 0;
+
+                    types[type] = ++i;
+
                     string name = $"{type.Name}{i - 1:000}";
-                    SetAttributeName(attribute, systemTargets.SelectMany(x => x.ProgramTargets), name);
+                    SetAttributeName(attribute, attributes, allProgramTargets, name);
                 }
             }
         }
 
         // Rename attributes with duplicate names
         {
-            var duplicates = _program.Attributes.GroupBy(a => a.Name);
+            var duplicates = attributes.GroupBy(a => a.Name);
 
             foreach (var group in duplicates)
             {
@@ -168,14 +178,14 @@ class CheckProgram
                 foreach (var attribute in group)
                 {
                     string name = $"{attribute.Name}{i++:000}";
-                    SetAttributeName(attribute, systemTargets.SelectMany(x => x.ProgramTargets), name);
+                    SetAttributeName(attribute, attributes, allProgramTargets, name);
                 }
             }
         }
 
         // Fix frames
         {
-            foreach (var frame in _program.Attributes.OfType<Frame>())
+            foreach (var frame in attributes.OfType<Frame>())
             {
                 if (frame.CoupledMechanicalGroup == -1 && frame.CoupledMechanism != -1)
                 {
@@ -203,6 +213,8 @@ class CheckProgram
                 }
             }
         }
+
+        _program.Attributes.AddRange(attributes);
     }
 
     int FixTargetMotions(List<SystemTarget> systemTargets, double stepSize)
@@ -391,20 +403,23 @@ class CheckProgram
         }
     }
 
-    void SetAttributeName(TargetAttribute attribute, IEnumerable<ProgramTarget> targets, string name)
+    void SetAttributeName(TargetAttribute attribute, HashSet<TargetAttribute> attributes, IEnumerable<ProgramTarget> targets, string name)
     {
         var namedAttribute = attribute.CloneWithName<TargetAttribute>(name);
 
-        int index = _program.Attributes.FindIndex(x => x == attribute);
-        _program.Attributes[index] = namedAttribute;
+        attributes.Remove(attribute);
+        attributes.Add(namedAttribute);
+
+        //int index = _program.Attributes.FindIndex(x => x == attribute);
+        //_program.Attributes[index] = namedAttribute;
 
         if (namedAttribute is Tool tool)
         {
-            foreach (var target in targets) if (target.Target.Tool == attribute as Tool) { target.Target = target.Target.ShallowClone(); target.Target.Tool = tool; }
+            foreach (var target in targets) if (target.Target.Tool.Equals(attribute)) { target.Target = target.Target.ShallowClone(); target.Target.Tool = tool; }
         }
         else if (namedAttribute is Frame frame)
         {
-            foreach (var target in targets) if (target.Target.Frame == attribute as Frame) { target.Target = target.Target.ShallowClone(); target.Target.Frame = frame; }
+            foreach (var target in targets) if (target.Target.Frame.Equals(attribute)) { target.Target = target.Target.ShallowClone(); target.Target.Frame = frame; }
         }
         else if (namedAttribute is Speed speed)
         {
@@ -412,12 +427,12 @@ class CheckProgram
         }
         else if (namedAttribute is Zone zone)
         {
-            foreach (var target in targets) if (target.Target.Zone == attribute as Zone) { target.Target = target.Target.ShallowClone(); target.Target.Zone = zone; }
+            foreach (var target in targets) if (target.Target.Zone.Equals(attribute)) { target.Target = target.Target.ShallowClone(); target.Target.Zone = zone; }
         }
         else if (namedAttribute is Command command)
         {
             for (int i = 0; i < _program.InitCommands.Count; i++)
-                if (_program.InitCommands[i] == attribute as Command) _program.InitCommands[i] = command;
+                if (_program.InitCommands[i].Equals(attribute)) _program.InitCommands[i] = command;
 
             foreach (var target in targets)
             {
@@ -425,7 +440,7 @@ class CheckProgram
 
                 for (int i = 0; i < group.Count; i++)
                 {
-                    if (group[i] == attribute as Command)
+                    if (group[i].Equals(attribute))
                         group[i] = command;
                 }
             }

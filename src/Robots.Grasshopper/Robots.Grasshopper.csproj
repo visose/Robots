@@ -8,6 +8,7 @@
     <PackageIcon>iconRhino128.png</PackageIcon>
     <Description>$(Description) This package is for development of Rhino and Grasshopper plug-ins.</Description>
     <PackageTags>$(PackageTags);Rhino;Grasshopper</PackageTags>
+    <Rhino>7</Rhino>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,18 +20,18 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Assets\Embed\**\*" />
-    <None Include="$(RootDir)build\Assets\iconRhino128.png" Pack="true" PackagePath="" Visible="false"/>
+    <None Include="$(RootDir)build\Assets\iconRhino128.png" Pack="true" PackagePath="" Visible="false" />
     <None Include="$(RootDir)build\Assets\iconRobot.png" CopyToOutputDirectory="PreserveNewest" Visible="false" />
     <None Include="Build\Robots.Rhino.targets" Pack="true" PackagePath="buildTransitive" />
-    <None Include="$(TargetDir)$(Product).dll" Pack="true" PackagePath="lib\net48" Visible="false"/>
+    <None Include="$(TargetDir)$(Product).dll" Pack="true" PackagePath="lib\net48" Visible="false" />
   </ItemGroup>
 
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows)) and $(Configuration) == 'Debug'">
-    <StartProgram>C:\Program Files\Rhino 7\System\Rhino.exe</StartProgram>
+    <StartProgram>C:\Program Files\Rhino $(Rhino)\System\Rhino.exe</StartProgram>
     <StartArguments>/nosplash /runscript="-grasshopper window show _enter"</StartArguments>
     <StartAction>Program</StartAction>
 
-    <PackageDir>$(AppData)\McNeel\Rhinoceros\packages\7.0\$(Product)</PackageDir>
+    <PackageDir>$(AppData)\McNeel\Rhinoceros\packages\$(Rhino).0\$(Product)</PackageDir>
     <OutputPath>$(PackageDir)\$(Version)</OutputPath>
   </PropertyGroup>
 

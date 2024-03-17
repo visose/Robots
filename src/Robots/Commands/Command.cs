@@ -4,8 +4,8 @@ public abstract class Command : TargetAttribute
 {
     public static Command Default { get; } = new Commands.Custom("DefaultCommand");
 
-    protected Dictionary<Manufacturers, Func<RobotSystem, string>> _declarations = new(4);
-    protected Dictionary<Manufacturers, Func<RobotSystem, Target, string>> _commands = new(4);
+    protected Dictionary<Manufacturers, Func<RobotSystem, string>> _declarations = new(6);
+    protected Dictionary<Manufacturers, Func<RobotSystem, Target, string>> _commands = new(6);
 
     protected Command(string? name = null) : base(name) { }
 
