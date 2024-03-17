@@ -11,7 +11,7 @@ namespace Robots;
 /// </summary>
 class FrankaNumericalKinematics : RobotKinematics
 {
-    readonly List<string> _empty = new(0);
+    readonly List<string> _empty = [];
     readonly double _sq2 = 1.0 / Sqrt(2);
     readonly double[] _midJoints;
 
@@ -127,10 +127,10 @@ class FrankaNumericalKinematics : RobotKinematics
         }
 
     error:
-        errors = new List<string>(1)
-        {
+        errors =
+        [
             $"Warning: Target unreachable ({dis_min_all:e2})"
-        };
+        ];
 
     end:
         var vals = _q_current.AsArray();

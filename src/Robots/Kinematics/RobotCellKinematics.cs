@@ -45,7 +45,7 @@ class IndustrialSystemKinematics
                 if (coupledGroup == i)
                     throw new ArgumentException(" Cannot couple a robot with itself.");
 
-                coupledPlane = Solutions[coupledGroup].Planes[Solutions[coupledGroup].Planes.Length - 2] as Plane?;
+                coupledPlane = Solutions[coupledGroup].Planes[^2];
             }
             else
             {

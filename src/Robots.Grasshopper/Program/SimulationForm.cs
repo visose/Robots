@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using Eto.Drawing;
 using Eto.Forms;
 
@@ -65,7 +65,7 @@ class SimulationForm : ComponentForm
 
         var layout = new DynamicLayout();
         layout.BeginVertical();
-        layout.AddSeparateRow(padding: new Padding(10), spacing: new Size(10, 0), controls: new Control[] { Play, stop });
+        layout.AddSeparateRow(padding: new Padding(10), spacing: new Size(10, 0), controls: [Play, stop]);
         layout.BeginGroup("Speed");
         layout.AddSeparateRow(slider, speedLabel);
         layout.EndGroup();

@@ -24,7 +24,7 @@ public class RobotDoosan : RobotArm
         return (radian - Joints[i].Theta) * (180.0 / PI);
     }
 
-    protected override double[] DefaultAlpha => new[] { HalfPI, 0, HalfPI, -HalfPI, HalfPI, 0 };
-    protected override double[] DefaultTheta => new[] { 0, HalfPI, HalfPI, 0, 0, PI };
-    protected override int[] DefaultSign => new[] { 1, 1, 1, 1, 1, 1 };
+    protected override double[] DefaultAlpha => [HalfPI, 0, HalfPI, -HalfPI, HalfPI, 0];
+    protected override double[] DefaultTheta => [0, HalfPI, HalfPI, 0, 0, PI];
+    protected override int[] DefaultSign => [1, 1, 1, 1, 1, 1];
 }

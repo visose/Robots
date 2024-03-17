@@ -32,7 +32,7 @@ public class RobotFanuc : RobotArm
         return radian.ToDegrees();
     }
 
-    protected override double[] DefaultAlpha => new[] { HalfPI, 0, HalfPI, -HalfPI, HalfPI, 0 };
-    protected override double[] DefaultTheta => new[] { 0, HalfPI, 0, 0, 0, 0 };
-    protected override int[] DefaultSign => new[] { 1, -1, -1, 1, -1, 1 };
+    protected override double[] DefaultAlpha => [HalfPI, 0, HalfPI, -HalfPI, HalfPI, 0];
+    protected override double[] DefaultTheta => [0, HalfPI, 0, 0, 0, 0];
+    protected override int[] DefaultSign => [1, -1, -1, 1, -1, 1];
 }

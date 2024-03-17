@@ -59,7 +59,7 @@ abstract class MechanismKinematics
         return solution;
     }
 
-    protected virtual double[] AlphaValues => Array.Empty<double>();
+    protected virtual double[] AlphaValues => [];
 
     protected abstract void SetJoints(KinematicSolution solution, Target target, double[]? prevJoints);
     protected abstract void SetPlanes(KinematicSolution solution, Target target);

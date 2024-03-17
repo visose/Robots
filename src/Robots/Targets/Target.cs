@@ -2,29 +2,19 @@ using static Robots.Util;
 
 namespace Robots;
 
-public abstract class Target : IToolpath
+public abstract class Target(Tool? tool, Speed? speed, Zone? zone, Command? command, Frame? frame, IEnumerable<double>? external) : IToolpath
 {
     public static Target Default { get; } = new JointTarget([0, HalfPI, 0, 0, 0, 0]);
 
-    public Tool Tool { get; set; }
-    public Frame Frame { get; set; }
-    public Speed Speed { get; set; }
-    public Zone Zone { get; set; }
-    public Command Command { get; set; }
-    public double[] External { get; set; }
+    public Tool Tool { get; set; } = tool ?? Tool.Default;
+    public Frame Frame { get; set; } = frame ?? Frame.Default;
+    public Speed Speed { get; set; } = speed ?? Speed.Default;
+    public Zone Zone { get; set; } = zone ?? Zone.Default;
+    public Command Command { get; set; } = command ?? Command.Default;
+    public double[] External { get; set; } = (external is not null) ? external.ToArray() : [];
     public string[]? ExternalCustom { get; set; }
 
     public IEnumerable<Target> Targets => Enumerable.Repeat(this, 1);
-
-    protected Target(Tool? tool, Speed? speed, Zone? zone, Command? command, Frame? frame, IEnumerable<double>? external)
-    {
-        Tool = tool ?? Tool.Default;
-        Speed = speed ?? Speed.Default;
-        Zone = zone ?? Zone.Default;
-        Frame = frame ?? Frame.Default;
-        Command = command ?? Command.Default;
-        External = (external is not null) ? external.ToArray() : [];
-    }
 
     public void AppendCommand(Command command)
     {

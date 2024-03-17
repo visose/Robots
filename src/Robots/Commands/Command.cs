@@ -1,13 +1,11 @@
 namespace Robots;
 
-public abstract class Command : TargetAttribute
+public abstract class Command(string? name = null) : TargetAttribute(name)
 {
     public static Command Default { get; } = new Commands.Custom("DefaultCommand");
 
     protected Dictionary<Manufacturers, Func<RobotSystem, string>> _declarations = new(6);
     protected Dictionary<Manufacturers, Func<RobotSystem, Target, string>> _commands = new(6);
-
-    protected Command(string? name = null) : base(name) { }
 
     protected virtual void ErrorChecking(RobotSystem robotSystem) { }
     protected virtual void Populate() { }

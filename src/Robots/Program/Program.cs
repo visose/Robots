@@ -73,7 +73,7 @@ public class Program : IProgram
     public Program(string name, RobotSystem robotSystem, IEnumerable<IToolpath> toolpaths, Commands.Group? initCommands = null, IEnumerable<int>? multiFileIndices = null, double stepSize = 1.0)
     {
         RobotSystem = robotSystem;
-        InitCommands = initCommands?.Flatten().ToList() ?? new List<Command>(0);
+        InitCommands = initCommands?.Flatten().ToList() ?? [];
         var targets = CreateSystemTargets(toolpaths);
 
         if (targets.Count > 0)

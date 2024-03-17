@@ -8,7 +8,7 @@ class FrankaKdlKinematics : RobotKinematics, IDisposable
 {
     const int _redundant = 2;
 
-    readonly List<string> _empty = new(0);
+    readonly List<string> _empty = [];
     readonly double[] _midJoints;
     readonly K.JntArray _qMin;
     readonly K.JntArray _qMax;
@@ -84,10 +84,10 @@ class FrankaKdlKinematics : RobotKinematics, IDisposable
         {
             var text = _ikSolver.strError(retVal);
 
-            errors = new List<string>(1)
-            {
+            errors =
+            [
                 $"Warning: Target unreachable ({text})"
-            };
+            ];
         }
 
         var vals = FromJntArray(q_sol);

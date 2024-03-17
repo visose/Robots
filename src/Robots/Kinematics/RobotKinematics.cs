@@ -4,11 +4,8 @@ using static System.Math;
 
 namespace Robots;
 
-abstract class RobotKinematics : MechanismKinematics
+abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
 {
-    protected RobotKinematics(RobotArm robot)
-        : base(robot) { }
-
     protected virtual int SolutionCount => 8;
 
     protected override void SetJoints(KinematicSolution solution, Target target, double[]? prevJoints)
@@ -63,7 +60,7 @@ abstract class RobotKinematics : MechanismKinematics
             }
             else
             {
-                _ = GetClosestSolution(jointTransforms[jointTransforms.Length - 1], target.External, joints, out var configuration, out _, out var difference);
+                _ = GetClosestSolution(jointTransforms[^1], target.External, joints, out var configuration, out _, out var difference);
                 solution.Configuration = difference < AngleTol ? configuration : RobotConfigurations.Undefined;
             }
         }

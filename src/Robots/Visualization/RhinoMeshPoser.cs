@@ -47,7 +47,7 @@ public class RhinoMeshPoser : IMeshPoser
         }
 
         var toolMesh = tool.DuplicateMesh();
-        toolMesh.Transform(planes[planes.Length - 2].ToTransform());
+        toolMesh.Transform(planes[^2].ToTransform());
         meshes.Add(toolMesh);
     }
 }

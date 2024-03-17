@@ -1,4 +1,4 @@
-﻿using System.Net.Sockets;
+using System.Net.Sockets;
 using System.Text;
 
 namespace Robots;
@@ -47,7 +47,7 @@ class RemoteURSecondaryClient(string ip, Action<string> log) : IRemoteURBackend
 
         stream.Write(sendBuffer, 0, sendBuffer.Length);
 
-        string firstLine = message.Substring(0, message.IndexOf('\n'));
+        string firstLine = message[..message.IndexOf('\n')];
         string text = firstLine.Length + 1 < message.Length
             ? "Robot program" : message;
 

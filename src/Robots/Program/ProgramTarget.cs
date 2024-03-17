@@ -29,7 +29,7 @@ public class ProgramTarget
                 return targetPlane;
             }
 
-            return Kinematics.Planes[Kinematics.Planes.Length - 1];
+            return Kinematics.Planes[^1];
         }
     }
 
@@ -88,7 +88,7 @@ public class ProgramTarget
     {
         var target = (ProgramTarget)MemberwiseClone();
         target.SystemTarget = systemTarget;
-        target.Commands = new List<Command>(0);
+        target.Commands = [];
         return target;
     }
 

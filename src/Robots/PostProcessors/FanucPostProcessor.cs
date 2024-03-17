@@ -1,8 +1,3 @@
-using Kdl;
-using Rhino.Geometry;
-using System;
-using System.CodeDom;
-using static System.Math;
 
 namespace Robots;
 
@@ -12,7 +7,7 @@ class FanucPostProcessor
     readonly Program _program;
 
     internal List<List<List<string>>> Code { get; }
-    internal int lineCount;
+    //internal int LineCount;
 
     internal FanucPostProcessor(SystemFanuc system, Program program)
     {
@@ -209,8 +204,6 @@ class FanucPostProcessor
 
             foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
                 code.Add($":{command.Code(_program, target)}");
-
-
         }
 
         code.Add("/POS");
@@ -229,11 +222,12 @@ class FanucPostProcessor
 
         var values = _system.PlaneToNumbers(tcp);
 
-        double weight = (tool.Weight > 0.001) ? tool.Weight : 0.001;
+        //TODO: Weight and centroid not used.
+        //double weight = (tool.Weight > 0.001) ? tool.Weight : 0.001;
 
-        Point3d centroid = tool.Centroid;
-        if (centroid.DistanceTo(Point3d.Origin) < 0.001)
-            centroid = new Point3d(0, 0, 0.001);
+        //Point3d centroid = tool.Centroid;
+        //if (centroid.DistanceTo(Point3d.Origin) < 0.001)
+        //    centroid = new Point3d(0, 0, 0.001);
 
         ToolCode.Add($"UTOOL_NUM=1 ;");
         ToolCode.Add($"! Tool 1 TCP Configuration ;");
@@ -243,25 +237,26 @@ class FanucPostProcessor
         return ToolCode;
     }
 
-    List<string> Frame(Frame frame)
-    {
-        Plane plane = frame.Plane;
-        plane.InverseOrient(ref _system.BasePlane);
+    //TODO: Frame not used.
+    //List<string> Frame(Frame frame)
+    //{
+    //    Plane plane = frame.Plane;
+    //    plane.InverseOrient(ref _system.BasePlane);
 
-        var values = _system.PlaneToNumbers(plane);
+    //    var values = _system.PlaneToNumbers(plane);
 
-        var FrameCode = new List<string>();
-        FrameCode.Add($"PR[9,1]={values[0]:0.000} ;");
-        FrameCode.Add($"PR[9,2]={values[1]:0.000} ;");
-        FrameCode.Add($"PR[9,3]={values[2]:0.000} ;");
-        FrameCode.Add($"PR[9,4]={values[5]:0.000} ;");
-        FrameCode.Add($"PR[9,5]={values[4]:0.000} ;");
-        FrameCode.Add($"PR[9,6]={values[3]:0.000} ;");
-        FrameCode.Add($"UFRAME[9]=PR[9] ;");
-        FrameCode.Add($"UFRAME_NUM=9 ;");
+    //    var FrameCode = new List<string>();
+    //    FrameCode.Add($"PR[9,1]={values[0]:0.000} ;");
+    //    FrameCode.Add($"PR[9,2]={values[1]:0.000} ;");
+    //    FrameCode.Add($"PR[9,3]={values[2]:0.000} ;");
+    //    FrameCode.Add($"PR[9,4]={values[5]:0.000} ;");
+    //    FrameCode.Add($"PR[9,5]={values[4]:0.000} ;");
+    //    FrameCode.Add($"PR[9,6]={values[3]:0.000} ;");
+    //    FrameCode.Add($"UFRAME[9]=PR[9] ;");
+    //    FrameCode.Add($"UFRAME_NUM=9 ;");
 
-        return FrameCode;
-    }
+    //    return FrameCode;
+    //}
 
     static int GetAxisSpeed(Robots.ProgramTarget programTarget, Robots.Joint[] joints)
     {

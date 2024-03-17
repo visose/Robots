@@ -11,7 +11,7 @@ public class SimulationPose(List<KinematicSolution> kinematics, int index)
     public Plane GetLastPlane(int mechanicalGroupindex)
     {
         var planes = Kinematics[mechanicalGroupindex].Planes;
-        return planes[planes.Length - 1];
+        return planes[^1];
     }
 }
 

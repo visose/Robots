@@ -40,7 +40,7 @@ public abstract class CobotSystem : RobotSystem
     public override List<KinematicSolution> Kinematics(IEnumerable<Target> target, IEnumerable<double[]?>? prevJoints = null)
     {
         if (!target.Any())
-            return new(0);
+            return [];
 
         var singleTarget = target.First();
         var prevJoint = prevJoints?.First();
@@ -64,7 +64,7 @@ public abstract class CobotSystem : RobotSystem
         }
         else
         {
-            planes.Add(planes[planes.Count - 1]);
+            planes.Add(planes[^1]);
         }
 
         kinematic.Planes = [.. planes];

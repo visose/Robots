@@ -50,11 +50,11 @@ class MechanicalGroupKinematics
             solution.Errors.AddRange(externalKinematics.Errors);
 
             if (external == coupledMech)
-                coupledPlane = externalKinematics.Planes[externalKinematics.Planes.Length - 1];
+                coupledPlane = externalKinematics.Planes[^1];
 
             if (external.MovesRobot)
             {
-                Plane externalPlane = externalKinematics.Planes[externalKinematics.Planes.Length - 1];
+                Plane externalPlane = externalKinematics.Planes[^1];
                 robotBase = externalPlane;
             }
         }
@@ -89,7 +89,7 @@ class MechanicalGroupKinematics
 
         // Tool
         Plane toolPlane = target.Tool.Tcp;
-        var lastPlane = planes[planes.Count - 1];
+        var lastPlane = planes[^1];
         toolPlane.Orient(ref lastPlane);
         planes.Add(toolPlane);
 

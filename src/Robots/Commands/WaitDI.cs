@@ -60,7 +60,7 @@ public class WaitDI(int di, bool value = true) : Command
     string CodeFanuc(RobotSystem robotSystem, Target target)
     {
         var number = GetNumber(robotSystem);
-        if (value) { return $":WAIT (DI[{number}]) ;"; }
+        if (Value) { return $":WAIT (DI[{number}]) ;"; }
         else{ return $":WAIT (!DI[{number}]) ;"; }
         
     }
