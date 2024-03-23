@@ -1,6 +1,5 @@
 using System.Xml;
 using System.Xml.Linq;
-using Rhino;
 using Rhino.FileIO;
 using Rhino.Geometry;
 
@@ -55,33 +54,14 @@ public static class FileIO
     // library files
 
     /// <summary>
-    /// Win: C:\Users\userName\Documents\Robots
-    /// Mac: /Users/userName/Robots
+    /// Default Win: C:\Users\userName\Documents\Robots
+    /// Default Mac: /Users/userName/Robots
     /// </summary>
     public static string LocalLibraryPath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Robots");
+        Settings.Load().LocalLibraryPath;
 
-    /// <summary>
-    /// Win: C:\Users\userName\AppData\Roaming\McNeel\Rhinoceros\packages\7.0\Robots\libraries
-    /// Mac: /Users/userName/.config/McNeel/Rhinoceros/packages/7.0/Robots/libraries
-    /// Lib: {appData}\Robots\libraries
-    /// </summary>
-    public static string OnlineLibraryPath
-    {
-        get
-        {
-            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.DoNotVerify);
-            int version = 7;
-#if (NET48)
-            version = RhinoApp.Version.Major;
-#endif
-#if (NET48 || DEBUG)
-            return Path.Combine(appData, "McNeel", "Rhinoceros", "packages", $"{version:0.0}", "Robots", "libraries");
-#elif NETSTANDARD2_0
-            return Path.Combine(appData, "Robots", "libraries");
-#endif
-        }
-    }
+    public static string OnlineLibraryPath =>
+        Path.Combine(Settings.PluginPath, "libraries");
 
     static IEnumerable<string> GetLibraryPaths()
     {

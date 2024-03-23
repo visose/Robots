@@ -6,6 +6,7 @@
   - Added persistance to Joints parameter.
   - Added support for Fanuc (by a third party contributor).
   - Added deconstruct Toolpath component.
+  - Added ability to change folder path for local libraries.
 
 - version: 1.6.7
   changes:

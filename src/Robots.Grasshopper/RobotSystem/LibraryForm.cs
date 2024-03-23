@@ -79,6 +79,22 @@ class LibraryForm : ComponentForm
         _grid.SelectedRowsChanged += (s, e) => _detailView.DataContext = _grid.SelectedItem;
     }
 
+    async Task ChangeLocalPathAsync()
+    {
+        var settings = Settings.Load();
+        SelectFolderDialog dialog = new()
+        {
+            Title = "Select folder for local robot libraries",
+            Directory = settings.LocalLibraryPath,
+        };
+
+        if (dialog.ShowDialog(this) != DialogResult.Ok)
+            return;
+
+        Settings.Save(settings with { LocalLibraryPath = dialog.Directory });
+        await RefreshAsync();
+    }
+
     async Task RefreshAsync()
     {
         try
@@ -183,6 +199,7 @@ class LibraryForm : ComponentForm
                 Items =
                 {
                     new StackLayoutItem(NewAsyncButton(RefreshAsync, label: "Refresh", runOnce: true), true),
+                    new StackLayoutItem(NewAsyncButton(ChangeLocalPathAsync, label: "Set local folder"), false),
                     new LinkButton
                     {
                         Text = "Help",
