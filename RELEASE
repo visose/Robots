@@ -1,3 +1,12 @@
+- version: 1.7.0
+  changes:
+  - Fixed RIPEMD160 missing in .NET 7 (Rhino 8).
+  - Changed target attributes are now compared by value.
+  - Added cast from integer to Joints parameter.
+  - Added persistance to Joints parameter.
+  - Added support for Fanuc (by a third party contributor).
+  - Added deconstruct Toolpath component.
+
 - version: 1.6.7
   changes:
   - Fixed UR FromPlane wrong units

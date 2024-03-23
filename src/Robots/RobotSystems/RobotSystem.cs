@@ -4,7 +4,7 @@ using static Robots.Util;
 
 namespace Robots;
 
-public enum Manufacturers { ABB, KUKA, UR, Staubli, FrankaEmika, Doosan, Fanuc, Other, All };
+public enum Manufacturers { ABB, KUKA, UR, Staubli, FrankaEmika, Doosan, Fanuc, All };
 
 public class DefaultPose(List<List<Plane>> planes, List<List<Mesh>> meshes)
 {

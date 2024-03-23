@@ -182,11 +182,6 @@ class SphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
 
     protected override Transform[] ForwardKinematics(double[] joints)
     {
-        joints = [.. joints];
-
-        for (int i = 0; i < 6; i++)
-            joints[i] = joints[i];
-
         var t = DH(joints);
         return t;
     }

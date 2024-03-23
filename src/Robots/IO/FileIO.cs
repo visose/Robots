@@ -1,5 +1,6 @@
 using System.Xml;
 using System.Xml.Linq;
+using Rhino;
 using Rhino.FileIO;
 using Rhino.Geometry;
 
@@ -70,8 +71,12 @@ public static class FileIO
         get
         {
             var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.DoNotVerify);
+            int version = 7;
+#if (NET48)
+            version = RhinoApp.Version.Major;
+#endif
 #if (NET48 || DEBUG)
-            return Path.Combine(appData, "McNeel", "Rhinoceros", "packages", "7.0", "Robots", "libraries");
+            return Path.Combine(appData, "McNeel", "Rhinoceros", "packages", $"{version:0.0}", "Robots", "libraries");
 #elif NETSTANDARD2_0
             return Path.Combine(appData, "Robots", "libraries");
 #endif

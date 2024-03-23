@@ -60,7 +60,7 @@ app.Add(
             props: props,
             github: github,
             notesFile: "RELEASE",
-            message: "> This **release** can only be installed through the package manager in **Rhino 7** using the `_PackageManager` command.\n> Check the [readme](../../blob/master/.github/README.md) for more details."
+            message: "> This **release** can only be installed through the package manager in **Rhino 7** or **Rhino 8** using the `_PackageManager` command.\n> Check the [readme](../../blob/master/.github/README.md) for more details."
         )
     ]);
 

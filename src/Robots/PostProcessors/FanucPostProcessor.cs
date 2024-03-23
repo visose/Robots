@@ -31,7 +31,6 @@ class FanucPostProcessor
 
     List<string> MainModule(int group)
     {
-
         var code = new List<string>();
         bool multiProgram = _program.MultiFileIndices.Count > 1;
 
@@ -73,9 +72,7 @@ class FanucPostProcessor
         if (multiProgram)
         {
             for (int i = 0; i < _program.MultiFileIndices.Count; i++)
-            {
                 code.Add($": CALL {_program.Name}_{i:000} ;");
-            }
         }
 
         if (multiProgram)
@@ -105,7 +102,7 @@ class FanucPostProcessor
         }
 
         int pointCounter = 1;
-        var pointsText = new List<String>();
+        var pointsText = new List<string>();
         for (int j = start; j < end; j++)
         {
             var programTarget = _program.Targets[j].ProgramTargets[group];
@@ -258,7 +255,7 @@ class FanucPostProcessor
     //    return FrameCode;
     //}
 
-    static int GetAxisSpeed(Robots.ProgramTarget programTarget, Robots.Joint[] joints)
+    static int GetAxisSpeed(ProgramTarget programTarget, Joint[] joints)
     {
         double percentSpeed;
         var jointTarget = (JointTarget)programTarget.Target;
@@ -277,5 +274,4 @@ class FanucPostProcessor
 
         return (int)percentSpeed;
     }
-
 }
