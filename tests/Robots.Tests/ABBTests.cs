@@ -28,7 +28,7 @@ public class ABBTests
     public void AbbCorrectDuration()
     {
         const double expected = 1.6432545251573487;
-        Assert.AreEqual(expected, _program.Duration, 1e-14);
+        Assert.That(_program.Duration, Is.EqualTo(expected).Within(1e-14));
     }
 
     [Test]
@@ -36,18 +36,17 @@ public class ABBTests
     {
         double[] expected =
         [
-                -0.72007069377409672,
-                1.5806369662963811,
-                -0.075569321979534809,
-                -1.4960590345094886,
-                0.72252891341688164,
-                3.042104596978858
-            ];
+            -0.72007069377409672,
+            1.5806369662963811,
+            -0.075569321979534809,
+            -1.4960590345094886,
+            0.72252891341688164,
+            3.042104596978858
+        ];
 
         var actual = _program.Targets[1].Joints;
 
-        for (int i = 0; i < 6; i++)
-            Assert.AreEqual(expected[i], actual[i], 1e-14);
+        Assert.That(actual, Is.EqualTo(expected).Within(1e-14));
     }
 
     [Test]
@@ -62,8 +61,7 @@ public class ABBTests
             .SelectMany(p => new[] { (Vector3d)p.Origin, p.XAxis, p.YAxis })
             .SelectMany(v => new[] { v.X, v.Y, v.Z });
 
-        foreach (var (e, a) in expected.Zip(actual))
-            Assert.AreEqual(e, a, 1e-12);
+        Assert.That(actual, Is.EqualTo(expected).Within(1e-12));
     }
 
     [Test]
@@ -85,6 +83,7 @@ ENDMODULE";
 
         var code = _program.Code ?? throw new InvalidOperationException("Program code not generated");
         var actual = string.Join(Environment.NewLine, code[0].SelectMany(c => c));
-        Assert.AreEqual(expected, actual);
+
+        Assert.That(actual, Is.EqualTo(expected));
     }
 }

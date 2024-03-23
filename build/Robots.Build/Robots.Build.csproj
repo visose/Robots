@@ -2,14 +2,14 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <StartWorkingDirectory>$(RootDir)</StartWorkingDirectory>
     <StartArguments><!--debug--></StartArguments>
     <NoWarn>CA1852</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="RhinoPackager" Version="1.3.0" />
+    <PackageReference Include="RhinoPackager" Version="1.4.0" />
   </ItemGroup>
 
 </Project>

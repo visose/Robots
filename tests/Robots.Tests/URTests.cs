@@ -28,7 +28,7 @@ public class URTests
     public void URCorrectDuration()
     {
         const double expected = 1.7425663263380393;
-        Assert.AreEqual(expected, _program.Duration, 1e-14);
+        Assert.That(_program.Duration, Is.EqualTo(expected).Within(1e-14));
     }
 
     [Test]
@@ -41,8 +41,7 @@ public class URTests
 
         var actual = _program.Targets[1].Joints;
 
-        for (int i = 0; i < 6; i++)
-            Assert.AreEqual(expected[i], actual[i], 1e-14);
+        Assert.That(actual, Is.EqualTo(expected).Within(1e-14));
     }
 
     [Test]
@@ -57,8 +56,7 @@ public class URTests
             .SelectMany(p => new[] { (Vector3d)p.Origin, p.XAxis, p.YAxis })
             .SelectMany(v => new[] { v.X, v.Y, v.Z });
 
-        foreach (var (e, a) in expected.Zip(actual))
-            Assert.AreEqual(e, a, 1e-12);
+        Assert.That(actual, Is.EqualTo(expected).Within(1e-12));
     }
 
     [Test]
@@ -79,6 +77,7 @@ end";
 
         var code = _program.Code ?? throw new InvalidOperationException("Program code not generated");
         var actual = string.Join(Environment.NewLine, code[0].SelectMany(c => c)).ReplaceLineEndings();
-        Assert.AreEqual(expected, actual);
+
+        Assert.That(actual, Is.EqualTo(expected));
     }
 }
