@@ -27,16 +27,16 @@ public static class FileIO
         return names;
     }
 
-    public static RobotSystem ParseRobotSystem(string xml, Plane basePlane)
+    public static RobotSystem ParseRobotSystem(string xml, Plane basePlane, IPostProcessor? postProcessor = null)
     {
         var element = XElement.Parse(xml);
-        return CreateRobotSystem(element, basePlane, false);
+        return CreateRobotSystem(element, basePlane, false, postProcessor);
     }
 
-    public static RobotSystem LoadRobotSystem(string name, Plane basePlane, bool loadMeshes = true)
+    public static RobotSystem LoadRobotSystem(string name, Plane basePlane, bool loadMeshes, IPostProcessor? postProcessor)
     {
         var (element, _) = LoadElement(name, ElementType.RobotSystem);
-        return CreateRobotSystem(element, basePlane, loadMeshes);
+        return CreateRobotSystem(element, basePlane, loadMeshes, postProcessor);
     }
 
     public static Tool LoadTool(string name)
@@ -119,7 +119,7 @@ public static class FileIO
         throw new ArgumentException($" {type} \"{name}\" not found");
     }
 
-    static RobotSystem CreateRobotSystem(XElement element, Plane basePlane, bool loadMeshes)
+    static RobotSystem CreateRobotSystem(XElement element, Plane basePlane, bool loadMeshes, IPostProcessor? postProcessor)
     {
         var typeName = element.Name.LocalName;
 
@@ -142,17 +142,17 @@ public static class FileIO
             mechanicalGroups.Add(CreateMechanicalGroup(mechanicalGroup, loadMeshes));
 
         var io = CreateIO(element.GetElementOrDefault("IO"), manufacturer);
-        Mesh? environment = null;
+        SystemAttributes attributes = new(name, io, basePlane, postProcessor);
 
         return manufacturer switch
         {
-            Manufacturers.ABB => new SystemAbb(name, mechanicalGroups, io, basePlane, environment),
-            Manufacturers.KUKA => new SystemKuka(name, mechanicalGroups, io, basePlane, environment),
-            Manufacturers.UR => new SystemUR(name, (RobotUR)mechanicalGroups[0].Robot, io, basePlane, environment),
-            Manufacturers.Staubli => new SystemStaubli(name, mechanicalGroups, io, basePlane, environment),
-            Manufacturers.FrankaEmika => new SystemFranka(name, (RobotFranka)mechanicalGroups[0].Robot, io, basePlane, environment),
-            Manufacturers.Doosan => new SystemDoosan(name, (RobotDoosan)mechanicalGroups[0].Robot, io, basePlane, environment),
-            Manufacturers.Fanuc => new SystemFanuc(name, mechanicalGroups, io, basePlane, environment),
+            Manufacturers.ABB => new SystemAbb(attributes, mechanicalGroups),
+            Manufacturers.KUKA => new SystemKuka(attributes, mechanicalGroups),
+            Manufacturers.UR => new SystemUR(attributes, (RobotUR)mechanicalGroups[0].Robot),
+            Manufacturers.Staubli => new SystemStaubli(attributes, mechanicalGroups),
+            Manufacturers.FrankaEmika => new SystemFranka(attributes, (RobotFranka)mechanicalGroups[0].Robot),
+            Manufacturers.Doosan => new SystemDoosan(attributes, (RobotDoosan)mechanicalGroups[0].Robot),
+            Manufacturers.Fanuc => new SystemFanuc(attributes, mechanicalGroups),
 
             _ => throw new ArgumentException($" Manufacturer '{manufacturer} is not supported.")
         };

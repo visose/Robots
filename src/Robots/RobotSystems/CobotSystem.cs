@@ -6,8 +6,8 @@ public abstract class CobotSystem : RobotSystem
 {
     public RobotArm Robot { get; }
 
-    internal CobotSystem(string name, Manufacturers manufacturer, RobotArm robot, IO io, Plane basePlane, Mesh? environment)
-        : base(name, manufacturer, io, basePlane, environment, GetDefaultPose(robot))
+    internal CobotSystem(SystemAttributes attributes, RobotArm robot)
+        : base(attributes, GetDefaultPose(robot))
     {
         Robot = robot;
         DisplayMesh.Append(robot.DisplayMesh);
@@ -17,8 +17,8 @@ public abstract class CobotSystem : RobotSystem
     static DefaultPose GetDefaultPose(RobotArm robot)
     {
         return new DefaultPose(
-            planes: [robot.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY).ToList()],
-            meshes: [robot.Joints.Select(j => j.Mesh).Prepend(robot.BaseMesh).ToList()]
+            [robot.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY).ToList()],
+            [robot.Joints.Select(j => j.Mesh).Prepend(robot.BaseMesh).ToList()]
             );
     }
 

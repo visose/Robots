@@ -6,10 +6,11 @@ public abstract class IndustrialSystem : RobotSystem
 {
     public List<MechanicalGroup> MechanicalGroups { get; }
 
-    internal IndustrialSystem(string name, Manufacturers manufacturer, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment)
-        : base(name, manufacturer, io, basePlane, environment, GetDefaultPose(mechanicalGroups))
+    internal IndustrialSystem(SystemAttributes attributes, List<MechanicalGroup> mechanicalGroups)
+        : base(attributes, GetDefaultPose(mechanicalGroups))
     {
         MechanicalGroups = mechanicalGroups;
+
         foreach (var group in mechanicalGroups)
         {
             var movesRobot = group.Externals.Find(m => m.MovesRobot);
@@ -34,8 +35,8 @@ public abstract class IndustrialSystem : RobotSystem
     static DefaultPose GetDefaultPose(List<MechanicalGroup> groups)
     {
         return new DefaultPose(
-            planes: groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY)).SelectMany(p => p).ToList()).ToList(),
-            meshes: groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Mesh).Prepend(e.BaseMesh)).SelectMany(p => p).ToList()).ToList()
+            groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY)).SelectMany(p => p).ToList()).ToList(),
+            groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Mesh).Prepend(e.BaseMesh)).SelectMany(p => p).ToList()).ToList()
             );
     }
 

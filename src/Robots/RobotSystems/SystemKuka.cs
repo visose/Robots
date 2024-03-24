@@ -4,8 +4,11 @@ namespace Robots;
 
 public class SystemKuka : IndustrialSystem
 {
-    internal SystemKuka(string name, List<MechanicalGroup> mechanicalGroup, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.KUKA, mechanicalGroup, io, basePlane, environment) { }
+    internal SystemKuka(SystemAttributes attributes, List<MechanicalGroup> mechanicalGroup)
+        : base(attributes, mechanicalGroup) { }
 
+    public override Manufacturers Manufacturer => Manufacturers.KUKA;
+    protected override IPostProcessor GetDefaultPostprocessor() => new KRLPostProcessor();
     public override double[] PlaneToNumbers(Plane plane)
     {
         var t = plane.ToTransform();
@@ -42,8 +45,6 @@ public class SystemKuka : IndustrialSystem
 
         return result.ToPlane();
     }
-
-    internal override List<List<List<string>>> Code(Program program) => new KRLPostProcessor(this, program).Code;
 
     internal override void SaveCode(IProgram program, string folder)
     {

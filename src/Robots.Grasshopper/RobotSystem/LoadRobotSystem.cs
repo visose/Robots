@@ -16,6 +16,8 @@ public class LoadRobotSystem : GH_Component
     {
         pManager.AddTextParameter("Name", "N", "Name of the robot system", GH_ParamAccess.item);
         pManager.AddPlaneParameter("Base", "P", "Base plane", GH_ParamAccess.item, Plane.WorldXY);
+        pManager.AddParameter(new PostProcessorParameter(), "PostProcessor", "Ps", "Optional alternative post-processor.", GH_ParamAccess.item);
+        pManager[2].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -33,20 +35,15 @@ public class LoadRobotSystem : GH_Component
     {
         string? name = null;
         Plane basePlane = default;
+        IPostProcessor? postProcessor = null;
 
-        if (!DA.GetData(0, ref name)) return;
+        if (!DA.GetData(0, ref name) || name is null) return;
         if (!DA.GetData(1, ref basePlane)) return;
-
-        if (name is null)
-        {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $" Input parameter N cannot be null");
-            DA.AbortComponentSolution();
-            return;
-        }
+        DA.GetData(2, ref postProcessor);
 
         try
         {
-            var robotSystem = FileIO.LoadRobotSystem(name, basePlane);
+            var robotSystem = FileIO.LoadRobotSystem(name, basePlane, true, postProcessor);
             DA.SetData(0, robotSystem);
         }
         catch (Exception e)

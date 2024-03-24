@@ -4,12 +4,15 @@ namespace Robots;
 
 public class SystemFranka : CobotSystem
 {
-    internal SystemFranka(string name, RobotFranka robot, IO io, Plane basePlane, Mesh? environment)
-        : base(name, Manufacturers.FrankaEmika, robot, io, basePlane, environment)
+    internal SystemFranka(SystemAttributes attributes, RobotFranka robot)
+        : base(attributes, robot)
     {
         Remote = new RemoteFranka();
-        RobotJointCount = 7;
     }
+
+    public override int RobotJointCount => 7;
+    public override Manufacturers Manufacturer => Manufacturers.FrankaEmika;
+    protected override IPostProcessor GetDefaultPostprocessor() => new FrankxPostProcessor();
 
     static Plane QuaternionToPlane(double x, double y, double z, double q1, double q2, double q3, double q4)
     {
@@ -33,9 +36,6 @@ public class SystemFranka : CobotSystem
 
         return QuaternionToPlane(n0, n1, n2, numbers[3], numbers[4], numbers[5], numbers[6]);
     }
-
-    internal override List<List<List<string>>> Code(Program program) =>
-        new FrankxPostProcessor(this, program).Code;
 
     internal override void SaveCode(IProgram program, string folder)
     {

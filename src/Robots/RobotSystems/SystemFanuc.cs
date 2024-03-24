@@ -4,10 +4,12 @@ namespace Robots;
 
 public class SystemFanuc : IndustrialSystem
 {
-    internal SystemFanuc(string name, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.Fanuc, mechanicalGroups, io, basePlane, environment)
-    {
-       
-    }
+    internal SystemFanuc(SystemAttributes attributes, List<MechanicalGroup> mechanicalGroups)
+        : base(attributes, mechanicalGroups)
+    {}
+
+    public override Manufacturers Manufacturer => Manufacturers.Fanuc;
+    protected override IPostProcessor GetDefaultPostprocessor() => new FanucPostProcessor();
 
     public static Plane QuaternionToPlane(double x, double y, double z, double q1, double q2, double q3, double q4)
     {
@@ -72,6 +74,4 @@ public class SystemFanuc : IndustrialSystem
             }
         }
     }
-
-    internal override List<List<List<string>>> Code(Program program) => new FanucPostProcessor(this, program).Code;
 }

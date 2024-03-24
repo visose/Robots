@@ -7,9 +7,13 @@ namespace Robots;
 
 public class SystemStaubli : IndustrialSystem
 {
-    internal SystemStaubli(string name, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.Staubli, mechanicalGroups, io, basePlane, environment)
+    internal SystemStaubli(SystemAttributes attributes, List<MechanicalGroup> mechanicalGroups)
+        : base(attributes, mechanicalGroups)
     {
     }
+
+    public override Manufacturers Manufacturer => Manufacturers.Staubli;
+    protected override IPostProcessor GetDefaultPostprocessor() => new VAL3PostProcessor();
 
     public static Plane EulerToPlane(double x, double y, double z, double aDeg, double bDeg, double cDeg)
     {
@@ -98,6 +102,4 @@ public class SystemStaubli : IndustrialSystem
             }
         }
     }
-
-    internal override List<List<List<string>>> Code(Program program) => new VAL3PostProcessor(this, program).Code;
 }

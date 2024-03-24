@@ -6,9 +6,12 @@ namespace Robots;
 
 public class SystemDoosan : CobotSystem
 {
-    internal SystemDoosan(string name, RobotDoosan robot, IO io, Plane basePlane, Mesh? environment)
-        : base(name, Manufacturers.Doosan, robot, io, basePlane, environment)
+    internal SystemDoosan(SystemAttributes attributes, RobotDoosan robot)
+        : base(attributes, robot)
     { }
+
+    public override Manufacturers Manufacturer => Manufacturers.Doosan;
+    protected override IPostProcessor GetDefaultPostprocessor() => new DrlPostProcessor();
 
     public static Vector6d EulerZYZ(Transform t)
     {
@@ -55,9 +58,6 @@ public class SystemDoosan : CobotSystem
         var t = e.EulerZYXToTransform();
         return t.ToPlane();
     }
-
-    internal override List<List<List<string>>> Code(Program program) =>
-        new DrlPostProcessor(this, program).Code;
 
     internal override void SaveCode(IProgram program, string folder)
     {

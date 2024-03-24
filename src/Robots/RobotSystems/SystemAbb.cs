@@ -4,7 +4,8 @@ namespace Robots;
 
 public class SystemAbb : IndustrialSystem
 {
-    internal SystemAbb(string name, List<MechanicalGroup> mechanicalGroups, IO io, Plane basePlane, Mesh? environment) : base(name, Manufacturers.ABB, mechanicalGroups, io, basePlane, environment)
+    internal SystemAbb(SystemAttributes attributes, List<MechanicalGroup> mechanicalGroups)
+        : base(attributes, mechanicalGroups)
     {
         Remote = new RemoteAbb();
     }
@@ -22,6 +23,9 @@ public class SystemAbb : IndustrialSystem
         return [plane.OriginX, plane.OriginY, plane.OriginZ, q.A, q.B, q.C, q.D];
     }
 
+    protected override IPostProcessor GetDefaultPostprocessor() => new RapidPostProcessor();
+
+    public override Manufacturers Manufacturer => Manufacturers.ABB;
     public override double[] PlaneToNumbers(Plane plane) => PlaneToQuaternion(plane);
     public override Plane NumbersToPlane(double[] numbers) => QuaternionToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5], numbers[6]);
 
@@ -74,6 +78,4 @@ public class SystemAbb : IndustrialSystem
             }
         }
     }
-
-    internal override List<List<List<string>>> Code(Program program) => new RapidPostProcessor(this, program).Code;
 }

@@ -5,11 +5,14 @@ namespace Robots;
 
 public class SystemUR : CobotSystem
 {
-    internal SystemUR(string name, RobotUR robot, IO io, Plane basePlane, Mesh? environment)
-        : base(name, Manufacturers.UR, robot, io, basePlane, environment)
+    internal SystemUR(SystemAttributes attributes, RobotUR robot)
+        : base(attributes, robot)
     {
         Remote = new RemoteUR();
     }
+
+    public override Manufacturers Manufacturer => Manufacturers.UR;
+    protected override IPostProcessor GetDefaultPostprocessor() => new URScriptPostProcessor();
 
     /// <summary>
     /// Code lifted from http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToAngle/
@@ -163,9 +166,6 @@ public class SystemUR : CobotSystem
 
         return AxisAngleToPlane(n0, n1, n2, numbers[3], numbers[4], numbers[5]);
     }
-
-    internal override List<List<List<string>>> Code(Program program) =>
-        new URScriptPostProcessor(this, program).Code;
 
     internal override void SaveCode(IProgram program, string folder)
     {

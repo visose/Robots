@@ -4,26 +4,28 @@ using static Robots.Util;
 
 namespace Robots;
 
+public interface IPostProcessor
+{
+    List<List<List<string>>> GetCode(RobotSystem system, Program program);
+}
+
 public enum Manufacturers { ABB, KUKA, UR, Staubli, FrankaEmika, Doosan, Fanuc, All };
 
-public class DefaultPose(List<List<Plane>> planes, List<List<Mesh>> meshes)
-{
-    public List<List<Plane>> Planes { get; } = planes;
-    public List<List<Mesh>> Meshes { get; } = meshes;
-}
+public record DefaultPose(List<List<Plane>> Planes, List<List<Mesh>> Meshes);
+record SystemAttributes(string Name, IO IO, Plane BasePlane, IPostProcessor? PostProcessor);
 
 public abstract class RobotSystem
 {
     Plane _basePlane;
+    protected IPostProcessor _postProcessor;
     public string Name { get; }
-    public Manufacturers Manufacturer { get; }
+    public abstract Manufacturers Manufacturer { get; }
     public IO IO { get; }
     public ref Plane BasePlane => ref _basePlane;
-    public Mesh? Environment { get; }
     public Mesh DisplayMesh { get; } = new();
     public DefaultPose DefaultPose { get; }
     public IRemote? Remote { get; protected set; }
-    public int RobotJointCount { get; protected set; } = 6;
+    public virtual int RobotJointCount => 6;
 
     static RobotSystem()
     {
@@ -31,25 +33,16 @@ public abstract class RobotSystem
         Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
     }
 
-    protected RobotSystem(string name, Manufacturers manufacturer, IO io, Plane basePlane, Mesh? environment, DefaultPose defaultPose)
+    private protected RobotSystem(SystemAttributes attributes, DefaultPose defaultPose)
     {
-        Name = name;
-        Manufacturer = manufacturer;
-        IO = io;
-        BasePlane = basePlane;
-        Environment = environment;
+        (Name, IO, BasePlane, _) = attributes;
+        _postProcessor = attributes.PostProcessor ?? GetDefaultPostprocessor();
         DefaultPose = defaultPose;
     }
 
     /// <summary>
     /// Quaternion interpolation based on: http://www.grasshopper3d.com/group/lobster/forum/topics/lobster-reloaded
     /// </summary>
-    /// <param name="a"></param>
-    /// <param name="b"></param>
-    /// <param name="t"></param>
-    /// <param name="min"></param>
-    /// <param name="max"></param>
-    /// <returns></returns>
     public virtual Plane CartesianLerp(Plane a, Plane b, double t, double min, double max)
     {
         t = (t - min) / (max - min);
@@ -63,11 +56,16 @@ public abstract class RobotSystem
         return q.ToPlane(newOrigin);
     }
 
-    public abstract List<KinematicSolution> Kinematics(IEnumerable<Target> target, IEnumerable<double[]>? prevJoints = null);
+    internal List<List<List<string>>> Code(Program program)
+    {
+        return _postProcessor.GetCode(this, program);
+    }
+
+    protected abstract IPostProcessor GetDefaultPostprocessor();
     internal abstract void SaveCode(IProgram program, string folder);
-    internal abstract List<List<List<string>>> Code(Program program);
     internal abstract double Payload(int group);
     internal abstract IList<Joint> GetJoints(int group);
+    public abstract List<KinematicSolution> Kinematics(IEnumerable<Target> target, IEnumerable<double[]>? prevJoints = null);
     public abstract double DegreeToRadian(double degree, int i, int group = 0);
     public abstract double[] PlaneToNumbers(Plane plane);
     public abstract Plane NumbersToPlane(double[] numbers);
