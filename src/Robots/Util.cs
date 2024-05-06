@@ -467,4 +467,74 @@ static class Util
 
         return result;
     }
+
+    // Matrix
+
+    public static double[,] Mult(this double[,] a, double[,] b)
+    {
+        int rA = a.GetLength(0);
+        int cA = a.GetLength(1);
+        int rB = b.GetLength(0);
+        int cB = b.GetLength(1);
+
+        if (cA != rB)
+            throw new("Matrices have incompatible dimensions.");
+
+        var result = new double[rA, cB];
+
+        for (int i = 0; i < rA; i++)
+        {
+            for (int j = 0; j < cB; j++)
+            {
+                double n = 0;
+
+                for (int k = 0; k < cA; k++)
+                    n += a[i, k] * b[k, j];
+
+                result[i, j] = n;
+            }
+        }
+
+        return result;
+    }
+
+    public static double[] Mult(this double[] a, double[,] b)
+    {
+        int cA = a.Length;
+        int rB = b.GetLength(0);
+        int cB = b.GetLength(1);
+
+        if (cA != rB)
+            throw new("Matrices have incompatible dimensions.");
+
+        var result = new double[cB];
+
+        for (int j = 0; j < cB; j++)
+        {
+            double n = 0;
+
+            for (int k = 0; k < cA; k++)
+                n += a[k] * b[k, j];
+
+            result[j] = n;
+        }
+
+        return result;
+    }
+
+    public static double[,] Transpose(this double[,] matrix)
+    {
+        int w = matrix.GetLength(0);
+        int h = matrix.GetLength(1);
+
+        var result = new double[h, w];
+
+        for (int i = 0; i < w; i++)
+        {
+            for (int j = 0; j < h; j++)
+                result[j, i] = matrix[i, j];
+        }
+
+        return result;
+    }
 }

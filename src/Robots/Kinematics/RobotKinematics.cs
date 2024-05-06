@@ -54,7 +54,7 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
 
         if (target is JointTarget)
         {
-            if (_mechanism.Joints.Length == 7)
+            if (this is NumericalKinematics)
             {
                 solution.Configuration = RobotConfigurations.None;
             }

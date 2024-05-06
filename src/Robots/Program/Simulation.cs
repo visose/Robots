@@ -68,7 +68,7 @@ class Simulation
 
         var systemTarget = _keyframes[_currentTarget + 1];
         var prevSystemTarget = _keyframes[_currentTarget + 0];
-        var prevJoints = prevSystemTarget.ProgramTargets.Select(x => x.Kinematics.Joints);
+        var prevJoints = prevSystemTarget.ProgramTargets.Map(x => x.Kinematics.Joints);
 
         var kineTargets = systemTarget.Lerp(prevSystemTarget, _program.RobotSystem, time, prevSystemTarget.TotalTime, systemTarget.TotalTime);
         CurrentSimulationPose.Kinematics = _program.RobotSystem.Kinematics(kineTargets, prevJoints);

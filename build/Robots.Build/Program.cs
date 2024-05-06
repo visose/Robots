@@ -32,9 +32,6 @@ app.Add(
                 "RobotStudio.Services.RobApi.Desktop.dll",
                 "RobotStudio.Services.RobApi.dll",
                 "Renci.SshNet.dll",
-                "MathNet.Numerics.dll",
-                "Kdl.NetStandard.dll",
-                "kdl_wrap.dll",
                 "iconRobot.png"
             ],
             tags:

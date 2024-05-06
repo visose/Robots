@@ -121,7 +121,7 @@ class SphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         if (wrist)
             joints[4] = -joints[4];
 
-        const double zero_threshold = 1e-3;
+        const double zero_threshold = 1.24e-2;
 
         if (Abs(joints[4]) < zero_threshold)
         {
@@ -172,10 +172,10 @@ class SphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         }
 
         if (isUnreachable)
-            errors.Add($"Target out of reach");
+            errors.Add($"Target out of reach.");
 
         if (isSingularity)
-            errors.Add($"Target near singularity");
+            errors.Add($"Target near singularity.");
 
         return joints;
     }

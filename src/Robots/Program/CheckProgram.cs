@@ -34,6 +34,7 @@ class CheckProgram
         if (fix.Any())
         {
             var kinematics = _robotSystem.Kinematics(firstTarget.ProgramTargets.Select(x => x.Target));
+            var isNumerical = IsNumerical();
 
             foreach (var programTarget in fix)
             {
@@ -45,7 +46,15 @@ class CheckProgram
                 }
 
                 programTarget.Target = new JointTarget(kinematic.Joints.RangeSubset(0, _robotSystem.RobotJointCount), programTarget.Target);
-                _program.Warnings.Add($"First target in robot {programTarget.Group} changed to a joint motion using axis rotations");
+
+                if (isNumerical)
+                {
+                    _program.Errors.Add($"First target in robot {programTarget.Group} should be a joint target.");
+                }
+                else
+                {
+                    _program.Warnings.Add($"First target in robot {programTarget.Group} changed to a joint target.");
+                }
             }
         }
     }
@@ -71,9 +80,6 @@ class CheckProgram
 
                         if (programTarget.Target.External.Length != externalCount)
                         {
-                            //double[] external = programTarget.Target.External;
-                            //Array.Resize(ref external, externalCount);
-                            //programTarget.Target.External = external;
                             resizeCount++;
                             resizeTarget ??= programTarget;
                         }
@@ -110,7 +116,6 @@ class CheckProgram
         CheckTargets(t => t.Speed.Equals(Speed.Default), "have their speed set to default");
 
         // Fix linear with forced config
-
         CheckTargets(
             t => t is CartesianTarget cartesian && cartesian.Motion == Motions.Linear && cartesian.Configuration is not null,
             "are set to linear with a forced configuration (configuration is ignored for linear motions)",
@@ -217,17 +222,33 @@ class CheckProgram
         _program.Attributes.AddRange(attributes);
     }
 
+    bool IsNumerical()
+    {
+        var robots = _robotSystem is IndustrialSystem industrial
+            ? industrial.MechanicalGroups.Select(g => g.Robot)
+            : [((CobotSystem)_robotSystem).Robot];
+
+        return robots.Any(r => r.Solver is NumericalKinematics);
+    }
+
     int FixTargetMotions(List<SystemTarget> systemTargets, double stepSize)
     {
         double time = 0;
-        //int groups = systemTargets[0].ProgramTargets.Count;
         double[][]? prevJoints = null;
-        bool is7dof = _robotSystem.RobotJointCount == 7;
+        bool isNumerical = IsNumerical();
 
         for (int i = 0; i < systemTargets.Count; i++)
         {
             var systemTarget = systemTargets[i];
-            //int errorIndex = -1;
+
+            if (isNumerical)
+            {
+                if (systemTarget.ProgramTargets.Any(t => t.Target is CartesianTarget target && target.Motion != Motions.Linear))
+                {
+                    _program.Errors.Add($"Cartesian joint motion found at target {i}, but is not supported for this robot.");
+                    break;
+                }
+            }
 
             // first target
             if (i == 0)
@@ -242,7 +263,8 @@ class CheckProgram
             {
                 var prevSystemTarget = systemTargets[i - 1];
 
-                // no interpolation
+                //no interpolation
+                if (!isNumerical)
                 {
                     var kineTargets = systemTarget.ProgramTargets.MapToList(x => x.Target.ShallowClone());
 
@@ -254,17 +276,13 @@ class CheckProgram
                         }
                     }
 
-                    if (!is7dof)
-                    {
-                        var kinematics = _robotSystem.Kinematics(kineTargets, prevJoints);
-                        prevJoints = kinematics.Map(k => k.Joints);
-                        systemTarget.SetTargetKinematics(kinematics, _program.Errors, _program.Warnings, prevSystemTarget);
-                    }
+                    var kinematics = _robotSystem.Kinematics(kineTargets, prevJoints);
+                    prevJoints = kinematics.Map(k => k.Joints);
+                    systemTarget.SetTargetKinematics(kinematics, _program.Errors, _program.Warnings, prevSystemTarget);
                 }
 
                 double divisions = 1;
                 var linearTargets = systemTarget.ProgramTargets.Where(x => !x.IsJointMotion).ToList();
-                //   if (linearTargets.Count() > 0) program.Errors.Clear();
 
                 foreach (var target in linearTargets)
                 {
@@ -292,6 +310,7 @@ class CheckProgram
                     var interTarget = systemTarget.ShallowClone();
                     var kineTargets = systemTarget.Lerp(prevSystemTarget, _robotSystem, t, 0.0, 1.0);
                     var kinematics = _program.RobotSystem.Kinematics(kineTargets, prevJoints);
+
                     prevJoints = kinematics.Map(k => k.Joints);
                     interTarget.SetTargetKinematics(kinematics, _program.Errors, _program.Warnings, prevInterTarget);
 
@@ -308,7 +327,7 @@ class CheckProgram
                         target.SpeedType = speeds.Item4;
                     }
 
-                    if ((j > 1) && (is7dof || (Abs(slowestDelta - lastDeltaTime) > 1e-09)))
+                    if ((j > 1) && (isNumerical || (Abs(slowestDelta - lastDeltaTime) > 1e-09)))
                     {
                         Keyframes.Add(prevInterTarget.ShallowClone());
                         deltaTimeSinceLast = 0;
@@ -327,6 +346,9 @@ class CheckProgram
                     interTarget.TotalTime = time;
 
                     prevInterTarget = interTarget;
+
+                    if (_program.Errors.Count > 0)
+                        break;
                 }
 
                 Keyframes.Add(prevInterTarget.ShallowClone());
@@ -352,7 +374,7 @@ class CheckProgram
                 }
 
                 // set target kinematics
-                if (is7dof)
+                if (isNumerical)
                 {
                     var lastKinematics = prevInterTarget.ProgramTargets.MapToList(p => p.Kinematics);
                     systemTarget.SetTargetKinematics(lastKinematics, _program.Errors, _program.Warnings, prevInterTarget);
@@ -379,8 +401,6 @@ class CheckProgram
                 _program.Duration = time;
                 return i;
             }
-
-            //   if (errorIndex != -1) return errorIndex;
         }
 
         _program.Duration = time;
@@ -396,8 +416,7 @@ class CheckProgram
             {
                 if (!systemTargets[i + 1].ProgramTargets[target.Group].IsJointMotion)
                 {
-                    _program.Errors.Add($"Undefined configuration (probably due to a singularity) in target {target.Index} of robot {target.Group} before a linear motion");
-                    //IndexError = i;
+                    _program.Errors.Add($"Undefined configuration (probably due to a singularity) in target {target.Index} of robot {target.Group} before a linear motion.");
                 }
             }
         }
@@ -409,9 +428,6 @@ class CheckProgram
 
         attributes.Remove(attribute);
         attributes.Add(namedAttribute);
-
-        //int index = _program.Attributes.FindIndex(x => x == attribute);
-        //_program.Attributes[index] = namedAttribute;
 
         if (namedAttribute is Tool tool)
         {

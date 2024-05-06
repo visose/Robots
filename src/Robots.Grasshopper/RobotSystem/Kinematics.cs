@@ -4,6 +4,8 @@ namespace Robots.Grasshopper;
 
 public class Kinematics : GH_Component
 {
+    readonly Dictionary<RobotSystem, List<KinematicSolution>> _prevKinematics = [];
+
     public Kinematics() : base("Kinematics", "K", "Inverse and forward kinematics for a single target, or list of targets when using a robot system with coordinated robots.", "Robots", "Components") { }
     public override GH_Exposure Exposure => GH_Exposure.quinary;
     public override Guid ComponentGuid => new("{EFDA05EB-B281-4703-9C9E-B5F98A9B2E1D}");
@@ -38,17 +40,32 @@ public class Kinematics : GH_Component
         DA.GetDataList(2, ghPrevJoints);
         if (!DA.GetData(3, ref drawMeshes)) return;
 
-        var prevJoints = ghPrevJoints.Count == 0
-            ? null
-            : ghPrevJoints.Select(v => v.Value).ToList();
+        double[][]? prevJoints = null;
+
+        if (_prevKinematics.TryGetValue(robotSystem, out var prevKinematics))
+        {
+            prevJoints = prevKinematics.Select(x => x.Joints).ToArray();
+        }
+        else if (ghPrevJoints.Count > 0)
+        {
+            prevJoints = ghPrevJoints.Select(v => v.Value).ToArray();
+        }
 
         var targets = ghTargets.Select(x => x.Value).ToList();
         var kinematics = robotSystem.Kinematics(targets, prevJoints);
         var errors = kinematics.SelectMany(x => x.Errors);
 
         if (errors.Any())
-        {
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in solution");
+
+        if (errors.Any(e => e.Equals("Target out of reach.")))
+        {
+            if (prevKinematics is not null)
+                kinematics = prevKinematics;
+        }
+        else
+        {
+            _prevKinematics[robotSystem] = kinematics;
         }
 
         var joints = kinematics.SelectMany(x => x.Joints).ToArray();

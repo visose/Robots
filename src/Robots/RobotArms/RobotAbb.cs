@@ -8,7 +8,15 @@ public class RobotAbb : RobotArm
 {
     internal RobotAbb(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints)
         : base(model, Manufacturers.ABB, payload, basePlane, baseMesh, joints) { }
-    private protected override MechanismKinematics CreateSolver() => new SphericalWristKinematics(this);
+
+    private protected override MechanismKinematics CreateSolver()
+    {
+        var isNumerical = Model.StartsWith("ABB.CRB15000", StringComparison.OrdinalIgnoreCase);
+
+        return isNumerical
+            ? new NumericalKinematics(this)
+            : new SphericalWristKinematics(this);
+    }
 
     public static double ABBDegreeToRadian(double degree, int i)
     {

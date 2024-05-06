@@ -18,6 +18,8 @@ public abstract class Mechanism
 
     MechanismKinematics? _solver;
 
+    internal MechanismKinematics Solver => _solver ??= CreateSolver();
+
     internal Mechanism(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints, bool movesRobot)
     {
         _model = model;
@@ -26,14 +28,8 @@ public abstract class Mechanism
         BasePlane = basePlane;
         BaseMesh = baseMesh;
         MovesRobot = movesRobot;
-        Joints = InitJoints(joints.TryCastArray());
+        Joints = InitJoints(joints);
         DisplayMesh = CreateDisplayMesh();
-
-        for (int i = 0; i < Joints.Length; i++)
-        {
-            var range = Joints[i].Range;
-            Joints[i].Range = new Interval(DegreeToRadian(range.T0, i), DegreeToRadian(range.T1, i));
-        }
 
         SetStartPlanes();
     }
@@ -59,6 +55,12 @@ public abstract class Mechanism
 
             if (joint.Sign == 0)
                 joint.Sign = signs[i];
+
+            var range = joint.Range;
+            range.T0 = DegreeToRadian(range.T0, i);
+            range.T1 = DegreeToRadian(range.T1, i);
+            range.MakeIncreasing();
+            joint.Range = range;
         }
 
         return joints;
@@ -81,7 +83,7 @@ public abstract class Mechanism
     }
 
     public KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? basePlane = null) =>
-        (_solver ??= CreateSolver()).Solve(target, prevJoints, basePlane);
+        Solver.Solve(target, prevJoints, basePlane);
 
     private protected abstract MechanismKinematics CreateSolver();
     protected abstract void SetStartPlanes();

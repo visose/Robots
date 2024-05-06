@@ -1,6 +1,4 @@
-using System.Runtime.InteropServices;
 using Rhino.Geometry;
-using static System.Runtime.InteropServices.RuntimeInformation;
 using static System.Math;
 using static Robots.Util;
 
@@ -13,10 +11,7 @@ public class RobotFranka : RobotArm
 
     private protected override MechanismKinematics CreateSolver()
     {
-        if (IsOSPlatform(OSPlatform.Windows) && OSArchitecture == Architecture.X64)
-            return new FrankaKdlKinematics(this);
-
-        return new FrankaNumericalKinematics(this);
+        return new NumericalKinematics(this, true, 2);
     }
 
     public override double DegreeToRadian(double degree, int i) => degree * (PI / 180.0);

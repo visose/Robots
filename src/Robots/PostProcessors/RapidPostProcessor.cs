@@ -121,8 +121,10 @@ class RapidPostProcessor : IPostProcessor
 
         List<string> SubModule(int file, int group)
         {
+            var mechGroup = _system.MechanicalGroups[group];
+
             bool multiProgram = _program.MultiFileIndices.Count > 1;
-            string groupName = _system.MechanicalGroups[group].Name;
+            string groupName = mechGroup.Name;
 
             int start = _program.MultiFileIndices[file];
             int end = (file == _program.MultiFileIndices.Count - 1) ? _program.Targets.Count : _program.MultiFileIndices[file + 1];
@@ -144,9 +146,9 @@ class RapidPostProcessor : IPostProcessor
                 string id = (_system.MechanicalGroups.Count > 1) ? id = $@"\ID:={programTarget.Index}" : "";
                 string external = "extj";
 
-                if (_system.MechanicalGroups[group].Externals.Count > 0)
+                if (mechGroup.Externals.Count > 0)
                 {
-                    double[] values = _system.MechanicalGroups[group].RadiansToDegreesExternal(target);
+                    double[] values = mechGroup.RadiansToDegreesExternal(target);
                     var externals = new string[6];
 
                     for (int i = 0; i < 6; i++)
@@ -174,14 +176,13 @@ class RapidPostProcessor : IPostProcessor
                 {
                     var jointTarget = (JointTarget)programTarget.Target;
                     double[] joints = jointTarget.Joints;
-                    joints = joints.Map((x, i) => _system.MechanicalGroups[group].RadianToDegree(x, i));
+                    joints = joints.Map((x, i) => mechGroup.RadianToDegree(x, i));
                     moveText = $"MoveAbsJ [[{joints[0]:0.####},{joints[1]:0.####},{joints[2]:0.####},{joints[3]:0.####},{joints[4]:0.####},{joints[5]:0.####}],{external}]{id},{target.Speed.Name},{zone},{target.Tool.Name};";
                 }
                 else
                 {
                     var cartesian = (CartesianTarget)programTarget.Target;
                     var plane = cartesian.Plane;
-                    // var quaternion = Quaternion.Rotation(Plane.WorldXY, plane);
                     Quaternion quaternion = plane.ToQuaternion();
 
                     switch (cartesian.Motion)

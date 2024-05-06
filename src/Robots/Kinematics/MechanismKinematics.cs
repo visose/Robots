@@ -66,10 +66,17 @@ abstract class MechanismKinematics
 
     void JointsOutOfRange(KinematicSolution solution)
     {
-        var outofRangeErrors = _mechanism.Joints
-        .Where(x => !x.Range.IncludesParameter(solution.Joints[x.Index]))
-        .Select(x => $"Axis {x.Number + 1} is outside the permitted range.");
-        solution.Errors.AddRange(outofRangeErrors);
+        foreach (var joint in _mechanism.Joints)
+        {
+            var r = joint.Range;
+            var i = joint.Index;
+            var n = solution.Joints[i];
+
+            if (!(r.T0 - 1e-10 < n && n < r.T1 + 1e-10))
+            {
+                solution.Errors.Add($"Axis {i + 1} is outside the permitted range.");
+            }
+        }
     }
 
     protected Transform[] ModifiedDH(double[] joints)

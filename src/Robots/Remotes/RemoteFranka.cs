@@ -91,7 +91,7 @@ public class RemoteFranka : IRemote
             return;
         }
 
-        Send($"echo -e '{_user.Password}\n' | sudo -S python -u {_user.ProgramsDir}/{_uploadedFile}");
+        Send($"echo -e '{_user.Password}\n' | sudo -S python3 -u {_user.ProgramsDir}/{_uploadedFile}");
     }
 
     public void Send(string message)
