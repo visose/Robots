@@ -5,6 +5,7 @@
   - Changed Kinematics component tracks previous pose.
   - Changed program simulation ends earlier at error.
   - Changed Franka remote to call python3 instead of python.
+  - Changed solution to use new .slnx format.
   - Added ability to use alternative post-processors.
   - Added support for ABB GoFa.
 
