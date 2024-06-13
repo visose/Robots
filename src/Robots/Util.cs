@@ -41,7 +41,7 @@ static class Util
 
     // String
 
-    public static bool EqualsIgnoreCase(this string a, string b)
+    public static bool EqualsIgnoreCase(this string? a, string? b)
     {
         return string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
     }

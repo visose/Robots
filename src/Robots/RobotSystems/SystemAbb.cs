@@ -1,4 +1,5 @@
 using Rhino.Geometry;
+using System.Text;
 
 namespace Robots;
 
@@ -32,7 +33,11 @@ public class SystemAbb : IndustrialSystem
     internal override void SaveCode(IProgram program, string folder)
     {
         if (program.Code is null)
-            throw new InvalidOperationException(" Program code not generated");
+            throw new InvalidOperationException(" Program code not generated.");
+
+        bool isOmniCore = Controller.EqualsIgnoreCase("omnicore");
+        var extension = isOmniCore ? "modx" : "mod";
+        var encoding = isOmniCore ? new UTF8Encoding(false) : Encoding.GetEncoding("ISO-8859-1");
 
         Directory.CreateDirectory(Path.Combine(folder, program.Name));
         bool multiProgram = program.MultiFileIndices.Count > 1;
@@ -43,17 +48,18 @@ public class SystemAbb : IndustrialSystem
             {
                 // program
                 string file = Path.Combine(folder, program.Name, $"{program.Name}_{group}.pgf");
-                string mainModule = $@"{program.Name}_{group}.mod";
-                string code = $@"<?xml version=""1.0"" encoding=""ISO-8859-1"" ?>
-    <Program>
-        <Module>{mainModule}</Module>
-    </Program>
-    ";
-                File.WriteAllText(file, code);
+                string mainModule = $@"{program.Name}_{group}.{extension}";
+                string code = $"""
+                    <?xml version="1.0" encoding="ISO-8859-1" ?>
+                    <Program>
+                        <Module>{mainModule}</Module>
+                    </Program>
+                    """;
+                File.WriteAllText(file, code, Encoding.GetEncoding("ISO-8859-1"));
             }
 
             {
-                string file = Path.Combine(folder, program.Name, $"{program.Name}_{group}.mod");
+                string file = Path.Combine(folder, program.Name, $"{program.Name}_{group}.{extension}");
                 var code = program.Code[i][0];
 
                 if (!multiProgram)
@@ -63,7 +69,7 @@ public class SystemAbb : IndustrialSystem
                 }
 
                 var joinedCode = string.Join("\r\n", code);
-                File.WriteAllText(file, joinedCode);
+                File.WriteAllText(file, joinedCode, encoding);
             }
 
             if (multiProgram)
@@ -71,9 +77,9 @@ public class SystemAbb : IndustrialSystem
                 for (int j = 1; j < program.Code[i].Count; j++)
                 {
                     int index = j - 1;
-                    string file = Path.Combine(folder, program.Name, $"{program.Name}_{group}_{index:000}.mod");
+                    string file = Path.Combine(folder, program.Name, $"{program.Name}_{group}_{index:000}.{extension}");
                     var joinedCode = string.Join("\r\n", program.Code[i][j]);
-                    File.WriteAllText(file, joinedCode);
+                    File.WriteAllText(file, joinedCode, encoding);
                 }
             }
         }

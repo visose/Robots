@@ -12,13 +12,14 @@ public interface IPostProcessor
 public enum Manufacturers { ABB, KUKA, UR, Staubli, FrankaEmika, Doosan, Fanuc, Igus, All };
 
 public record DefaultPose(List<List<Plane>> Planes, List<List<Mesh>> Meshes);
-record SystemAttributes(string Name, IO IO, Plane BasePlane, IPostProcessor? PostProcessor);
+record SystemAttributes(string Name, string? Controller, IO IO, Plane BasePlane, IPostProcessor? PostProcessor);
 
 public abstract class RobotSystem
 {
     Plane _basePlane;
     protected IPostProcessor _postProcessor;
     public string Name { get; }
+    public string? Controller { get; }
     public abstract Manufacturers Manufacturer { get; }
     public IO IO { get; }
     public ref Plane BasePlane => ref _basePlane;
@@ -35,7 +36,7 @@ public abstract class RobotSystem
 
     private protected RobotSystem(SystemAttributes attributes, DefaultPose defaultPose)
     {
-        (Name, IO, BasePlane, _) = attributes;
+        (Name, Controller, IO, BasePlane, _) = attributes;
         _postProcessor = attributes.PostProcessor ?? GetDefaultPostprocessor();
         DefaultPose = defaultPose;
     }

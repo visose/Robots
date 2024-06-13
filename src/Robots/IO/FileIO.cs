@@ -21,7 +21,7 @@ public static class FileIO
             var elements = GetTypeElements(root, type);
 
             foreach (var element in elements)
-                names.Add(element.GetAttribute("name"));
+                names.Add(element.GetString("name"));
         }
 
         return names;
@@ -110,7 +110,7 @@ public static class FileIO
             var elements = GetTypeElements(root, type);
 
             var element = elements
-                ?.FirstOrDefault(e => e.GetAttribute("name").EqualsIgnoreCase(name));
+                ?.FirstOrDefault(e => e.GetString("name").EqualsIgnoreCase(name));
 
             if (element is not null)
                 return (element, file);
@@ -130,11 +130,12 @@ public static class FileIO
             throw new ArgumentException($" Element '{typeName}' should be 'RobotSystem'");
         }
 
-        var name = element.GetAttribute("name");
-        var manufacturerAttribute = element.GetAttribute("manufacturer");
+        var name = element.GetString("name");
+        var manufacturerName = element.GetString("manufacturer");
+        var controller = element.GetStringOrDefault("controller");
 
-        if (!Enum.TryParse<Manufacturers>(manufacturerAttribute, out var manufacturer))
-            throw new ArgumentException($" Manufacturer '{manufacturerAttribute}' not valid.");
+        if (!Enum.TryParse<Manufacturers>(manufacturerName, out var manufacturer))
+            throw new ArgumentException($" Manufacturer '{manufacturerName}' not valid.");
 
         var mechanicalGroups = new List<MechanicalGroup>();
 
@@ -142,7 +143,7 @@ public static class FileIO
             mechanicalGroups.Add(CreateMechanicalGroup(mechanicalGroup, loadMeshes));
 
         var io = CreateIO(element.GetElementOrDefault("IO"), manufacturer);
-        SystemAttributes attributes = new(name, io, basePlane, postProcessor);
+        SystemAttributes attributes = new(name, controller, io, basePlane, postProcessor);
 
         return manufacturer switch
         {
@@ -172,10 +173,10 @@ public static class FileIO
 
     static Mechanism CreateMechanism(XElement element, bool loadMeshes)
     {
-        var systemName = element.Parent.Parent.GetAttribute("name");
+        var systemName = element.Parent.Parent.GetString("name");
         var mechanism = element.Name.LocalName;
-        var model = element.GetAttribute("model");
-        var manufacturer = (Manufacturers)Enum.Parse(typeof(Manufacturers), element.GetAttribute("manufacturer"));
+        var model = element.GetString("model");
+        var manufacturer = (Manufacturers)Enum.Parse(typeof(Manufacturers), element.GetString("manufacturer"));
 
         bool movesRobot = element.GetBoolAttributeOrDefault("movesRobot");
         double payload = element.GetDoubleAttribute("payload");
@@ -258,7 +259,7 @@ public static class FileIO
             if (e is null)
                 return [];
 
-            return e.GetAttribute("names").Split(',');
+            return e.GetString("names").Split(',');
         }
     }
 
@@ -269,7 +270,7 @@ public static class FileIO
         if (type != "Tool")
             throw new ArgumentException($" Element '{type}' should be 'Tool'");
 
-        var name = element.GetAttribute("name");
+        var name = element.GetString("name");
 
         var tcp = element.GetElement("Tcp");
         var plane = CreatePlane(tcp);
@@ -293,7 +294,7 @@ public static class FileIO
         if (type != "Frame")
             throw new ArgumentException($" Element '{type}' should be 'Frame'");
 
-        var name = element.GetAttribute("name");
+        var name = element.GetString("name");
         var useController = element.GetBoolAttributeOrDefault("useController");
         var number = element.GetIntAttributeOrDefault("number");
 
@@ -402,7 +403,7 @@ public static class FileIO
     static XElement GetElement(this XElement element, string name)
     {
         return element.Element(XName.Get(name))
-            ?? throw new ArgumentException($" XML tag '{element.Name} is missing '{name} tag.");
+            ?? throw new ArgumentException($" XML tag '{element.Name} is missing '{name}' element.");
     }
 
     static XElement? GetElementOrDefault(this XElement element, string name)
@@ -410,15 +411,19 @@ public static class FileIO
         return element.Element(XName.Get(name));
     }
 
-    static string GetAttribute(this XElement element, string name)
+    static string? GetStringOrDefault(this XElement element, string name)
     {
-        var attribute = element.Attribute(XName.Get(name)).NotNull($" XML tag '{element.Name} is missing '{name} attribute.");
-        return attribute.Value;
+        return element.Attribute(name)?.Value ?? null;
+    }
+
+    static string GetString(this XElement element, string name)
+    {
+        return element.GetStringOrDefault(name).NotNull($" XML tag '{element.Name} is missing '{name}' attribute.");
     }
 
     static bool GetBoolAttributeOrDefault(this XElement element, string name)
     {
-        string? s = element.Attribute(XName.Get(name))?.Value;
+        string? s = element.GetStringOrDefault(name);
         return s is not null && XmlConvert.ToBoolean(s);
     }
 
@@ -429,25 +434,25 @@ public static class FileIO
 
     static double GetDoubleAttribute(this XElement element, string name)
     {
-        var s = element.GetAttribute(name);
+        var s = element.GetString(name);
         return XmlConvert.ToDouble(s);
     }
 
     static double? GetDoubleAttributeOrDefault(this XElement element, string name)
     {
-        string? s = element.Attribute(XName.Get(name))?.Value;
+        string? s = element.GetStringOrDefault(name);
         return s is null ? null : XmlConvert.ToDouble(s);
     }
 
     static int GetIntAttribute(this XElement element, string name)
     {
-        var s = element.GetAttribute(name);
+        var s = element.GetString(name);
         return XmlConvert.ToInt32(s);
     }
 
     static int? GetIntAttributeOrDefault(this XElement element, string name)
     {
-        string? s = element.Attribute(XName.Get(name))?.Value;
+        string? s = element.GetStringOrDefault(name);
         return s is null ? null : XmlConvert.ToInt32(s);
     }
 }
