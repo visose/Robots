@@ -82,7 +82,7 @@
 					<!--End of axis 2, a=x, d=z(along axis)-->
 					<Revolute number="2" a="420" d="0" minrange="-120" maxrange="120" maxspeed="85" />
 					<!--End of axis 3, a=z, d=x(along axis)-->
-					<Revolute number="3" a="0" d="400" minrange="-120" maxrange="120" maxspeed="75" />
+					<Revolute number="3" a="0" d="0" minrange="-120" maxrange="120" maxspeed="75" />
 					<!--End of axis 4(from end of axis 2), a=z, d=x(along axis)-->
 					<Revolute number="4" a="0" d="400" minrange="-170" maxrange="170" maxspeed="130" />
 					<Revolute number="5" a="0" d="0" minrange="-120" maxrange="120" maxspeed="135" />
