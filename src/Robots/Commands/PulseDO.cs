@@ -19,6 +19,7 @@ public class PulseDO(int @do, double length = 0.2) : Command
         _commands.Add(Manufacturers.UR, CodeUR);
         _commands.Add(Manufacturers.Doosan, CodeDoosan);
         _commands.Add(Manufacturers.Fanuc, CodeFanuc);
+        _commands.Add(Manufacturers.Igus, CodeIgus);
 
         _declarations.Add(Manufacturers.UR, DeclarationUR);
     }
@@ -68,6 +69,17 @@ public class PulseDO(int @do, double length = 0.2) : Command
     {
         var number = GetNumber(robotSystem);
         return $":DO[{number}]=PULSE, {_length:0.###}sec ;";
+    }
+
+    string CodeIgus(RobotSystem robotSystem, Target target)
+    {
+        var number = GetNumber(robotSystem);
+
+        //return $":DO[{number}]=PULSE, {_length:0.###}sec ;";
+        return $"<Output Channel=\"{number}\" State=\"True\" /> \r\n" +
+            $"<Wait Type=\"Time\" Seconds=\"{_length:0.###}\"  /> \r\n  " +
+            $"<Output Channel=\"{number}\" State=\"False\"/>";
+        //<Output Nr="3" Channel="DOut32" State="True" Descr="" />
     }
 
     string GetNumber(RobotSystem robotSystem)

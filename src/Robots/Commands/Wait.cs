@@ -13,6 +13,7 @@ public class Wait(double seconds) : Command
         _commands.Add(Manufacturers.FrankaEmika, CodePython);
         _commands.Add(Manufacturers.Doosan, CodeDoosan);
         _commands.Add(Manufacturers.Fanuc, CodeFanuc);
+        _commands.Add(Manufacturers.Igus, CodeIgus);
 
         _declarations.Add(Manufacturers.ABB, DeclarationAbb);
         _declarations.Add(Manufacturers.KUKA, DeclarationKuka);
@@ -76,6 +77,10 @@ public class Wait(double seconds) : Command
     string CodeFanuc(RobotSystem robotSystem, Target target)
     {
         return $":WAIT {Seconds:0.00}(sec) ;";
+    }
+    string CodeIgus(RobotSystem robotSystem, Target target)
+    {
+        return $"<Wait Type=\"Time\" Seconds=\"{Seconds:0.00}\" />";
     }
 
     public override string ToString() => $"Command (Wait {Seconds} secs)";

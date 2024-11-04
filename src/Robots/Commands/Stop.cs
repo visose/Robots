@@ -12,6 +12,7 @@ public class Stop : Command
         _commands.Add(Manufacturers.Doosan, (_, _) => "wait_nudge()");
         //_commands.Add(Manufacturers.Staubli, (_, __) => "wait(true)");
         _commands.Add(Manufacturers.Fanuc, (_, _) => ":ABORT ;");
+        _commands.Add(Manufacturers.Igus, (_, _) => "<Stop  Descr=\"\" />");
     }
 
     public override string ToString() => "Command (Stop)";
