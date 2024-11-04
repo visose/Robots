@@ -9,7 +9,7 @@ public interface IPostProcessor
     List<List<List<string>>> GetCode(RobotSystem system, Program program);
 }
 
-public enum Manufacturers { ABB, KUKA, UR, Staubli, FrankaEmika, Doosan, Fanuc, All };
+public enum Manufacturers { ABB, KUKA, UR, Staubli, FrankaEmika, Doosan, Fanuc, Igus, All };
 
 public record DefaultPose(List<List<Plane>> Planes, List<List<Mesh>> Meshes);
 record SystemAttributes(string Name, IO IO, Plane BasePlane, IPostProcessor? PostProcessor);

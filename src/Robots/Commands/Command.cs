@@ -36,6 +36,9 @@ public abstract class Command(string? name = null) : TargetAttribute(name)
 
     internal string Code(Program program, Target target)
     {
+        _declarations.Clear();
+        _commands.Clear();
+        Populate();
         var robot = program.RobotSystem;
 
         if (_commands.TryGetValue(robot.Manufacturer, out var command))
