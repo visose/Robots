@@ -152,5 +152,25 @@
       <AI names="0,1" />
     </IO>
   </RobotCell>  
-
+  <RobotCell name="UR20" manufacturer="UR">
+    <Mechanisms>
+      <RobotArm model="UR20" manufacturer="UR" payload="25">
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
+        <Joints>
+          <Revolute number="1" a="0" d="236.3" minrange="-360" maxrange="360" maxspeed="120" />
+          <Revolute number="2" a="-862.0" d="0" minrange="-360" maxrange="360" maxspeed="120" />
+          <Revolute number="3" a="-728.7" d="0" minrange="-360" maxrange="360" maxspeed="150" />
+          <Revolute number="4" a="0" d="201.0" minrange="-360" maxrange="360" maxspeed="210" />
+          <Revolute number="5" a="0" d="159.3" minrange="-360" maxrange="360" maxspeed="210" />
+          <Revolute number="6" a="0" d="154.3" minrange="-360" maxrange="360" maxspeed="210" />
+        </Joints>
+      </RobotArm>
+    </Mechanisms>
+    <IO>
+      <DO names="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <DI names="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" />
+      <AO names="0,1" />
+      <AI names="0,1" />
+    </IO>
+  </RobotCell>
 </RobotSystems>
