@@ -82,11 +82,6 @@ public class SystemIgus : IndustrialSystem
             }
         }
 
-        //string filePath = Path.Combine(folder, $"{program.Name}.xml");
-        //var code = program.Code[0][0];
-        //var joinedCode = string.Join("\r\n", code);
-        //File.WriteAllText(filePath, joinedCode);
-
      }
     
 }
