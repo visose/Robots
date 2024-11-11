@@ -21,7 +21,8 @@ public class RobotIgus : RobotArm
 
     public override double RadianToDegree(double radian, int i)
     {
-        radian = -radian;
+        if (i != 0 && i != 5)
+            radian = -radian;
         if (i == 1 || i == 2) radian += HalfPI;
         return radian.ToDegrees();
     }

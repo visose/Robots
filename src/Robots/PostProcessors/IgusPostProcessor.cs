@@ -1,5 +1,7 @@
 using static System.Math;
 namespace Robots;
+
+using Rhino.Geometry;
 using System.Linq;
 
 class IgusPostProcessor : IPostProcessor
@@ -23,6 +25,7 @@ class IgusPostProcessor : IPostProcessor
             _system = system;
             _program = program;
             bool is_multiProgram = _program.MultiFileIndices.Count > 1;
+
             //var groupCode = new List<List<string>>();
             //var first_file= new List<string>();
 
@@ -116,10 +119,19 @@ class IgusPostProcessor : IPostProcessor
             {
                 for (int j = start_index; j < end_index; j++)
                 {
+                    
                     var programTarget = _program.Targets[j].ProgramTargets[group];
                     var target = programTarget.Target;
-                    
-                    
+                    if (j == 0)
+                    {
+                        foreach (var command in _program.InitCommands)
+                        {
+                            var instructions_str = add_number(command.Code(_program, target), line_counter);
+                            instructions.Add(instructions_str);
+                            line_counter++;
+                        }
+                    }
+
                     string move_text = "";
                     if (_system.MechanicalGroups[group].Externals.Count > 0)
                     {
@@ -147,11 +159,9 @@ class IgusPostProcessor : IPostProcessor
                         {
                             case Motions.Joint:
                                 {
-                                    var speed = target.Speed.RotationSpeed* 180.0 / PI;
-                                    if(speed>100)
-                                        speed = 100;
+                                    var speed_percent = (target.Speed.RotationSpeed * 180.0 / PI) * (100.0 / 180.0);
                                     move_text = $"<JointToCart AbortCondition=\"False\" Nr=\"{line_counter}\" Source=\"Numerical\"" +
-                                        $" vel=\"{speed}\" acc=\"90\" smooth=\"0\" UserFrame=\"#base\" " +
+                                        $" velPercent=\"{speed_percent}\" acc=\"90\" smooth=\"0\" UserFrame=\"#base\" " +
                                         $"x=\"{planeValues[0]:0.000}\" y=\"{planeValues[1]:0.000}\" z=\"{planeValues[2]:0.000}\" " +
                                         $"a=\"{planeValues[3]:0.000}\" b=\"{planeValues[4]:0.000}\" c=\"{planeValues[5]:0.000}\" " +
                                         $"e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"\" />";
