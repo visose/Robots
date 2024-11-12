@@ -25,10 +25,10 @@ class RapidPostProcessor : IPostProcessor
 
             for (int i = 0; i < _system.MechanicalGroups.Count; i++)
             {
-                var groupCode = new List<List<string>>
-            {
-                MainModule(i)
-            };
+                List<List<string>> groupCode =
+                [
+                    MainModule(i)
+                ];
 
                 for (int j = 0; j < program.MultiFileIndices.Count; j++)
                     groupCode.Add(SubModule(j, i));

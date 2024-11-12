@@ -77,8 +77,7 @@ public class SetAO(int ao, double value) : Command
 
     string CodeStaubli(RobotSystem robotSystem, Target target)
     {
-        var number = GetNumber(robotSystem);
-        return $"aioSet(aos[{number}], {Name})";
+        return $"aioSet(aos[{AO}], {Name})";
     }
 
     string CodeDoosan(RobotSystem robotSystem, Target target)

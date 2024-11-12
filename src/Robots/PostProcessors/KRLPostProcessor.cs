@@ -28,11 +28,11 @@ class KRLPostProcessor : IPostProcessor
 
             for (int i = 0; i < _system.MechanicalGroups.Count; i++)
             {
-                var groupCode = new List<List<string>>
-                    {
-                        MainFile(i),
-                        DatFile(i)
-                    };
+                List<List<string>> groupCode =
+                [
+                    MainFile(i),
+                    DatFile(i)
+                ];
 
                 for (int j = 0; j < program.MultiFileIndices.Count; j++)
                     groupCode.Add(SrcFile(j, i));

@@ -24,7 +24,7 @@ public abstract class CobotSystem : RobotSystem
 
     public override double DegreeToRadian(double degree, int i, int group = 0)
     {
-        return degree.ToRadians();
+        return Robot.DegreeToRadian(degree, i);
     }
 
     internal override double Payload(int group)

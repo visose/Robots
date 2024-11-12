@@ -26,7 +26,7 @@ public class Frame : TargetAttribute, IEquatable<Frame>
     public int? Number { get; }
     internal int CoupledPlaneIndex { get; set; }
 
-    public bool IsCoupled => (CoupledMechanicalGroup != -1);
+    public bool IsCoupled => CoupledMechanicalGroup != -1;
 
     public Frame(Plane plane, int coupledMechanism = -1, int coupledMechanicalGroup = -1, string? name = null, bool useController = false, int? number = null)
         : base(name)

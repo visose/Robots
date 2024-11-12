@@ -54,10 +54,8 @@ public class SetDO(int @do, bool value) : Command
 
     string CodeStaubli(RobotSystem robotSystem, Target target)
     {
-        var number = GetNumber(robotSystem);
-
         string textValue = Value ? "true" : "false";
-        return $"waitEndMove()\r\ndos[{number}] = {textValue}";
+        return $"waitEndMove()\r\ndos[{DO}] = {textValue}";
     }
 
     string CodeDoosan(RobotSystem robotSystem, Target target)
