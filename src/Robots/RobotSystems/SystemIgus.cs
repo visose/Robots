@@ -1,4 +1,3 @@
-
 using Rhino.Geometry;
 
 namespace Robots;
@@ -75,13 +74,12 @@ public class SystemIgus : IndustrialSystem
                         filePath = Path.Combine(folder, $"{program.Name}.xml");
                     else
                         filePath = Path.Combine(folder, $"{program.Name}_{j:000}.xml");
-
                     var joinedCode = string.Join("\r\n", program.Code[i][j]);
                     File.WriteAllText(filePath, joinedCode);
                 }
             }
         }
 
-     }
-    
+    }
+
 }
