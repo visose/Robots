@@ -56,30 +56,25 @@ public class SystemIgus : IndustrialSystem
 
         for (int i = 0; i < program.Code.Count; i++)
         {
-
             if (!multiProgram)
             {
                 string filePath = Path.Combine(folder, $"{program.Name}.xml");
                 var code = program.Code[i][0];
                 var joinedCode = string.Join("\r\n", code);
                 File.WriteAllText(filePath, joinedCode);
-
             }
             else
             {
                 for (int j = 0; j < program.Code[i].Count; j++)
                 {
-                    string filePath;
-                    if (j == 0)
-                        filePath = Path.Combine(folder, $"{program.Name}.xml");
-                    else
-                        filePath = Path.Combine(folder, $"{program.Name}_{j:000}.xml");
+                    string filePath = j == 0
+                        ? Path.Combine(folder, $"{program.Name}.xml")
+                        : Path.Combine(folder, $"{program.Name}_{j:000}.xml");
+
                     var joinedCode = string.Join("\r\n", program.Code[i][j]);
                     File.WriteAllText(filePath, joinedCode);
                 }
             }
         }
-
     }
-
 }

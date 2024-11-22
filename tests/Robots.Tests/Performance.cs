@@ -52,7 +52,7 @@ class Performance
 
         Log("Toolpath");
 
-        var program = new Program("TestProgram", robot, new[] { toolpath }, stepSize: 0.02);
+        var program = new Program("TestProgram", robot, [toolpath], stepSize: 0.02);
 
         Log("Program"); // 486
 
@@ -60,6 +60,7 @@ class Performance
         Debug.Assert(program.Duration == expected, "Test failed");
     }
 
+#pragma warning disable IDE0051
     void PerfTestUR()
     {
         _watch.Restart();
@@ -79,7 +80,7 @@ class Performance
 
         Log("Toolpath");
 
-        var program = new Program("URTest", robot, new[] { toolpath }, stepSize: 0.01);
+        var program = new Program("URTest", robot, [toolpath], stepSize: 0.01);
 
         Log("Program");
 

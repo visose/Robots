@@ -1,6 +1,6 @@
 using static System.Math;
+
 namespace Robots;
-using System.Linq;
 
 class IgusPostProcessor : IPostProcessor
 {
@@ -19,7 +19,6 @@ class IgusPostProcessor : IPostProcessor
 
         public PostInstance(SystemIgus system, Program program)
         {
-
             _system = system;
             _program = program;
             bool isMultiProgram = _program.MultiFileIndices.Count > 1;
@@ -42,8 +41,8 @@ class IgusPostProcessor : IPostProcessor
                     groupCode.Add(SubModule(j));
                 }
             }
-            Code = [groupCode];
 
+            Code = [groupCode];
         }
 
         List<string> MainModule()
@@ -55,12 +54,11 @@ class IgusPostProcessor : IPostProcessor
             code.Add("<Program>");
             code.Add(" <Header RobotName=\"igus REBEL-6DOF\" RobotType=\"igus-REBEL/REBEL-6DOF-01\" " +
                 $"GripperType=\"{ToolName()}.xml\" Software=\"\" VelocitySetting=\"0\" />");
-            //_program.
+
             if (is_multiProgram)
             {
                 for (int i = 0; i < _program.MultiFileIndices.Count; i++)
                     code.Add($"<Sub Nr=\"{i + 1}\" File=\"{_program.Name}_{i + 1}.xml\" Descr=\"\" />");
-
             }
             else
             {
@@ -74,19 +72,26 @@ class IgusPostProcessor : IPostProcessor
 
         List<string> SubModule(int index)
         {
-            var code = new List<string>
-            {
+            List<string> code =
+            [
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
                 "<Program>",
                 "<Header RobotName=\"igus REBEL-6DOF\" RobotType=\"igus-REBEL/REBEL-6DOF-01\" " +
                 $"GripperType=\"{ToolName()}.xml\" Software=\"\" VelocitySetting=\"0\" />"
-            };
+            ];
+
             if (index == 0)
+            {
                 code.AddRange(TargetsCode(0, _program.MultiFileIndices[index + 1]));
+            }
             else if (index == _program.MultiFileIndices.Count - 1)
+            {
                 code.AddRange(TargetsCode(_program.MultiFileIndices.Last(), _program.Targets.Count));
+            }
             else
+            {
                 code.AddRange(TargetsCode(_program.MultiFileIndices[index], _program.MultiFileIndices[index + 1]));
+            }
 
             code.Add("</Program>");
 
@@ -97,31 +102,32 @@ class IgusPostProcessor : IPostProcessor
         {
             var attributes = _program.Attributes;
             var toolsNames = new List<string>();
+
             foreach (var tool in attributes.OfType<Tool>().Where(t => !t.UseController))
             {
                 if (toolsNames.Count == 0)
                     toolsNames.Add(tool.Name);
             }
 
-            if (toolsNames.Count == 0)
-                return "";
-            else
-                return toolsNames[0];//We are only allowed to have a single tool
+            return toolsNames.Count switch
+            {
+                0 => "",
+                _ => toolsNames[0] //We are only allowed to have a single tool
+            };
         }
 
         List<string> TargetsCode(int startIndex, int endIndex)
         {
-
-            var instructions = new List<string>();
+            List<string> instructions = [];
             int lineCounter = 1;
 
             for (int group = 0; group < _system.MechanicalGroups.Count; group++)
             {
                 for (int j = startIndex; j < endIndex; j++)
                 {
-
                     var programTarget = _program.Targets[j].ProgramTargets[group];
                     var target = programTarget.Target;
+
                     if (j == 0)
                     {
                         foreach (var command in _program.InitCommands)
@@ -133,6 +139,7 @@ class IgusPostProcessor : IPostProcessor
                     }
 
                     string moveText = "";
+
                     if (_system.MechanicalGroups[group].Externals.Count > 0)
                     {
                         _program.Warnings.Add("External axes not implemented in Staubli.");
@@ -188,6 +195,15 @@ class IgusPostProcessor : IPostProcessor
 
                         }
                     }
+
+                    foreach(var command in programTarget.Commands)
+                    {
+                        var declaration = command.Declaration(_program);
+
+                        if (!string.IsNullOrWhiteSpace(declaration))
+                            throw new NotImplementedException("Declaration of a command is not implemented for Igus robots.");
+                    }
+
                     foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
                     {
                         var instructionsStr = AddNumber(command.Code(_program, target), lineCounter);
@@ -206,6 +222,7 @@ class IgusPostProcessor : IPostProcessor
                     }
                 }
             }
+
             return instructions;
         }
 
@@ -223,9 +240,7 @@ class IgusPostProcessor : IPostProcessor
             {
                 _program.Errors.Add("Error at add_number function!");
                 return "Error at add_number function";
-
             }
         }
-
     }
 }
