@@ -1,4 +1,5 @@
-﻿namespace Robots.Commands;
+
+namespace Robots.Commands;
 
 public class Custom : Command
 {

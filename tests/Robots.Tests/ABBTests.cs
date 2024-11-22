@@ -21,7 +21,7 @@ public class ABBTests
         var targetB = new CartesianTarget(planeB, null, Motions.Linear, speed: speed);
         var toolpath = new SimpleToolpath() { targetA, targetB };
 
-        _program = new Program("TestProgram", robot, new[] { toolpath });
+        _program = new Program("TestProgram", robot, [toolpath]);
     }
 
     [Test]

@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
@@ -84,7 +84,7 @@ public class URRealTime
         using var client = GetClient();
         var stream = client.GetStream();
 
-        stream.Read(_buffer, 0, _bufferLength);
+        _ = stream.Read(_buffer, 0, _bufferLength);
         Array.Reverse(_buffer);
     }
 
