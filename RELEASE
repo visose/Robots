@@ -1,3 +1,10 @@
+- version: 1.9.0
+  changes:
+  - Added support for Igus robot.
+  - Changed to use .modx extension on Omnicore controllers.
+  - Fixed digital output declarations in Staubli.
+  - Fixed Doosan exception at initialization.
+
 - version: 1.8.0
   changes:
   - Improved Franka Emika inverse kinematics.

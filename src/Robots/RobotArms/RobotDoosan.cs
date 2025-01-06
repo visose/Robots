@@ -7,7 +7,7 @@ namespace Robots;
 public class RobotDoosan : RobotArm
 {
     internal RobotDoosan(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints)
-        : base(model, Manufacturers.UR, payload, basePlane, baseMesh, joints) { }
+        : base(model, Manufacturers.Doosan, payload, basePlane, baseMesh, joints) { }
 
     private protected override MechanismKinematics CreateSolver() => new SphericalWristKinematics(this);
 

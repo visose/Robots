@@ -8,7 +8,7 @@
     <PackageIcon>iconRhino128.png</PackageIcon>
     <Description>$(Description) This package is for development of Rhino and Grasshopper plug-ins.</Description>
     <PackageTags>$(PackageTags);Rhino;Grasshopper</PackageTags>
-    <Rhino>7</Rhino>
+    <Rhino>8</Rhino>
   </PropertyGroup>
 
   <ItemGroup>

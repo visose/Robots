@@ -28,14 +28,17 @@ public abstract class Mechanism
         BasePlane = basePlane;
         BaseMesh = baseMesh;
         MovesRobot = movesRobot;
-        Joints = InitJoints(joints);
+        Joints = joints;
+        InitJoints();
         DisplayMesh = CreateDisplayMesh();
 
         SetStartPlanes();
     }
 
-    Joint[] InitJoints(Joint[] joints)
+    void InitJoints()
     {
+        var joints = Joints;
+
         var alphas = DefaultAlpha ?? new double[joints.Length];
         var thetas = DefaultTheta ?? new double[joints.Length];
         var signs = DefaultSign ?? Enumerable.Repeat(1, joints.Length).ToArray();
@@ -62,8 +65,6 @@ public abstract class Mechanism
             range.MakeIncreasing();
             joint.Range = range;
         }
-
-        return joints;
     }
 
     Mesh CreateDisplayMesh()
