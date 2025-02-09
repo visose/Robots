@@ -14,6 +14,7 @@ public class Wait(double seconds) : Command
         _commands.Add(Manufacturers.Doosan, CodeDoosan);
         _commands.Add(Manufacturers.Fanuc, CodeFanuc);
         _commands.Add(Manufacturers.Igus, CodeIgus);
+        _commands.Add(Manufacturers.Jaka, CodeJaka);
 
         _declarations.Add(Manufacturers.ABB, DeclarationAbb);
         _declarations.Add(Manufacturers.KUKA, DeclarationKuka);
@@ -42,6 +43,10 @@ public class Wait(double seconds) : Command
     {
         return VAL3Syntax.NumData(Name.NotNull(), Seconds);
     }
+    string DeclarationJaka(RobotSystem robotSystem)
+    {
+        return VAL3Syntax.NumData(Name.NotNull(), Seconds);
+    }
 
     string CodeAbb(RobotSystem robotSystem, Target target)
     {
@@ -65,6 +70,11 @@ public class Wait(double seconds) : Command
     }
 
     string CodeStaubli(RobotSystem robotSystem, Target target)
+    {
+        return $"waitEndMove()\r\ndelay({Name})";
+    }
+
+    string CodeJaka(RobotSystem robotSystem, Target target)
     {
         return $"waitEndMove()\r\ndelay({Name})";
     }

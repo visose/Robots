@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35707.178 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Robots", "Robots.csproj", "{F312EA84-4E41-4F0A-9EDA-2667D6E47163}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Robots.Grasshopper", "..\Robots.Grasshopper\Robots.Grasshopper.csproj", "{9860B791-8F28-4C42-8410-9B94EA2FA74C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Robots.Build", "..\..\build\Robots.Build\Robots.Build.csproj", "{B163430D-E398-464D-A4D6-5FBA8B740F20}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F312EA84-4E41-4F0A-9EDA-2667D6E47163}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F312EA84-4E41-4F0A-9EDA-2667D6E47163}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F312EA84-4E41-4F0A-9EDA-2667D6E47163}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F312EA84-4E41-4F0A-9EDA-2667D6E47163}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9860B791-8F28-4C42-8410-9B94EA2FA74C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9860B791-8F28-4C42-8410-9B94EA2FA74C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9860B791-8F28-4C42-8410-9B94EA2FA74C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9860B791-8F28-4C42-8410-9B94EA2FA74C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B163430D-E398-464D-A4D6-5FBA8B740F20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B163430D-E398-464D-A4D6-5FBA8B740F20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B163430D-E398-464D-A4D6-5FBA8B740F20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B163430D-E398-464D-A4D6-5FBA8B740F20}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

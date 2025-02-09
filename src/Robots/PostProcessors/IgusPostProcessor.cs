@@ -142,7 +142,7 @@ class IgusPostProcessor : IPostProcessor
 
                     if (_system.MechanicalGroups[group].Externals.Count > 0)
                     {
-                        _program.Warnings.Add("External axes not implemented in Staubli.");
+                        _program.Warnings.Add("External axes not implemented in Igus.");
                     }
 
                     if (programTarget.IsJointTarget)
