@@ -22,6 +22,7 @@ public class Wait(double seconds) : Command
         _declarations.Add(Manufacturers.Staubli, DeclarationStaubli);
         _declarations.Add(Manufacturers.FrankaEmika, DeclarationPython);
         _declarations.Add(Manufacturers.Doosan, DeclarationPython);
+        _declarations.Add(Manufacturers.Jaka, DeclarationJaka);
     }
 
     string DeclarationAbb(RobotSystem robotSystem)

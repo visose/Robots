@@ -13,7 +13,7 @@ public class SystemJaka : IndustrialSystem
     }
 
     public override Manufacturers Manufacturer => Manufacturers.Jaka;
-    protected override IPostProcessor GetDefaultPostprocessor() => new VAL3PostProcessor();
+    protected override IPostProcessor GetDefaultPostprocessor() => new JKSPostProcessor();
 
     public static Plane EulerToPlane(double x, double y, double z, double aDeg, double bDeg, double cDeg)
     {
@@ -60,7 +60,11 @@ public class SystemJaka : IndustrialSystem
             c = 0;
         }
 
-        return [plane.OriginX, plane.OriginY, plane.OriginZ, a.ToDegrees(), b.ToDegrees(), c.ToDegrees()];
+        double rx = Math.Asin(-plane.ZAxis.Z) + (Math.PI / 2.0);
+        double ry = Math.Atan2(plane.YAxis.Z, plane.ZAxis.Y);
+        double rz = Math.Atan2(plane.XAxis.Y, plane.XAxis.X);
+
+        return [plane.OriginX, plane.OriginY, plane.OriginZ, rx.ToDegrees(), ry.ToDegrees(), rz.ToDegrees()];
     }
 
     public override double[] PlaneToNumbers(Plane plane) => PlaneToEuler(plane);
@@ -84,11 +88,8 @@ public class SystemJaka : IndustrialSystem
             {
                 string name = j switch
                 {
-                    0 => $"{programName}.pjx",
-                    1 => $"{programName}.dtx",
-                    2 => "start.pgx",
-                    3 => "stop.pgx",
-                    _ => $"{programName}_{j - 4:000}.pgx",
+                    0 => $"{programName}.jks",
+                    _ => $"{programName}_{j - 1:000}.jks",
                 };
 
                 string file = Path.Combine(programDir, name);
