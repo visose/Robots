@@ -40,31 +40,10 @@ public class SystemJaka : IndustrialSystem
 
     public static double[] PlaneToEuler(Plane plane)
     {
-        Transform t = plane.ToTransform();
-        double a = Atan2(-t.M12, t.M22);
-        double mult = 1.0 - t.M02 * t.M02;
-        if (Abs(mult) < UnitTol) mult = 0.0;
-        double b = Atan2(t.M02, Sqrt(mult));
-        double c = Atan2(-t.M01, t.M00);
 
-        if (t.M02 < (-1.0 + UnitTol))
-        {
-            a = Atan2(t.M21, t.M11);
-            b = -PI / 2;
-            c = 0;
-        }
-        else if (t.M02 > (1.0 - UnitTol))
-        {
-            a = Atan2(t.M21, t.M11);
-            b = PI / 2;
-            c = 0;
-        }
-
-        double rx = Math.Asin(-plane.ZAxis.Z) + (Math.PI / 2.0);
-        double ry = Math.Atan2(plane.YAxis.Z, plane.ZAxis.Y);
-        double rz = Math.Atan2(plane.XAxis.Y, plane.XAxis.X);
-
-        return [plane.OriginX, plane.OriginY, plane.OriginZ, rx.ToDegrees(), ry.ToDegrees(), rz.ToDegrees()];
+        var t = plane.ToTransform();
+        var e = t.ToEulerZYX();
+        return [e.A1, e.A2, e.A3, e.A4.ToDegrees(), e.A5.ToDegrees(), e.A6.ToDegrees()];
     }
 
     public override double[] PlaneToNumbers(Plane plane) => PlaneToEuler(plane);
