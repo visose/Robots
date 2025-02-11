@@ -15,39 +15,25 @@ public class SystemJaka : IndustrialSystem
     public override Manufacturers Manufacturer => Manufacturers.Jaka;
     protected override IPostProcessor GetDefaultPostprocessor() => new JKSPostProcessor();
 
-    public static Plane EulerToPlane(double x, double y, double z, double aDeg, double bDeg, double cDeg)
+    public static Plane XYZToPlane(double[] numbers)
     {
-        double a = aDeg.ToRadians();
-        double b = bDeg.ToRadians();
-        double c = cDeg.ToRadians();
-        double ca = Cos(a);
-        double sa = Sin(a);
-        double cb = Cos(b);
-        double sb = Sin(b);
-        double cc = Cos(c);
-        double sc = Sin(c);
-
-        Transform t = default;
-        t.M00 = cb * cc; t.M01 = ca * sc + sa * sb * cc; t.M02 = sa * sc - ca * sb * cc;
-        t.M10 = -cb * sc; t.M11 = ca * cc - sa * sb * sc; t.M12 = sa * cc + ca * sb * sc;
-        t.M20 = sb; t.M21 = -sa * cb; t.M22 = ca * cb;
-        t.M33 = 1;
-
-        var plane = t.ToPlane();
-        plane.Origin = new Point3d(x, y, z);
-        return plane;
+        var e = new Vector6d(numbers);
+        e.A6 = e.A4.ToRadians();
+        e.A5 = e.A5.ToRadians();
+        e.A4 = e.A6.ToRadians();
+        var t = e.EulerZYXToTransform();
+        return t.ToPlane();
     }
 
-    public static double[] PlaneToEuler(Plane plane)
+    public static double[] PlaneToXYZ(Plane plane)
     {
-
         var t = plane.ToTransform();
         var e = t.ToEulerZYX();
-        return [e.A1, e.A2, e.A3, e.A4.ToDegrees(), e.A5.ToDegrees(), e.A6.ToDegrees()];
+        return [e.A1, e.A2, e.A3, e.A6.ToDegrees(), e.A5.ToDegrees(), e.A4.ToDegrees()];
     }
 
-    public override double[] PlaneToNumbers(Plane plane) => PlaneToEuler(plane);
-    public override Plane NumbersToPlane(double[] numbers) => EulerToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5]);
+    public override double[] PlaneToNumbers(Plane plane) => PlaneToXYZ(plane);
+    public override Plane NumbersToPlane(double[] numbers) => XYZToPlane(numbers);
 
     internal override void SaveCode(IProgram program, string folder)
     {
