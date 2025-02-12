@@ -44,9 +44,10 @@ public class Wait(double seconds) : Command
     {
         return VAL3Syntax.NumData(Name.NotNull(), Seconds);
     }
+
     string DeclarationJaka(RobotSystem robotSystem)
     {
-        return VAL3Syntax.NumData(Name.NotNull(), Seconds);
+        return $"wait_input(0,3,1,{Name})";
     }
 
     string CodeAbb(RobotSystem robotSystem, Target target)

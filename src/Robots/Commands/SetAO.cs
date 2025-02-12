@@ -86,6 +86,7 @@ public class SetAO(int ao, double value) : Command
     {
         return $"aioSet(aos[{AO}], {Name})";
     }
+
     string CodeJaka(RobotSystem robotSystem, Target target)
     {
         var number = GetNumber(robotSystem);
