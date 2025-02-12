@@ -58,9 +58,10 @@ public class SetAO(int ao, double value) : Command
     {
         return VAL3Syntax.NumData(Name.NotNull(), Value);
     }
+
     string DeclarationJaka(RobotSystem robotSystem)
     {
-        return VAL3Syntax.NumData(Name.NotNull(), Value);
+        return $"{Name} = {Value:0.###}";
     }
 
     string CodeAbb(RobotSystem robotSystem, Target target)
@@ -87,7 +88,8 @@ public class SetAO(int ao, double value) : Command
     }
     string CodeJaka(RobotSystem robotSystem, Target target)
     {
-        return $"aioSet(aos[{AO}], {Name})";
+        var number = GetNumber(robotSystem);
+        return $"set_analog_output(0,{number},{Name},0)";
     }
 
     string CodeDoosan(RobotSystem robotSystem, Target target)

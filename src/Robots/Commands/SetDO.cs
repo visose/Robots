@@ -58,10 +58,11 @@ public class SetDO(int @do, bool value) : Command
         string textValue = Value ? "true" : "false";
         return $"waitEndMove()\r\ndos[{DO}] = {textValue}";
     }
+
     string CodeJaka(RobotSystem robotSystem, Target target)
     {
-        string textValue = Value ? "true" : "false";
-        return $"waitEndMove()\r\ndos[{DO}] = {textValue}";
+        string textValue = Value ? "1" : "0";
+        return $"set_digital_output(0,{number},{textValue},0)";
     }
 
     string CodeDoosan(RobotSystem robotSystem, Target target)

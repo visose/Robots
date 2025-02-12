@@ -1,4 +1,3 @@
-using System.Xml.Linq;
 using static System.Math;
 
 namespace Robots;
@@ -22,7 +21,6 @@ class JKSPostProcessor : IPostProcessor
         {
             _system = system;
             _program = program;
-            bool isMultiProgram = _program.MultiFileIndices.Count > 1;
 
             //var groupCode = new List<List<string>>();
             //var first_file= new List<string>();
@@ -35,7 +33,6 @@ class JKSPostProcessor : IPostProcessor
                 MainModule()
             };
 
-
             Code = [groupCode];
         }
 
@@ -43,14 +40,11 @@ class JKSPostProcessor : IPostProcessor
         {
             var code = new List<string>();
             bool is_multiProgram = _program.MultiFileIndices.Count > 1;
-            code.Add("#Begin");
 
+            code.Add("#Begin");
             code.Add("endPosJ =[0,0,0,0,0,0]\r\nendPosL =[0,0,0,0,0,0]\r\npos_mvl =[0,0,0,0,0,0]\r\npos_waypoint =[0,0,0,0,0,0]");
             code.Add("set_tool_id(0)");
             code.Add("set_user_frame_id(0)");
-
-
-            
 
             if (is_multiProgram)
             {
@@ -95,24 +89,6 @@ class JKSPostProcessor : IPostProcessor
             return code;
         }
 
-        string ToolName()
-        {
-            var attributes = _program.Attributes;
-            var toolsNames = new List<string>();
-
-            foreach (var tool in attributes.OfType<Tool>().Where(t => !t.UseController))
-            {
-                if (toolsNames.Count == 0)
-                    toolsNames.Add(tool.Name);
-            }
-
-            return toolsNames.Count switch
-            {
-                0 => "",
-                _ => toolsNames[0] //We are only allowed to have a single tool
-            };
-        }
-
         List<string> TargetsCode(int startIndex, int endIndex)
         {
 
@@ -127,21 +103,17 @@ class JKSPostProcessor : IPostProcessor
                 {
                     var programTarget = _program.Targets[j].ProgramTargets[group];
                     var target = programTarget.Target;
-
                     var tool = target.Tool.Name;
-
 
                     if (lastTool is null || target.Tool != lastTool)
                     {
-                        instructions.Add($"set_tool_id(1)");
-
                         var values = _system.PlaneToNumbers(target.Tool.Tcp);
-
+                        instructions.Add($"set_tool_id(1)");
                         instructions.Add($"toolOffset = [{values[0]:0.000}, {values[1]:0.000}, {values[2]:0.000}, {values[3]:0.000}, {values[4]:0.000}, {values[5]:0.000}]");
-
                         instructions.Add($"set_tool(toolOffset)");
                         lastTool = target.Tool;
                     }
+
                     if (j == 0)
                     {
                         foreach (var command in _program.InitCommands)
