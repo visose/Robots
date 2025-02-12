@@ -22,9 +22,6 @@ class JKSPostProcessor : IPostProcessor
             _system = system;
             _program = program;
 
-            //var groupCode = new List<List<string>>();
-            //var first_file= new List<string>();
-
             if (_system.MechanicalGroups.Count > 1)
                 program.Errors.Add("Multi-Robot not supported for JAKA robots yet!");
 
@@ -145,14 +142,12 @@ class JKSPostProcessor : IPostProcessor
                     {
                         var cartesian = (CartesianTarget)programTarget.Target;
                         var plane = cartesian.Plane;
-                        //var values = SystemJaka.PlaneToEuler(plane);
                         var planeValues = _system.PlaneToNumbers(plane);
 
                         switch (cartesian.Motion)
                         {
                             case Motions.Joint:
                                 {
-                                    
                                     moveText = $"endPosL = [{planeValues[0]:0.000}, {planeValues[1]:0.000}, {planeValues[2]:0.000}, {planeValues[3]:0.000}, {planeValues[4]:0.000}, {planeValues[5]:0.000}]\r\n" +
                         $"movl(endPosL,0,{target.Speed.TranslationSpeed},5000,0.0)";
                                     break;
