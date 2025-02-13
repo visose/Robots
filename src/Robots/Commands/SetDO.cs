@@ -61,6 +61,8 @@ public class SetDO(int @do, bool value) : Command
 
     string CodeJaka(RobotSystem robotSystem, Target target)
     {
+        var number = GetNumber(robotSystem);
+
         string textValue = Value ? "1" : "0";
         return $"set_digital_output(0,{number},{textValue},0)";
     }
