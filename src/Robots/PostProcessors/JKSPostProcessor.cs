@@ -25,17 +25,14 @@ class JKSPostProcessor : IPostProcessor
             if (_system.MechanicalGroups.Count > 1)
                 program.Errors.Add("Multi-Robot not supported for JAKA robots yet!");
 
-            var groupCode = new List<List<string>>
-            {
-                MainModule()
-            };
+            List<List<string>> groupCode = [MainModule()];
 
             Code = [groupCode];
         }
 
         List<string> MainModule()
         {
-            var code = new List<string>();
+            List<string> code = [];
             bool is_multiProgram = _program.MultiFileIndices.Count > 1;
 
             code.Add("#Begin");
@@ -88,7 +85,6 @@ class JKSPostProcessor : IPostProcessor
 
         List<string> TargetsCode(int startIndex, int endIndex)
         {
-
             List<string> instructions = [];
             int lineCounter = 1;
 
@@ -165,7 +161,6 @@ class JKSPostProcessor : IPostProcessor
                                     _program.Warnings.Add($"Movement type not supported.");
                                     continue;
                                 }
-
                         }
                     }
 

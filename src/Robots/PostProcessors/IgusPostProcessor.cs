@@ -29,10 +29,7 @@ class IgusPostProcessor : IPostProcessor
             if (_system.MechanicalGroups.Count > 1)
                 program.Errors.Add("Multi-Robot not supported for Igus robots yet!");
 
-            var groupCode = new List<List<string>>
-            {
-                MainModule()
-            };
+            List<List<string>> groupCode = [MainModule()];
 
             if (isMultiProgram)
             {
@@ -47,7 +44,7 @@ class IgusPostProcessor : IPostProcessor
 
         List<string> MainModule()
         {
-            var code = new List<string>();
+            List<string> code = [];
             bool is_multiProgram = _program.MultiFileIndices.Count > 1;
 
             code.Add("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
@@ -101,7 +98,7 @@ class IgusPostProcessor : IPostProcessor
         string ToolName()
         {
             var attributes = _program.Attributes;
-            var toolsNames = new List<string>();
+            List<string> toolsNames = [];
 
             foreach (var tool in attributes.OfType<Tool>().Where(t => !t.UseController))
             {
@@ -196,7 +193,7 @@ class IgusPostProcessor : IPostProcessor
                         }
                     }
 
-                    foreach(var command in programTarget.Commands)
+                    foreach (var command in programTarget.Commands)
                     {
                         var declaration = command.Declaration(_program);
 
