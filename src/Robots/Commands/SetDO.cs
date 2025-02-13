@@ -20,6 +20,7 @@ public class SetDO(int @do, bool value) : Command
         _commands.Add(Manufacturers.Doosan, CodeDoosan);
         _commands.Add(Manufacturers.Fanuc, CodeFanuc);
         _commands.Add(Manufacturers.Igus, CodeIgus);
+        _commands.Add(Manufacturers.Jaka, CodeJaka);
     }
 
     string CodeAbb(RobotSystem robotSystem, Target target)
@@ -56,6 +57,14 @@ public class SetDO(int @do, bool value) : Command
     {
         string textValue = Value ? "true" : "false";
         return $"waitEndMove()\r\ndos[{DO}] = {textValue}";
+    }
+
+    string CodeJaka(RobotSystem robotSystem, Target target)
+    {
+        var number = GetNumber(robotSystem);
+
+        string textValue = Value ? "1" : "0";
+        return $"set_digital_output(0,{number},{textValue},0)";
     }
 
     string CodeDoosan(RobotSystem robotSystem, Target target)

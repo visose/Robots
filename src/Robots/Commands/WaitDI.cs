@@ -19,6 +19,7 @@ public class WaitDI(int di, bool value = true) : Command
         _commands.Add(Manufacturers.Staubli, CodeStaubli);
         _commands.Add(Manufacturers.Doosan, CodeDoosan);
         _commands.Add(Manufacturers.Fanuc, CodeFanuc);
+        _commands.Add(Manufacturers.Jaka, CodeJaka);
     }
 
     string CodeAbb(RobotSystem robotSystem, Target target)
@@ -44,6 +45,13 @@ public class WaitDI(int di, bool value = true) : Command
     }
 
     string CodeStaubli(RobotSystem robotSystem, Target target)
+    {
+        var number = GetNumber(robotSystem);
+        string textValue = Value ? "true" : "false";
+        return $"waitEndMove()\r\nwait(dis[{number}] == {textValue})";
+    }
+
+    string CodeJaka(RobotSystem robotSystem, Target target)
     {
         var number = GetNumber(robotSystem);
         string textValue = Value ? "true" : "false";

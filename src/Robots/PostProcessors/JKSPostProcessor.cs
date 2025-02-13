@@ -2,42 +2,30 @@ using static System.Math;
 
 namespace Robots;
 
-class IgusPostProcessor : IPostProcessor
+class JKSPostProcessor : IPostProcessor
 {
     public List<List<List<string>>> GetCode(RobotSystem system, Program program)
     {
-        PostInstance instance = new((SystemIgus)system, program);
+        PostInstance instance = new((SystemJaka)system, program);
         return instance.Code;
     }
 
     class PostInstance
     {
-        readonly SystemIgus _system;
+        readonly SystemJaka _system;
         readonly Program _program;
 
         public List<List<List<string>>> Code { get; }
 
-        public PostInstance(SystemIgus system, Program program)
+        public PostInstance(SystemJaka system, Program program)
         {
             _system = system;
             _program = program;
-            bool isMultiProgram = _program.MultiFileIndices.Count > 1;
-
-            //var groupCode = new List<List<string>>();
-            //var first_file= new List<string>();
 
             if (_system.MechanicalGroups.Count > 1)
-                program.Errors.Add("Multi-Robot not supported for Igus robots yet!");
+                program.Errors.Add("Multi-Robot not supported for JAKA robots yet!");
 
             List<List<string>> groupCode = [MainModule()];
-
-            if (isMultiProgram)
-            {
-                for (int j = 0; j < program.MultiFileIndices.Count; j++)
-                {
-                    groupCode.Add(SubModule(j));
-                }
-            }
 
             Code = [groupCode];
         }
@@ -47,22 +35,25 @@ class IgusPostProcessor : IPostProcessor
             List<string> code = [];
             bool is_multiProgram = _program.MultiFileIndices.Count > 1;
 
-            code.Add("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-            code.Add("<Program>");
-            code.Add(" <Header RobotName=\"igus REBEL-6DOF\" RobotType=\"igus-REBEL/REBEL-6DOF-01\" " +
-                $"GripperType=\"{ToolName()}.xml\" Software=\"\" VelocitySetting=\"0\" />");
+            code.Add("#Begin");
+            code.Add("endPosJ =[0,0,0,0,0,0]\r\nendPosL =[0,0,0,0,0,0]\r\npos_mvl =[0,0,0,0,0,0]\r\npos_waypoint =[0,0,0,0,0,0]");
+            code.Add("set_tool_id(0)");
+            code.Add("set_user_frame_id(0)");
 
             if (is_multiProgram)
             {
-                for (int i = 0; i < _program.MultiFileIndices.Count; i++)
-                    code.Add($"<Sub Nr=\"{i + 1}\" File=\"{_program.Name}_{i + 1}.xml\" Descr=\"\" />");
+
+                for (int j = 0; j < _program.MultiFileIndices.Count; j++)
+                {
+                    code.AddRange(SubModule(j));
+                }
             }
             else
             {
                 code.AddRange(TargetsCode(0, _program.Targets.Count));
             }
 
-            code.Add("</Program>");
+            code.Add("#end");
 
             return code;
         }
@@ -71,10 +62,7 @@ class IgusPostProcessor : IPostProcessor
         {
             List<string> code =
             [
-                "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
-                "<Program>",
-                "<Header RobotName=\"igus REBEL-6DOF\" RobotType=\"igus-REBEL/REBEL-6DOF-01\" " +
-                $"GripperType=\"{ToolName()}.xml\" Software=\"\" VelocitySetting=\"0\" />"
+                "#beginSubmodule"
             ];
 
             if (index == 0)
@@ -90,27 +78,9 @@ class IgusPostProcessor : IPostProcessor
                 code.AddRange(TargetsCode(_program.MultiFileIndices[index], _program.MultiFileIndices[index + 1]));
             }
 
-            code.Add("</Program>");
+            code.Add("#end");
 
             return code;
-        }
-
-        string ToolName()
-        {
-            var attributes = _program.Attributes;
-            List<string> toolsNames = [];
-
-            foreach (var tool in attributes.OfType<Tool>().Where(t => !t.UseController))
-            {
-                if (toolsNames.Count == 0)
-                    toolsNames.Add(tool.Name);
-            }
-
-            return toolsNames.Count switch
-            {
-                0 => "",
-                _ => toolsNames[0] //We are only allowed to have a single tool
-            };
         }
 
         List<string> TargetsCode(int startIndex, int endIndex)
@@ -118,12 +88,24 @@ class IgusPostProcessor : IPostProcessor
             List<string> instructions = [];
             int lineCounter = 1;
 
+            Tool? lastTool = null;
+
             for (int group = 0; group < _system.MechanicalGroups.Count; group++)
             {
                 for (int j = startIndex; j < endIndex; j++)
                 {
                     var programTarget = _program.Targets[j].ProgramTargets[group];
                     var target = programTarget.Target;
+                    var tool = target.Tool.Name;
+
+                    if (lastTool is null || target.Tool != lastTool)
+                    {
+                        var values = _system.PlaneToNumbers(target.Tool.Tcp);
+                        instructions.Add($"set_tool_id(1)");
+                        instructions.Add($"toolOffset = [{values[0]:0.000}, {values[1]:0.000}, {values[2]:0.000}, {values[3]:0.000}, {values[4]:0.000}, {values[5]:0.000}]");
+                        instructions.Add($"set_tool(toolOffset)");
+                        lastTool = target.Tool;
+                    }
 
                     if (j == 0)
                     {
@@ -139,7 +121,7 @@ class IgusPostProcessor : IPostProcessor
 
                     if (_system.MechanicalGroups[group].Externals.Count > 0)
                     {
-                        _program.Warnings.Add("External axes not implemented in Igus.");
+                        _program.Warnings.Add("External axes not implemented in Jaka.");
                     }
 
                     if (programTarget.IsJointTarget)
@@ -148,10 +130,9 @@ class IgusPostProcessor : IPostProcessor
                         double[] joints = jointTarget.Joints;
                         joints = joints.Map((x, i) => _system.MechanicalGroups[group].RadianToDegree(x, i));
                         var speedPercent = (target.Speed.RotationSpeed * 180.0 / PI) * (100.0 / 180.0);
-                        moveText = $"<Joint AbortCondition=\"False\" Nr=\"{lineCounter}\" Source=\"Numerical\" velPercent=\"{speedPercent}\" acc=\"90\" smooth=\"0\" " +
-                            $"a1=\"{joints[0]:0.000}\" a2=\"{joints[1]:0.000}\" a3=\"{joints[2]:0.000}\" " +
-                            $"a4=\"{joints[3]:0.000}\" a5=\"{joints[4]:0.000}\" a6=\"{joints[5]:0.000}\"" +
-                            $" e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"\" />";
+
+                        moveText = $"endPosJ = [{joints[0]:0.000}, {-joints[1]:0.000}, {-joints[2]:0.000}, {joints[3]:0.000}, {-joints[4]:0.000}, {joints[5]:0.000}]\r\n" +
+                        $"movj(endPosJ,0,{target.Speed.RotationSpeed * 180.0 / PI},5000,2.0)";
                     }
                     else
                     {
@@ -163,24 +144,15 @@ class IgusPostProcessor : IPostProcessor
                         {
                             case Motions.Joint:
                                 {
-                                    var speedPercent = (target.Speed.RotationSpeed * 180.0 / PI) * (100.0 / 180.0);
-                                    moveText = $"<JointToCart AbortCondition=\"False\" Nr=\"{lineCounter}\" Source=\"Numerical\"" +
-                                        $" velPercent=\"{speedPercent}\" acc=\"90\" smooth=\"0\" UserFrame=\"#base\" " +
-                                        $"x=\"{planeValues[0]:0.000}\" y=\"{planeValues[1]:0.000}\" z=\"{planeValues[2]:0.000}\" " +
-                                        $"a=\"{planeValues[3]:0.000}\" b=\"{planeValues[4]:0.000}\" c=\"{planeValues[5]:0.000}\" " +
-                                        $"e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"\" />";
+                                    moveText = $"endPosL = [{planeValues[0]:0.000}, {planeValues[1]:0.000}, {planeValues[2]:0.000}, {planeValues[3]:0.000}, {planeValues[4]:0.000}, {planeValues[5]:0.000}]\r\n" +
+                        $"movl(endPosL,0,{target.Speed.TranslationSpeed},5000,0.0)";
                                     break;
                                 }
 
                             case Motions.Linear:
                                 {
-
-                                    var speed = target.Speed.TranslationSpeed;
-                                    moveText = $"<Linear AbortCondition=\"False\" Nr=\"{lineCounter}\" Source=\"Numerical\"" +
-                                        $" vel=\"{speed:0}\" acc=\"90\" smooth=\"0\" UserFrame=\"#base\" " +
-                                        $"x=\"{planeValues[0]:0.000}\" y=\"{planeValues[1]:0.000}\" z=\"{planeValues[2]:0.000}\" " +
-                                        $"a=\"{planeValues[3]:0.000}\" b=\"{planeValues[4]:0.000}\" c=\"{planeValues[5]:0.000}\" " +
-                                        $"e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"\" />";
+                                    moveText = $"endPosL = [{planeValues[0]:0.000}, {planeValues[1]:0.000}, {planeValues[2]:0.000}, {planeValues[3]:0.000}, {planeValues[4]:0.000}, {planeValues[5]:0.000}]\r\n" +
+                         $"movl(endPosL,0,{target.Speed.TranslationSpeed},5000,0.0)";
                                     break;
                                 }
 
@@ -189,7 +161,6 @@ class IgusPostProcessor : IPostProcessor
                                     _program.Warnings.Add($"Movement type not supported.");
                                     continue;
                                 }
-
                         }
                     }
 
@@ -198,7 +169,7 @@ class IgusPostProcessor : IPostProcessor
                         var declaration = command.Declaration(_program);
 
                         if (!string.IsNullOrWhiteSpace(declaration))
-                            throw new NotImplementedException("Declaration of a command is not implemented for Igus robots.");
+                            throw new NotImplementedException("Declaration of a command is not implemented for Jaka robots.");
                     }
 
                     foreach (var command in programTarget.Commands.Where(c => c.RunBefore))

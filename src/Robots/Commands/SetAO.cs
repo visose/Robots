@@ -19,12 +19,14 @@ public class SetAO(int ao, double value) : Command
         _commands.Add(Manufacturers.Staubli, CodeStaubli);
         _commands.Add(Manufacturers.Doosan, CodeDoosan);
         _commands.Add(Manufacturers.Fanuc, CodeFanuc);
+        _commands.Add(Manufacturers.Jaka, CodeJaka);
 
         _declarations.Add(Manufacturers.ABB, DeclarationAbb);
         _declarations.Add(Manufacturers.KUKA, DeclarationKuka);
         _declarations.Add(Manufacturers.UR, DeclarationPython);
         _declarations.Add(Manufacturers.Staubli, DeclarationStaubli);
         _declarations.Add(Manufacturers.Doosan, DeclarationDoosan);
+        _declarations.Add(Manufacturers.Jaka, DeclarationJaka);
     }
 
     string DeclarationAbb(RobotSystem robotSystem)
@@ -57,6 +59,11 @@ public class SetAO(int ao, double value) : Command
         return VAL3Syntax.NumData(Name.NotNull(), Value);
     }
 
+    string DeclarationJaka(RobotSystem robotSystem)
+    {
+        return $"{Name} = {Value:0.###}";
+    }
+
     string CodeAbb(RobotSystem robotSystem, Target target)
     {
         var io = robotSystem.IO;
@@ -78,6 +85,12 @@ public class SetAO(int ao, double value) : Command
     string CodeStaubli(RobotSystem robotSystem, Target target)
     {
         return $"aioSet(aos[{AO}], {Name})";
+    }
+
+    string CodeJaka(RobotSystem robotSystem, Target target)
+    {
+        var number = GetNumber(robotSystem);
+        return $"set_analog_output(0,{number},{Name},0)";
     }
 
     string CodeDoosan(RobotSystem robotSystem, Target target)

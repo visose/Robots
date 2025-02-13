@@ -24,10 +24,7 @@ class FanucPostProcessor : IPostProcessor
 
             for (int i = 0; i < _system.MechanicalGroups.Count; i++)
             {
-                var groupCode = new List<List<string>>
-            {
-                MainModule(i)
-            };
+                List<List<string>> groupCode = [MainModule(i)];
 
                 for (int j = 0; j < program.MultiFileIndices.Count; j++)
                     groupCode.Add(SubModule(j, i));
@@ -38,7 +35,7 @@ class FanucPostProcessor : IPostProcessor
 
         List<string> MainModule(int group)
         {
-            var code = new List<string>();
+            List<string> code = [];
             bool multiProgram = _program.MultiFileIndices.Count > 1;
 
             // Program Name - Has to be the same as the program filename
@@ -98,8 +95,9 @@ class FanucPostProcessor : IPostProcessor
 
             int start = _program.MultiFileIndices[file];
             int end = (file == _program.MultiFileIndices.Count - 1) ? _program.Targets.Count : _program.MultiFileIndices[file + 1];
-            var code = new List<string>();
-            var codeMain = new List<string>();
+
+            List<string> code = [];
+
             if (multiProgram)
             {
                 code.Add($"/PROG {_program.Name}_{file:000}");
@@ -109,7 +107,8 @@ class FanucPostProcessor : IPostProcessor
             }
 
             int pointCounter = 1;
-            var pointsText = new List<string>();
+            List<string> pointsText = [];
+
             for (int j = start; j < end; j++)
             {
                 var programTarget = _program.Targets[j].ProgramTargets[group];
@@ -211,8 +210,10 @@ class FanucPostProcessor : IPostProcessor
             }
 
             code.Add("/POS");
+
             foreach (var pointCodeLine in pointsText)
                 code.Add(pointCodeLine);
+
             code.Add("/END");
             code.Add("");
 
@@ -221,9 +222,7 @@ class FanucPostProcessor : IPostProcessor
 
         List<string> Tool(Tool tool)
         {
-            var ToolCode = new List<string>();
             var tcp = tool.Tcp;
-
             var values = _system.PlaneToNumbers(tcp);
 
             //TODO: Weight and centroid not used.
@@ -233,12 +232,13 @@ class FanucPostProcessor : IPostProcessor
             //if (centroid.DistanceTo(Point3d.Origin) < 0.001)
             //    centroid = new Point3d(0, 0, 0.001);
 
-            ToolCode.Add($"UTOOL_NUM=1 ;");
-            ToolCode.Add($"! Tool 1 TCP Configuration ;");
-            ToolCode.Add($"! X: {-1 * values[0]:0.000}, Y:{values[1]:0.000}, Z: {values[2]:0.000} ;");
-            ToolCode.Add($"! W: {values[5]:0.000}, P:{values[4]:0.000}, R: {-1 * values[3]:0.000} ;");
+            List<string> toolCode = [];
+            toolCode.Add($"UTOOL_NUM=1 ;");
+            toolCode.Add($"! Tool 1 TCP Configuration ;");
+            toolCode.Add($"! X: {-1 * values[0]:0.000}, Y:{values[1]:0.000}, Z: {values[2]:0.000} ;");
+            toolCode.Add($"! W: {values[5]:0.000}, P:{values[4]:0.000}, R: {-1 * values[3]:0.000} ;");
 
-            return ToolCode;
+            return toolCode;
         }
 
         //TODO: Frame not used.

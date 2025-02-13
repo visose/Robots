@@ -155,6 +155,7 @@ public static class FileIO
             Manufacturers.Doosan => new SystemDoosan(attributes, (RobotDoosan)mechanicalGroups[0].Robot),
             Manufacturers.Fanuc => new SystemFanuc(attributes, mechanicalGroups),
             Manufacturers.Igus => new SystemIgus(attributes, mechanicalGroups),
+            Manufacturers.Jaka => new SystemJaka(attributes, mechanicalGroups),
 
             _ => throw new ArgumentException($" Manufacturer '{manufacturer} is not supported.")
         };
@@ -231,6 +232,7 @@ public static class FileIO
                 Manufacturers.Doosan => new RobotDoosan(model, payload, basePlane, baseMesh, joints),
                 Manufacturers.Fanuc => new RobotFanuc(model, payload, basePlane, baseMesh, joints),
                 Manufacturers.Igus => new RobotIgus(model, payload, basePlane, baseMesh, joints),
+                Manufacturers.Jaka => new RobotJaka(model, payload, basePlane, baseMesh, joints),
 
                 _ => throw new ArgumentException($" Manufacturer '{manufacturer}' not supported."),
             },
