@@ -54,8 +54,13 @@ public class WaitDI(int di, bool value = true) : Command
     string CodeJaka(RobotSystem robotSystem, Target target)
     {
         var number = GetNumber(robotSystem);
-        string textValue = Value ? "true" : "false";
-        return $"waitEndMove()\r\nwait(dis[{number}] == {textValue})";
+        string textValue = Value ? "1" : "0";
+
+        //0 to 1 == ToolIO, 2-9 = controller IO
+        if (DI < 2)
+            return $"wait_input(1,{DI.ToString()},{textValue},0)";
+        else
+            return $"wait_input(0,{(DI - 2).ToString()},{textValue},0)";
     }
 
     string CodeDoosan(RobotSystem robotSystem, Target target)

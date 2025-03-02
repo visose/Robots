@@ -14,7 +14,7 @@ public class Message(string message) : Command
         _commands.Add(Manufacturers.Doosan, (_, _) => $"tp_log(\"{_message}\")");
         _commands.Add(Manufacturers.Fanuc, (_, _) => $":MESSAGE[\"{_message}\"] ;");
         _commands.Add(Manufacturers.Igus, (_, _) => $"<Comment Descr=\"{_message}\" />");
-        _commands.Add(Manufacturers.Jaka, (_, _) => $"putln(\"{_message}\")");
+        _commands.Add(Manufacturers.Jaka, (_, _) => $"print(\"{_message}\")");
     }
 
     public override string ToString() => $"Command (Message \"{_message}\")";
