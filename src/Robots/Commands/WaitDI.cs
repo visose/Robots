@@ -53,7 +53,6 @@ public class WaitDI(int di, bool value = true) : Command
 
     string CodeJaka(RobotSystem robotSystem, Target target)
     {
-        var number = GetNumber(robotSystem);
         string textValue = Value ? "1" : "0";
 
         //0 to 1 == ToolIO, 2-9 = controller IO
