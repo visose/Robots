@@ -56,10 +56,9 @@ public class WaitDI(int di, bool value = true) : Command
         string textValue = Value ? "1" : "0";
 
         //0 to 1 == ToolIO, 2-9 = controller IO
-        if (DI < 2)
-            return $"wait_input(1,{DI.ToString()},{textValue},0)";
-        else
-            return $"wait_input(0,{(DI - 2).ToString()},{textValue},0)";
+        return DI < 2
+            ? $"wait_input(1,{DI},{textValue},0)"
+            : $"wait_input(0,{DI - 2},{textValue},0)";
     }
 
     string CodeDoosan(RobotSystem robotSystem, Target target)

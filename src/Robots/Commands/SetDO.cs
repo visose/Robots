@@ -62,11 +62,11 @@ public class SetDO(int @do, bool value) : Command
     string CodeJaka(RobotSystem robotSystem, Target target)
     {
         string textValue = Value ? "1" : "0";
+
         //0 to 1 == ToolIO, 2-9 = controller IO
-        if(DO < 2)
-            return $"set_digital_output(1,{DO.ToString()},{textValue},0)";
-        else
-            return $"set_digital_output(0,{(DO-2).ToString()},{textValue},0)";
+        return DO < 2
+            ? $"set_digital_output(1,{DO},{textValue},0)"
+            : $"set_digital_output(0,{DO - 2},{textValue},0)";
     }
 
     string CodeDoosan(RobotSystem robotSystem, Target target)

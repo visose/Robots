@@ -90,10 +90,9 @@ public class SetAO(int ao, double value) : Command
     string CodeJaka(RobotSystem robotSystem, Target target)
     {
         //0 to 1 == ToolIO, 2-9 = controller IO
-        if (AO < 2)
-            return $"set_analog_output(1,{AO.ToString()},{Name},0)";
-        else
-            return $"set_analog_output(0,{(AO - 2).ToString()},{Name},0)";
+        return AO < 2
+            ? $"set_analog_output(1,{AO},{Name},0)"
+            : $"set_analog_output(0,{AO - 2},{Name},0)";
     }
 
     string CodeDoosan(RobotSystem robotSystem, Target target)
