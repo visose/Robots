@@ -111,7 +111,7 @@ class JKSPostProcessor : IPostProcessor
                     {
                         foreach (var command in _program.InitCommands)
                         {
-                            var instructionsStr = AddNumber(command.Code(_program, target), lineCounter);
+                            var instructionsStr = command.Code(_program, target);
                             instructions.Add(instructionsStr);
                             lineCounter++;
                         }
@@ -174,7 +174,7 @@ class JKSPostProcessor : IPostProcessor
 
                     foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
                     {
-                        var instructionsStr = AddNumber(command.Code(_program, target), lineCounter);
+                        var instructionsStr = command.Code(_program, target);
                         instructions.Add(instructionsStr);
                         lineCounter++;
                     }
@@ -184,7 +184,7 @@ class JKSPostProcessor : IPostProcessor
 
                     foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
                     {
-                        var instructionsStr = AddNumber(command.Code(_program, target), lineCounter);
+                        var instructionsStr = command.Code(_program, target);
                         instructions.Add(instructionsStr);
                         lineCounter++;
                     }
@@ -192,23 +192,6 @@ class JKSPostProcessor : IPostProcessor
             }
 
             return instructions;
-        }
-
-        string AddNumber(string input, int number)
-        {
-            int spaceIndex = input.IndexOf(' ');
-
-            if (spaceIndex != -1)
-            {
-                // It inserts the number at the space position
-                string result = input.Insert(spaceIndex, $" Nr=\"{number}\"");
-                return result;
-            }
-            else
-            {
-                _program.Errors.Add("Error at add_number function!");
-                return "Error at add_number function";
-            }
         }
     }
 }

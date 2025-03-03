@@ -89,8 +89,10 @@ public class SetAO(int ao, double value) : Command
 
     string CodeJaka(RobotSystem robotSystem, Target target)
     {
-        var number = GetNumber(robotSystem);
-        return $"set_analog_output(0,{number},{Name},0)";
+        //0 to 1 == ToolIO, 2-9 = controller IO
+        return AO < 2
+            ? $"set_analog_output(1,{AO},{Name},0)"
+            : $"set_analog_output(0,{AO - 2},{Name},0)";
     }
 
     string CodeDoosan(RobotSystem robotSystem, Target target)
