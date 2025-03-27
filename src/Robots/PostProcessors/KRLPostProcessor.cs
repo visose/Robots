@@ -203,8 +203,12 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                             {
                                 ResetSpeed(code);
 
-                                if (systemTarget.DeltaTime > UnitTol)
-                                    code.Add($"$VEL_AXIS[{programTarget.LeadingJoint + 1}] = {percentSpeed * 100:0.###}");
+                                if (systemTarget.DeltaTime > TimeTol)
+                                {
+                                    var leading = programTarget.LeadingJoint;
+                                    var command = leading < 6 ? $"$VEL_AXIS[{leading + 1}]" : $"$VEL_EXTAX[{leading + 1 - 6}]";
+                                    code.Add($"{command} = {percentSpeed * 100:0.###}");
+                                }
 
                                 currentPercentSpeed = percentSpeed;
                                 shouldResetSpeed = true;

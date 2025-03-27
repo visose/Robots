@@ -1,4 +1,5 @@
 using Rhino.Geometry;
+using static Robots.Util;
 
 namespace Robots;
 
@@ -166,7 +167,7 @@ class URScriptPostProcessor : IPostProcessor
                     var joints = _system.Robot.Joints;
                     double axisSpeed;
 
-                    if (systemTarget.DeltaTime > 0)
+                    if (systemTarget.DeltaTime > TimeTol)
                     {
                         int leadIndex = programTarget.LeadingJoint;
                         double leadAxisSpeed = joints[leadIndex].MaxSpeed;
