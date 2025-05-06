@@ -1,0 +1,25 @@
+<RobotSystems>
+
+  <RobotCell name="KR120_R2700_2" manufacturer="KUKA">
+    <Mechanisms>
+      <RobotArm model="MSAKR120_R2700_2" manufacturer="KUKA" payload="120">
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
+        <Joints>
+<Revolute number="1" a="330" d="645" minrange="-185" maxrange="185" maxspeed="120" />
+<Revolute number="2" a="1150" d="0" minrange="-140" maxrange="-5" maxspeed="115" />
+<Revolute number="3" a="115" d="0" minrange="-120" maxrange="168" maxspeed="120" />
+<Revolute number="4" a="0" d="1220" minrange="-350" maxrange="350" maxspeed="190" />
+<Revolute number="5" a="0" d="0" minrange="-125" maxrange="125" maxspeed="180" />
+<Revolute number="6" a="0" d="215" minrange="-350" maxrange="350" maxspeed="260" />
+        </Joints>
+      </RobotArm>
+    </Mechanisms>
+    <IO>
+      <DO names="1,2,3,4" />
+      <DI names="1,2,3,4" />
+      <AO names="1,2" />
+      <AI names="1,2" />
+    </IO>
+  </RobotCell>
+
+</RobotSystems>
