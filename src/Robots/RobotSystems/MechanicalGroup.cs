@@ -16,7 +16,7 @@ public class MechanicalGroup
     {
         Index = index;
         Name = $"T_ROB{index + 1}";
-        Joints = mechanisms.SelectMany(x => x.Joints.OrderBy(y => y.Number)).ToList();
+        Joints = [.. mechanisms.SelectMany(x => x.Joints.OrderBy(y => y.Number))];
         Robot = mechanisms.OfType<RobotArm>().FirstOrDefault();
         mechanisms.Remove(Robot);
         Externals = mechanisms;

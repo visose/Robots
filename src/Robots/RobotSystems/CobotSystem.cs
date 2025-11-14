@@ -17,8 +17,8 @@ public abstract class CobotSystem : RobotSystem
     static DefaultPose GetDefaultPose(RobotArm robot)
     {
         return new DefaultPose(
-            [robot.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY).ToList()],
-            [robot.Joints.Select(j => j.Mesh).Prepend(robot.BaseMesh).ToList()]
+            [[.. robot.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY)]],
+            [[.. robot.Joints.Select(j => j.Mesh).Prepend(robot.BaseMesh)]]
             );
     }
 

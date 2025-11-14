@@ -285,6 +285,7 @@ class RapidPostProcessor : IPostProcessor
             }
             return $@"TASK PERS wobjdata {frame.Name}:=[FALSE,{coupledBool},""{coupledMech}"",[{pos},{orient}],[[0,0,0],[1,0,0,0]]];";
         }
+
         static string Speed(Speed speed)
         {
             double rotation = speed.RotationSpeed.ToDegrees();

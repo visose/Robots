@@ -18,7 +18,7 @@ public class URRealTime
     public URRealTime(string IP)
     {
         _ipEndPoint = new IPEndPoint(IPAddress.Parse(IP), 30003);
-        FeedbackData = MakeDataTypes().ToArray();
+        FeedbackData = [.. MakeDataTypes()];
     }
 
     public void UpdateFeedback()

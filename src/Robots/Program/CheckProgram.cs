@@ -356,9 +356,10 @@ class CheckProgram
                 if (_program.Errors.Count == 0)
                 {
                     double longestWaitTime = 0;
+
                     foreach (var target in systemTarget.ProgramTargets)
                     {
-                        double waitTime = target.Commands.OfType<Commands.Wait>().Select(x => x.Seconds).Sum();
+                        double waitTime = target.Commands.OfType<Commands.Wait>().Sum(x => x.Seconds);
                         if (waitTime > longestWaitTime) longestWaitTime = waitTime;
                     }
 

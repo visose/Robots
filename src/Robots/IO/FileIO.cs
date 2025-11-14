@@ -191,7 +191,7 @@ public static class FileIO
 
         var meshes = loadMeshes
             ? GetMechanismMeshes(systemName, mechanism, model, manufacturer, jointCount)
-            : Enumerable.Repeat(EmptyMesh, jointCount + 1).ToList();
+            : [.. Enumerable.Repeat(EmptyMesh, jointCount + 1)];
 
         Mesh baseMesh = meshes[0];
 
@@ -360,7 +360,7 @@ public static class FileIO
         var parentLayer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(parentName));
 
         if (parentLayer is null)
-            return Enumerable.Repeat(EmptyMesh, meshCount).ToList();
+            return [.. Enumerable.Repeat(EmptyMesh, meshCount)];
 
         var meshes = new List<Mesh>(meshCount);
 

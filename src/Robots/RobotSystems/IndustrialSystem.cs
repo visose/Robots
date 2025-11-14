@@ -35,8 +35,8 @@ public abstract class IndustrialSystem : RobotSystem
     static DefaultPose GetDefaultPose(List<MechanicalGroup> groups)
     {
         return new DefaultPose(
-            groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY)).SelectMany(p => p).ToList()).ToList(),
-            groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Mesh).Prepend(e.BaseMesh)).SelectMany(p => p).ToList()).ToList()
+            [.. groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY)).SelectMany(p => p).ToList())],
+            [.. groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Mesh).Prepend(e.BaseMesh)).SelectMany(p => p).ToList())]
             );
     }
 

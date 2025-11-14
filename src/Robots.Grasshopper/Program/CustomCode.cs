@@ -42,7 +42,7 @@ public class CustomCode : GH_Component
 
         foreach (var branch in codeTree.Branches)
         {
-            code[0].Add(branch.Select(s => s.Value).ToList());
+            code[0].Add([.. branch.Select(s => s.Value)]);
         }
 
         var programCode = program.Code;

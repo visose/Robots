@@ -81,7 +81,7 @@ public class ProgramTarget
     {
         Target = target;
         Group = group;
-        Commands = target.Command.Flatten().ToList();
+        Commands = [.. target.Command.Flatten()];
     }
 
     public ProgramTarget ShallowClone(SystemTarget systemTarget)

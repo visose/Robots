@@ -10,8 +10,8 @@ public class SystemTarget
     public double DeltaTime { get; internal set; }
     internal double MinTime { get; set; }
 
-    public Plane[] Planes => ProgramTargets.SelectMany(x => x.Kinematics.Planes).ToArray();
-    public double[] Joints => ProgramTargets.SelectMany(x => x.Kinematics.Joints).ToArray();
+    public Plane[] Planes => [.. ProgramTargets.SelectMany(x => x.Kinematics.Planes)];
+    public double[] Joints => [.. ProgramTargets.SelectMany(x => x.Kinematics.Joints)];
 
     internal SystemTarget(List<ProgramTarget> programTargets, int index)
     {

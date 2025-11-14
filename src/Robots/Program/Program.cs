@@ -170,7 +170,7 @@ public class Program : IProgram
         if (indices.Count > 0)
         {
             int startCount = indices.Count;
-            indices = indices.Where(i => i < targetCount).ToList();
+            indices = [.. indices.Where(i => i < targetCount)];
 
             if (startCount > indices.Count)
                 Warnings.Add("Multi-file index was higher than the number of targets.");

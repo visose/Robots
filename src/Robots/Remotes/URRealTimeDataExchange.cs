@@ -106,7 +106,7 @@ public class URRealTimeDataExchange : IDisposable
 
     public URRealTimeDataExchange(string IP, IList<string> variables)
     {
-        Outputs = CreateOutputs(variables).ToArray();
+        Outputs = [.. CreateOutputs(variables)];
 
         MemoryStream memStream = new(_buffer);
         _writer = new BinaryWriter(memStream, Encoding.ASCII);

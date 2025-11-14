@@ -11,7 +11,7 @@ public abstract class Target(Tool? tool, Speed? speed, Zone? zone, Command? comm
     public Speed Speed { get; set; } = speed ?? Speed.Default;
     public Zone Zone { get; set; } = zone ?? Zone.Default;
     public Command Command { get; set; } = command ?? Command.Default;
-    public double[] External { get; set; } = (external is not null) ? external.ToArray() : [];
+    public double[] External { get; set; } = (external is not null) ? [.. external] : [];
     public string[]? ExternalCustom { get; set; }
 
     public IEnumerable<Target> Targets => Enumerable.Repeat(this, 1);

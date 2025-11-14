@@ -44,11 +44,11 @@ public class Kinematics : GH_Component
 
         if (_prevKinematics.TryGetValue(robotSystem, out var prevKinematics))
         {
-            prevJoints = prevKinematics.Select(x => x.Joints).ToArray();
+            prevJoints = [.. prevKinematics.Select(x => x.Joints)];
         }
         else if (ghPrevJoints.Count > 0)
         {
-            prevJoints = ghPrevJoints.Select(v => v.Value).ToArray();
+            prevJoints = [.. ghPrevJoints.Select(v => v.Value)];
         }
 
         var targets = ghTargets.Select(x => x.Value).ToList();

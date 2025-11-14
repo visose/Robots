@@ -41,7 +41,7 @@ public abstract class Mechanism
 
         var alphas = DefaultAlpha ?? new double[joints.Length];
         var thetas = DefaultTheta ?? new double[joints.Length];
-        var signs = DefaultSign ?? Enumerable.Repeat(1, joints.Length).ToArray();
+        var signs = DefaultSign ?? [.. Enumerable.Repeat(1, joints.Length)];
 
         for (int i = 0; i < joints.Length; i++)
         {

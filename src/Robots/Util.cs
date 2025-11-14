@@ -50,12 +50,12 @@ static class Util
 
     public static IList<T> TryCastIList<T>(this IEnumerable<T> list)
     {
-        return list as IList<T> ?? list.ToList();
+        return list as IList<T> ?? [.. list];
     }
 
     public static T[] TryCastArray<T>(this IEnumerable<T> list)
     {
-        return list as T[] ?? list.ToArray();
+        return list as T[] ?? [.. list];
     }
 
     public static List<K> MapToList<T, K>(this IList<T> array, Func<T, K> projection)
