@@ -13,11 +13,14 @@ on:
 
 jobs:
   publish:
-    runs-on: windows-2022
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - run: dotnet run --project "build/Robots.Build/Robots.Build.csproj" ${{ github.event.inputs.commands }}
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: dotnet run --project "build/Robots.Build/Robots.Build.csproj" ${{ github.event_name == 'push' && '--publish' || github.event.inputs.commands }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           YAK_TOKEN: ${{ secrets.YAK_TOKEN }}

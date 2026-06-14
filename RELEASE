@@ -1,7 +1,7 @@
 - version: 2.0.0
   changes:
   - Dropped Rhino 7 and .NET Framework plug-in builds; this release targets Rhino 8 on .NET 8.
-  - Breaking API changes: modernized the core library, package layout, collections, and serialization.
+  - "Breaking API changes: modernized the core library, package layout, collections, and serialization."
   - Removed bundled ABB PC SDK and Newtonsoft.Json DLLs. ABB remote control now runs through a .NET 10 out-of-process helper that loads ABB PC SDK 2026 at runtime.
   - Existing Grasshopper definitions using supported components should continue to open; obsolete components now show clearer migration messages.
   - Added Cartesian joint motions for robots using numerical IK.
