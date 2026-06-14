@@ -6,7 +6,7 @@ namespace Robots.Tests;
 public class AbbRemoteIntegrationTests
 {
     [Test]
-    [Explicit("Requires ROBOTS_ABB_REMOTE_TESTS=1, ROBOTS_ABB_CONTROLLER_IP, ABB runtime, and a virtual controller.")]
+    [Explicit("Requires ROBOTS_ABB_CONTROLLER_IP, ABB runtime, and a RobotStudio virtual controller.")]
     public void UploadToRobotStudioVirtualController()
     {
         var remote = CreateRemote();
@@ -18,11 +18,9 @@ public class AbbRemoteIntegrationTests
     }
 
     [Test]
-    [Explicit("Requires ROBOTS_ABB_REMOTE_TESTS=1 and ROBOTS_ABB_REMOTE_PLAY_TESTS=1.")]
+    [Explicit("Requires ROBOTS_ABB_CONTROLLER_IP, ABB runtime, and a RobotStudio virtual controller.")]
     public void PlayPauseRobotStudioVirtualController()
     {
-        RequireEnabled("ROBOTS_ABB_REMOTE_PLAY_TESTS");
-
         var remote = CreateRemote();
         remote.Play();
         remote.Pause();
@@ -32,7 +30,6 @@ public class AbbRemoteIntegrationTests
 
     static RemoteAbb CreateRemote()
     {
-        RequireEnabled("ROBOTS_ABB_REMOTE_TESTS");
         string ip = Environment.GetEnvironmentVariable("ROBOTS_ABB_CONTROLLER_IP")
             ?? throw new IgnoreException("ROBOTS_ABB_CONTROLLER_IP is not set.");
 
@@ -46,12 +43,6 @@ public class AbbRemoteIntegrationTests
 
         remote.IP = ip;
         return remote;
-    }
-
-    static void RequireEnabled(string variable)
-    {
-        if (Environment.GetEnvironmentVariable(variable) != "1")
-            throw new IgnoreException($"{variable}=1 is required.");
     }
 
     static Program CreateProgram()

@@ -119,7 +119,52 @@ static class TestRobots
             ? UR10()
             : Parse(PostProcessorXml(manufacturer, jointCount));
 
+    public static Program AbbSampleProgram()
+    {
+        var planeA = Plane.WorldYZ;
+        var planeB = Plane.WorldYZ;
+        planeA.Origin = new(300, 200, 610);
+        planeB.Origin = new(300, -200, 610);
+
+        return SampleProgram("TestProgram", AbbIrb120(), planeA, planeB);
+    }
+
+    public static Program URSampleProgram()
+    {
+        var planeA = Plane.WorldZX;
+        var planeB = Plane.WorldZX;
+        planeA.Origin = new(200, 100, 600);
+        planeB.Origin = new(700, 250, 600);
+
+        return SampleProgram("URTest", UR10(), planeA, planeB);
+    }
+
+    public static SimpleToolpath Toolpath(params Target[] targets)
+    {
+        var toolpath = new SimpleToolpath();
+
+        foreach (var target in targets)
+            toolpath.Add(target);
+
+        return toolpath;
+    }
+
+    public static string FlattenCode(Program program)
+    {
+        var code = program.Code ?? throw new InvalidOperationException("Program code was not generated.");
+        return string.Join("\n", code.SelectMany(group => group).SelectMany(file => file)).ReplaceLineEndings("\n");
+    }
+
     static RobotSystem Parse(string xml) => FileIO.ParseRobotSystem(xml, Plane.WorldXY);
+
+    static Program SampleProgram(string name, RobotSystem robot, Plane planeA, Plane planeB)
+    {
+        var speed = new Speed(300);
+        var targetA = new CartesianTarget(planeA, RobotConfigurations.Wrist, Motions.Joint);
+        var targetB = new CartesianTarget(planeB, null, Motions.Linear, speed: speed);
+
+        return new(name, robot, [Toolpath(targetA, targetB)]);
+    }
 
     static string PostProcessorXml(Manufacturers manufacturer, int jointCount)
     {

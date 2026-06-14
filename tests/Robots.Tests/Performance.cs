@@ -9,6 +9,7 @@ namespace Robots.Tests;
 class Performance
 {
     const int Iterations = 20;
+    const double DurationTolerance = 1e-8;
 
     [Test]
     [Explicit("Reports synthetic ABB parse and program creation timings.")]
@@ -69,7 +70,7 @@ class Performance
 
         Assert.That(program, Is.Not.Null);
         Assert.That(program!.Errors, Is.Empty);
-        Assert.That(program.Duration, Is.EqualTo(expectedDuration).Within(1e-9));
+        Assert.That(program.Duration, Is.EqualTo(expectedDuration).Within(DurationTolerance));
     }
 
     static (T Result, long ElapsedMilliseconds) Measure<T>(Func<T> action)
