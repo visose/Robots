@@ -15,6 +15,7 @@
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddReferenceAssemblies</TargetsForTfmSpecificContentInPackage>
     <!-- Robots.Rhino intentionally packages compile-time-only assemblies under ref/ without runtime build output. -->
     <NoWarn>$(NoWarn);NU5131</NoWarn>
+    <AbbRemoteProject>$(MSBuildThisFileDirectory)..\Robots.AbbRemote\Robots.AbbRemote.csproj</AbbRemoteProject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -40,4 +41,8 @@
     <Move SourceFiles="$(TargetPath)" DestinationFiles="$(TargetDir)$(Product).gha" />
   </Target>
 
+  <Target Name="PublishAbbRemoteHelper" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(ContinuePackingAfterGeneratingNuspec)' != 'true'">
+    <RemoveDir Directories="$(TargetDir)abb-remote\" />
+    <MSBuild Projects="$(AbbRemoteProject)" Targets="Restore;Publish" Properties="Configuration=$(Configuration);RuntimeIdentifier=win-x64;SelfContained=false;PublishDir=$(TargetDir)abb-remote\;UseSharedCompilation=$(UseSharedCompilation)" />
+  </Target>
 </Project>

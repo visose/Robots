@@ -9,7 +9,7 @@ on:
       commands:
         description: 'Commands'
         required: true
-        default: 'debug'
+        default: '--no-publish'
 
 jobs:
   publish:

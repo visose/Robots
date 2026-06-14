@@ -89,11 +89,10 @@ public class ABBTests
     }
 
     [Test]
-    public void AbbRemoteIsUnavailableInNet8()
+    public void AbbRemoteIsCreated()
     {
         var remote = _program.RobotSystem.Remote ?? throw new InvalidOperationException("ABB remote was not created.");
-        var exception = Assert.Throws<NotSupportedException>(remote.Play);
 
-        Assert.That(exception!.Message, Does.Contain("out-of-process ABB PC SDK bridge"));
+        Assert.That(remote, Is.TypeOf<RemoteAbb>());
     }
 }
