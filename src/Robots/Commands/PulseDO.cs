@@ -1,15 +1,22 @@
-namespace Robots.Commands;
+﻿namespace Robots.Commands;
 
 public class PulseDO(int @do, double length = 0.2) : Command
 {
     public int DO { get; } = @do;
 
-    readonly double _length = length;
+    readonly double _length = CheckNonNegative(length, nameof(length));
 
-    protected override void ErrorChecking(RobotSystem robotSystem)
+    protected override bool Validate(Program program)
     {
-        var io = robotSystem.IO;
-        io.CheckBounds(DO, io.DO);
+        var io = program.RobotSystem.IO;
+
+        if (io.ValidateBounds(DO, io.DO) is string error)
+        {
+            program.AddError(IssueKind.CommandInvalid, $"Digital output {DO}: {error}", source: nameof(PulseDO));
+            return false;
+        }
+
+        return true;
     }
 
     protected override void Populate()
@@ -47,10 +54,9 @@ public class PulseDO(int @do, double length = 0.2) : Command
     {
         var number = GetNumber(robotSystem);
 
-        if (target.Zone.IsFlyBy)
-            return $"CONTINUE\r\nPULSE($OUT[{number}],TRUE,{_length:0.###})";
-        else
-            return $"PULSE($OUT[{number}],TRUE,{_length:0.###})";
+        return target.Zone.IsFlyBy
+            ? $"CONTINUE\r\nPULSE($OUT[{number}],TRUE,{_length:0.###})"
+            : $"PULSE($OUT[{number}],TRUE,{_length:0.###})";
     }
 
     string CodeUR(RobotSystem robotSystem, Target target)
@@ -75,11 +81,9 @@ public class PulseDO(int @do, double length = 0.2) : Command
     {
         var number = GetNumber(robotSystem);
 
-        //return $":DO[{number}]=PULSE, {_length:0.###}sec ;";
         return $"<Output Channel=\"{number}\" State=\"True\" /> \r\n" +
             $"<Wait Type=\"Time\" Seconds=\"{_length:0.###}\"  /> \r\n  " +
             $"<Output Channel=\"{number}\" State=\"False\"/>";
-        //<Output Nr="3" Channel="DOut32" State="True" Descr="" />
     }
 
     string GetNumber(RobotSystem robotSystem)
@@ -87,7 +91,7 @@ public class PulseDO(int @do, double length = 0.2) : Command
         var io = robotSystem.IO;
 
         return io.UseControllerNumbering
-         ? DO.ToString()
+         ? DO.Text()
          : io.DO[DO];
     }
 

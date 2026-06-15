@@ -1,14 +1,21 @@
-namespace Robots.Commands;
+﻿namespace Robots.Commands;
 
 public class WaitDI(int di, bool value = true) : Command
 {
     public int DI { get; } = di;
     public bool Value { get; } = value;
 
-    protected override void ErrorChecking(RobotSystem robotSystem)
+    protected override bool Validate(Program program)
     {
-        var io = robotSystem.IO;
-        io.CheckBounds(DI, io.DI);
+        var io = program.RobotSystem.IO;
+
+        if (io.ValidateBounds(DI, io.DI) is string error)
+        {
+            program.AddError(IssueKind.CommandInvalid, $"Digital input {DI}: {error}", source: nameof(WaitDI));
+            return false;
+        }
+
+        return true;
     }
 
     protected override void Populate()
@@ -82,7 +89,7 @@ public class WaitDI(int di, bool value = true) : Command
         var io = robotSystem.IO;
 
         return io.UseControllerNumbering
-         ? DI.ToString()
+         ? DI.Text()
          : io.DI[DI];
     }
 

@@ -1,11 +1,11 @@
 ﻿using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
-using SharpDX;
+using Color = System.Windows.Media.Color;
 using HelixToolkit.SharpDX.Core;
 using HelixToolkit.Wpf.SharpDX;
+using SharpDX;
 using PerspectiveCamera = HelixToolkit.Wpf.SharpDX.PerspectiveCamera;
-using Color = System.Windows.Media.Color;
 
 namespace Robots.Samples.Wpf;
 
@@ -23,6 +23,12 @@ partial class MainWindow : Window, IDisposable
         SetViewport();
         var viewModel = (MainViewModel)DataContext;
         await viewModel.InitAsync();
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        Dispose();
+        base.OnClosed(e);
     }
 
     void SetViewport()
@@ -76,17 +82,15 @@ partial class MainWindow : Window, IDisposable
         light.Transform = t;
     }
 
-    private bool _disposedValue = false;
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
+    bool _disposedValue;
 
-    void Dispose(bool disposing)
+    public void Dispose()
     {
         if (_disposedValue)
             return;
+
+        if (DataContext is IDisposable disposableContext)
+            disposableContext.Dispose();
 
         var effectsManager = view.EffectsManager;
 
@@ -94,8 +98,6 @@ partial class MainWindow : Window, IDisposable
             Disposer.RemoveAndDispose(ref effectsManager);
 
         _disposedValue = true;
-
+        GC.SuppressFinalize(this);
     }
-
-    ~MainWindow() => Dispose(false);
 }

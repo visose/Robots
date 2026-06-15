@@ -1,4 +1,4 @@
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using System.Text;
 
 namespace Robots;
@@ -45,11 +45,10 @@ class RemoteURFtp(User user, Action<string> log) : IRemoteURBackend
         client.Connect(_user.IP, _dashboardPort);
 
         using var stream = client.GetStream();
-        string first = GetMessage(stream);
+        _ = GetMessage(stream);
 
         byte[] sendBuffer = Encoding.ASCII.GetBytes(message + '\n');
         stream.Write(sendBuffer, 0, sendBuffer.Length);
-        //AddLog($"Sent: {message}");
 
         string second = GetMessage(stream);
         AddLog($"Received: {second}");

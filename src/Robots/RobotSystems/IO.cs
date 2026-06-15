@@ -3,31 +3,27 @@ namespace Robots;
 
 public class IO(Manufacturers manufacturer, bool useControllerNumbering, string[] @do, string[] di, string[] ao, string[] ai)
 {
-    private readonly Manufacturers _manufacturer = manufacturer;
+    readonly int _controllerStartIndex = useControllerNumbering ? GetStartIndex(manufacturer) : 0;
+
     public string[] DO { get; } = @do;
     public string[] DI { get; } = di;
     public string[] AO { get; } = ao;
     public string[] AI { get; } = ai;
     public bool UseControllerNumbering { get; } = useControllerNumbering;
 
-    internal void CheckBounds(int index, string[] array)
+    internal string? ValidateBounds(int index, string[] array)
     {
         if (UseControllerNumbering)
-        {
-            if (index < GetStartIndex())
-                throw new ArgumentOutOfRangeException(nameof(index), " Index of IO is out of range.");
+            return index < _controllerStartIndex ? "IO index is out of range." : null;
 
-            return;
-        }
-
-        if (index < 0 || index >= array.Length)
-            throw new ArgumentOutOfRangeException(nameof(index), " Index of IO is out of range.");
+        return index < 0 || index >= array.Length ? "IO index is out of range." : null;
     }
 
-    int GetStartIndex() => _manufacturer switch
+    static int GetStartIndex(Manufacturers manufacturer)
     {
-        Manufacturers.ABB => 1,
-        Manufacturers.KUKA => 1,
-        _ => 0
-    };
+        if (manufacturer is Manufacturers.ABB or Manufacturers.KUKA)
+            return 1;
+
+        throw new NotSupportedException($"Controller IO numbering is not supported for {manufacturer} robots.");
+    }
 }

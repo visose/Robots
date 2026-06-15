@@ -1,4 +1,4 @@
-using static System.Math;
+﻿using static System.Math;
 using static Robots.Util;
 
 namespace Robots;
@@ -7,16 +7,19 @@ public class JointTarget : Target
 {
     public double[] Joints { get; set; }
 
-    public JointTarget(double[] joints, Tool? tool = null, Speed? speed = null, Zone? zone = null, Command? command = null, Frame? frame = null, IEnumerable<double>? external = null)
+    public JointTarget(double[] joints, Tool? tool = null, Speed? speed = null, Zone? zone = null, Command? command = null, Frame? frame = null, double[]? external = null)
         : base(tool, speed, zone, command, frame, external)
     {
-        if (joints.Length != 6 && joints.Length != 7)
-            Array.Resize(ref joints, 6);
+        ArgumentOutOfRangeException.ThrowIfLessThan(joints.Length, 6, nameof(joints));
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(joints.Length, 7, nameof(joints));
+
+        for (int i = 0; i < joints.Length; i++)
+            _ = CheckFinite(joints[i], nameof(joints), $"Joint value {i} must be finite.");
 
         Joints = joints;
     }
 
-    public JointTarget(double[] joints, Target target, IEnumerable<double>? external = null)
+    public JointTarget(double[] joints, Target target, double[]? external = null)
         : this(joints, target.Tool, target.Speed, target.Zone, target.Command, target.Frame, external ?? target.External) { }
 
     public static double[] Lerp(double[] a, double[] b, double t, double min, double max)
@@ -27,7 +30,7 @@ public class JointTarget : Target
 
         for (int i = 0; i < a.Length; i++)
         {
-            result[i] = (a[i] * (1.0 - t) + b[i] * t);
+            result[i] = a[i] * (1.0 - t) + b[i] * t;
         }
 
         return result;
@@ -66,7 +69,7 @@ public class JointTarget : Target
         string speed = $", {Speed}";
         string zone = $", {Zone}";
         string commands = Command != Command.Default ? ", Contains commands" : "";
-        string external = External.Length > 0 ? $", {External.Length.ToString():0} external axes" : "";
+        string external = External.Length > 0 ? $", {External.Length.Text()} external axes" : "";
         return $"Target ({type}{tool}{speed}{zone}{commands}{external})";
     }
 }

@@ -1,5 +1,5 @@
+﻿using static System.Math;
 using Rhino.Geometry;
-using static System.Math;
 using static Robots.Util;
 
 namespace Robots;
@@ -9,13 +9,13 @@ public class RobotDoosan : RobotArm
     internal RobotDoosan(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints)
         : base(model, Manufacturers.Doosan, payload, basePlane, baseMesh, joints) { }
 
-    private protected override MechanismKinematics CreateSolver() => new SphericalWristKinematics(this);
+    private protected override SphericalWristKinematics CreateSolver() => new(this);
 
     public override double DegreeToRadian(double degree, int i)
     {
         var radian = degree.ToRadians();
         if (i == 0) radian -= PI;
-        return (radian + Joints[i].Theta);
+        return radian + Joints[i].Theta;
     }
 
     public override double RadianToDegree(double radian, int i)

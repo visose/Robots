@@ -1,28 +1,11 @@
 <Project>
 
   <PropertyGroup>
-    <Product>Robots</Product>
-    <Version>1.9.0</Version>
-    <Authors>Robots Authors</Authors>
-    <Description>Create and simulate ABB, KUKA, UR, and Staubli robot programs.</Description>
-    <PackageTags>Robots;ABB;KUKA;UR;Staubli;Robotics</PackageTags>
-    <PackageProjectUrl>https://github.com/visose/robots</PackageProjectUrl>
-    <Icon>iconRobot.png</Icon>
-    <ReleaseNotes>RELEASE</ReleaseNotes>
-
-    <CurrentYear>$([System.DateTime]::Now.Year)</CurrentYear>
-    <Copyright>Copyright (c) 2015-$(CurrentYear) $(Authors)</Copyright>
-    <Company>$(Authors) - $(PackageProjectUrl)</Company>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/visose/robots.git</RepositoryUrl>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AnalysisLevel>latest</AnalysisLevel>
-    <NoWarn>MSB3270</NoWarn>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <RootDir>$(MSBuildThisFileDirectory)</RootDir>
     <ArtifactsPath>$(RootDir)artifacts</ArtifactsPath>
   </PropertyGroup>

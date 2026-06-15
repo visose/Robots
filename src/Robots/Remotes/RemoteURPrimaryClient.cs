@@ -1,4 +1,4 @@
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using System.Text;
 
 namespace Robots;
@@ -13,7 +13,7 @@ class RemoteURSecondaryClient(string ip, Action<string> log) : IRemoteURBackend
     {
         if (program.Code is null)
         {
-            AddLog("Error: Program code not generated.");
+            AddLog("Error: Program code was not generated.");
             return;
         }
 

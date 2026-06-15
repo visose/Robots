@@ -1,5 +1,6 @@
-using Rhino.Geometry;
+﻿using System.Diagnostics.CodeAnalysis;
 using static System.Math;
+using Rhino.Geometry;
 
 namespace Robots;
 
@@ -11,6 +12,8 @@ class NumericalKinematics(RobotArm robot, bool useModifiedDH = false, int? redun
     readonly double[] _midJoints = robot.Joints.Map(j => j.Range.Mid);
 
     protected override int SolutionCount => 1;
+    internal override bool RequiresContinuation => true;
+    internal override int? RedundantJointIndex => _redundant;
 
     protected override Transform[] ForwardKinematics(double[] joints)
     {
@@ -34,34 +37,34 @@ class NumericalKinematics(RobotArm robot, bool useModifiedDH = false, int? redun
 
         for (int i = 0; i < 400; i++)
         {
-            Transform forward;
-            double[,] inverse;
+            Transform forward = default;
+            double[,]? inverse = null;
 
             for (int ii = 0; ii < 20; ii++)
             {
                 forward = Forward(joints);
                 var jacobian = Jacobian(joints, ref forward);
 
-                if (TryPseudoInverse(jacobian, out inverse))
-                    goto success;
+                if (TryPseudoInverse(jacobian, out var candidate))
+                {
+                    inverse = candidate;
+                    break;
+                }
 
                 for (int j = 0; j < joints.Length; j++)
                     joints[j] += 1e-3;
             }
 
-            errors.Add("Target near singularity.");
-            return joints;
-
-        success:
+            if (inverse is null)
+            {
+                errors.Add("Target near singularity.");
+                return joints;
+            }
 
             var transpose = inverse.Transpose();
             var jd = Subtract(ref forward, ref t);
             var deltas = jd.Mult(transpose);
-
-            for (int j = 0; j < deltas.Length; j++)
-                joints[j] += j == _redundant ? 0 : deltas[j];
-
-            var maxValue = deltas.Max(v => Abs(v));
+            var maxValue = deltas.Max(Abs);
 
             if (maxValue > max)
             {
@@ -70,11 +73,12 @@ class NumericalKinematics(RobotArm robot, bool useModifiedDH = false, int? redun
                 for (int j = 0; j < deltas.Length; j++)
                     deltas[j] /= value;
             }
-            else
-            {
-                if (!deltas.Any(v => Abs(v) > min))
-                    return joints;
-            }
+
+            for (int j = 0; j < deltas.Length; j++)
+                joints[j] += j == _redundant ? 0 : deltas[j];
+
+            if (maxValue <= min)
+                return joints;
         }
 
         errors.Add("Target out of reach.");
@@ -90,14 +94,17 @@ class NumericalKinematics(RobotArm robot, bool useModifiedDH = false, int? redun
     {
         const double step = 0.001;
         var m = new double[6, _jointCount];
+        var move = new double[joints.Length];
+        Array.Copy(joints, move, joints.Length);
 
         for (int i = 0; i < joints.Length; i++)
         {
             if (i == _redundant)
                 continue;
 
-            var move = joints.Map((n, j) => i == j ? n + step : n);
+            move[i] += step;
             Transform d = Forward(move);
+            move[i] = joints[i];
             var step2 = step * 2;
 
             m[0, i] = (d[0, 3] - f[0, 3]) / step;
@@ -145,11 +152,10 @@ class NumericalKinematics(RobotArm robot, bool useModifiedDH = false, int? redun
         return delta;
     }
 
-    static bool TryPseudoInverse(double[,] jacobian, out double[,] result)
+    static bool TryPseudoInverse(double[,] jacobian, [MaybeNullWhen(false)] out double[,] result)
     {
         const double tol = 1e-6;
 
-        result = null!;
         var rows = jacobian.GetLength(0);
         var columns = jacobian.GetLength(1);
 
@@ -186,7 +192,10 @@ class NumericalKinematics(RobotArm robot, bool useModifiedDH = false, int? redun
 
         // Check for singular matrix
         if (Abs(values[2 * length * length - length - 1]) < tol)
+        {
+            result = null;
             return false;
+        }
 
         var inverse = new double[length, length];
 

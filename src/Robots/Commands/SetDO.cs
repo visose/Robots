@@ -1,14 +1,21 @@
-namespace Robots.Commands;
+﻿namespace Robots.Commands;
 
 public class SetDO(int @do, bool value) : Command
 {
     public int DO { get; } = @do;
     public bool Value { get; } = value;
 
-    protected override void ErrorChecking(RobotSystem robotSystem)
+    protected override bool Validate(Program program)
     {
-        var io = robotSystem.IO;
-        io.CheckBounds(DO, io.DO);
+        var io = program.RobotSystem.IO;
+
+        if (io.ValidateBounds(DO, io.DO) is string error)
+        {
+            program.AddError(IssueKind.CommandInvalid, $"Digital output {DO}: {error}", source: nameof(SetDO));
+            return false;
+        }
+
+        return true;
     }
 
     protected override void Populate()
@@ -28,10 +35,9 @@ public class SetDO(int @do, bool value) : Command
         var io = robotSystem.IO;
         string textValue = Value ? "1" : "0";
 
-        if (target.Zone.IsFlyBy)
-            return $"SetDO {io.DO[DO]},{textValue};";
-        else
-            return $@"SetDO \Sync ,{io.DO[DO]},{textValue};";
+        return target.Zone.IsFlyBy
+            ? $"SetDO {io.DO[DO]},{textValue};"
+            : $@"SetDO \Sync ,{io.DO[DO]},{textValue};";
     }
 
     string CodeKuka(RobotSystem robotSystem, Target target)
@@ -39,10 +45,9 @@ public class SetDO(int @do, bool value) : Command
         var number = GetNumber(robotSystem);
         string textValue = Value ? "TRUE" : "FALSE";
 
-        if (target.Zone.IsFlyBy)
-            return $"CONTINUE\r\n$OUT[{number}] = {textValue}";
-        else
-            return $"$OUT[{number}] = {textValue}";
+        return target.Zone.IsFlyBy
+            ? $"CONTINUE\r\n$OUT[{number}] = {textValue}"
+            : $"$OUT[{number}] = {textValue}";
     }
 
     string CodeUR(RobotSystem robotSystem, Target target)
@@ -84,7 +89,7 @@ public class SetDO(int @do, bool value) : Command
         string textValue = Value ? "ON" : "OFF";
         return $":DO[{number}]={textValue} ;";
     }
-    
+
     string CodeIgus(RobotSystem robotSystem, Target target)
     {
 
@@ -97,7 +102,7 @@ public class SetDO(int @do, bool value) : Command
         var io = robotSystem.IO;
 
         return io.UseControllerNumbering
-         ? DO.ToString()
+         ? DO.Text()
          : io.DO[DO];
     }
 

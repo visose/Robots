@@ -1,3 +1,4 @@
+﻿using System.Globalization;
 using System.Text;
 using Rhino.Geometry;
 
@@ -5,37 +6,38 @@ namespace Robots;
 
 internal static class VAL3Syntax
 {
-    public static string Data(string name, string type, params string[] values)
-    {
-        var valuesText = new StringBuilder();
+    public static string Data(string name, string type, params string[] values) => Data(name, type, (IReadOnlyList<string>)values);
 
-        for (int i = 0; i < values.Length; i++)
+    public static string Data(string name, string type, IReadOnlyList<string> values)
+    {
+        var text = new StringBuilder();
+        _ = text.AppendLine(CultureInfo.InvariantCulture, $"    <Data name=\"{name}\" access=\"private\" xsi:type=\"array\" type=\"{type}\" size=\"{values.Count}\">");
+
+        for (int i = 0; i < values.Count; i++)
         {
-            valuesText.AppendLine($@"        <Value key=""{i}"" {values[i]}/>");
+            _ = text.AppendLine(CultureInfo.InvariantCulture, $"        <Value key=\"{i}\" {values[i]}/>");
         }
 
-        string attribute = $@"    <Data name=""{name}"" access=""private"" xsi:type=""array"" type=""{type}"" size=""{values.Length}"">
-{valuesText}    </Data>";
-
-        return attribute;
+        _ = text.Append("    </Data>");
+        return text.ToString();
     }
 
     public static string NumData(string name, double number)
     {
-        string value = $@"value=""{number:0.###}""";
+        string value = $"value=\"{number:0.###}\"";
         return Data(name, "num", value);
     }
 
     public static string TrsfData(string name, Plane plane)
     {
         var values = SystemStaubli.PlaneToEuler(plane);
-        string value = $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}""";
+        string value = $"x=\"{values[0]:0.###}\" y=\"{values[1]:0.###}\" z=\"{values[2]:0.###}\" rx=\"{values[3]:0.####}\" ry=\"{values[4]:0.####}\" rz=\"{values[5]:0.####}\"";
         return Data(name, "trsf", value);
     }
 
     public static string Local(string name, string type, int size = 1)
     {
-        return $@"      <Local name=""{name}"" type=""{type}"" xsi:type=""array"" size=""{size}"" />";
+        return $"      <Local name=\"{name}\" type=\"{type}\" xsi:type=\"array\" size=\"{size}\" />";
     }
 }
 
@@ -64,17 +66,17 @@ class VAL3PostProcessor : IPostProcessor
 
             if (groupCount > 1)
             {
-                _program.Errors.Add("Coordinated robots not supported on Staubli.");
+                _program.AddError(IssueKind.UnsupportedPostProcessorFeature, "Coordinated robots are not supported on Staubli robots.", source: nameof(VAL3PostProcessor));
                 return;
             }
 
             if (!CheckNames())
                 return;
 
+            PostProcessorUtil.RejectExternalAxes(program, _system, "Staubli");
+
             for (int i = 0; i < _system.MechanicalGroups.Count; i++)
             {
-                //var group = _system.MechanicalGroups[i];
-                //var name = $"{_program.Name}_{group.Name}";
                 var name = $"{_program.Name}";
                 var mdescs = CreateMdescs(i);
 
@@ -99,9 +101,9 @@ class VAL3PostProcessor : IPostProcessor
             {
                 var name = $"{_program.Name}_{group.Name}";
 
-                if (name.Length >= 12)
+                if (name.Length >= 16)
                 {
-                    _program.Errors.Add($"Program name combined with mechanical group name '{name}' is too long, should be shorter than 16 characters.");
+                    _program.AddError(IssueKind.UnsupportedPostProcessorFeature, $"Program name combined with mechanical group name '{name}' is too long; it must be shorter than 16 characters.", source: nameof(VAL3PostProcessor));
                     return false;
                 }
             }
@@ -117,7 +119,7 @@ class VAL3PostProcessor : IPostProcessor
 
                 if (name.Length >= maxLength)
                 {
-                    _program.Errors.Add($"Attribute name '{name}' is too long, should be shorter than {maxLength} characters.");
+                    _program.AddError(IssueKind.UnsupportedPostProcessorFeature, $"Attribute name '{name}' is too long; it must be shorter than {maxLength} characters.", source: nameof(VAL3PostProcessor));
                     return false;
                 }
             }
@@ -150,27 +152,31 @@ class VAL3PostProcessor : IPostProcessor
         {
             var codes = new List<string>();
 
-            string start = $@"<?xml version=""1.0"" encoding=""utf-8""?>
-<Project xmlns=""http://www.staubli.com/robotics/VAL3/Project/3"">
-  <Parameters version=""s7.10.2"" stackSize=""5000"" millimeterUnit=""true"" />
-  <Programs>
-    <Program file=""start.pgx"" />
-    <Program file=""stop.pgx"" />";
+            string start = """
+                <?xml version="1.0" encoding="utf-8"?>
+                <Project xmlns="http://www.staubli.com/robotics/VAL3/Project/3">
+                  <Parameters version="s7.10.2" stackSize="5000" millimeterUnit="true" />
+                  <Programs>
+                    <Program file="start.pgx" />
+                    <Program file="stop.pgx" />
+                """;
 
             codes.Add(start);
 
             for (int j = 0; j < _program.MultiFileIndices.Count; j++)
             {
-                codes.Add($@"    <Program file=""{name}_{j:000}.pgx"" />");
+                codes.Add($"    <Program file=\"{name}_{j:000}.pgx\" />");
             }
 
-            string end = $@" </Programs>
-  <Database>
-    <Data file=""{name}.dtx"" />
-  </Database>
-  <Libraries />
-</Project>
-    ";
+            string end = $"""
+                 </Programs>
+                  <Database>
+                    <Data file="{name}.dtx" />
+                  </Database>
+                  <Libraries />
+                </Project>
+                {"    "}
+                """;
             codes.Add(end);
             return codes;
         }
@@ -179,9 +185,11 @@ class VAL3PostProcessor : IPostProcessor
         {
             var codes = new List<string>();
 
-            string start = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
-<Database xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Data/2"">
-  <Datas>";
+            string start = """
+                <?xml version="1.0" encoding="utf-8" ?>
+                <Database xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.staubli.com/robotics/VAL3/Data/2">
+                  <Datas>
+                """;
 
             codes.Add(start);
             var attributes = _program.Attributes;
@@ -197,18 +205,14 @@ class VAL3PostProcessor : IPostProcessor
             codes.AddRange(IOData());
             codes.AddRange(Speeds(mdescs));
 
-            foreach (var command in attributes.OfType<Command>())
-            {
-                string declaration = command.Declaration(_program);
-
-                if (!string.IsNullOrWhiteSpace(declaration))
-                    codes.Add(declaration);
-            }
+            PostProcessorUtil.AddDeclarations(codes, _program);
 
             codes.Add(Targets(group, out indices));
 
-            string end = $@"  </Datas>
-</Database>";
+            string end = """
+                  </Datas>
+                </Database>
+                """;
 
             codes.Add(end);
             return codes;
@@ -228,7 +232,7 @@ class VAL3PostProcessor : IPostProcessor
             {
                 if (ios is not null)
                 {
-                    var iosData = ios.Where(d => !string.IsNullOrEmpty(d)).Select(d => $@"link=""{d}""").ToArray();
+                    var iosData = ios.Where(d => !string.IsNullOrEmpty(d)).Select(d => $"link=\"{d}\"").ToArray();
                     if (iosData.Length > 0)
                         datas.Add(VAL3Syntax.Data(name, type, iosData));
                 }
@@ -253,7 +257,7 @@ class VAL3PostProcessor : IPostProcessor
                     var jointTarget = (JointTarget)programTarget.Target;
                     var js = jointTarget.Joints.Map((x, j) => _system.MechanicalGroups[group].RadianToDegree(x, j));
 
-                    var value = $@"j1=""{js[0]:0.####}"" j2=""{js[1]:0.####}"" j3=""{js[2]:0.####}"" j4=""{js[3]:0.####}"" j5=""{js[4]:0.####}"" j6=""{js[5]:0.####}""";
+                    var value = $"j1=\"{js[0]:0.####}\" j2=\"{js[1]:0.####}\" j3=\"{js[2]:0.####}\" j4=\"{js[3]:0.####}\" j5=\"{js[4]:0.####}\" j6=\"{js[5]:0.####}\"";
 
                     indices.Add(joints.Count);
                     joints.Add(value);
@@ -275,19 +279,19 @@ class VAL3PostProcessor : IPostProcessor
                         var wristT = !wrist ? "wpositive" : "wnegative";
                         var elbowT = !elbow ? "epositive" : "enegative";
                         var shoulderT = !shoulder ? "lefty" : "righty";
-                        config = $@"shoulder=""{shoulderT}"" elbow=""{elbowT}"" wrist=""{wristT}"" ";
+                        config = $"shoulder=\"{shoulderT}\" elbow=\"{elbowT}\" wrist=\"{wristT}\" ";
                     }
 
                     var values = _system.PlaneToNumbers(cartesian.Plane);
-                    string value = $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}"" {config}fatherId=""{target.Frame.Name}[0]""";
+                    string value = $"x=\"{values[0]:0.###}\" y=\"{values[1]:0.###}\" z=\"{values[2]:0.###}\" rx=\"{values[3]:0.####}\" ry=\"{values[4]:0.####}\" rz=\"{values[5]:0.####}\" {config}fatherId=\"{target.Frame.Name}[0]\"";
 
                     indices.Add(points.Count);
                     points.Add(value);
                 }
             }
 
-            var jointsData = VAL3Syntax.Data("joints", "jointRx", [.. joints]);
-            var pointsData = VAL3Syntax.Data("points", "pointRx", [.. points]);
+            var jointsData = VAL3Syntax.Data("joints", "jointRx", joints);
+            var pointsData = VAL3Syntax.Data("points", "pointRx", points);
 
             return $"{jointsData}\r\n{pointsData}";
         }
@@ -299,11 +303,11 @@ class VAL3PostProcessor : IPostProcessor
 
             Point3d centroid = tool.Centroid;
             if (centroid.DistanceTo(Point3d.Origin) < 0.001)
-                centroid = new Point3d(0, 0, 0.001);
+                centroid = new(0, 0, 0.001);
 
             string toolName = tool.Name.NotNull();
-            string toolText = VAL3Syntax.Data(toolName, "tool", $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}"" fatherId=""flange[0]""");
-            string centroidText = VAL3Syntax.Data($"{toolName}_C", "trsf", $@"x=""{centroid.X:0.###}"" y=""{centroid.Y:0.###}"" z=""{centroid.Z:0.###}""");
+            string toolText = VAL3Syntax.Data(toolName, "tool", $"x=\"{values[0]:0.###}\" y=\"{values[1]:0.###}\" z=\"{values[2]:0.###}\" rx=\"{values[3]:0.####}\" ry=\"{values[4]:0.####}\" rz=\"{values[5]:0.####}\" fatherId=\"flange[0]\"");
+            string centroidText = VAL3Syntax.Data($"{toolName}_C", "trsf", $"x=\"{centroid.X:0.###}\" y=\"{centroid.Y:0.###}\" z=\"{centroid.Z:0.###}\"");
             string weightText = VAL3Syntax.NumData($"{toolName}_W", weight);
 
             return $"{toolText}\r\n{centroidText}\r\n{weightText}";
@@ -313,7 +317,7 @@ class VAL3PostProcessor : IPostProcessor
         {
             if (frame.IsCoupled)
             {
-                _program.Warnings.Add("Frame coupling not supported with Staubli robots.");
+                _program.AddError(IssueKind.UnsupportedPostProcessorFeature, "Frame coupling is not supported on Staubli robots.", source: nameof(VAL3PostProcessor));
             }
 
             Plane plane = frame.Plane;
@@ -324,7 +328,7 @@ class VAL3PostProcessor : IPostProcessor
             var values = _system.PlaneToNumbers(plane);
 
             string frameName = frame.Name.NotNull();
-            string code = VAL3Syntax.Data(frameName, "frame", $@"x=""{values[0]:0.###}"" y=""{values[1]:0.###}"" z=""{values[2]:0.###}"" rx=""{values[3]:0.####}"" ry=""{values[4]:0.####}"" rz=""{values[5]:0.####}"" fatherId=""world[0]""");
+            string code = VAL3Syntax.Data(frameName, "frame", $"x=\"{values[0]:0.###}\" y=\"{values[1]:0.###}\" z=\"{values[2]:0.###}\" rx=\"{values[3]:0.####}\" ry=\"{values[4]:0.####}\" rz=\"{values[5]:0.####}\" fatherId=\"world[0]\"");
             return code;
         }
 
@@ -341,7 +345,7 @@ class VAL3PostProcessor : IPostProcessor
                 var blend = mdesc.zone.IsFlyBy ? "Cartesian" : "off";
                 var zone = mdesc.zone.Distance;
 
-                string code = VAL3Syntax.Data(name, "mdesc", $@"accel=""100"" vel=""100"" decel=""100"" tmax=""{speed:0.###}"" rmax=""{rotation:0.###}"" blend=""{blend}"" leave=""{zone}"" reach=""{zone}""");
+                string code = VAL3Syntax.Data(name, "mdesc", $"accel=\"100\" vel=\"100\" decel=\"100\" tmax=\"{speed:0.###}\" rmax=\"{rotation:0.###}\" blend=\"{blend}\" leave=\"{zone}\" reach=\"{zone}\"");
                 codes.Add(code);
             }
 
@@ -350,39 +354,46 @@ class VAL3PostProcessor : IPostProcessor
 
         static string ProgramHeader(string name)
         {
-            return $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
-<Programs xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns=""http://www.staubli.com/robotics/VAL3/Program/2"">
-  <Program name=""{name}"">";
+            return $"""
+                <?xml version="1.0" encoding="utf-8" ?>
+                <Programs xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.staubli.com/robotics/VAL3/Program/2">
+                  <Program name="{name}">
+                """;
         }
 
         static string ProgramFooter()
         {
-            return @"end]]></Code>
-  </Program>
-</Programs>";
+            return """
+                end]]></Code>
+                  </Program>
+                </Programs>
+                """;
         }
 
         List<string> Start(string name)
         {
             var codes = new List<string>();
 
-            string start = $@"{ProgramHeader("start")}
-    <Locals>
-    </Locals>
-    <Code><![CDATA[begin
-cls()
-putln(""Program '{name}' started..."")";
+            string start = $"""
+                {ProgramHeader("start")}
+                    <Locals>
+                    </Locals>
+                    <Code><![CDATA[begin
+                cls()
+                putln("Program '{name}' started...")
+                """;
 
             codes.Add(start);
 
-            foreach (var command in _program.InitCommands)
-                codes.Add(command.Code(_program, Target.Default));
+            PostProcessorUtil.AddInitCommands(codes, _program);
 
             for (int j = 0; j < _program.MultiFileIndices.Count; j++)
                 codes.Add($"call {name}_{j:000}()");
 
-            string end = $@"waitEndMove()
-{ProgramFooter()}";
+            string end = $"""
+                waitEndMove()
+                {ProgramFooter()}
+                """;
 
             codes.Add(end);
             return codes;
@@ -392,11 +403,13 @@ putln(""Program '{name}' started..."")";
         {
             var codes = new List<string>();
 
-            string start = $@"{ProgramHeader("stop")}
-    <Locals>
-    </Locals>
-    <Code><![CDATA[begin
-putln(""Program '{name}' stopped."")";
+            string start = $"""
+                {ProgramHeader("stop")}
+                    <Locals>
+                    </Locals>
+                    <Code><![CDATA[begin
+                putln("Program '{name}' stopped.")
+                """;
 
             codes.Add(start);
             codes.Add(ProgramFooter());
@@ -405,8 +418,7 @@ putln(""Program '{name}' stopped."")";
 
         List<string> SubModule(int file, int group, Dictionary<(Speed speed, Zone zone), string> mdescs, List<int> indices, string name)
         {
-            int start = _program.MultiFileIndices[file];
-            int end = (file == _program.MultiFileIndices.Count - 1) ? _program.Targets.Count : _program.MultiFileIndices[file + 1];
+            var (start, end) = _program.GetTargetRange(file);
 
             Tool? lastTool = null;
 
@@ -420,19 +432,13 @@ putln(""Program '{name}' stopped."")";
                 var tool = target.Tool.Name;
                 var key = (target.Speed, target.Zone);
                 var speed = mdescs[key];
-                string moveText = "";
+                string moveText;
 
                 // payload
                 if (lastTool is null || target.Tool != lastTool)
                 {
                     instructions.Add($"setPayload({tool}, {tool}_W, {tool}_C, Inertia)");
                     lastTool = target.Tool;
-                }
-
-                // external
-                if (_system.MechanicalGroups[group].Externals.Count > 0)
-                {
-                    _program.Warnings.Add("External axes not implemented in Staubli.");
                 }
 
                 if (programTarget.IsJointTarget)
@@ -444,59 +450,37 @@ putln(""Program '{name}' stopped."")";
                 {
                     string targetName = $"points[{indices[j]}]";
                     var cartesian = (CartesianTarget)programTarget.Target;
-                    string move = "";
-
-                    switch (cartesian.Motion)
+                    string move = cartesian.Motion switch
                     {
-                        case Motions.Joint:
-                            {
-                                move = "movej";
-                                break;
-                            }
-
-                        case Motions.Linear:
-                            {
-                                move = "movel";
-                                break;
-                            }
-
-                        default:
-                            {
-                                _program.Warnings.Add($"Movement type '{cartesian.Motion} not supported.");
-                                continue;
-                            }
-                    }
+                        Motions.Joint => "movej",
+                        Motions.Linear => "movel",
+                        _ => throw new InvalidOperationException($"Motion '{cartesian.Motion}' is invalid.")
+                    };
 
                     moveText = $"{move}({targetName}, {tool}, {speed})";
                 }
 
-                foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
-                    instructions.Add(command.Code(_program, target));
+                PostProcessorUtil.AddTargetCommands(instructions, _program, programTarget, true);
 
                 instructions.Add(moveText);
 
-                foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
-                    instructions.Add(command.Code(_program, target));
+                PostProcessorUtil.AddTargetCommands(instructions, _program, programTarget, false);
             }
 
-            //var locals = new List<string>();
-
-            //if (jointCount > 0)
-            //    locals.Add(VAL3Syntax.Local("joints", "joint", jointCount));
-            //if (pointCount > 0)
-            //    locals.Add(VAL3Syntax.Local("points", "point", pointCount));
-
             string programName = $"{name}_{file:000}";
-            string startCode = $@"{ProgramHeader(programName)}
-    <Locals>";
+            string startCode = $"""
+                {ProgramHeader(programName)}
+                    <Locals>
+                """;
 
-            string midCode = @"    </Locals>
-    <Code><![CDATA[begin ";
+            string midCode = $"""
+                    </Locals>
+                    <Code><![CDATA[begin{" "}
+                """;
 
             var code = new List<string>
         {
             startCode,
-            // code.AddRange(locals);
             midCode
         };
             code.AddRange(instructions);

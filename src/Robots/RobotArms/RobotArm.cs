@@ -1,4 +1,4 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 
 namespace Robots;
 
@@ -10,7 +10,7 @@ public abstract class RobotArm : Mechanism
     protected override void SetStartPlanes()
     {
         var thetas = Joints.Map(j => j.Theta);
-        var startPose = new JointTarget(thetas);
+        JointTarget startPose = new(thetas);
         var kinematics = Kinematics(startPose);
 
         for (int i = 0; i < Joints.Length; i++)

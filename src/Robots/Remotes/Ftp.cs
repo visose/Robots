@@ -1,4 +1,4 @@
-using Renci.SshNet;
+﻿using Renci.SshNet;
 
 namespace Robots;
 
@@ -13,20 +13,11 @@ class Ftp
             Timeout = TimeSpan.FromSeconds(5)
         };
 
-        // Remove ecdsa algorithms not supported in mono (MacOS)
-        // https://github.com/sshnet/SSH.NET/issues/807
-        var algsToRemove = connectionInfo.HostKeyAlgorithms.Keys
-            .Where(algName => algName.StartsWith("ecdsa"))
-            .ToList();
-
-        foreach (var algName in algsToRemove)
-            connectionInfo.HostKeyAlgorithms.Remove(algName);
-
         using SftpClient client = new(connectionInfo);
         client.Connect();
 
         if (!client.Exists(programsDir))
-            throw new DirectoryNotFoundException($"\"{programsDir}\" folder not found.");
+            throw new DirectoryNotFoundException($"Folder '{programsDir}' was not found.");
 
         using MemoryStream stream = new(bytes);
         string filePath = $"{programsDir}/{fileName}";

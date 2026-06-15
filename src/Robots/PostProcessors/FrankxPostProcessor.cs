@@ -1,6 +1,5 @@
-using Rhino;
+﻿using static System.Math;
 using Rhino.Geometry;
-using static System.Math;
 
 namespace Robots;
 
@@ -27,9 +26,7 @@ class FrankxPostProcessor : IPostProcessor
             var groupCode = new List<List<string>> { Program() };
             Code = [groupCode];
 
-            // MultiFile warning
-            if (program.MultiFileIndices.Count > 1)
-                program.Warnings.Add("Multi-file input not supported on Franka Emika robots");
+            PostProcessorUtil.RejectMultiFile(program, "Franka Emika");
         }
 
         List<string> Program()
@@ -68,21 +65,11 @@ def program():
                 code.Add($"  {zone.Name} = {zoneDistance:0.#####}");
             }
 
-            foreach (var command in attributes.OfType<Command>())
-            {
-                string declaration = command.Declaration(_program);
-
-                if (!string.IsNullOrWhiteSpace(declaration))
-                    code.Add(_indent + declaration);
-            }
+            PostProcessorUtil.AddDeclarations(code, _program, _indent);
 
             // Init commands
 
-            foreach (var command in _program.InitCommands)
-            {
-                string commands = command.Code(_program, Target.Default);
-                code.Add(_indent + commands);
-            }
+            PostProcessorUtil.AddInitCommands(code, _program, _indent);
 
             Motions? currentMotion = null;
             Tool? currentTool = null;
@@ -102,11 +89,7 @@ def program():
                     if (currentMotion is not null)
                         MotionMove();
 
-                    foreach (var command in beforeCommands)
-                    {
-                        string commands = command.Code(_program, target);
-                        code.Add(_indent + commands);
-                    }
+                    PostProcessorUtil.AddTargetCommands(code, _program, programTarget, true, command => _indent + command);
                 }
 
                 var accel = GetAccel(systemTarget);
@@ -149,6 +132,7 @@ def program():
                         currentTool = target.Tool;
                         currentMotion = motion;
 
+                        code.Add($"  data = MotionData(dynamic_rel)");
                         code.Add($"  motion = WaypointMotion([");
 
                         switch (currentMotion)
@@ -156,7 +140,7 @@ def program():
                             case Motions.Linear:
                                 break;
                             default:
-                                throw new NotSupportedException($" Motion {currentMotion} not supported.");
+                                throw new InvalidOperationException($"Motion '{currentMotion}' is invalid.");
                         }
                     }
 
@@ -167,12 +151,6 @@ def program():
 
                     // Bake base
                     plane.InverseOrient(ref _system.BasePlane);
-
-                    // Bake tcp and base
-                    //var tcp = target.Tool.Tcp;
-                    //tcp.Rotate(PI, Vector3d.ZAxis, Point3d.Origin);
-                    //var transform = _system.BasePlane.ToInverseTransform() * Transform.PlaneToPlane(tcp, plane);
-                    //plane = transform.ToPlane();
 
                     var elbow = target.External.Length > 0
                                 ? $", {target.External[0]:0.#####}" : "";
@@ -186,11 +164,7 @@ def program():
                 if (currentMotion is not null && afterCommands.Any())
                     MotionMove();
 
-                foreach (var command in afterCommands)
-                {
-                    string commands = command.Code(_program, target);
-                    code.Add(_indent + commands);
-                }
+                PostProcessorUtil.AddTargetCommands(code, _program, programTarget, false, command => _indent + command);
             }
 
             if (currentMotion != null)
@@ -226,7 +200,7 @@ program()
         {
             var programTarget = systemTarget.ProgramTargets[0];
             var speed = programTarget.Target.Speed;
-            return RhinoMath.Clamp(speed.AxisAccel / (4 * PI), 0, 1);
+            return GeometryUtil.Clamp(speed.AxisAccel / (4 * PI), 0, 1);
         }
 
         static double GetSpeed(SystemTarget systemTarget)

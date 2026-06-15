@@ -1,24 +1,12 @@
-﻿namespace Robots.Grasshopper.Commands;
+﻿#pragma warning disable CA1716 // Stop is intentional in the Commands namespace.
 
-public class Stop : GH_Component
+namespace Robots.Grasshopper.Commands;
+
+public class Stop() : CommandComponent(
+    "Stop Program",
+    "Pauses the program until an operator resumes it.",
+    "{80E4E1AD-D1C0-441F-BDC5-5E810BCECE61}",
+    GH_Exposure.secondary)
 {
-    public Stop() : base("Stop program", "Stop", "Stops the program until an operator starts it again", "Robots", "Commands") { }
-    public override GH_Exposure Exposure => GH_Exposure.secondary;
-    public override Guid ComponentGuid => new("{80E4E1AD-D1C0-441F-BDC5-5E810BCECE61}");
-    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconStopCommand");
-
-    protected override void RegisterInputParams(GH_InputParamManager pManager)
-    {
-    }
-
-    protected override void RegisterOutputParams(GH_OutputParamManager pManager)
-    {
-        pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
-    }
-
-    protected override void SolveInstance(IGH_DataAccess DA)
-    {
-        var command = new Robots.Commands.Stop();
-        DA.SetData(0, command);
-    }
+    protected override Command SolveCommand(IGH_DataAccess DA) => new Robots.Commands.Stop();
 }

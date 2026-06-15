@@ -1,4 +1,4 @@
-
+﻿
 namespace Robots.Commands;
 
 public class Custom : Command
@@ -13,10 +13,13 @@ public class Custom : Command
 
     public void AddCommand(Manufacturers manufacturer, string? command, string? declaration)
     {
-        if (command is not null)
+        if (string.IsNullOrWhiteSpace(command) && string.IsNullOrWhiteSpace(declaration))
+            throw new ArgumentException("Custom commands require command code, a declaration, or both.");
+
+        if (!string.IsNullOrWhiteSpace(command))
             _customCommands.Add(manufacturer, command);
 
-        if (declaration is not null)
+        if (!string.IsNullOrWhiteSpace(declaration))
             _customDeclarations.Add(manufacturer, declaration);
     }
 

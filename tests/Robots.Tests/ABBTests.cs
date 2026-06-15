@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using Rhino.Geometry;
 
 namespace Robots.Tests;
@@ -9,19 +9,18 @@ public class ABBTests
 
     public ABBTests()
     {
-        const string xml = "<RobotSystem name=\"IRB120\" manufacturer=\"ABB\"><Mechanisms><RobotArm model=\"IRB120\" manufacturer=\"ABB\" payload=\"3\"><Base x=\"0.000\" y=\"0.000\" z=\"0.000\" q1=\"1.000\" q2=\"0.000\" q3=\"0.000\" q4=\"0.000\"/><Joints><Revolute number=\"1\" a =\"0\" d =\"290\" minrange = \"-165\" maxrange =\"165\" maxspeed =\"250\"/><Revolute number=\"2\" a =\"270\" d =\"0\" minrange = \"-110\" maxrange =\"110\" maxspeed =\"250\"/><Revolute number=\"3\" a =\"70\" d =\"0\" minrange = \"-110\" maxrange =\"70\" maxspeed =\"250\"/><Revolute number=\"4\" a =\"0\" d =\"302\" minrange = \"-160\" maxrange =\"160\" maxspeed =\"320\"/><Revolute number=\"5\" a =\"0\" d =\"0\" minrange = \"-120\" maxrange =\"120\" maxspeed =\"320\"/><Revolute number=\"6\" a =\"0\" d =\"72\" minrange = \"-400\" maxrange =\"400\" maxspeed =\"420\"/></Joints></RobotArm></Mechanisms><IO><DO names=\"DO10_1,DO10_2\"/><DI names=\"DI10_1,DI10_2\"/></IO></RobotSystem>";
-        var robot = FileIO.ParseRobotSystem(xml, Plane.WorldXY);
+        var robot = TestRobots.AbbIrb120();
 
         var planeA = Plane.WorldYZ;
         var planeB = Plane.WorldYZ;
-        planeA.Origin = new Point3d(300, 200, 610);
-        planeB.Origin = new Point3d(300, -200, 610);
+        planeA.Origin = new(300, 200, 610);
+        planeB.Origin = new(300, -200, 610);
         var speed = new Speed(300);
         var targetA = new CartesianTarget(planeA, RobotConfigurations.Wrist, Motions.Joint);
         var targetB = new CartesianTarget(planeB, null, Motions.Linear, speed: speed);
         var toolpath = new SimpleToolpath() { targetA, targetB };
 
-        _program = new Program("TestProgram", robot, [toolpath]);
+        _program = new("TestProgram", robot, [toolpath]);
     }
 
     [Test]
@@ -67,23 +66,34 @@ public class ABBTests
     [Test]
     public void AbbCorrectCode()
     {
-        const string expected = @"MODULE TestProgram_T_ROB1
-VAR extjoint extj := [9E9,9E9,9E9,9E9,9E9,9E9];
-VAR confdata conf := [0,0,0,0];
-PERS tooldata DefaultTool:=[TRUE,[[0,0,0],[1,0,0,0]],[0.001,[0,0,0.001],[1,0,0,0],0,0,0]];
-TASK PERS wobjdata DefaultFrame:=[FALSE,TRUE,"""",[[0,0,0],[1,0,0,0]],[[0,0,0],[1,0,0,0]]];
-TASK PERS speeddata DefaultSpeed:=[100,180,5000,1080];
-TASK PERS speeddata Speed000:=[300,180,5000,1080];
-PROC Main()
-ConfL \Off;
-MoveAbsJ [[41.257,-0.5638,4.3298,85.7179,-41.3979,5.7002],extj],DefaultSpeed,fine,DefaultTool;
-MoveL [[300,-200,610],[0.5,0.5,0.5,0.5],conf,extj],Speed000,fine,DefaultTool \WObj:=DefaultFrame;
-ENDPROC
-ENDMODULE";
+        const string expected = """
+            MODULE TestProgram_T_ROB1
+            VAR extjoint extj := [9E9,9E9,9E9,9E9,9E9,9E9];
+            VAR confdata conf := [0,0,0,0];
+            PERS tooldata DefaultTool:=[TRUE,[[0,0,0],[1,0,0,0]],[0.001,[0,0,0.001],[1,0,0,0],0,0,0]];
+            TASK PERS wobjdata DefaultFrame:=[FALSE,TRUE,"",[[0,0,0],[1,0,0,0]],[[0,0,0],[1,0,0,0]]];
+            TASK PERS speeddata DefaultSpeed:=[100,180,5000,1080];
+            TASK PERS speeddata Speed000:=[300,180,5000,1080];
+            PROC Main()
+            ConfL \Off;
+            MoveAbsJ [[41.257,-0.5638,4.3298,85.7179,-41.3979,5.7002],extj],DefaultSpeed,fine,DefaultTool;
+            MoveL [[300,-200,610],[0.5,0.5,0.5,0.5],conf,extj],Speed000,fine,DefaultTool \WObj:=DefaultFrame;
+            ENDPROC
+            ENDMODULE
+            """;
 
-        var code = _program.Code ?? throw new InvalidOperationException("Program code not generated");
-        var actual = string.Join(Environment.NewLine, code[0].SelectMany(c => c));
+        var code = _program.Code ?? throw new InvalidOperationException("Program code was not generated.");
+        var actual = string.Join(Environment.NewLine, code[0].SelectMany(c => c)).ReplaceLineEndings("\n");
 
         Assert.That(actual, Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void AbbRemoteIsUnavailableInNet8()
+    {
+        var remote = _program.RobotSystem.Remote ?? throw new InvalidOperationException("ABB remote was not created.");
+        var exception = Assert.Throws<NotSupportedException>(remote.Play);
+
+        Assert.That(exception!.Message, Does.Contain("out-of-process ABB PC SDK bridge"));
     }
 }

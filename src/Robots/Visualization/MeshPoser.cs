@@ -1,15 +1,18 @@
-namespace Robots;
+﻿namespace Robots;
 
 public interface IMeshPoser
 {
-    void Pose(List<KinematicSolution> solutions, Tool[] tools);
+    void Pose(IReadOnlyList<KinematicSolution> solutions, Tool[] tools);
 }
 
 public static class IMeshPoserExtensions
 {
-    public static void Pose(this IMeshPoser poser, List<KinematicSolution> solutions, SystemTarget systemTarget)
+    extension(IMeshPoser poser)
     {
-        var tools = systemTarget.ProgramTargets.Map(t => t.Target.Tool);
-        poser.Pose(solutions, tools);
+        public void Pose(IReadOnlyList<KinematicSolution> solutions, SystemTarget systemTarget)
+        {
+            var tools = systemTarget.ProgramTargets.Map(t => t.Target.Tool);
+            poser.Pose(solutions, tools);
+        }
     }
 }

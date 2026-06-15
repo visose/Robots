@@ -1,42 +1,39 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\Package.props" />
 
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
-    <AssemblyTitle>$(Product) Grasshopper</AssemblyTitle>
-
+    <TargetFramework>net8.0</TargetFramework>
     <PackageId>Robots.Rhino</PackageId>
-    <PackageIcon>iconRhino128.png</PackageIcon>
+    <PackageIcon>rhino-package-icon.png</PackageIcon>
+    <AssemblyTitle>$(Product) Grasshopper</AssemblyTitle>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <EnableDynamicLoading Condition="'$(EnableDynamicLoading)' == '' and '$(_IsPacking)' != 'true'">true</EnableDynamicLoading>
+    <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
     <Description>$(Description) This package is for development of Rhino and Grasshopper plug-ins.</Description>
     <PackageTags>$(PackageTags);Rhino;Grasshopper</PackageTags>
-    <Rhino>8</Rhino>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddReferenceAssemblies</TargetsForTfmSpecificContentInPackage>
+    <!-- Robots.Rhino intentionally packages compile-time-only assemblies under ref/ without runtime build output. -->
+    <NoWarn>$(NoWarn);NU5131</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Windows.Forms" />
-    <PackageReference Include="Grasshopper" Version="7.0.20314.3001" ExcludeAssets="runtime" />
-    <ProjectReference Include="..\Robots\Robots.csproj" PrivateAssets="All" />
+    <PackageReference Include="Grasshopper" Version="8.21.25188.17001" ExcludeAssets="runtime" GeneratePathProperty="true" />
+    <PackageReference Include="RhinoCommon" Version="8.21.25188.17001" ExcludeAssets="runtime" GeneratePathProperty="true" />
+    <ProjectReference Include="..\Robots\Robots.Rhino.csproj" PrivateAssets="All" />
+    <EmbeddedResource Include="Resources\Icons\**\*" />
+    <None Include="Resources\Package\rhino-package-icon.png" Pack="true" PackagePath="" Visible="false" />
+    <None Include="Resources\Package\robots-icon.png" CopyToOutputDirectory="PreserveNewest" TargetPath="robots-icon.png" Visible="false" />
+    <None Include="$(PkgRhinoCommon)\build\net7.0\RhinoCommon.props" Pack="true" PackagePath="buildTransitive\$(PackageId).props" Visible="false" />
+    <None Include="$(PkgRhinoCommon)\build\net7.0\RhinoCommon.targets" Pack="true" PackagePath="buildTransitive\$(PackageId).targets" Visible="false" />
+    <None Include="$(PkgGrasshopper)\build\net7.0\Grasshopper.targets" Pack="true" PackagePath="buildTransitive" Visible="false" />
   </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Assets\Embed\**\*" />
-    <None Include="$(RootDir)build\Assets\iconRhino128.png" Pack="true" PackagePath="" Visible="false" />
-    <None Include="$(RootDir)build\Assets\iconRobot.png" CopyToOutputDirectory="PreserveNewest" Visible="false" />
-    <None Include="Build\Robots.Rhino.targets" Pack="true" PackagePath="buildTransitive" />
-    <None Include="$(TargetDir)$(Product).dll" Pack="true" PackagePath="lib\net48" Visible="false" />
-  </ItemGroup>
-
-  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows)) and $(Configuration) == 'Debug'">
-    <StartProgram>C:\Program Files\Rhino $(Rhino)\System\Rhino.exe</StartProgram>
-    <StartArguments>/nosplash /runscript="-grasshopper window show _enter"</StartArguments>
-    <StartAction>Program</StartAction>
-
-    <PackageDir>$(AppData)\McNeel\Rhinoceros\packages\$(Rhino).0\$(Product)</PackageDir>
-    <OutputPath>$(PackageDir)\$(Version)</OutputPath>
-  </PropertyGroup>
-
-  <Target Name="Manifest" BeforeTargets="Build" Condition="$(Configuration) == 'Debug'">
-    <WriteLinesToFile File="$(PackageDir)\manifest.txt" Overwrite="true" Lines="$(Version)" />
+  <Target Name="AddReferenceAssemblies">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(TargetPath)" PackagePath="ref\$(TargetFramework)\" />
+      <TfmSpecificPackageFile Include="$(TargetDir)$(Product).dll" PackagePath="ref\$(TargetFramework)\" />
+    </ItemGroup>
   </Target>
 
   <Target Name="Rename" AfterTargets="AfterBuild" Condition="'$(ContinuePackingAfterGeneratingNuspec)' != 'true'">

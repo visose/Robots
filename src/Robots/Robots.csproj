@@ -1,35 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="Robots.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net48</TargetFrameworks>
-    <AssemblyTitle>$(Product) Core</AssemblyTitle>
-
     <PackageId>Robots</PackageId>
-    <PackageIcon>icon128.png</PackageIcon>
-    <Description>$(Description)</Description>
-
+    <PackageIcon>package-icon.png</PackageIcon>
+    <DefineConstants>$(DefineConstants);RHINO3DM</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="PolySharp" Version="1.14.1" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
-    <PackageReference Include="SSH.NET" Version="2024.0.0" />
+    <PackageReference Include="Rhino3dm" Version="8.17.0" />
+    <None Include="Resources\Package\package-icon.png" Pack="true" PackagePath="" Visible="false" />
   </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="Rhino3dm" Version="7.15.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-    <PackageReference Include="RhinoCommon" Version="7.0.20314.3001" ExcludeAssets="runtime" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="Newtonsoft.Json.Rhino" HintPath="..\..\lib\Newtonsoft.Json.Rhino.dll" Private="false" />
-    <Reference Include="ABB.Robotics.Controllers.PC" HintPath="..\..\lib\ABB.Robotics.Controllers.PC.dll" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\**\*" />
-    <None Include="..\..\build\Assets\icon128.png" Pack="true" PackagePath="" />
-  </ItemGroup>
-
 </Project>

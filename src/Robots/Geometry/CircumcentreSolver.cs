@@ -1,5 +1,5 @@
+﻿using static System.Math;
 using Rhino.Geometry;
-using static System.Math;
 
 namespace Robots.Geometry;
 

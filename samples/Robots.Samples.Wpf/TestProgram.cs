@@ -1,4 +1,4 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 using Plane = Rhino.Geometry.Plane;
 
 namespace Robots.Samples.Wpf;
@@ -18,7 +18,7 @@ class TestProgram
         var targetB = new CartesianTarget(planeB, null, Motions.Linear, speed: speed);
         var toolpath = new SimpleToolpath() { targetA, targetB };
 
-        return new Program("TestProgram", robot, new[] { toolpath });
+        return new Program("TestProgram", robot, [toolpath]);
     }
 
     static async Task<RobotSystem> GetRobotAsync()

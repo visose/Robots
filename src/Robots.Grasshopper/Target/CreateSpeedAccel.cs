@@ -1,49 +1,37 @@
-using System.Drawing;
-using static System.Math;
+﻿using static System.Math;
 
 namespace Robots.Grasshopper;
 
-public class CreateSpeedAccel : GH_Component
+public class CreateSpeedAccel() : Component(
+    "Create Speed",
+    "Creates robot speed settings.",
+    "Components",
+    ComponentIds.CreateSpeed,
+    GH_Exposure.tertiary)
 {
-    public CreateSpeedAccel() : base("Create speed", "Speed", "Creates a target speed.", "Robots", "Components") { }
-    public override GH_Exposure Exposure => GH_Exposure.tertiary;
-    public override Guid ComponentGuid => new("2849cac0-4006-4531-a2a3-a37cd7e31031");
-    protected override Bitmap Icon => Util.GetIcon("iconSpeed");
-
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddNumberParameter("Translation", "T", "TCP translation speed (mm/s)", GH_ParamAccess.item, 100.0);
-        pManager.AddNumberParameter("Rotation", "R", "TCP rotation and swivel speed (rad/s)", GH_ParamAccess.item, PI);
-        pManager.AddNumberParameter("External translation", "Et", "External axes translation speed (mm/s)", GH_ParamAccess.item, 5000.0);
-        pManager.AddNumberParameter("External rotation", "Er", "External axes rotation speed (rad/s)", GH_ParamAccess.item, PI * 6);
-        pManager.AddNumberParameter("Accel translation", "At", "Used only in Doosan and UR (mm/s²)", GH_ParamAccess.item, 2500);
-        pManager.AddNumberParameter("Accel axis", "Aa", "Used in UR, Doosan and Franka Emika (rads/s²). For Franka, assumes max accel and jerk is 4PI.", GH_ParamAccess.item, 4 * PI);
+        _ = pManager.AddNumberParameter("Translation", "T", "TCP translation speed in mm/s.", GH_ParamAccess.item, 100.0);
+        _ = pManager.AddNumberParameter("Rotation", "R", "TCP rotation and swivel speed in rad/s.", GH_ParamAccess.item, PI);
+        _ = pManager.AddNumberParameter("External Translation", "Et", "External linear axis speed in mm/s.", GH_ParamAccess.item, 5000.0);
+        _ = pManager.AddNumberParameter("External Rotation", "Er", "External rotational axis speed in rad/s.", GH_ParamAccess.item, PI * 6);
+        _ = pManager.AddNumberParameter("Accel Translation", "At", "Linear acceleration for UR and Doosan in mm/s².", GH_ParamAccess.item, 2500);
+        _ = pManager.AddNumberParameter("Accel Axis", "Aa", "Axis acceleration for UR, Doosan, and Franka Emika in rad/s². Franka assumes max acceleration and jerk of 4π.", GH_ParamAccess.item, 4 * PI);
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddParameter(new SpeedParameter(), "Speed", "S", "Speed instance", GH_ParamAccess.item);
+        _ = pManager.AddParameter(new SpeedParameter(), "Speed", "S", "Robot speed settings.", GH_ParamAccess.item);
     }
 
-    protected override void SolveInstance(IGH_DataAccess DA)
+    protected override void SolveComponent(IGH_DataAccess DA)
     {
-        double translationSpeed = 0, rotationSpeed = 0,
-            translationExternal = 0, rotationExternal = 0,
-            translationAccel = 0, axisAccel = 0;
-
-        if (!DA.GetData(0, ref translationSpeed)) return;
-        if (!DA.GetData(1, ref rotationSpeed)) return;
-        if (!DA.GetData(2, ref translationExternal)) return;
-        if (!DA.GetData(3, ref rotationExternal)) return;
-        if (!DA.GetData(4, ref translationAccel)) return;
-        if (!DA.GetData(5, ref axisAccel)) return;
-
-        Speed speed = new(translationSpeed, rotationSpeed, translationExternal, rotationExternal)
+        Speed speed = new(DA.Get<double>(0), DA.Get<double>(1), DA.Get<double>(2), DA.Get<double>(3))
         {
-            TranslationAccel = translationAccel,
-            AxisAccel = axisAccel
+            TranslationAccel = DA.Get<double>(4),
+            AxisAccel = DA.Get<double>(5)
         };
 
-        DA.SetData(0, speed);
+        _ = DA.SetData(0, speed);
     }
 }

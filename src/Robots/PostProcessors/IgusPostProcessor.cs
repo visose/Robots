@@ -1,4 +1,4 @@
-using static System.Math;
+﻿using static System.Math;
 
 namespace Robots;
 
@@ -23,11 +23,12 @@ class IgusPostProcessor : IPostProcessor
             _program = program;
             bool isMultiProgram = _program.MultiFileIndices.Count > 1;
 
-            //var groupCode = new List<List<string>>();
-            //var first_file= new List<string>();
+            PostProcessorUtil.RejectMultiRobot(program, _system, "Igus");
+            PostProcessorUtil.RejectExternalAxes(program, _system, "Igus");
+            PostProcessorUtil.RejectDeclarations(program, "Igus");
 
-            if (_system.MechanicalGroups.Count > 1)
-                program.Errors.Add("Multi-Robot not supported for Igus robots yet!");
+            if (_program.Attributes.OfType<Tool>().Count(t => !t.UseController) > 1)
+                program.AddError(IssueKind.UnsupportedPostProcessorFeature, "Igus programs support only one custom tool.", source: nameof(IgusPostProcessor));
 
             List<List<string>> groupCode = [MainModule()];
 
@@ -45,17 +46,17 @@ class IgusPostProcessor : IPostProcessor
         List<string> MainModule()
         {
             List<string> code = [];
-            bool is_multiProgram = _program.MultiFileIndices.Count > 1;
+            bool multiProgram = _program.MultiFileIndices.Count > 1;
 
             code.Add("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
             code.Add("<Program>");
             code.Add(" <Header RobotName=\"igus REBEL-6DOF\" RobotType=\"igus-REBEL/REBEL-6DOF-01\" " +
                 $"GripperType=\"{ToolName()}.xml\" Software=\"\" VelocitySetting=\"0\" />");
 
-            if (is_multiProgram)
+            if (multiProgram)
             {
                 for (int i = 0; i < _program.MultiFileIndices.Count; i++)
-                    code.Add($"<Sub Nr=\"{i + 1}\" File=\"{_program.Name}_{i + 1}.xml\" Descr=\"\" />");
+                    code.Add($"<Sub Nr=\"{i + 1}\" File=\"{_program.Name}_{i + 1:000}.xml\" Descr=\"\" />");
             }
             else
             {
@@ -77,18 +78,8 @@ class IgusPostProcessor : IPostProcessor
                 $"GripperType=\"{ToolName()}.xml\" Software=\"\" VelocitySetting=\"0\" />"
             ];
 
-            if (index == 0)
-            {
-                code.AddRange(TargetsCode(0, _program.MultiFileIndices[index + 1]));
-            }
-            else if (index == _program.MultiFileIndices.Count - 1)
-            {
-                code.AddRange(TargetsCode(_program.MultiFileIndices.Last(), _program.Targets.Count));
-            }
-            else
-            {
-                code.AddRange(TargetsCode(_program.MultiFileIndices[index], _program.MultiFileIndices[index + 1]));
-            }
+            var (start, end) = _program.GetTargetRange(index);
+            code.AddRange(TargetsCode(start, end));
 
             code.Add("</Program>");
 
@@ -97,20 +88,8 @@ class IgusPostProcessor : IPostProcessor
 
         string ToolName()
         {
-            var attributes = _program.Attributes;
-            List<string> toolsNames = [];
-
-            foreach (var tool in attributes.OfType<Tool>().Where(t => !t.UseController))
-            {
-                if (toolsNames.Count == 0)
-                    toolsNames.Add(tool.Name);
-            }
-
-            return toolsNames.Count switch
-            {
-                0 => "",
-                _ => toolsNames[0] //We are only allowed to have a single tool
-            };
+            var tool = _program.Attributes.OfType<Tool>().FirstOrDefault(t => !t.UseController);
+            return tool?.Name ?? "";
         }
 
         List<string> TargetsCode(int startIndex, int endIndex)
@@ -137,17 +116,12 @@ class IgusPostProcessor : IPostProcessor
 
                     string moveText = "";
 
-                    if (_system.MechanicalGroups[group].Externals.Count > 0)
-                    {
-                        _program.Warnings.Add("External axes not implemented in Igus.");
-                    }
-
                     if (programTarget.IsJointTarget)
                     {
                         var jointTarget = (JointTarget)programTarget.Target;
                         double[] joints = jointTarget.Joints;
                         joints = joints.Map((x, i) => _system.MechanicalGroups[group].RadianToDegree(x, i));
-                        var speedPercent = (target.Speed.RotationSpeed * 180.0 / PI) * (100.0 / 180.0);
+                        var speedPercent = target.Speed.RotationSpeed * 180.0 / PI * (100.0 / 180.0);
                         moveText = $"<Joint AbortCondition=\"False\" Nr=\"{lineCounter}\" Source=\"Numerical\" velPercent=\"{speedPercent}\" acc=\"90\" smooth=\"0\" " +
                             $"a1=\"{joints[0]:0.000}\" a2=\"{joints[1]:0.000}\" a3=\"{joints[2]:0.000}\" " +
                             $"a4=\"{joints[3]:0.000}\" a5=\"{joints[4]:0.000}\" a6=\"{joints[5]:0.000}\"" +
@@ -163,7 +137,7 @@ class IgusPostProcessor : IPostProcessor
                         {
                             case Motions.Joint:
                                 {
-                                    var speedPercent = (target.Speed.RotationSpeed * 180.0 / PI) * (100.0 / 180.0);
+                                    var speedPercent = target.Speed.RotationSpeed * 180.0 / PI * (100.0 / 180.0);
                                     moveText = $"<JointToCart AbortCondition=\"False\" Nr=\"{lineCounter}\" Source=\"Numerical\"" +
                                         $" velPercent=\"{speedPercent}\" acc=\"90\" smooth=\"0\" UserFrame=\"#base\" " +
                                         $"x=\"{planeValues[0]:0.000}\" y=\"{planeValues[1]:0.000}\" z=\"{planeValues[2]:0.000}\" " +
@@ -185,38 +159,17 @@ class IgusPostProcessor : IPostProcessor
                                 }
 
                             default:
-                                {
-                                    _program.Warnings.Add($"Movement type not supported.");
-                                    continue;
-                                }
+                                throw new InvalidOperationException($"Motion '{cartesian.Motion}' is invalid.");
 
                         }
                     }
 
-                    foreach (var command in programTarget.Commands)
-                    {
-                        var declaration = command.Declaration(_program);
-
-                        if (!string.IsNullOrWhiteSpace(declaration))
-                            throw new NotImplementedException("Declaration of a command is not implemented for Igus robots.");
-                    }
-
-                    foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
-                    {
-                        var instructionsStr = AddNumber(command.Code(_program, target), lineCounter);
-                        instructions.Add(instructionsStr);
-                        lineCounter++;
-                    }
+                    PostProcessorUtil.AddTargetCommands(instructions, _program, programTarget, true, command => AddNumber(command, lineCounter++));
 
                     instructions.Add(moveText);
                     lineCounter++;
 
-                    foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
-                    {
-                        var instructionsStr = AddNumber(command.Code(_program, target), lineCounter);
-                        instructions.Add(instructionsStr);
-                        lineCounter++;
-                    }
+                    PostProcessorUtil.AddTargetCommands(instructions, _program, programTarget, false, command => AddNumber(command, lineCounter++));
                 }
             }
 
@@ -235,8 +188,8 @@ class IgusPostProcessor : IPostProcessor
             }
             else
             {
-                _program.Errors.Add("Error at add_number function!");
-                return "Error at add_number function";
+                _program.AddError(IssueKind.UnsupportedPostProcessorFeature, "Could not number the Igus command.", source: nameof(IgusPostProcessor));
+                return "Could not number the Igus command";
             }
         }
     }

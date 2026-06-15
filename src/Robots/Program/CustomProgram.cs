@@ -8,7 +8,11 @@ public class CustomProgram(string name, RobotSystem robotSystem, List<int> multi
     public List<int> MultiFileIndices { get; } = multiFileIndices;
     public bool HasSimulation => false;
 
-    public void Save(string folder) => RobotSystem.SaveCode(this, folder);
+    public void Save(string folder)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(folder);
+        RobotSystem.SaveCode(this, folder);
+    }
 
     public override string ToString() => $"Program ({Name} with custom code)";
 }

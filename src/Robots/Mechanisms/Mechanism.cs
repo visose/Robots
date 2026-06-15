@@ -1,10 +1,9 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 
 namespace Robots;
 
 public abstract class Mechanism
 {
-    readonly string _model;
     Plane _basePlane;
 
     public Manufacturers Manufacturer { get; }
@@ -14,16 +13,14 @@ public abstract class Mechanism
     public Joint[] Joints { get; }
     public bool MovesRobot { get; }
     public Mesh DisplayMesh { get; }
-    public string Model => $"{Manufacturer}.{_model}";
+    public string Model { get; }
 
-    MechanismKinematics? _solver;
-
-    internal MechanismKinematics Solver => _solver ??= CreateSolver();
+    internal MechanismKinematics Solver { get => field ??= CreateSolver(); private set; }
 
     internal Mechanism(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints, bool movesRobot)
     {
-        _model = model;
         Manufacturer = manufacturer;
+        Model = $"{manufacturer}.{model}";
         Payload = payload;
         BasePlane = basePlane;
         BaseMesh = baseMesh;
@@ -79,7 +76,7 @@ public abstract class Mechanism
         foreach (var joint in Joints)
             mesh.Append(joint.Mesh);
 
-        mesh.Transform(BasePlane.ToTransform());
+        _ = mesh.Transform(BasePlane.ToTransform());
         return mesh;
     }
 

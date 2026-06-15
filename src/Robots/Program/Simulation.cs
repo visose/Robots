@@ -1,5 +1,5 @@
-using Rhino.Geometry;
-using static Rhino.RhinoMath;
+﻿using Rhino.Geometry;
+using static Robots.GeometryUtil;
 
 namespace Robots;
 
@@ -8,9 +8,9 @@ public class SimulationPose(List<KinematicSolution> kinematics, int index)
     public List<KinematicSolution> Kinematics { get; internal set; } = kinematics;
     public int TargetIndex { get; internal set; } = index;
     public double CurrentTime { get; internal set; }
-    public Plane GetLastPlane(int mechanicalGroupindex)
+    public Plane GetLastPlane(int group)
     {
-        var planes = Kinematics[mechanicalGroupindex].Planes;
+        var planes = Kinematics[group].Planes;
         return planes[^1];
     }
 }
@@ -32,7 +32,7 @@ class Simulation
 
         var firstTarget = keyframes[0];
         var kinematics = firstTarget.ProgramTargets.MapToList(t => t.Kinematics);
-        CurrentSimulationPose = new SimulationPose(kinematics, firstTarget.Index);
+        CurrentSimulationPose = new(kinematics, firstTarget.Index);
     }
 
     public void Step(double time, bool isNormalized)
@@ -67,11 +67,11 @@ class Simulation
         }
 
         var systemTarget = _keyframes[_currentTarget + 1];
-        var prevSystemTarget = _keyframes[_currentTarget + 0];
-        var prevJoints = prevSystemTarget.ProgramTargets.Map(x => x.Kinematics.Joints);
+        var previous = _keyframes[_currentTarget + 0];
+        var prevJoints = previous.ProgramTargets.Map(x => x.Kinematics.Joints);
 
-        var kineTargets = systemTarget.Lerp(prevSystemTarget, _program.RobotSystem, time, prevSystemTarget.TotalTime, systemTarget.TotalTime);
-        CurrentSimulationPose.Kinematics = _program.RobotSystem.Kinematics(kineTargets, prevJoints);
+        var targets = systemTarget.Lerp(previous, _program.RobotSystem, time, previous.TotalTime, systemTarget.TotalTime);
+        CurrentSimulationPose.Kinematics = _program.RobotSystem.Kinematics(targets, prevJoints);
         CurrentSimulationPose.TargetIndex = systemTarget.Index;
         CurrentSimulationPose.CurrentTime = time;
     }

@@ -1,8 +1,8 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 
 namespace Robots;
 
-public class Tool : TargetAttribute
+public class Tool : TargetProperty
 {
     public static Tool Default { get; } = new(Plane.WorldXY, "DefaultTool");
 
@@ -21,33 +21,41 @@ public class Tool : TargetAttribute
     /// </summary>
     public int? Number { get; }
 
-    public Tool(Plane tcp, string name = "DefaultTool", double weight = 0, Point3d? centroid = null, Mesh? mesh = null, IList<Plane>? calibrationPlanes = null, bool useController = false, int? number = null)
+    public Tool(Plane tcp, string name = "DefaultTool", double weight = 0, Point3d? centroid = null, Mesh? mesh = null, IReadOnlyList<Plane>? calibrationPlanes = null, bool useController = false, int? number = null)
         : base(name)
     {
-        Weight = weight;
+        if (!tcp.IsValid)
+            throw new ArgumentException("TCP plane is invalid.", nameof(tcp));
+
+        Weight = CheckNonNegative(weight, nameof(weight));
         Centroid = (centroid is null) ? tcp.Origin : (Point3d)centroid;
         Mesh = mesh ?? FileIO.EmptyMesh;
         UseController = number is not null || useController;
         Number = number;
 
-        if (number is not null && number.Value < 1)
-            throw new ArgumentOutOfRangeException(nameof(number), " Tool number out of range.");
+        if (number is not null)
+            ArgumentOutOfRangeException.ThrowIfLessThan(number.Value, 1, nameof(number));
 
-        if (calibrationPlanes is null || !calibrationPlanes.Any())
+        if (calibrationPlanes is null || calibrationPlanes.Count == 0)
         {
             Tcp = tcp;
         }
         else
         {
-            if (calibrationPlanes.Count != 4)
-                throw new ArgumentException(" Calibration requires 4 planes.", nameof(calibrationPlanes));
+            ArgumentOutOfRangeException.ThrowIfNotEqual(calibrationPlanes.Count, 4, nameof(calibrationPlanes));
+
+            for (int i = 0; i < calibrationPlanes.Count; i++)
+            {
+                if (!calibrationPlanes[i].IsValid)
+                    throw new ArgumentException($"Calibration plane {i} is invalid.", nameof(calibrationPlanes));
+            }
 
             var origin = FourPointCalibration(calibrationPlanes);
-            Tcp = new Plane(origin, tcp.XAxis, tcp.YAxis);
+            Tcp = new(origin, tcp.XAxis, tcp.YAxis);
         }
     }
 
-    static Point3d FourPointCalibration(IList<Plane> calibrationPlanes)
+    static Point3d FourPointCalibration(IReadOnlyList<Plane> calibrationPlanes)
     {
         var p = calibrationPlanes;
         var calibrate = new Geometry.CircumcentreSolver(p[0].Origin, p[1].Origin, p[2].Origin, p[3].Origin);
@@ -55,7 +63,7 @@ public class Tool : TargetAttribute
 
         foreach (Plane plane in calibrationPlanes)
         {
-            plane.RemapToPlaneSpace(calibrate.Center, out Point3d remappedPoint);
+            _ = plane.RemapToPlaneSpace(calibrate.Center, out Point3d remappedPoint);
             tcpOrigin += remappedPoint;
         }
 

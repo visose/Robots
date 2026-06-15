@@ -1,22 +1,23 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
+using static Robots.Util;
+
 namespace Robots;
 
-public class VariableType
-{
-    public string Name { get; set; } = default!;
-    internal string Type { get; set; } = default!;
-    public string Comment { get; set; } = default!;
-    public string Version { get; set; } = "1";
-}
+public record VariableType(string Name, string Type, string Comment, string Version = "1");
 
-public class VariableOutput
+public record VariableOutput(string Name, RtdeType Type, double[] Values);
+
+public enum RtdeType
 {
-    public string Name { get; set; } = default!;
-    internal TypeCode Type { get; set; } = default!;
-    public double[] Values { get; set; } = default!;
+    Bool,
+    U8,
+    U32,
+    U64,
+    I32,
+    F64
 }
 
 public class URRealTimeDataExchange : IDisposable
@@ -48,49 +49,43 @@ public class URRealTimeDataExchange : IDisposable
 
     public static IEnumerable<VariableType> GetAllVariables()
     {
-        using var reader = Util.GetResource("URRTDE.csv");
+        using var reader = GetResource("URRTDE.csv");
         _ = reader.ReadLine(); // skip header
 
-        string line;
+        string? line;
         while ((line = reader.ReadLine()) is not null)
         {
             var data = line.Split(',');
 
-            yield return new()
-            {
-                Name = data[0],
-                Type = data[1],
-                Comment = data[2],
-                Version = data[3],
-            };
+            yield return new(data[0], data[1], data[2], data[3]);
         }
     }
 
-    static (int length, TypeCode type) GetLengthAndType(string type) => type switch
+    static (int length, RtdeType type) GetLengthAndType(string type) => type switch
     {
-        "BOOL" => (1, TypeCode.Boolean),
-        "UINT8" => (1, TypeCode.Byte),
-        "UINT32" => (1, TypeCode.UInt32),
-        "UINT64" => (1, TypeCode.UInt64),
-        "INT32" => (1, TypeCode.Int32),
-        "DOUBLE" => (1, TypeCode.Double),
-        "VECTOR3D" => (3, TypeCode.Double),
-        "VECTOR6D" => (6, TypeCode.Double),
-        "VECTOR6INT32" => (6, TypeCode.Int32),
-        "VECTOR6UINT32" => (6, TypeCode.Int32),
+        "BOOL" => (1, RtdeType.Bool),
+        "UINT8" => (1, RtdeType.U8),
+        "UINT32" => (1, RtdeType.U32),
+        "UINT64" => (1, RtdeType.U64),
+        "INT32" => (1, RtdeType.I32),
+        "DOUBLE" => (1, RtdeType.F64),
+        "VECTOR3D" => (3, RtdeType.F64),
+        "VECTOR6D" => (6, RtdeType.F64),
+        "VECTOR6INT32" => (6, RtdeType.I32),
+        "VECTOR6UINT32" => (6, RtdeType.U32),
         // "STRING" =>
-        _ => throw new ArgumentException($"Variable of type {type} not supported", nameof(type))
+        _ => throw new ArgumentException($"Variable type '{type}' is not supported.", nameof(type))
     };
 
-    static int GetByteLength(TypeCode type) => type switch
+    static int GetByteLength(RtdeType type) => type switch
     {
-        TypeCode.Boolean => 1,
-        TypeCode.Byte => 1,
-        TypeCode.UInt32 => 4,
-        TypeCode.UInt64 => 8,
-        TypeCode.Int32 => 4,
-        TypeCode.Double => 8,
-        _ => throw new ArgumentException($"TypeCode {type} not supported", nameof(type))
+        RtdeType.Bool => 1,
+        RtdeType.U8 => 1,
+        RtdeType.U32 => 4,
+        RtdeType.U64 => 8,
+        RtdeType.I32 => 4,
+        RtdeType.F64 => 8,
+        _ => throw Unsupported(type)
     };
 
     // instance
@@ -104,19 +99,19 @@ public class URRealTimeDataExchange : IDisposable
     public VariableOutput[] Outputs { get; }
     public List<string> Log { get; } = [];
 
-    public URRealTimeDataExchange(string IP, IList<string> variables)
+    public URRealTimeDataExchange(string IP, IReadOnlyList<string> variables)
     {
         Outputs = [.. CreateOutputs(variables)];
 
         MemoryStream memStream = new(_buffer);
-        _writer = new BinaryWriter(memStream, Encoding.ASCII);
-        _reader = new BinaryReader(memStream, Encoding.ASCII);
+        _writer = new(memStream, Encoding.ASCII);
+        _reader = new(memStream, Encoding.ASCII);
 
         _client = CreateClient();
-        _client.ConnectAsync(IPAddress.Parse(IP), 30004).Wait(1000);
+        _ = _client.ConnectAsync(IPAddress.Parse(IP), 30004).Wait(1000);
 
         if (!_client.Connected)
-            throw new InvalidOperationException($"Unable to connect to: {IP}");
+            throw new InvalidOperationException($"Unable to connect to {IP}.");
 
         WriteSetupOutputsPackage();
         WriteStartPackage();
@@ -124,8 +119,7 @@ public class URRealTimeDataExchange : IDisposable
 
     public void ReadOutputs()
     {
-        if (_isDisposed)
-            throw new ObjectDisposedException("Object has been disposed");
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
 
         PackageType packageType = PackageType.None;
         int length = 0;
@@ -136,7 +130,6 @@ public class URRealTimeDataExchange : IDisposable
         switch (packageType)
         {
             case PackageType.None:
-                //AddLog("No package received.");
                 break;
             case PackageType.RTDE_TEXT_MESSAGE:
                 ReadMessagePackage(length);
@@ -145,7 +138,7 @@ public class URRealTimeDataExchange : IDisposable
                 ReadDataPackage();
                 break;
             default:
-                AddLog($"Unexpected package: {packageType}");
+                AddLog($"Unexpected package: {packageType}.");
                 break;
         }
     }
@@ -153,7 +146,7 @@ public class URRealTimeDataExchange : IDisposable
     public void Dispose()
     {
         if (_isDisposed)
-            throw new ObjectDisposedException("Object has been disposed");
+            return;
 
         _client.Dispose();
         _isDisposed = true;
@@ -162,27 +155,27 @@ public class URRealTimeDataExchange : IDisposable
 
     void AddLog(string message)
     {
-        Log.Add($"{DateTime.Now.ToLongTimeString()} - {message}");
+        Log.Add($"{DateTime.Now:T} - {message}");
     }
 
-    static IEnumerable<VariableOutput> CreateOutputs(IList<string> variables)
+    static VariableOutput[] CreateOutputs(IReadOnlyList<string> variables)
     {
-        var set = new HashSet<string>(variables, StringComparer.OrdinalIgnoreCase);
+        var types = GetAllVariables().ToDictionary(t => t.Name, StringComparer.OrdinalIgnoreCase);
+        var outputs = new VariableOutput[variables.Count];
 
-        var types = GetAllVariables()
-            .Where(t => set.Contains(t.Name));
-
-        return types.Select(t =>
+        for (int i = 0; i < variables.Count; i++)
         {
+            var variable = variables[i];
+
+            if (!types.TryGetValue(variable, out var t))
+                throw new ArgumentException($"Output '{variable}' was not found.", nameof(variables));
+
             var (length, type) = GetLengthAndType(t.Type);
 
-            return new VariableOutput
-            {
-                Name = t.Name,
-                Type = type,
-                Values = new double[length]
-            };
-        });
+            outputs[i] = new(t.Name, type, new double[length]);
+        }
+
+        return outputs;
     }
 
     static TcpClient CreateClient() => new()
@@ -195,7 +188,7 @@ public class URRealTimeDataExchange : IDisposable
 
     int WritePackage(PackageType type, byte[] payload)
     {
-        int length = (_headerLength + payload.Length);
+        int length = _headerLength + payload.Length;
 
         _writer.BaseStream.Position = 0;
         _writer.Write((ushort)length);
@@ -209,7 +202,7 @@ public class URRealTimeDataExchange : IDisposable
         var (response, responseLength) = ReadPackage();
 
         if (response != type)
-            throw new InvalidOperationException($"Invalid response: {response}");
+            throw new InvalidOperationException($"Invalid response: {response}.");
 
         return responseLength;
     }
@@ -253,7 +246,8 @@ public class URRealTimeDataExchange : IDisposable
         var variablesBytes = Encoding.UTF8.GetBytes(variables);
         int length = WritePackage(type, variablesBytes);
 
-        var chars = _reader.ReadChars(length - _headerLength);
+        _ = _reader.ReadByte();
+        var chars = _reader.ReadChars(length - _headerLength - 1);
         string returnText = new(chars);
         var returnTypes = returnText.Split(',');
 
@@ -262,56 +256,52 @@ public class URRealTimeDataExchange : IDisposable
         for (int i = 0; i < returnTypes.Length; i++)
         {
             if (returnTypes[i].EqualsIgnoreCase("NOT_FOUND"))
-                throw new ArgumentException($"Output \"{Outputs[i].Name}\" not found", "variables");
+                throw new ArgumentException($"Output '{Outputs[i].Name}' was not found.", nameof(variables));
         }
     }
 
     void WriteStartPackage()
     {
         var type = PackageType.RTDE_CONTROL_PACKAGE_START;
-        WritePackage(type, []);
+        _ = WritePackage(type, []);
         bool accepted = _reader.ReadByte() == 1;
 
         AddLog($"{type}: {(accepted ? "accepted" : "denied")}");
 
         if (!accepted)
-            throw new InvalidOperationException($"{type} denied");
+            throw new InvalidOperationException($"{type} was denied.");
     }
-
-    //void WritePausePackage()
-    //{
-    //    var type = PackageType.RTDE_CONTROL_PACKAGE_PAUSE;
-    //    WritePackage(type, Array.Empty<byte>());
-    //    var accepted = _reader.ReadByte() == 1 ? "accepted" : "denied";
-
-    //    AddLog($"{type}: {accepted}");
-    //}
 
     void ReadDataPackage()
     {
+        _ = _reader.ReadByte();
+
         foreach (var output in Outputs)
         {
             var values = output.Values;
             var type = output.Type;
             var bytes = GetByteLength(type);
 
-            Array.Reverse(_buffer, (int)_reader.BaseStream.Position, bytes * values.Length);
-
             for (int i = 0; i < values.Length; i++)
             {
-                values[i] = type switch
-                {
-                    TypeCode.Boolean => _reader.ReadBoolean() ? 1.0 : 0.0,
-                    TypeCode.Byte => _reader.ReadByte(),
-                    TypeCode.UInt32 => _reader.ReadUInt32(),
-                    TypeCode.UInt64 => _reader.ReadUInt64(),
-                    TypeCode.Int32 => _reader.ReadInt32(),
-                    TypeCode.Double => _reader.ReadDouble(),
-                    _ => throw new ArgumentException(nameof(type))
-                };
+                if (bytes > 1)
+                    Array.Reverse(_buffer, (int)_reader.BaseStream.Position, bytes);
+
+                values[i] = ReadValue(type);
             }
         }
     }
+
+    double ReadValue(RtdeType type) => type switch
+    {
+        RtdeType.Bool => _reader.ReadBoolean() ? 1.0 : 0.0,
+        RtdeType.U8 => _reader.ReadByte(),
+        RtdeType.U32 => _reader.ReadUInt32(),
+        RtdeType.U64 => _reader.ReadUInt64(),
+        RtdeType.I32 => _reader.ReadInt32(),
+        RtdeType.F64 => _reader.ReadDouble(),
+        _ => throw Unsupported(type)
+    };
 
     void ReadMessagePackage(int length)
     {

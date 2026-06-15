@@ -1,4 +1,4 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 
 namespace Robots;
 
@@ -25,7 +25,8 @@ class DrlPostProcessor : IPostProcessor
             Code = [groupCode];
 
             var declaration = Declaration();
-            var initCommands = InitCommands();
+            List<string> initCommands = [];
+            PostProcessorUtil.AddInitCommands(initCommands, _program);
 
             bool isMultiProgram = program.MultiFileIndices.Count > 1;
 
@@ -47,12 +48,8 @@ class DrlPostProcessor : IPostProcessor
                 }
                 for (int i = 0; i < program.MultiFileIndices.Count; i++)
                 {
-                    var a = program.MultiFileIndices[i];
-                    var b = i == program.MultiFileIndices.Count - 1
-                        ? program.Targets.Count
-                        : program.MultiFileIndices[i + 1];
-
-                    var targets = program.Targets.Skip(a).Take(b - a);
+                    var (start, end) = program.GetTargetRange(i);
+                    var targets = program.Targets.GetRange(start, end - start);
                     List<string> code =
                     [
                         "from DRCF import *"
@@ -112,26 +109,12 @@ class DrlPostProcessor : IPostProcessor
                 code.Add($"{zone.Name} = {zoneDistance:0.#####}");
             }
 
-            foreach (var command in attributes.OfType<Command>())
-            {
-                string declaration = command.Declaration(_program);
-
-                if (!string.IsNullOrWhiteSpace(declaration))
-                    code.Add(declaration);
-            }
+            PostProcessorUtil.AddDeclarations(code, _program);
 
             return code;
         }
-        IEnumerable<string> InitCommands()
-        {
-            foreach (var command in _program.InitCommands)
-            {
-                string commands = command.Code(_program, Target.Default);
-                yield return commands;
-            }
-        }
 
-        List<string> Program(IEnumerable<SystemTarget> systemTargets)
+        List<string> Program(IReadOnlyList<SystemTarget> systemTargets)
         {
             List<string> code = [];
             Tool? currentTool = null;
@@ -178,7 +161,7 @@ class DrlPostProcessor : IPostProcessor
                         : $"trans({tool.Name}Tcp, {posx})";
 
                     var frame = target.Frame;
-                    var @ref = frame.Number?.ToString() ?? frame.Name;
+                    var @ref = frame.Number?.Text() ?? frame.Name;
 
                     switch (cartesian.Motion)
                     {
@@ -209,33 +192,25 @@ class DrlPostProcessor : IPostProcessor
 
                                 string speed = target.Speed.Time > 0 ?
                                     $"t={target.Speed.Time: 0.####}" :
-                                    $"a={linearAccel.ToDegrees():0.#####}, v=[{target.Speed.Name}Linear, {target.Speed.Name}Rotation]";
+                                    $"a={linearAccel:0.#####}, v=[{target.Speed.Name}Linear, {target.Speed.Name}Rotation]";
 
                                 moveText = $"movel({pos}, {speed}, r={zoneName}, ref={@ref})";
                                 break;
                             }
                         default:
-                            throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.");
+                            throw new InvalidOperationException($"Motion '{cartesian.Motion}' is invalid.");
                     }
                 }
                 else
                 {
-                    throw new ArgumentException(" Target type not supported.");
+                    throw new ArgumentException("Target type is not supported.");
                 }
 
-                foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
-                {
-                    string commands = command.Code(_program, target);
-                    code.Add(commands);
-                }
+                PostProcessorUtil.AddTargetCommands(code, _program, programTarget, true);
 
                 code.Add(moveText);
 
-                foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
-                {
-                    string commands = command.Code(_program, target);
-                    code.Add(commands);
-                }
+                PostProcessorUtil.AddTargetCommands(code, _program, programTarget, false);
 
                 string GetAxisSpeed()
                 {

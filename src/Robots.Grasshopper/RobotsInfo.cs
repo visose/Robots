@@ -1,10 +1,11 @@
-global using Grasshopper.Kernel;
+﻿global using Grasshopper.Kernel;
 
 using System.Drawing;
 using System.Reflection;
-using Grasshopper.Kernel.Types;
-using Grasshopper.Kernel.Special;
+
 using Grasshopper;
+using Grasshopper.Kernel.Special;
+using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
@@ -12,15 +13,15 @@ public class RobotsInfo : GH_AssemblyInfo
 {
     public RobotsInfo()
     {
-        var docServer = Instances.DocumentServer;
+        var docServer = Instances.DocumentServer
+            ?? throw new InvalidOperationException("Grasshopper document server is not available.");
 
-        docServer.DocumentAdded += FixScriptReferences;
         docServer.DocumentAdded += UpdateToLibraryParams;
     }
 
     public override string Name => GetInfo<AssemblyProductAttribute>().Product;
     public override string AssemblyVersion => GetInfo<AssemblyInformationalVersionAttribute>().InformationalVersion;
-    public override Bitmap Icon => Util.GetIcon("iconRobot");
+    public override Bitmap Icon => Util.GetIcon(nameof(LoadRobotSystem));
     public override string Description => GetInfo<AssemblyDescriptionAttribute>().Description;
     public override GH_LibraryLicense License => GH_LibraryLicense.opensource;
     public override string AuthorName => GetCompany()[0];
@@ -30,38 +31,14 @@ public class RobotsInfo : GH_AssemblyInfo
     static T GetInfo<T>() where T : Attribute
     {
         var assembly = Assembly.GetExecutingAssembly();
-        return assembly.GetCustomAttribute<T>();
+        return assembly.GetCustomAttribute<T>()
+            ?? throw new InvalidOperationException($"Assembly attribute '{typeof(T).Name}' is missing.");
     }
 
     static string[] GetCompany()
     {
         var company = GetInfo<AssemblyCompanyAttribute>().Company;
         return company.Split([" - "], StringSplitOptions.None);
-    }
-
-    void FixScriptReferences(GH_DocumentServer sender, GH_Document doc)
-    {
-        int count = 0;
-        var scripts = doc.Objects.Where(o => o.GetType().BaseType.Name == "Component_AbstractScript");
-        var robotsPath = GetRobotsPath();
-
-        foreach (dynamic script in scripts)
-        {
-            IList<string> references = script.ScriptSource.References;
-            var robotsRefs = references.Where(f => f.Contains("Robots.dll")).ToList();
-
-            if (robotsRefs.Count == 0)
-                continue;
-
-            foreach (var reference in robotsRefs)
-                references.Remove(reference);
-
-            references.Add(robotsPath);
-            count++;
-        }
-
-        if (count > 0)
-            Rhino.RhinoApp.WriteLine($"Fixed {count} script component reference(s) to Robots.dll.");
     }
 
     void UpdateToLibraryParams(GH_DocumentServer sender, GH_Document doc)
@@ -80,7 +57,7 @@ public class RobotsInfo : GH_AssemblyInfo
             var selected = (valueLists.FirstOrDefault(v => v.SelectedItems.Count != 0)?.FirstSelectedItem.Value as GH_String)?.Value;
 
             foreach (var valueList in valueLists)
-                doc.RemoveObject(valueList, true);
+                _ = doc.RemoveObject(valueList, true);
 
             if (LibraryParam.CreateIfEmpty(doc, component, ElementType.RobotSystem, selected))
                 count++;
@@ -88,17 +65,5 @@ public class RobotsInfo : GH_AssemblyInfo
 
         if (count > 0)
             Rhino.RhinoApp.WriteLine($"Updated {count} robot library value list(s).");
-    }
-
-    static string GetRobotsPath()
-    {
-        var robotsLib = Instances.ComponentServer.Libraries.FirstOrDefault(l => l.Name == "Robots");
-
-        if (robotsLib is null)
-            throw new ArgumentNullException(nameof(robotsLib), " Robots plug-in not loaded.");
-
-        var folder = Path.GetDirectoryName(robotsLib.Location);
-        var dllFile = Path.Combine(folder, "Robots.dll");
-        return dllFile;
     }
 }

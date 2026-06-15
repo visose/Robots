@@ -1,5 +1,5 @@
+﻿using static System.Math;
 using Rhino.Geometry;
-using static System.Math;
 
 namespace Robots;
 
@@ -44,7 +44,7 @@ class RapidPostProcessor : IPostProcessor
             string groupName = _system.MechanicalGroups[group].Name;
 
             code.Add($"MODULE {_program.Name}_{groupName}");
-            if (_system.MechanicalGroups[group].Externals.Count == 0) code.Add("VAR extjoint extj := [9E9,9E9,9E9,9E9,9E9,9E9];");
+            if (_system.MechanicalGroups[group].Externals.Length == 0) code.Add("VAR extjoint extj := [9E9,9E9,9E9,9E9,9E9,9E9];");
             code.Add("VAR confdata conf := [0,0,0,0];");
 
             // Attribute declarations
@@ -70,13 +70,7 @@ class RapidPostProcessor : IPostProcessor
                 foreach (var zone in attributes.OfType<Zone>().Where(z => z.IsFlyBy))
                     code.Add(Zone(zone));
 
-                foreach (var command in attributes.OfType<Command>())
-                {
-                    string declaration = command.Declaration(_program);
-
-                    if (!string.IsNullOrWhiteSpace(declaration))
-                        code.Add(declaration);
-                }
+                PostProcessorUtil.AddDeclarations(code, _program);
             }
 
             code.Add("PROC Main()");
@@ -85,10 +79,7 @@ class RapidPostProcessor : IPostProcessor
             // Init commands
 
             if (group == 0)
-            {
-                foreach (var command in _program.InitCommands)
-                    code.Add(command.Code(_program, Target.Default));
-            }
+                PostProcessorUtil.AddInitCommands(code, _program);
 
             if (_system.MechanicalGroups.Count > 1)
             {
@@ -126,8 +117,7 @@ class RapidPostProcessor : IPostProcessor
             bool multiProgram = _program.MultiFileIndices.Count > 1;
             string groupName = mechGroup.Name;
 
-            int start = _program.MultiFileIndices[file];
-            int end = (file == _program.MultiFileIndices.Count - 1) ? _program.Targets.Count : _program.MultiFileIndices[file + 1];
+            var (start, end) = _program.GetTargetRange(file);
             var code = new List<string>();
 
             if (multiProgram)
@@ -142,11 +132,11 @@ class RapidPostProcessor : IPostProcessor
                 var programTarget = _program.Targets[j].ProgramTargets[group];
                 var target = programTarget.Target;
                 string moveText;
-                string zone = (target.Zone.IsFlyBy ? target.Zone.Name : "fine").NotNull(" Zone name cannot be null.");
-                string id = (_system.MechanicalGroups.Count > 1) ? id = $@"\ID:={programTarget.Index}" : "";
+                string zone = (target.Zone.IsFlyBy ? target.Zone.Name : "fine").NotNull("Zone name cannot be null.");
+                string id = _system.MechanicalGroups.Count > 1 ? $@"\ID:={programTarget.Index}" : "";
                 string external = "extj";
 
-                if (mechGroup.Externals.Count > 0)
+                if (mechGroup.Externals.Length > 0)
                 {
                     double[] values = mechGroup.RadiansToDegreesExternal(target);
                     var externals = new string[6];
@@ -176,7 +166,7 @@ class RapidPostProcessor : IPostProcessor
                 {
                     var jointTarget = (JointTarget)programTarget.Target;
                     double[] joints = jointTarget.Joints;
-                    joints = joints.Map((x, i) => mechGroup.RadianToDegree(x, i));
+                    joints = joints.Map(mechGroup.RadianToDegree);
                     moveText = $"MoveAbsJ [[{joints[0]:0.####},{joints[1]:0.####},{joints[2]:0.####},{joints[3]:0.####},{joints[4]:0.####},{joints[5]:0.####}],{external}]{id},{target.Speed.Name},{zone},{target.Tool.Name};";
                 }
                 else
@@ -227,17 +217,15 @@ class RapidPostProcessor : IPostProcessor
                                 break;
                             }
                         default:
-                            throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.");
+                            throw new InvalidOperationException($"Motion '{cartesian.Motion}' is invalid.");
                     }
                 }
 
-                foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
-                    code.Add(command.Code(_program, target));
+                PostProcessorUtil.AddTargetCommands(code, _program, programTarget, true);
 
                 code.Add(moveText);
 
-                foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
-                    code.Add(command.Code(_program, target));
+                PostProcessorUtil.AddTargetCommands(code, _program, programTarget, false);
             }
 
             if (!multiProgram)
@@ -261,7 +249,7 @@ class RapidPostProcessor : IPostProcessor
 
             Point3d centroid = tool.Centroid;
             if (centroid.DistanceTo(Point3d.Origin) < 0.001)
-                centroid = new Point3d(0, 0, 0.001);
+                centroid = new(0, 0, 0.001);
 
             string pos = $"[{tool.Tcp.OriginX:0.###},{tool.Tcp.OriginY:0.###},{tool.Tcp.OriginZ:0.###}]";
             string orient = $"[{quaternion.A:0.#####},{quaternion.B:0.#####},{quaternion.C:0.#####},{quaternion.D:0.#####}]";

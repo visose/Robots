@@ -27,7 +27,7 @@ MonoBehaviour:
     m_Capabilities: 7
   - m_Id: scoped:Unity NuGet
     m_Name: Unity NuGet
-    m_Url: https://unitynuget-registry.azurewebsites.net
+    m_Url: https://package.openupm.com
     m_Scopes:
     - org.nuget
     m_IsDefault: 0

@@ -1,29 +1,15 @@
 ﻿namespace Robots.Grasshopper.Commands;
 
-public class Message : GH_Component
+public class Message() : CommandComponent(
+    "Message",
+    "Sends a text message to the teach pendant.",
+    "{CFAABB24-CAEE-49FC-850F-BE9F70F070CA}",
+    GH_Exposure.secondary)
 {
-    public Message() : base("Message", "Message", "Sends a text message to the teach pendant", "Robots", "Commands") { }
-    public override GH_Exposure Exposure => GH_Exposure.secondary;
-    public override Guid ComponentGuid => new("{CFAABB24-CAEE-49FC-850F-BE9F70F070CA}");
-    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconMessage");
-
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddTextParameter("Message", "M", "Message to display in teach pendant", GH_ParamAccess.item);
+        _ = pManager.AddTextParameter("Message", "M", "Message to display on the teach pendant.", GH_ParamAccess.item);
     }
 
-    protected override void RegisterOutputParams(GH_OutputParamManager pManager)
-    {
-        pManager.AddParameter(new CommandParameter(), "Command", "C", "Command", GH_ParamAccess.item);
-    }
-
-    protected override void SolveInstance(IGH_DataAccess DA)
-    {
-        string message = string.Empty;
-
-        if (!DA.GetData(0, ref message)) return;
-
-        var command = new Robots.Commands.Message(message);
-        DA.SetData(0, command);
-    }
+    protected override Command SolveCommand(IGH_DataAccess DA) => new Robots.Commands.Message(DA.Get<string>(0));
 }

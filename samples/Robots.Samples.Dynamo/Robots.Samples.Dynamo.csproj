@@ -2,12 +2,19 @@
 
 	<PropertyGroup>
 		<AssemblyName>Robots.Dynamo</AssemblyName>
-		<TargetFramework>net48</TargetFramework>
+		<RootNamespace>Robots.Dynamo</RootNamespace>
+		<Version>1.0.0</Version>
+		<TargetFramework>net10.0-windows</TargetFramework>
+		<UseWPF>true</UseWPF>
+		<EnableWindowsTargeting>true</EnableWindowsTargeting>
+		<EnableDynamicLoading>true</EnableDynamicLoading>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<NoWarn>CS1591</NoWarn>
+		<NoWarn>$(NoWarn);CS1591</NoWarn>
 
-		<RevitVersion>2023</RevitVersion>
-		<DynamoVersion>2.13</DynamoVersion>
+		<RevitVersion>2027</RevitVersion>
+		<DynamoPackageVersion>4.0.2.3870</DynamoPackageVersion>
+		<DynamoPackageFolderVersion>4.0</DynamoPackageFolderVersion>
+		<DynamoPackageInstallDir>$(AppData)\Dynamo\Dynamo Revit\$(DynamoPackageFolderVersion)\packages\$(AssemblyName)</DynamoPackageInstallDir>
 
 		<StartProgram>C:\Program Files\Autodesk\Revit $(RevitVersion)\Revit.exe</StartProgram>
 		<StartArguments>/language ENG</StartArguments>
@@ -15,23 +22,21 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Reference Include="PresentationCore" />
-		<Reference Include="PresentationFramework" />
-		<Reference Include="WindowsBase" />
-		<PackageReference Include="DynamoVisualProgramming.WpfUILibrary" Version="2.15.0.5383" ExcludeAssets="runtime" />
-		<PackageReference Include="DynamoVisualProgramming.ZeroTouchLibrary" Version="2.15.0.5383" ExcludeAssets="runtime" />
-		<PackageReference Include="HelixToolkit.Wpf.SharpDX" Version="2.17.0" ExcludeAssets="runtime" />
-		<PackageReference Include="Robots" Version="1.5.1" />
+		<PackageReference Include="DynamoVisualProgramming.WpfUILibrary" Version="$(DynamoPackageVersion)" ExcludeAssets="runtime" />
+		<PackageReference Include="DynamoVisualProgramming.ZeroTouchLibrary" Version="$(DynamoPackageVersion)" ExcludeAssets="runtime" />
+		<PackageReference Include="HelixToolkit.SharpDX.Core.Wpf" Version="2.27.3" />
+		<PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
+		<ProjectReference Include="..\..\src\Robots\Robots.csproj" />
 	</ItemGroup>
 
-	<Target Name="CopyPackage" AfterTargets="PostBuildEvent">
+	<Target Name="CopyPackage" AfterTargets="Build">
 		<ItemGroup>
-			<BinFiles Include="$(TargetDir)\*" />
+			<BinFiles Include="$(TargetDir)**\*" />
 			<PackageFiles Include="$(ProjectDir)package\**\*" />
 		</ItemGroup>
 
-		<Copy SourceFiles="@(BinFiles)" DestinationFolder="$(AppData)\Dynamo\Dynamo Revit\$(DynamoVersion)\packages\$(AssemblyName)\bin" />
-		<Copy SourceFiles="@(PackageFiles)" DestinationFolder="$(AppData)\Dynamo\Dynamo Revit\$(DynamoVersion)\packages\$(AssemblyName)\%(RecursiveDir)" />
+		<Copy SourceFiles="@(BinFiles)" DestinationFolder="$(DynamoPackageInstallDir)\bin\%(RecursiveDir)" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(PackageFiles)" DestinationFolder="$(DynamoPackageInstallDir)\%(RecursiveDir)" SkipUnchangedFiles="true" />
 	</Target>
 
 </Project>

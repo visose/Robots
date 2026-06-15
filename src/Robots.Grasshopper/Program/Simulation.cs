@@ -1,8 +1,12 @@
-using Grasshopper.Kernel.Types;
-
+﻿
 namespace Robots.Grasshopper;
 
-public sealed class Simulation : GH_Component
+public sealed class Simulation() : Component(
+    "Program Simulation",
+    "Simulates a checked robot program. Right-click for playback controls.",
+    "Components",
+    "{6CE35140-A625-4686-B8B3-B734D9A36CFC}",
+    GH_Exposure.quinary)
 {
     SimulationForm? _form;
     DateTime? _lastTime;
@@ -11,49 +15,34 @@ public sealed class Simulation : GH_Component
 
     internal double Speed = 1;
 
-    public Simulation() : base("Program simulation", "Sim", "Rough simulation of the robot program, right click for playback controls", "Robots", "Components") { }
-
-    public override GH_Exposure Exposure => GH_Exposure.quinary;
-    public override Guid ComponentGuid => new("{6CE35140-A625-4686-B8B3-B734D9A36CFC}");
-    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconSimulation");
-
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program to simulate", GH_ParamAccess.item);
-        pManager.AddNumberParameter("Time", "T", "Advance the simulation to this time", GH_ParamAccess.item, 0);
-        pManager.AddBooleanParameter("Normalized", "N", "Time value is normalized (from 0 to 1)", GH_ParamAccess.item, true);
+        _ = pManager.AddParameter(new ProgramParameter(), "Program", "P", "Program to simulate.", GH_ParamAccess.item);
+        _ = pManager.AddNumberParameter("Time", "T", "Simulation time. Use 0 to 1 when Normalized is true.", GH_ParamAccess.item, 0);
+        _ = pManager.AddBooleanParameter("Normalized", "N", "Treat Time as a normalized value from 0 to 1.", GH_ParamAccess.item, true);
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddMeshParameter("System meshes", "M", "System meshes", GH_ParamAccess.list);
-        pManager.AddNumberParameter("Joint rotations", "J", "Joint rotations", GH_ParamAccess.list);
-        pManager.AddPlaneParameter("Plane", "P", "TCP position", GH_ParamAccess.list);
-        pManager.AddIntegerParameter("Index", "I", "Current target index", GH_ParamAccess.item);
-        pManager.AddNumberParameter("Time", "T", "Current time in seconds", GH_ParamAccess.item);
-        pManager.AddParameter(new ProgramParameter(), "Program", "P", "This is the same program as the input program. Use this output to update other visualization components along with the simulation.", GH_ParamAccess.item);
-        pManager.AddTextParameter("Errors", "E", "Errors", GH_ParamAccess.list);
+        _ = pManager.AddMeshParameter("System Meshes", "M", "Robot system meshes at the current time.", GH_ParamAccess.list);
+        _ = pManager.AddNumberParameter("Joint Rotations", "J", "Joint rotations in radians at the current time.", GH_ParamAccess.list);
+        _ = pManager.AddPlaneParameter("Plane", "P", "TCP planes at the current time.", GH_ParamAccess.list);
+        _ = pManager.AddIntegerParameter("Index", "I", "Current target index.", GH_ParamAccess.item);
+        _ = pManager.AddNumberParameter("Time", "T", "Current time in seconds.", GH_ParamAccess.item);
+        _ = pManager.AddParameter(new ProgramParameter(), "Program", "P", "Pass-through program for visualization components that use simulation state.", GH_ParamAccess.item);
+        _ = pManager.AddTextParameter("Errors", "E", "Simulation errors.", GH_ParamAccess.list);
     }
 
-    protected override void SolveInstance(IGH_DataAccess DA)
+    protected override void SolveComponent(IGH_DataAccess DA)
     {
-        IProgram? program = null;
-        double inputTime = 0;
-        bool isNormalized = true;
+        var inputProgram = DA.Get<IProgram>(0);
+        var inputTime = DA.Get<double>(1);
+        var isNormalized = DA.Get<bool>(2);
 
-        if (!DA.GetData(0, ref program) || program is null) return;
-        if (!DA.GetData(1, ref inputTime)) return;
-        if (!DA.GetData(2, ref isNormalized)) return;
+        if (inputProgram is not Program p || !p.HasSimulation)
+            throw new RuntimeWarningException("Input program cannot be animated.");
 
-        if (!program.HasSimulation)
-        {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, " Input program cannot be animated");
-            DA.AbortComponentSolution();
-            return;
-        }
-
-        var p = (Program)program;
-        inputTime = (isNormalized) ? inputTime * p.Duration : inputTime;
+        inputTime = isNormalized ? inputTime * p.Duration : inputTime;
 
         if (_lastInputTime != inputTime)
         {
@@ -70,28 +59,28 @@ public sealed class Simulation : GH_Component
             Pause();
         }
 
-        p.MeshPoser ??= new RhinoMeshPoser(p.RobotSystem);
+        if (p.MeshPoser is not RhinoMeshPoser meshPoser)
+        {
+            meshPoser = new(p.RobotSystem);
+            p.MeshPoser = meshPoser;
+        }
+
         p.Animate(_time, false);
 
         var currentPose = p.CurrentSimulationPose;
         var currentKinematics = currentPose.Kinematics;
-        var currentSystemTarget = p.Targets[currentPose.TargetIndex];
+        var errors = currentKinematics.AllErrors();
 
-        var errors = currentKinematics.SelectMany(x => x.Errors);
-        var joints = currentKinematics.SelectMany(x => x.Joints);
-        var planes = currentKinematics.SelectMany(x => x.Planes).ToList();
-        var meshes = ((RhinoMeshPoser)p.MeshPoser).Meshes;
+        if (errors.Length > 0)
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Solution has errors.");
 
-        if (errors.Any())
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Errors in solution");
-
-        DA.SetDataList(0, meshes);
-        DA.SetDataList(1, joints);
-        DA.SetDataList(2, planes.Select(x => new GH_Plane(x)));
-        DA.SetData(3, currentPose.TargetIndex);
-        DA.SetData(4, currentPose.CurrentTime);
-        DA.SetData(5, program);
-        DA.SetDataList(6, errors);
+        _ = DA.SetDataList(0, meshPoser.Meshes);
+        _ = DA.SetDataList(1, currentKinematics.AllJoints());
+        _ = DA.SetDataList(2, currentKinematics.AllPlanes());
+        _ = DA.SetData(3, currentPose.TargetIndex);
+        _ = DA.SetData(4, currentPose.CurrentTime);
+        _ = DA.SetData(5, inputProgram);
+        _ = DA.SetDataList(6, errors);
 
         Update();
     }
@@ -118,8 +107,7 @@ public sealed class Simulation : GH_Component
 
     void Pause()
     {
-        if (_form is not null)
-            _form.Play.Checked = false;
+        _ = (_form?.Play.Checked = false);
 
         _lastTime = null;
     }
@@ -136,8 +124,6 @@ public sealed class Simulation : GH_Component
         ExpireSolution(true);
     }
 
-    // form
-
     public override void CreateAttributes()
     {
         m_attributes = new ComponentButton(this, "Playback", ToggleForm);
@@ -147,13 +133,12 @@ public sealed class Simulation : GH_Component
     {
         base.RemovedFromDocument(document);
 
-        if (_form is not null)
-            _form.Visible = false;
+        _ = (_form?.Visible = false);
     }
 
     void ToggleForm()
     {
-        _form ??= new SimulationForm(this);
+        _form ??= new(this);
         _form.Visible = !_form.Visible;
 
         if (!_form.Visible)

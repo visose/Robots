@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using Rhino.Geometry;
 
 namespace Robots.Tests;
@@ -9,19 +9,18 @@ public class URTests
 
     public URTests()
     {
-        const string xml = "<RobotSystem name=\"UR10\" manufacturer=\"UR\"><Mechanisms><RobotArm model=\"UR10\" manufacturer=\"UR\" payload=\"10\"><Base x=\"0.000\" y=\"0.000\" z=\"0.000\" q1=\"1.000\" q2=\"0.000\" q3=\"0.000\" q4=\"0.000\"/><Joints><Revolute number=\"1\" a =\"0\" d =\"127.3\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"120\"/><Revolute number=\"2\" a =\"-612\" d =\"0\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"120\"/><Revolute number=\"3\" a =\"-572.3\" d =\"0\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"180\"/><Revolute number=\"4\" a =\"0\" d =\"163.941\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"180\"/><Revolute number=\"5\" a =\"0\" d =\"115.7\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"180\"/><Revolute number=\"6\" a =\"0\" d =\"92.2\" minrange = \"-360\" maxrange =\"360\" maxspeed =\"180\"/></Joints></RobotArm></Mechanisms><IO><DO names=\"0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16\"/><DI names=\"0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16\"/><AO names=\"0,1\"/><AI names=\"0,1\"/></IO></RobotSystem>";
-        var robot = FileIO.ParseRobotSystem(xml, Plane.WorldXY);
+        var robot = TestRobots.UR10();
 
         var planeA = Plane.WorldZX;
         var planeB = Plane.WorldZX;
-        planeA.Origin = new Point3d(200, 100, 600);
-        planeB.Origin = new Point3d(700, 250, 600);
+        planeA.Origin = new(200, 100, 600);
+        planeB.Origin = new(700, 250, 600);
         var speed = new Speed(300);
         var targetA = new CartesianTarget(planeA, RobotConfigurations.Wrist, Motions.Joint);
         var targetB = new CartesianTarget(planeB, null, Motions.Linear, speed: speed);
         var toolpath = new SimpleToolpath() { targetA, targetB };
 
-        _program = new Program("URTest", robot, [toolpath]);
+        _program = new("URTest", robot, [toolpath]);
     }
 
     [Test]
@@ -62,21 +61,23 @@ public class URTests
     [Test]
     public void URCorrectCode()
     {
-        const string expected = @"def Program():
-  DefaultToolTcp = p[0, 0, 0, 0, 0, 1.5708]
-  DefaultToolWeight = 0
-  DefaultToolCog = [0, 0, 0]
-  DefaultSpeed = 0.1
-  Speed000 = 0.3
-  DefaultZone = 0
-  set_tcp(DefaultToolTcp)
-  set_payload(DefaultToolWeight, DefaultToolCog)
-  movej([2.2208, -2.4093, 2.5006, 3.0503, 0.9208, -3.1416], a=3.1416, v=0.3142, r=DefaultZone)
-  movel(p[0.7, 0.25, 0.6, -1.2092, -1.2092, -1.2092], a=1, v=Speed000, r=DefaultZone)
-end";
+        const string expected = """
+            def Program():
+              DefaultToolTcp = p[0, 0, 0, 0, 0, 1.5708]
+              DefaultToolWeight = 0
+              DefaultToolCog = [0, 0, 0]
+              DefaultSpeed = 0.1
+              Speed000 = 0.3
+              DefaultZone = 0
+              set_tcp(DefaultToolTcp)
+              set_payload(DefaultToolWeight, DefaultToolCog)
+              movej([2.2208, -2.4093, 2.5006, 3.0503, 0.9208, -3.1416], a=3.1416, v=0.3142, r=DefaultZone)
+              movel(p[0.7, 0.25, 0.6, -1.2092, -1.2092, -1.2092], a=1, v=Speed000, r=DefaultZone)
+            end
+            """;
 
-        var code = _program.Code ?? throw new InvalidOperationException("Program code not generated");
-        var actual = string.Join(Environment.NewLine, code[0].SelectMany(c => c)).ReplaceLineEndings();
+        var code = _program.Code ?? throw new InvalidOperationException("Program code was not generated.");
+        var actual = string.Join(Environment.NewLine, code[0].SelectMany(c => c)).ReplaceLineEndings("\n");
 
         Assert.That(actual, Is.EqualTo(expected));
     }

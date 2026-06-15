@@ -1,232 +1,163 @@
-using System.Drawing;
+﻿using System.Windows.Forms;
+
 using Rhino.Geometry;
+
+using GH_IO.Serialization;
 using Grasshopper;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Special;
-using GH_IO.Serialization;
 
 namespace Robots.Grasshopper;
 
-public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
+public sealed class CreateTarget() : Component(
+    "Create Target",
+    "Creates or modifies a target. Right-click for additional inputs.",
+    "Components",
+    ComponentIds.CreateTarget,
+    GH_Exposure.secondary)
+    , IGH_VariableParameterComponent
 {
-    // Variable inputs
-    readonly IGH_Param[] _parameters =
+    enum Input
+    {
+        Target,
+        Joints,
+        Plane,
+        Configuration,
+        Motion,
+        Tool,
+        Speed,
+        Zone,
+        Command,
+        Frame,
+        External
+    }
+
+    enum TargetKind { Cartesian, Joint }
+
+    static readonly ParamSpec[] Specs =
     [
-            new TargetParameter() { Name = "Target", NickName = "T", Description = "Reference target", Optional = false },
-            new JointsParameter() { Name = "Joints", NickName = "J", Description = "Joint rotations in radians", Optional = false },
-            new Param_Plane() { Name = "Plane", NickName = "P", Description = "Target plane", Optional = false },
-            new Param_Integer() { Name = "RobConf", NickName = "Cf", Description = "Robot configuration", Optional = true },
-            new Param_String() { Name = "Motion", NickName = "M", Description = "Type of motion", Optional = true },
-            new ToolParameter() { Name = "Tool", NickName = "T", Description = "Tool or end effector", Optional = true },
-            new SpeedParameter() { Name = "Speed", NickName = "S", Description = "Speed of robot in mm/s", Optional = true },
-            new ZoneParameter() { Name = "Zone", NickName = "Z", Description = "Approximation zone in mm", Optional = true },
-            new CommandParameter() { Name = "Command", NickName = "C", Description = "Robot command", Optional = true },
-            new FrameParameter() { Name = "Frame", NickName = "F", Description = "Base frame", Optional = true },
-            new JointsParameter() { Name = "External", NickName = "E", Description = "External axes", Optional = true }
+        ParamSpec.New<TargetParameter>("Target", "T", "Reference target.", false),
+        ParamSpec.New<JointsParameter>("Joints", "J", "Joint rotations in radians.", false),
+        ParamSpec.New<Param_Plane>("Plane", "P", "Target plane.", false),
+        ParamSpec.New<Param_Integer>("Configuration", "Cf", "Robot configuration.", true),
+        ParamSpec.New<Param_String>("Motion", "M", "Type of motion.", true),
+        ParamSpec.New<ToolParameter>("Tool", "T", "Tool or end effector.", true),
+        ParamSpec.New<SpeedParameter>("Speed", "S", "Robot speed settings.", true),
+        ParamSpec.New<ZoneParameter>("Zone", "Z", "Approximation zone in mm.", true),
+        ParamSpec.New<CommandParameter>("Command", "C", "Robot command.", true),
+        ParamSpec.New<FrameParameter>("Frame", "F", "Base frame.", true),
+        ParamSpec.New<JointsParameter>("External", "E", "External axes.", true)
     ];
 
     bool _isCartesian = true;
 
-    public CreateTarget() : base("Create target", "Target", "Creates or modifies a target. Right click for additional inputs.", "Robots", "Components") { }
-    public override GH_Exposure Exposure => GH_Exposure.secondary;
-    public override Guid ComponentGuid => new("{BC68DC2C-EED6-4717-9F49-80A2B21B75B6}");
-    protected override Bitmap Icon => Util.GetIcon("iconCreateTarget");
-
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        Params.RegisterInputParam(_parameters[2]);
+        _ = Params.RegisterInputParam(New(Input.Plane));
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddParameter(new TargetParameter(), "Target", "T", "Target", GH_ParamAccess.item);
+        _ = pManager.AddParameter(new TargetParameter(), "Target", "T", "Robot target.", GH_ParamAccess.item);
     }
 
     public override void AddedToDocument(GH_Document document)
     {
         base.AddedToDocument(document);
 
-        FixJointsParams(1);
-        FixJointsParams(10);
+        FixJointsParam(Input.Joints);
+        FixJointsParam(Input.External);
     }
 
-    void FixJointsParams(int index)
+    protected override void SolveComponent(IGH_DataAccess DA)
     {
-        var param = _parameters[index];
-        var inputParam = Params.Input.FirstOrDefault(p => p.Name == param.Name);
+        int targetIndex = InputIndex(Input.Target);
+        Target? source = targetIndex == -1 ? null : DA.Get<Target>(targetIndex);
+        var sourceCartesian = source as CartesianTarget;
+        var sourceJoint = source as JointTarget;
 
-        if (inputParam is null or JointsParameter)
-            return;
-
-        var sources = inputParam.Sources.ToList();
-
-        Params.UnregisterInputParameter(inputParam, true);
-        AddParam(index);
-
-        var updatedParam = Params.Input.FirstOrDefault(p => p.Name == param.Name);
-
-        foreach (var source in sources)
-            updatedParam.AddSource(source);
-    }
-
-    protected override void SolveInstance(IGH_DataAccess DA)
-    {
-        bool hasTarget = Params.Input.Any(x => x.Name == "Target");
-        bool hasJoints = Params.Input.Any(x => x.Name == "Joints");
-        bool hasPlane = Params.Input.Any(x => x.Name == "Plane");
-        bool hasConfig = Params.Input.Any(x => x.Name == "RobConf");
-        bool hasMotion = Params.Input.Any(x => x.Name == "Motion");
-        bool hasTool = Params.Input.Any(x => x.Name == "Tool");
-        bool hasSpeed = Params.Input.Any(x => x.Name == "Speed");
-        bool hasZone = Params.Input.Any(x => x.Name == "Zone");
-        bool hasCommand = Params.Input.Any(x => x.Name == "Command");
-        bool hasFrame = Params.Input.Any(x => x.Name == "Frame");
-        bool hasExternal = Params.Input.Any(x => x.Name == "External");
-
-        Target? sourceTarget = null;
-
-        if (hasTarget)
-        {
-            if (!DA.GetData("Target", ref sourceTarget) || sourceTarget is null)
-                return;
-        }
-
-        double[]? joints = null;
-        var plane = new Plane();
-        RobotConfigurations? configuration = null;
-        Motions motion = Motions.Joint;
-        Tool? tool = null;
-        Speed? speed = null;
-        Zone? zone = null;
-        Command? command = null;
-        Frame? frame = null;
-        double[]? external = null;
-
-        if (hasJoints)
-        {
-            if (!DA.GetData("Joints", ref joints) || joints is null)
-                return;
-        }
-        else if (sourceTarget is not null)
-        {
-            if (sourceTarget is JointTarget jointTarget)
-                joints = jointTarget.Joints;
-        }
-
-        if (hasPlane)
-        {
-            if (!DA.GetData("Plane", ref plane))
-                return;
-        }
-        else if (sourceTarget is not null)
-        {
-            if (sourceTarget is CartesianTarget cartesian)
-                plane = cartesian.Plane;
-        }
-
-        if (hasConfig)
-        {
-            int? config = null;
-            DA.GetData("RobConf", ref config);
-            configuration = (RobotConfigurations?)config;
-        }
-        else if (sourceTarget is not null)
-        {
-            if (sourceTarget is CartesianTarget cartesian)
-                configuration = cartesian.Configuration;
-        }
-
-        if (hasMotion)
-        {
-            string motionText = "Joint";
-            DA.GetData("Motion", ref motionText);
-
-            if (!Enum.TryParse(motionText, out motion))
-                throw new ArgumentException($"Motion {motionText} not valid.");
-        }
-        else if (sourceTarget is not null)
-        {
-            if (sourceTarget is CartesianTarget cartesian)
-                motion = cartesian.Motion;
-        }
-
-        if (hasTool)
-        {
-            DA.GetData("Tool", ref tool);
-        }
-        else if (sourceTarget is not null)
-        {
-            tool = sourceTarget.Tool;
-        }
-
-        if (hasSpeed)
-        {
-            DA.GetData("Speed", ref speed);
-        }
-        else if (sourceTarget is not null)
-        {
-            speed = sourceTarget.Speed;
-        }
-
-        if (hasZone)
-        {
-            DA.GetData("Zone", ref zone);
-        }
-        else if (sourceTarget is not null)
-        {
-            zone = sourceTarget.Zone;
-        }
-
-        if (hasCommand)
-        {
-            DA.GetData("Command", ref command);
-        }
-        else if (sourceTarget is not null)
-        {
-            command = sourceTarget.Command;
-        }
-
-        if (hasFrame)
-        {
-            DA.GetData("Frame", ref frame);
-        }
-        else if (sourceTarget is not null)
-        {
-            frame = sourceTarget.Frame;
-        }
-
-        if (hasExternal)
-        {
-            DA.GetData("External", ref external);
-        }
-        else if (sourceTarget is not null)
-        {
-            external = sourceTarget.External;
-        }
-
-        bool localCartesian = _isCartesian;
-
-        if (hasTarget && !hasPlane && !hasJoints && sourceTarget is not null)
-            localCartesian = sourceTarget is CartesianTarget;
+        bool hasPlane = Has(Input.Plane, out int planeIndex);
+        bool hasJoints = Has(Input.Joints, out int jointsIndex);
+        var kind = ResolveTargetKind(source, hasPlane, hasJoints);
+        var tool = Maybe(Input.Tool, source?.Tool);
+        var speed = Maybe(Input.Speed, source?.Speed);
+        var zone = Maybe(Input.Zone, source?.Zone);
+        var command = Maybe(Input.Command, source?.Command);
+        var frame = Maybe(Input.Frame, source?.Frame);
+        var external = Maybe(Input.External, source?.External);
 
         Target target;
 
-        if (localCartesian)
+        if (kind == TargetKind.Cartesian)
         {
+            var plane = hasPlane
+                ? DA.Get<Plane>(planeIndex)
+                : sourceCartesian?.Plane ?? throw new RuntimeWarningException("Plane input is required. Add a Plane input or connect a Cartesian target to the Target input.");
+
+            var configuration = !Has(Input.Configuration, out int configurationIndex)
+                ? sourceCartesian?.Configuration
+                : (RobotConfigurations?)DA.MaybeValue<int>(configurationIndex);
+
+            var motion = ReadMotion(DA, InputIndex(Input.Motion), sourceCartesian);
+
             target = new CartesianTarget(plane, configuration, motion, tool, speed, zone, command, frame, external);
         }
         else
         {
-            if (joints is null)
-                throw new ArgumentException("Joints should not be null");
+            var joints = hasJoints
+                ? DA.Get<double[]>(jointsIndex)
+                : sourceJoint?.Joints ?? throw new RuntimeWarningException("Joints input is required. Add a Joints input or connect a joint target to the Target input.");
 
             target = new JointTarget(joints, tool, speed, zone, command, frame, external);
         }
 
-        if (sourceTarget is not null)
-            target.ExternalCustom = sourceTarget.ExternalCustom;
+        if (source is not null && InputIndex(Input.External) == -1)
+            target.ExternalCustom = source.ExternalCustom;
 
-        DA.SetData(0, target);
+        _ = DA.SetData(0, target);
+
+        bool Has(Input input, out int index)
+        {
+            index = InputIndex(input);
+            return index != -1;
+        }
+
+        T? Maybe<T>(Input input, T? fallback) where T : class
+        {
+            return Has(input, out int index) ? DA.Maybe<T>(index) : fallback;
+        }
+    }
+
+    TargetKind ResolveTargetKind(Target? source, bool hasPlane, bool hasJoints)
+    {
+        if (hasPlane && hasJoints)
+            throw new InvalidOperationException("Create Target cannot have both Plane and Joints inputs.");
+
+        if (hasPlane)
+            return TargetKind.Cartesian;
+
+        if (hasJoints)
+            return TargetKind.Joint;
+
+        return source switch
+        {
+            CartesianTarget => TargetKind.Cartesian,
+            JointTarget => TargetKind.Joint,
+            null => _isCartesian ? TargetKind.Cartesian : TargetKind.Joint,
+            _ => throw new InvalidOperationException($"Target type '{source.GetType().Name}' is invalid.")
+        };
+    }
+
+    static Motions ReadMotion(IGH_DataAccess DA, int motionIndex, CartesianTarget? source)
+    {
+        if (motionIndex == -1)
+            return source?.Motion ?? Motions.Joint;
+
+        string text = DA.Get(motionIndex, "Joint");
+
+        return Enum.TryParse(text, true, out Motions motion) && Enum.IsDefined(motion)
+            ? motion
+            : throw new ArgumentException($"Motion '{text}' is invalid.");
     }
 
     public override bool Write(GH_IWriter writer)
@@ -241,130 +172,171 @@ public sealed class CreateTarget : GH_Component, IGH_VariableParameterComponent
         return base.Read(reader);
     }
 
-    // Menu items
-    protected override void AppendAdditionalComponentMenuItems(System.Windows.Forms.ToolStripDropDown menu)
+    protected override void AppendAdditionalComponentMenuItems(ToolStripDropDown menu)
     {
-        Menu_AppendItem(menu, "Target input", AddTarget, true, Params.Input.Any(x => x.Name == "Target"));
-        Menu_AppendSeparator(menu);
-        Menu_AppendItem(menu, "Joint target", SwitchCartesianEvent, true, !_isCartesian);
-        Menu_AppendItem(menu, "Joint input", AddJoints, !_isCartesian, Params.Input.Any(x => x.Name == "Joints"));
-        Menu_AppendSeparator(menu);
-        Menu_AppendItem(menu, "Cartesian target", SwitchCartesianEvent, true, _isCartesian);
-        Menu_AppendItem(menu, "Plane input", AddPlane, _isCartesian, Params.Input.Any(x => x.Name == "Plane"));
-        Menu_AppendItem(menu, "Configuration input", AddConfig, _isCartesian, Params.Input.Any(x => x.Name == "RobConf"));
-        Menu_AppendItem(menu, "Motion input", AddMotion, _isCartesian, Params.Input.Any(x => x.Name == "Motion"));
-        Menu_AppendSeparator(menu);
-        Menu_AppendItem(menu, "Tool input", AddTool, true, Params.Input.Any(x => x.Name == "Tool"));
-        Menu_AppendItem(menu, "Speed input", AddSpeed, true, Params.Input.Any(x => x.Name == "Speed"));
-        Menu_AppendItem(menu, "Zone input", AddZone, true, Params.Input.Any(x => x.Name == "Zone"));
-        Menu_AppendItem(menu, "Command input", AddCommand, true, Params.Input.Any(x => x.Name == "Command"));
-        Menu_AppendItem(menu, "Frame input", AddFrame, true, Params.Input.Any(x => x.Name == "Frame"));
-        Menu_AppendItem(menu, "External input", AddExternal, true, Params.Input.Any(x => x.Name == "External"));
+        _ = Menu_AppendItem(menu, "Target Input", Toggle(Input.Target), true, Has(Input.Target));
+        _ = Menu_AppendSeparator(menu);
+        _ = Menu_AppendItem(menu, "Joint Target", SwitchCartesianEvent, true, !_isCartesian);
+        _ = Menu_AppendItem(menu, "Joint Input", Toggle(Input.Joints), !_isCartesian, Has(Input.Joints));
+        _ = Menu_AppendSeparator(menu);
+        _ = Menu_AppendItem(menu, "Cartesian Target", SwitchCartesianEvent, true, _isCartesian);
+        _ = Menu_AppendItem(menu, "Plane Input", Toggle(Input.Plane), _isCartesian, Has(Input.Plane));
+        _ = Menu_AppendItem(menu, "Configuration Input", Toggle(Input.Configuration, AddConfigurationList), _isCartesian, Has(Input.Configuration));
+        _ = Menu_AppendItem(menu, "Motion Input", Toggle(Input.Motion, AddMotionList), _isCartesian, Has(Input.Motion));
+        _ = Menu_AppendSeparator(menu);
+
+        foreach (var input in new[] { Input.Tool, Input.Speed, Input.Zone, Input.Command, Input.Frame, Input.External })
+            _ = Menu_AppendItem(menu, Spec(input).Menu("Input"), Toggle(input), true, Has(input));
     }
 
-    // Variable methods
-    private void SwitchCartesian()
+    void SwitchCartesian()
     {
         if (_isCartesian)
         {
-            Params.UnregisterInputParameter(Params.Input.Find(x => x.Name == "Plane"), true);
-            Params.UnregisterInputParameter(Params.Input.Find(x => x.Name == "RobConf"), true);
-            Params.UnregisterInputParameter(Params.Input.Find(x => x.Name == "Motion"), true);
-            AddParam(1);
-            _isCartesian = false;
+            Remove(Input.Plane);
+            Remove(Input.Configuration);
+            Remove(Input.Motion);
+            _ = Add(Input.Joints);
         }
         else
         {
-            Params.UnregisterInputParameter(Params.Input.FirstOrDefault(x => x.Name == "Joints"), true);
-            AddParam(2);
-            _isCartesian = true;
+            Remove(Input.Joints);
+            _ = Add(Input.Plane);
         }
 
-        Params.OnParametersChanged();
-        ExpireSolution(true);
+        _isCartesian = !_isCartesian;
+        Changed();
     }
-    private void SwitchCartesianEvent(object sender, EventArgs e) => SwitchCartesian();
 
-    private void AddParam(int index)
+    void FixJointsParam(Input input)
     {
-        IGH_Param parameter = _parameters[index];
+        var param = Find(input);
 
-        if (Params.Input.Any(x => x.Name == parameter.Name))
-        {
-            Params.UnregisterInputParameter(Params.Input.First(x => x.Name == parameter.Name), true);
-        }
-        else
-        {
-            int insertIndex = Params.Input.Count;
+        if (param is null or JointsParameter)
+            return;
 
-            for (int i = 0; i < Params.Input.Count; i++)
+        var sources = param.Sources.ToArray();
+        Remove(input);
+        var updated = Add(input);
+
+        foreach (var source in sources)
+            updated.AddSource(source);
+    }
+
+    EventHandler Toggle(Input input, Action<IGH_Param>? onAdded = null) =>
+        (_, _) =>
+        {
+            if (Has(input))
             {
-                int otherIndex = Array.FindIndex(_parameters, x => x.Name == Params.Input[i].Name);
-                if (otherIndex > index)
-                {
-                    insertIndex = i;
-                    break;
-                }
+                Remove(input);
+            }
+            else
+            {
+                var param = Add(input);
+                onAdded?.Invoke(param);
             }
 
-            Params.RegisterInputParam(parameter, insertIndex);
+            Changed();
+        };
+
+    IGH_Param Add(Input input)
+    {
+        if (Find(input) is { } existing)
+            return existing;
+
+        var param = New(input);
+        _ = Params.RegisterInputParam(param, InsertIndex(input));
+        return param;
+    }
+
+    void Remove(Input input)
+    {
+        if (Find(input) is { } param)
+            _ = Params.UnregisterInputParameter(param, true);
+    }
+
+    int InsertIndex(Input input)
+    {
+        int index = (int)input;
+
+        for (int i = 0; i < Params.Input.Count; i++)
+        {
+            int other = IndexOf(Params.Input[i]);
+
+            if (other > index)
+                return i;
         }
 
+        return Params.Input.Count;
+    }
+
+    void AddConfigurationList(IGH_Param parameter)
+    {
+        var list = new ConfigParam();
+        AddValueList(parameter, list, -110, -33, valueList =>
+        {
+            valueList.ListMode = GH_ValueListMode.CheckList;
+            valueList.ListItems.Add(new("Shoulder", "1"));
+            valueList.ListItems.Add(new("Elbow", "2"));
+            valueList.ListItems.Add(new("Wrist", "4"));
+        });
+    }
+
+    void AddMotionList(IGH_Param parameter)
+    {
+        var list = new GH_ValueList();
+        AddValueList(parameter, list, -130, -11, valueList =>
+        {
+            valueList.ListItems.Add(new("Joint", "\"Joint\""));
+            valueList.ListItems.Add(new("Linear", "\"Linear\""));
+        });
+    }
+
+    void AddValueList(IGH_Param parameter, GH_ValueList list, int xOffset, int yOffset, Action<GH_ValueList> configure)
+    {
+        parameter.CreateAttributes();
+        list.CreateAttributes();
+        list.Attributes.Pivot = new(parameter.Attributes.InputGrip.X + xOffset, parameter.Attributes.InputGrip.Y + yOffset);
+        list.ListItems.Clear();
+        configure(list);
+
+        var document = OnPingDocument()
+            ?? Instances.ActiveCanvas?.Document
+            ?? throw new InvalidOperationException("Could not find the active Grasshopper document.");
+
+        _ = document.AddObject(list, false);
+        parameter.AddSource(list);
+        parameter.CollectData();
+    }
+
+    void Changed()
+    {
         Params.OnParametersChanged();
         ExpireSolution(true);
     }
 
-    private void AddTarget(object sender, EventArgs e) => AddParam(0);
-    private void AddJoints(object sender, EventArgs e) => AddParam(1);
-    private void AddPlane(object sender, EventArgs e) => AddParam(2);
-    private void AddConfig(object sender, EventArgs e)
+    bool Has(Input input) => Find(input) is not null;
+    IGH_Param? Find(Input input) => Params.Input.FirstOrDefault(x => Spec(input).Name == x.Name);
+
+    static IGH_Param New(Input input) => Specs[(int)input].Create();
+    static ParamSpec Spec(Input input) => Specs[(int)input];
+    static int IndexOf(IGH_Param param) => ParamSpec.IndexOf(Specs, param.Name);
+
+    int InputIndex(Input input) => Params.Input.FindIndex(param => Spec(input).Name == param.Name);
+
+    internal static int CanonicalInputIndex(string name) => ParamSpec.IndexOf(Specs, name);
+
+    internal IGH_Param AddInputForUpgrade(int index) => Add((Input)index);
+
+    internal void ClearInputsForUpgrade()
     {
-        AddParam(3);
-        var parameter = _parameters[3];
-
-        if (Params.Input.Any(x => x.Name == parameter.Name))
-        {
-            var configParm = new ConfigParam();
-            configParm.CreateAttributes();
-            configParm.Attributes.Pivot = new PointF(parameter.Attributes.InputGrip.X - 110, parameter.Attributes.InputGrip.Y - 33);
-            configParm.ListItems.Clear();
-            configParm.ListMode = GH_ValueListMode.CheckList;
-            configParm.ListItems.Add(new GH_ValueListItem("Shoulder", "1"));
-            configParm.ListItems.Add(new GH_ValueListItem("Elbow", "2"));
-            configParm.ListItems.Add(new GH_ValueListItem("Wrist", "4"));
-            Instances.ActiveCanvas.Document.AddObject(configParm, false);
-            parameter.AddSource(configParm);
-            parameter.CollectData();
-
-            ExpireSolution(true);
-        }
-    }
-    private void AddMotion(object sender, EventArgs e)
-    {
-        AddParam(4);
-        var parameter = _parameters[4];
-
-        if (Params.Input.Any(x => x.Name == parameter.Name))
-        {
-            var valueList = new GH_ValueList();
-            valueList.CreateAttributes();
-            valueList.Attributes.Pivot = new PointF(parameter.Attributes.InputGrip.X - 130, parameter.Attributes.InputGrip.Y - 11);
-            valueList.ListItems.Clear();
-            valueList.ListItems.Add(new GH_ValueListItem("Joint", "\"Joint\""));
-            valueList.ListItems.Add(new GH_ValueListItem("Linear", "\"Linear\""));
-            Instances.ActiveCanvas.Document.AddObject(valueList, false);
-            parameter.AddSource(valueList);
-            parameter.CollectData();
-            ExpireSolution(true);
-        }
+        foreach (var input in Params.Input.ToArray())
+            _ = Params.UnregisterInputParameter(input, true);
     }
 
-    private void AddTool(object sender, EventArgs e) => AddParam(5);
-    private void AddSpeed(object sender, EventArgs e) => AddParam(6);
-    private void AddZone(object sender, EventArgs e) => AddParam(7);
-    private void AddCommand(object sender, EventArgs e) => AddParam(8);
-    private void AddFrame(object sender, EventArgs e) => AddParam(9);
-    private void AddExternal(object sender, EventArgs e) => AddParam(10);
+    internal void SetCartesianForUpgrade(bool value) => _isCartesian = value;
+
+    void SwitchCartesianEvent(object? sender, EventArgs e) => SwitchCartesian();
 
     bool IGH_VariableParameterComponent.CanInsertParameter(GH_ParameterSide side, int index) => false;
     bool IGH_VariableParameterComponent.CanRemoveParameter(GH_ParameterSide side, int index) => false;

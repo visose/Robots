@@ -1,48 +1,59 @@
-﻿using System.Runtime.CompilerServices;
-using System.ComponentModel;
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows.Media;
-using SharpDX;
 using HelixToolkit.Wpf.SharpDX;
 using HelixToolkit.Wpf.SharpDX.Controls;
+using SharpDX;
 
 namespace Robots.Samples.Wpf;
 
-class MainViewModel : INotifyPropertyChanged
+class MainViewModel : INotifyPropertyChanged, IDisposable
 {
-    string _log = "";
-    double _time;
-    bool _isPlaying;
     Program? _program;
     readonly CompositionTargetEx _timer = new();
 
-    public ObservableElement3DCollection RobotModels { get; } = new();
+    public ObservableElement3DCollection RobotModels { get; } = [];
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public string Log
     {
-        get => _log;
-        set => SetField(ref _log, value);
-    }
+        get;
+        set
+        {
+            if (field == value)
+                return;
+
+            field = value;
+            OnPropertyChanged();
+        }
+    } = "";
 
     public double Time
     {
-        get => _time;
+        get;
         set
         {
-            if (SetField(ref _time, value))
-                _program?.Animate(_time / 100.0);
+            if (field == value)
+                return;
+
+            field = value;
+            OnPropertyChanged();
+            _program?.Animate(value / 100.0);
         }
     }
 
     public bool IsPlaying
     {
-        get => _isPlaying;
+        get;
         set
         {
-            if (!SetField(ref _isPlaying, value))
+            if (field == value)
                 return;
 
-            if (_isPlaying)
+            field = value;
+            OnPropertyChanged();
+
+            if (value)
             {
                 _timer.Rendering += Update;
             }
@@ -105,14 +116,15 @@ class MainViewModel : INotifyPropertyChanged
         return 1 - Math.Abs(t - 1);
     }
 
-    bool SetField<T>(ref T field, T value, [CallerMemberName] string property = "")
-        where T : notnull, IEquatable<T>
+    void OnPropertyChanged([CallerMemberName] string property = "")
     {
-        if (value.Equals(field))
-            return false;
-
-        field = value;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
-        return true;
+    }
+
+    public void Dispose()
+    {
+        _timer.Rendering -= Update;
+        _timer.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

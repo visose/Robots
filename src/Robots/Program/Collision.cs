@@ -1,33 +1,35 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
+#if RHINOCOMMON
+using static System.Math;
+using static Robots.Util;
+#endif
 
 namespace Robots;
 
-#if NETSTANDARD2_0
+#if RHINO3DM
 public class Collision
 {
-    public bool HasCollision => throw NotImplemented();
-    public Mesh[] Meshes => throw NotImplemented();
-    public SystemTarget CollisionTarget => throw NotImplemented();
+    public bool HasCollision => throw NotSupported();
+    public Mesh[] Meshes => throw NotSupported();
+    public SystemTarget CollisionTarget => throw NotSupported();
 
-    internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh? environment, int environmentPlane, double linearStep, double angularStep)
+    internal Collision(Program program, IReadOnlyList<int> first, IReadOnlyList<int> second, Mesh? environment, int environmentPlane, double linearStep, double angularStep)
     {
-        throw NotImplemented();
+        throw NotSupported();
     }
 
-    static NotImplementedException NotImplemented() => new(" Collisions not implemented in standalone.");
+    static NotSupportedException NotSupported() => new("Collisions are not available when Robots is built against rhino3dm.");
 }
 
-#elif NET48
-using static System.Math;
-
+#else
 public class Collision
 {
     readonly Program _program;
     readonly RobotSystem _system;
     readonly double _linearStep;
     readonly double _angularStep;
-    readonly IEnumerable<int> _first;
-    readonly IEnumerable<int> _second;
+    readonly IReadOnlyList<int> _first;
+    readonly IReadOnlyList<int> _second;
     readonly Mesh? _environment;
     readonly int _environmentPlane;
 
@@ -35,29 +37,45 @@ public class Collision
     public SystemTarget? CollisionTarget { get; private set; }
     public bool HasCollision => CollisionTarget is not null;
 
-    internal Collision(Program program, IEnumerable<int> first, IEnumerable<int> second, Mesh? environment, int environmentPlane, double linearStep, double angularStep)
+    internal Collision(Program program, IReadOnlyList<int> first, IReadOnlyList<int> second, Mesh? environment, int environmentPlane, double linearStep, double angularStep)
     {
+        ValidateSet(first, nameof(first));
+        ValidateSet(second, nameof(second));
 
         _program = program;
         _system = program.RobotSystem;
-        _linearStep = linearStep;
-        _angularStep = angularStep;
+        _linearStep = CheckPositive(linearStep, nameof(linearStep));
+        _angularStep = CheckPositive(angularStep, nameof(angularStep));
         _first = first;
         _second = second;
         _environment = environment;
+        ArgumentOutOfRangeException.ThrowIfLessThan(environmentPlane, -1);
         _environmentPlane = environmentPlane;
 
         Collide();
     }
 
+    static void ValidateSet(IReadOnlyList<int> indices, string name)
+    {
+        for (int i = 0; i < indices.Count; i++)
+            ArgumentOutOfRangeException.ThrowIfNegative(indices[i], name);
+    }
+
+    static double CheckPositive(double value, string name)
+    {
+        _ = CheckFinite(value, name);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(value, name);
+        return value;
+    }
+
     void Collide()
     {
-        Parallel.ForEach(_program.Targets, (systemTarget, state) =>
+        _ = Parallel.ForEach(_program.Targets, (systemTarget, state) =>
         {
             if (systemTarget.Index == 0)
                 return;
 
-            var prevsystemTarget = _program.Targets[systemTarget.Index - 1];
+            var previous = _program.Targets[systemTarget.Index - 1];
 
             double divisions = 1;
 
@@ -66,7 +84,7 @@ public class Collision
             for (int group = 0; group < groupCount; group++)
             {
                 var target = systemTarget.ProgramTargets[group];
-                var prevTarget = prevsystemTarget.ProgramTargets[group];
+                var prevTarget = previous.ProgramTargets[group];
 
                 double distance = prevTarget.WorldPlane.Origin.DistanceTo(target.WorldPlane.Origin);
                 double linearDivisions = Ceiling(distance / _linearStep);
@@ -84,26 +102,28 @@ public class Collision
 
             for (int i = j; i < divisions; i++)
             {
-                double t = (double)i / (double)divisions;
-                var kineTargets = systemTarget.Lerp(prevsystemTarget, _system, t, 0.0, 1.0);
-                var kinematics = _program.RobotSystem.Kinematics(kineTargets);
+                double t = i / (double)divisions;
+                var targets = systemTarget.Lerp(previous, _system, t, 0.0, 1.0);
+                var kinematics = _program.RobotSystem.Kinematics(targets);
 
                 meshPoser.Pose(kinematics, systemTarget);
-                var meshes = meshPoser.Meshes.NotNull();
+                var meshes = meshPoser.Meshes;
 
                 if (_environment is not null)
                 {
+                    var temp = new Mesh[meshes.Length + 1];
+                    Array.Copy(meshes, temp, meshes.Length);
+                    temp[^1] = _environmentPlane == -1
+                        ? _environment
+                        : _environment.DuplicateMesh();
+
                     if (_environmentPlane != -1)
                     {
-                        Mesh currentEnvironment = _environment.DuplicateMesh();
-                        var plane = kinematics.SelectMany(x => x.Planes).ToList()[_environmentPlane];
-                        currentEnvironment.Transform(plane.ToTransform());
-                        meshes.Add(currentEnvironment);
+                        var plane = GetPlane(kinematics, _environmentPlane);
+                        _ = temp[^1].Transform(plane.ToTransform());
                     }
-                    else
-                    {
-                        meshes.Add(_environment);
-                    }
+
+                    meshes = temp;
                 }
 
                 var setA = _first.Select(x => meshes[x]);
@@ -120,6 +140,18 @@ public class Collision
             }
         });
     }
-}
 
+    static Plane GetPlane(IReadOnlyList<KinematicSolution> kinematics, int index)
+    {
+        foreach (var solution in kinematics)
+        {
+            if (index < solution.Planes.Length)
+                return solution.Planes[index];
+
+            index -= solution.Planes.Length;
+        }
+
+        throw new ArgumentOutOfRangeException(nameof(index), "Environment plane index is outside the posed robot planes.");
+    }
+}
 #endif

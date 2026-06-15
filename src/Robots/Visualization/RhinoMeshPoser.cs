@@ -1,10 +1,10 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 
 namespace Robots;
 
 public class RhinoMeshPoser : IMeshPoser
 {
-    public static List<Mesh> Pose(RobotSystem robot, List<KinematicSolution> solutions, IList<Target> targets)
+    public static Mesh[] Pose(RobotSystem robot, IReadOnlyList<KinematicSolution> solutions, IReadOnlyList<Target> targets)
     {
         var tools = targets.Map(t => t.Tool);
         var poser = new RhinoMeshPoser(robot);
@@ -14,40 +14,42 @@ public class RhinoMeshPoser : IMeshPoser
 
     // Instance
 
-    public List<Mesh> Meshes { get; }
+    public Mesh[] Meshes { get; }
 
     readonly DefaultPose _default;
 
     public RhinoMeshPoser(RobotSystem robot)
     {
         _default = robot.DefaultPose;
-
-        var meshCount = _default.Meshes.Sum(m => m.Count + 1);
-        Meshes = new List<Mesh>(meshCount);
+        Meshes = new Mesh[_default.Meshes.Sum(m => m.Length + 1)];
     }
 
-    public void Pose(List<KinematicSolution> solutions, Tool[] tools)
+    public void Pose(IReadOnlyList<KinematicSolution> solutions, Tool[] tools)
     {
-        Meshes.Clear();
+        int index = 0;
 
         for (int i = 0; i < solutions.Count; i++)
-        {
-            AddGroupPose(Meshes, solutions[i].Planes, tools[i].Mesh, _default.Planes[i], _default.Meshes[i]);
-        }
+            index = AddGroupPose(Meshes, index, solutions[i].Planes, tools[i].Mesh, _default.Planes[i], _default.Meshes[i]);
     }
 
-    static void AddGroupPose(List<Mesh> meshes, Plane[] planes, Mesh tool, List<Plane> defaultPlanes, List<Mesh> defaultMeshes)
+    static int AddGroupPose(Mesh[] meshes, int index, Plane[] planes, Mesh tool, Plane[] defaultPlanes, Mesh[] defaultMeshes)
     {
-        for (int i = 0; i < planes.Length - 1; i++)
+        ArgumentOutOfRangeException.ThrowIfNotEqual(defaultMeshes.Length, defaultPlanes.Length);
+        ArgumentOutOfRangeException.ThrowIfNotEqual(planes.Length, defaultPlanes.Length + 1);
+
+        for (int i = 0; i < defaultMeshes.Length; i++)
         {
-            var t = Transform.PlaneToPlane(defaultPlanes[i], planes[i]);
+            var defaultPlane = defaultPlanes[i];
+            var plane = planes[i];
+            var t = defaultPlane.PlaneToPlane(ref plane);
             var mesh = defaultMeshes[i].DuplicateMesh();
-            mesh.Transform(t);
-            meshes.Add(mesh);
+            _ = mesh.Transform(t);
+            meshes[index++] = mesh;
         }
 
         var toolMesh = tool.DuplicateMesh();
-        toolMesh.Transform(planes[^2].ToTransform());
-        meshes.Add(toolMesh);
+        _ = toolMesh.Transform(planes[^2].ToTransform());
+        meshes[index++] = toolMesh;
+        return index;
     }
 }

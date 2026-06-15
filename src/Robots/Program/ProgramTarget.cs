@@ -1,4 +1,4 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 
 namespace Robots;
 
@@ -7,7 +7,6 @@ public enum SpeedType { Tcp, Rotation, Axis, External };
 public class ProgramTarget
 {
     KinematicSolution? _kinematics;
-    SystemTarget? _systemTarget;
 
     public Target Target { get; internal set; }
     public int Group { get; internal set; }
@@ -37,14 +36,14 @@ public class ProgramTarget
 
     public KinematicSolution Kinematics
     {
-        get => _kinematics.NotNull(" Kinematics should not be null.");
+        get => _kinematics.NotNull("Kinematics cannot be null.");
         internal set => _kinematics = value;
     }
 
     internal SystemTarget SystemTarget
     {
-        get => _systemTarget.NotNull(" SystemTarget should not be null.");
-        set => _systemTarget = value;
+        get => field.NotNull("System target cannot be null.");
+        set;
     }
 
     public Plane Plane
@@ -99,8 +98,9 @@ public class ProgramTarget
         if (prevTarget.Target.Tool != Target.Tool)
         {
             var toolPlane = Target.Tool.Tcp;
-            var trans = Transform.PlaneToPlane(prevTarget.Target.Tool.Tcp, prevPlane);
-            toolPlane.Transform(trans);
+            var previousToolPlane = prevTarget.Target.Tool.Tcp;
+            var trans = previousToolPlane.PlaneToPlane(ref prevPlane);
+            _ = toolPlane.Transform(trans);
             prevPlane = toolPlane;
         }
 
@@ -118,38 +118,19 @@ public class ProgramTarget
 
     public Target Lerp(ProgramTarget prevTarget, RobotSystem robot, double t, double start, double end)
     {
-        int jointCount = robot.RobotJointCount;
+        int robotJointCount = robot.GetRobotJointCount(Group);
 
         var currentJoints = _kinematics?.Joints;
         var prevJoints = prevTarget.Kinematics.Joints;
 
-        if (currentJoints is null)
-        {
-            var j = (Target is JointTarget jointTarget) ? jointTarget.Joints : new double[jointCount];
-            currentJoints = [.. j];
-
-            if (Target.External.Length == 1 && robot.RobotJointCount == 7)
-                currentJoints[2] = Target.External[0];
-        }
+        currentJoints ??= robot.GetInterpolationJoints(Group, Target);
 
         double[] allJoints = JointTarget.Lerp(prevJoints, currentJoints, t, start, end);
-
-        double[] external;
-
-        if (robot is IndustrialSystem system)
-        {
-            int externalCount = system.MechanicalGroups[Group].Externals.Sum(e => e.Joints.Length);
-            external = allJoints.RangeSubset(jointCount, externalCount);
-        }
-        else
-        {
-            external = robot.RobotJointCount == 7 && Target.External.Length == 1 
-                ? ([allJoints[2]]) : [];
-        }
+        double[] external = robot.GetInterpolationExternal(Group, Target, allJoints);
 
         if (IsJointMotion)
         {
-            var joints = allJoints.RangeSubset(0, jointCount);
+            var joints = allJoints.RangeSubset(0, robotJointCount);
             return new JointTarget(joints, Target, external);
         }
         else
@@ -162,21 +143,23 @@ public class ProgramTarget
         }
     }
 
-    internal void SetTargetKinematics(KinematicSolution kinematics, List<string> errors, List<string> warnings, ProgramTarget? prevTarget)
+    internal void SetTargetKinematics(KinematicSolution kinematics, Program program, ProgramTarget? prevTarget)
     {
         Kinematics = kinematics;
         var kinematicErrors = kinematics.Errors;
 
-        if (errors.Count == 0 && kinematicErrors.Count > 0)
+        if (kinematicErrors.Count > 0)
         {
-            errors.Add($"Errors in target {Index} of robot {Group}:");
-            errors.AddRange(kinematicErrors);
+            program.AddError(IssueKind.KinematicError, $"Errors in target {Index} of robot {Group}:", Index, Group, nameof(ProgramTarget));
+
+            foreach (var error in kinematicErrors)
+                program.AddError(IssueKind.KinematicError, error, Index, Group, nameof(ProgramTarget));
         }
 
         if (prevTarget is not null && prevTarget.Kinematics.Configuration != kinematics.Configuration)
         {
             ChangesConfiguration = true;
-            warnings.Add($"Configuration changed to \"{kinematics.Configuration}\" on target {Index} of robot {Group}.");
+            program.AddWarning(IssueKind.ConfigurationChanged, $"Configuration changed to \"{kinematics.Configuration}\" on target {Index} of robot {Group}.", Index, Group, nameof(ProgramTarget));
         }
         else
         {

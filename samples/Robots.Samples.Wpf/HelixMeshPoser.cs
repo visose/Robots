@@ -1,9 +1,9 @@
 ﻿using System.Windows.Media.Media3D;
-using HelixToolkit.Wpf.SharpDX;
 using HelixToolkit.SharpDX.Core;
+using HelixToolkit.Wpf.SharpDX;
 using SharpDX;
-using Rhino.Geometry;
 using MeshGeometry3D = HelixToolkit.SharpDX.Core.MeshGeometry3D;
+using Rhino.Geometry;
 
 namespace Robots.Samples.Wpf;
 
@@ -31,7 +31,7 @@ class HelixMeshPoser : IMeshPoser
         }
     }
 
-    public void Pose(List<KinematicSolution> solutions, Tool[] tools)
+    public void Pose(IReadOnlyList<KinematicSolution> solutions, Tool[] tools)
     {
         // TODO: tool display not implemented
 
@@ -56,9 +56,9 @@ class HelixMeshPoser : IMeshPoser
     {
         return new MeshGeometry3D()
         {
-            Positions = new Vector3Collection(m.Vertices.Select(ToVector3)),
-            Indices = new IntCollection(m.Faces.ToIntArray(true)),
-            Normals = new Vector3Collection(m.Normals.Select(ToVector3)),
+            Positions = [.. m.Vertices.Select(ToVector3)],
+            Indices = [.. m.Faces.ToIntArray(true)],
+            Normals = [.. m.Normals.Select(ToVector3)],
         };
     }
 

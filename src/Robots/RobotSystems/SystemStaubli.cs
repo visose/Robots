@@ -1,7 +1,6 @@
-using System.Text;
+﻿using System.Text;
+
 using Rhino.Geometry;
-using static System.Math;
-using static Robots.Util;
 
 namespace Robots;
 
@@ -17,67 +16,34 @@ public class SystemStaubli : IndustrialSystem
 
     public static Plane EulerToPlane(double x, double y, double z, double aDeg, double bDeg, double cDeg)
     {
-        double a = aDeg.ToRadians();
-        double b = bDeg.ToRadians();
-        double c = cDeg.ToRadians();
-        double ca = Cos(a);
-        double sa = Sin(a);
-        double cb = Cos(b);
-        double sb = Sin(b);
-        double cc = Cos(c);
-        double sc = Sin(c);
-
-        Transform t = default;
-        t.M00 = cb * cc; t.M01 = ca * sc + sa * sb * cc; t.M02 = sa * sc - ca * sb * cc;
-        t.M10 = -cb * sc; t.M11 = ca * cc - sa * sb * sc; t.M12 = sa * cc + ca * sb * sc;
-        t.M20 = sb; t.M21 = -sa * cb; t.M22 = ca * cb;
-        t.M33 = 1;
-
-        var plane = t.ToPlane();
-        plane.Origin = new Point3d(x, y, z);
-        return plane;
+        var euler = new Vector6d(x, y, z, aDeg.ToRadians(), bDeg.ToRadians(), cDeg.ToRadians());
+        return GeometryUtil.EulerXYZToPlane(euler);
     }
 
     public static double[] PlaneToEuler(Plane plane)
     {
-        Transform t = plane.ToTransform();
-        double a = Atan2(-t.M12, t.M22);
-        double mult = 1.0 - t.M02 * t.M02;
-        if (Abs(mult) < UnitTol) mult = 0.0;
-        double b = Atan2(t.M02, Sqrt(mult));
-        double c = Atan2(-t.M01, t.M00);
-
-        if (t.M02 < (-1.0 + UnitTol))
-        {
-            a = Atan2(t.M21, t.M11);
-            b = -PI / 2;
-            c = 0;
-        }
-        else if (t.M02 > (1.0 - UnitTol))
-        {
-            a = Atan2(t.M21, t.M11);
-            b = PI / 2;
-            c = 0;
-        }
-
-        return [plane.OriginX, plane.OriginY, plane.OriginZ, a.ToDegrees(), b.ToDegrees(), c.ToDegrees()];
+        var euler = GeometryUtil.PlaneToEulerXYZ(plane);
+        return [euler.A1, euler.A2, euler.A3, euler.A4.ToDegrees(), euler.A5.ToDegrees(), euler.A6.ToDegrees()];
     }
 
     public override double[] PlaneToNumbers(Plane plane) => PlaneToEuler(plane);
-    public override Plane NumbersToPlane(double[] numbers) => EulerToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5]);
+
+    public override Plane NumbersToPlane(double[] numbers)
+    {
+        numbers = CheckNumbers(numbers, 6);
+        return EulerToPlane(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5]);
+    }
 
     internal override void SaveCode(IProgram program, string folder)
     {
         if (program.Code is null)
-            throw new InvalidOperationException(" Program code not generated");
+            throw new InvalidOperationException("Program code was not generated.");
 
         var programDir = Path.Combine(folder, program.Name);
-        Directory.CreateDirectory(programDir);
+        _ = Directory.CreateDirectory(programDir);
 
         for (int i = 0; i < program.Code.Count; i++)
         {
-            //string group = MechanicalGroups[i].Name;
-            //string programName = $"{program.Name}_{group}";
             string programName = $"{program.Name}";
 
             for (int j = 0; j < program.Code[i].Count; j++)
@@ -93,12 +59,9 @@ public class SystemStaubli : IndustrialSystem
 
                 string file = Path.Combine(programDir, name);
                 var joinedCode = string.Join("\r\n", program.Code[i][j]);
-                //File.WriteAllText(file, joinedCode);
-
-                var utf8WithoutBom = new UTF8Encoding(true);
-                var writer = new StreamWriter(file, false, utf8WithoutBom);
+                var utf8WithBom = new UTF8Encoding(true);
+                using var writer = new StreamWriter(file, false, utf8WithBom);
                 writer.WriteLine(joinedCode);
-                writer.Close();
             }
         }
     }

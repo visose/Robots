@@ -1,6 +1,8 @@
-using Rhino.Geometry;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using static System.Math;
+using Rhino.Geometry;
+
+using static Robots.Util;
 
 namespace Robots;
 
@@ -52,25 +54,29 @@ public class Program : IProgram
     // instance
 
     readonly Simulation? _simulation;
+    readonly List<ProgramIssue> _issues = [];
+    readonly HashSet<string> _warnings = [];
+    readonly HashSet<string> _errors = [];
 
     public string Name { get; }
     public RobotSystem RobotSystem { get; }
     public List<SystemTarget> Targets { get; }
     public List<int> MultiFileIndices { get; }
-    public List<TargetAttribute> Attributes { get; } = [];
+    public List<TargetProperty> Attributes { get; } = [];
     public List<Command> InitCommands { get; }
     public List<string> Warnings { get; } = [];
     public List<string> Errors { get; } = [];
     public List<List<List<string>>>? Code { get; }
     public double Duration { get; internal set; }
+    internal IReadOnlyList<ProgramIssue> Issues => _issues;
 
     public IMeshPoser? MeshPoser { get; set; }
     public SimulationPose CurrentSimulationPose => _simulation?.CurrentSimulationPose
-        ?? throw new InvalidOperationException(" This program cannot be animated.");
+        ?? throw new InvalidOperationException("This program cannot be animated.");
 
     public bool HasSimulation => _simulation is not null;
 
-    public Program(string name, RobotSystem robotSystem, IEnumerable<IToolpath> toolpaths, Commands.Group? initCommands = null, IEnumerable<int>? multiFileIndices = null, double stepSize = 1.0)
+    public Program(string name, RobotSystem robotSystem, IReadOnlyList<IToolpath> toolpaths, Commands.Group? initCommands = null, IReadOnlyList<int>? multiFileIndices = null, double stepSize = 1.0)
     {
         RobotSystem = robotSystem;
         InitCommands = initCommands?.Flatten().ToList() ?? [];
@@ -78,9 +84,21 @@ public class Program : IProgram
 
         if (targets.Count > 0)
         {
-            var checkProgram = new CheckProgram(this, targets, stepSize);
-            _simulation = new Simulation(this, checkProgram.Keyframes);
-            targets = checkProgram.FixedTargets;
+            new ProgramPreflight(this).Run(targets);
+        }
+
+        if (targets.Count > 0 && Errors.Count == 0)
+        {
+            var motionPlanner = new ProgramMotionPlanner(this, targets, stepSize);
+
+            if (motionPlanner.Keyframes.Count > 0)
+                _simulation = new(this, motionPlanner.Keyframes);
+
+            targets = motionPlanner.FixedTargets;
+        }
+        else if (targets.Count > 0 && Errors.Count > 0)
+        {
+            targets = targets.GetRange(0, 1);
         }
 
         Targets = targets;
@@ -90,7 +108,27 @@ public class Program : IProgram
         MultiFileIndices = FixMultiFileIndices(multiFileIndices, Targets.Count);
 
         if (Errors.Count == 0)
-            Code = RobotSystem.Code(this);
+        {
+            var code = RobotSystem.Code(this);
+
+            if (Errors.Count == 0)
+                Code = code;
+        }
+    }
+
+    internal void AddError(IssueKind kind, string message, int? targetIndex = null, int? robotGroup = null, string? source = null) =>
+        AddIssue(IssueLevel.Error, kind, Errors, _errors, message, targetIndex, robotGroup, source);
+
+    internal void AddWarning(IssueKind kind, string message, int? targetIndex = null, int? robotGroup = null, string? source = null) =>
+        AddIssue(IssueLevel.Warning, kind, Warnings, _warnings, message, targetIndex, robotGroup, source);
+
+    void AddIssue(IssueLevel level, IssueKind kind, List<string> messages, HashSet<string> unique, string message, int? targetIndex, int? robotGroup, string? source)
+    {
+        if (!unique.Add(message))
+            return;
+
+        messages.Add(message);
+        _issues.Add(new(level, kind, message, targetIndex, robotGroup, source));
     }
 
     void CheckName(string name, RobotSystem robotSystem)
@@ -102,81 +140,98 @@ public class Program : IProgram
         }
 
         if (!IsValidIdentifier(name, out var error))
-            Errors.Add("Program " + error);
+            AddError(IssueKind.ProgramNameInvalid, "Program " + error, source: nameof(CheckName));
 
         if (robotSystem is SystemKuka)
         {
             var excess = name.Length - 24;
 
             if (excess > 0)
-                Warnings.Add($"If using an older KRC2 or KRC3 controller, make the program name {excess} character(s) shorter.");
+                AddWarning(IssueKind.ProgramNameInvalid, $"If using an older KRC2 or KRC3 controller, make the program name {excess} character(s) shorter.", source: nameof(CheckName));
         }
     }
 
-    List<SystemTarget> CreateSystemTargets(IEnumerable<IToolpath> toolpaths)
+    List<SystemTarget> CreateSystemTargets(IReadOnlyList<IToolpath> toolpaths)
     {
-        var systemTargets = new List<SystemTarget>();
-        var enumerators = toolpaths.Select(e => e.Targets.GetEnumerator()).ToList();
+        var targets = toolpaths.Map(t => t.Targets);
 
-        if (RobotSystem is IndustrialSystem industrialSystem)
+        return ValidateToolpaths(targets, out int targetCount)
+            ? BuildSystemTargets(targets, targetCount)
+            : [];
+    }
+
+    bool ValidateToolpaths(IReadOnlyList<Target>[] targets, out int targetCount)
+    {
+        targetCount = 0;
+        int groupCount = RobotSystem is IndustrialSystem industrialSystem
+            ? industrialSystem.MechanicalGroups.Count
+            : 1;
+
+        if (targets.Length != groupCount)
         {
-            var pathsCount = enumerators.Count;
-            var groupCount = industrialSystem.MechanicalGroups.Count;
+            AddError(IssueKind.ToolpathInvalid, $"You supplied {targets.Length} toolpath(s), this robot system requires {groupCount} toolpath(s).", source: nameof(ValidateToolpaths));
+            return false;
+        }
 
-            if (pathsCount != groupCount)
+        int firstTargetCount = targets[0].Count;
+        targetCount = firstTargetCount;
+
+        if (firstTargetCount == 0)
+        {
+            AddError(IssueKind.ToolpathInvalid, "The program must contain at least one target.", source: nameof(ValidateToolpaths));
+            return false;
+        }
+
+        if (targets.Any(t => t.Count != firstTargetCount))
+        {
+            AddError(IssueKind.ToolpathInvalid, "All toolpaths must contain the same number of targets.", source: nameof(ValidateToolpaths));
+            return false;
+        }
+
+        return true;
+    }
+
+    List<SystemTarget> BuildSystemTargets(IReadOnlyList<Target>[] targets, int targetCount)
+    {
+        var systemTargets = new List<SystemTarget>(targetCount);
+
+        for (int index = 0; index < targetCount; index++)
+        {
+            var groupTargets = new List<ProgramTarget>(targets.Length);
+
+            for (int group = 0; group < targets.Length; group++)
             {
-                Errors.Add($"You supplied {pathsCount} toolpath(s), this robot system requires {groupCount} toolpath(s).");
-                goto End;
-            }
-        }
+                var target = targets[group][index];
 
-        while (enumerators.All(e => e.MoveNext()))
-        {
-            var programTargets = new List<ProgramTarget>(enumerators.Count);
-            programTargets.AddRange(enumerators.Select((e, i) => new ProgramTarget(e.Current, i)));
+                if (target is null)
+                {
+                    AddError(IssueKind.ToolpathInvalid, $"Target index {index} in robot {group} is null or invalid.", index, group, nameof(BuildSystemTargets));
+                    return systemTargets;
+                }
 
-            if (programTargets.Any(t => t.Target is null))
-            {
-                Errors.Add($"Target index {systemTargets.Count} is null or invalid.");
-                goto End;
+                groupTargets.Add(new ProgramTarget(target, group));
             }
 
-            var systemTarget = new SystemTarget(programTargets, systemTargets.Count);
-            systemTargets.Add(systemTarget);
+            systemTargets.Add(new SystemTarget(groupTargets, index));
         }
 
-        if (enumerators.Any(e => e.MoveNext()))
-        {
-            Errors.Add("All toolpaths must contain the same number of targets.");
-            goto End;
-        }
-
-        if (systemTargets.Count == 0)
-        {
-            Errors.Add("The program must contain at least 1 target.");
-        }
-
-    End:
         return systemTargets;
     }
 
-    List<int> FixMultiFileIndices(IEnumerable<int>? multiFileIndices, int targetCount)
+    List<int> FixMultiFileIndices(IReadOnlyList<int>? multiFileIndices, int targetCount)
     {
         if (Errors.Count != 0)
             return [0];
 
         var indices = multiFileIndices?.ToList() ?? [0];
 
-        if (indices.Count > 0)
-        {
-            int startCount = indices.Count;
-            indices = [.. indices.Where(i => i < targetCount)];
+        int startCount = indices.Count;
+        indices = [.. indices.Where(i => i >= 0 && i < targetCount).Distinct()];
 
-            if (startCount > indices.Count)
-                Warnings.Add("Multi-file index was higher than the number of targets.");
+        if (startCount > indices.Count)
+            AddWarning(IssueKind.ToolpathInvalid, "Multi-file index was outside the target range.", source: nameof(FixMultiFileIndices));
 
-            indices.Sort();
-        }
+        indices.Sort();
 
         if (indices.Count == 0 || indices[0] != 0)
             indices.Insert(0, 0);
@@ -184,10 +239,25 @@ public class Program : IProgram
         return indices;
     }
 
+    internal (int Start, int End) GetTargetRange(int file)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(file);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(file, MultiFileIndices.Count);
+
+        int start = MultiFileIndices[file];
+        int end = file == MultiFileIndices.Count - 1
+            ? Targets.Count
+            : MultiFileIndices[file + 1];
+
+        return (start, end);
+    }
+
     public IProgram CustomCode(List<List<List<string>>> code) => new CustomProgram(Name, RobotSystem, MultiFileIndices, code);
 
     public void Animate(double time, bool isNormalized = true)
     {
+        _ = CheckFinite(time, nameof(time), "Time must be finite.");
+
         if (_simulation is null)
             return;
 
@@ -202,12 +272,16 @@ public class Program : IProgram
         MeshPoser.Pose(current.Kinematics, systemTarget);
     }
 
-    public Collision CheckCollisions(IEnumerable<int>? first = null, IEnumerable<int>? second = null, Mesh? environment = null, int environmentPlane = 0, double linearStep = 100, double angularStep = PI / 4.0)
+    public Collision CheckCollisions(IReadOnlyList<int>? first = null, IReadOnlyList<int>? second = null, Mesh? environment = null, int environmentPlane = 0, double linearStep = 100, double angularStep = PI / 4.0)
     {
-        return new Collision(this, first ?? [7], second ?? [4], environment, environmentPlane, linearStep, angularStep);
+        return new(this, first ?? [7], second ?? [4], environment, environmentPlane, linearStep, angularStep);
     }
 
-    public void Save(string folder) => RobotSystem.SaveCode(this, folder);
+    public void Save(string folder)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(folder);
+        RobotSystem.SaveCode(this, folder);
+    }
 
     public override string ToString()
     {
@@ -215,6 +289,6 @@ public class Program : IProgram
         int milliseconds = (int)((Duration - seconds) * 1000);
         string format = @"hh\:mm\:ss";
         var span = new TimeSpan(0, 0, 0, seconds, milliseconds);
-        return $"Program ({Name} with {Targets.Count} targets and {span.ToString(format)} (h:m:s) long)";
+        return $"Program ({Name} with {Targets.Count} targets and {span.Text(format)} (h:m:s) long)";
     }
 }

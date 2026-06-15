@@ -1,4 +1,4 @@
-
+﻿
 namespace Robots;
 
 interface IRemoteURBackend
@@ -15,15 +15,20 @@ public class RemoteUR : IRemote
 
     public string? IP
     {
-        get => throw new NotImplementedException();
+        get;
         set
         {
             if (value is null)
+            {
+                field = null;
+                _backend = null;
                 return;
+            }
 
+            field = value;
             try
             {
-                var user = new User(value);
+                User user = new(value);
                 _backend = new RemoteURFtp(user, AddLog);
             }
             catch
@@ -35,37 +40,18 @@ public class RemoteUR : IRemote
 
     public List<string> Log { get; } = [];
 
-    public void Pause()
-    {
-        CheckIP();
-        _backend?.Pause();
-    }
+    public void Pause() => GetBackend().Pause();
 
-    public void Play()
-    {
-        CheckIP();
-        _backend?.Play();
-    }
+    public void Play() => GetBackend().Play();
 
-    public void Upload(IProgram program)
-    {
-        CheckIP();
-        _backend?.Upload(program);
-    }
-    public void Send(string message)
-    {
-        CheckIP();
-        _backend?.Send(message);
-    }
+    public void Upload(IProgram program) => GetBackend().Upload(program);
 
-    void CheckIP()
-    {
-        if (_backend is null)
-            AddLog("Error: IP not set.");
-    }
+    public void Send(string message) => GetBackend().Send(message);
+
+    IRemoteURBackend GetBackend() => _backend ?? throw new InvalidOperationException("IP is not set.");
 
     void AddLog(string text)
     {
-        Log.Insert(0, $"{DateTime.Now.ToLongTimeString()} - {text}");
+        Log.Insert(0, $"{DateTime.Now:T} - {text}");
     }
 }

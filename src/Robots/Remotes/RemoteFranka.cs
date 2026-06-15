@@ -1,9 +1,9 @@
+﻿using System.Text;
 using Renci.SshNet;
-using System.Text;
 
 namespace Robots;
 
-public class RemoteFranka : IRemote
+public class RemoteFranka : IRemote, IDisposable
 {
     User? _user;
     string? _uploadedFile;
@@ -26,7 +26,7 @@ public class RemoteFranka : IRemote
             catch
             {
                 _user = null;
-                LogAdd($"Invalid address: {value}");
+                LogAdd($"Invalid address: {value}.");
             }
         }
     }
@@ -35,13 +35,13 @@ public class RemoteFranka : IRemote
     {
         if (_user is null)
         {
-            LogAdd($"Error: IP not set.");
+            LogAdd("Error: IP is not set.");
             return;
         }
 
         if (program.Code is null)
         {
-            LogAdd($"Error: Program code not generated.");
+            LogAdd("Error: Program code was not generated.");
             return;
         }
 
@@ -76,13 +76,13 @@ public class RemoteFranka : IRemote
     {
         if (_user is null)
         {
-            LogAdd($"Error: IP not set.");
+            LogAdd("Error: IP is not set.");
             return;
         }
 
         if (_uploadedFile is null)
         {
-            LogAdd($"Error: File not uploaded.");
+            LogAdd("Error: File was not uploaded.");
             return;
         }
 
@@ -109,7 +109,7 @@ public class RemoteFranka : IRemote
     void SendPrivate(string message)
     {
         if (_user is null)
-            throw new("IP not set.");
+            throw new("IP is not set.");
 
         var (ip, username, password, _) = _user;
 
@@ -166,7 +166,7 @@ public class RemoteFranka : IRemote
                 LogUpdate("Program ended.");
             }
 
-            command.EndExecute(async);
+            _ = command.EndExecute(async);
         }, token)
             .ContinueWith(t =>
             {
@@ -176,11 +176,18 @@ public class RemoteFranka : IRemote
     }
 
     void LogAdd(string text) =>
-        Log.Insert(0, $"{DateTime.Now.ToLongTimeString()} - {text}");
+        Log.Insert(0, $"{DateTime.Now:T} - {text}");
 
     void LogUpdate(string text)
     {
         LogAdd(text);
         Update?.Invoke();
+    }
+
+    public void Dispose()
+    {
+        _cancelToken?.Dispose();
+        _cancelToken = null;
+        GC.SuppressFinalize(this);
     }
 }

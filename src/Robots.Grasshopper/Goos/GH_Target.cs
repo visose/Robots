@@ -1,28 +1,19 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
-public class GH_Target : GH_Goo<Target>
+public class GH_Target() : Goo<Target, GH_Target>("Target", Target.Default)
 {
-    public GH_Target() { Value = Target.Default; }
-    public GH_Target(GH_Target goo) { Value = goo.Value; }
-    public GH_Target(Target native) { Value = native; }
-    public override IGH_Goo Duplicate() => new GH_Target(this);
-    public override bool IsValid => true;
-    public override string TypeName => "Target";
-    public override string TypeDescription => "Target";
-    public override string ToString() => Value.ToString();
-
     public override bool CastFrom(object source)
     {
+        if (base.CastFrom(source))
+            return true;
+
         switch (source)
         {
-            case Target target:
-                Value = target;
-                return true;
             case GH_Point point:
-                Value = new CartesianTarget(new Plane(point.Value, Vector3d.XAxis, Vector3d.YAxis));
+                Value = new CartesianTarget(new(point.Value, Vector3d.XAxis, Vector3d.YAxis));
                 return true;
             case GH_Plane plane:
                 Value = new CartesianTarget(plane.Value);
@@ -31,7 +22,7 @@ public class GH_Target : GH_Goo<Target>
                 {
                     string[] jointsText = text.Value.Split(',');
 
-                    if (jointsText.Length != 6 && jointsText.Length != 7)
+                    if (jointsText.Length is not 6 and not 7)
                         return false;
 
                     var joints = new double[jointsText.Length];
@@ -42,17 +33,6 @@ public class GH_Target : GH_Goo<Target>
                     Value = new JointTarget(joints);
                     return true;
                 }
-        }
-
-        return false;
-    }
-
-    public override bool CastTo<Q>(ref Q target)
-    {
-        if (typeof(Q).IsAssignableFrom(typeof(Target)))
-        {
-            target = (Q)(object)Value;
-            return true;
         }
 
         return false;

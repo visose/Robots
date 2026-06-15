@@ -1,1 +1,8 @@
-* text=auto
+* text=auto eol=lf
+
+*.3dm binary
+*.ai binary
+*.dll binary
+*.gh binary
+*.pdf binary
+*.png binary

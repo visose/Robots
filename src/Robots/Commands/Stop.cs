@@ -1,3 +1,5 @@
+﻿#pragma warning disable CA1716 // Stop is intentional in the Commands namespace.
+
 namespace Robots.Commands;
 
 public class Stop : Command

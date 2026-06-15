@@ -1,21 +1,10 @@
-
+﻿
 namespace Robots;
 
 class TrackKinematics : MechanismKinematics
 {
     internal TrackKinematics(Track track)
         : base(track) { }
-
-    protected override void SetJoints(KinematicSolution solution, Target target, double[]? prevJoints)
-    {
-        for (int i = 0; i < _mechanism.Joints.Length; i++)
-        {
-            int externalNum = _mechanism.Joints[i].Number - 6;
-
-            solution.Joints[i] = target.External.Length < externalNum + 1
-                ? 0 : target.External[externalNum];
-        }
-    }
 
     protected override void SetPlanes(KinematicSolution solution, Target target)
     {

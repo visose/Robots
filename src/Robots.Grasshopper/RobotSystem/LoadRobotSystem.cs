@@ -1,63 +1,39 @@
-using System.Xml;
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 
 namespace Robots.Grasshopper;
 
-public class LoadRobotSystem : GH_Component
+public class LoadRobotSystem() : Component(
+    "Load Robot System",
+    "Loads a robot system from the library.",
+    "Components",
+    "{7722D7E3-98DE-49B5-9B1D-E0D1B938B4A7}"), IDisposable
 {
     LibraryForm? _form;
 
-    public LoadRobotSystem() : base("Load robot system", "LoadRobot", "Loads a robot system from the library.", "Robots", "Components") { }
-    public override GH_Exposure Exposure => GH_Exposure.primary;
-    public override Guid ComponentGuid => new("{7722D7E3-98DE-49B5-9B1D-E0D1B938B4A7}");
-    protected override System.Drawing.Bitmap Icon => Util.GetIcon("iconRobot");
-
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddTextParameter("Name", "N", "Name of the robot system", GH_ParamAccess.item);
-        pManager.AddPlaneParameter("Base", "P", "Base plane", GH_ParamAccess.item, Plane.WorldXY);
-        pManager.AddParameter(new PostProcessorParameter(), "PostProcessor", "Ps", "Optional alternative post-processor.", GH_ParamAccess.item);
+        _ = pManager.AddTextParameter("Name", "N", "Robot system name in the library.", GH_ParamAccess.item);
+        _ = pManager.AddPlaneParameter("Base", "P", "Robot system base plane.", GH_ParamAccess.item, Plane.WorldXY);
+        _ = pManager.AddParameter(new PostProcessorParameter(), "Post Processor", "Ps", "Optional alternative post processor.", GH_ParamAccess.item);
         pManager[2].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddParameter(new RobotSystemParameter(), "Robot system", "R", "Robot system", GH_ParamAccess.item);
+        _ = pManager.AddParameter(new RobotSystemParameter(), "Robot System", "R", "Loaded robot system.", GH_ParamAccess.item);
     }
 
     public override void AddedToDocument(GH_Document document)
     {
         base.AddedToDocument(document);
-        LibraryParam.CreateIfEmpty(document, this, ElementType.RobotSystem);
+        _ = LibraryParam.CreateIfEmpty(document, this, ElementType.RobotSystem);
     }
 
-    protected override void SolveInstance(IGH_DataAccess DA)
+    protected override void SolveComponent(IGH_DataAccess DA)
     {
-        string? name = null;
-        Plane basePlane = default;
-        IPostProcessor? postProcessor = null;
-
-        if (!DA.GetData(0, ref name) || name is null) return;
-        if (!DA.GetData(1, ref basePlane)) return;
-        DA.GetData(2, ref postProcessor);
-
-        try
-        {
-            var robotSystem = FileIO.LoadRobotSystem(name, basePlane, true, postProcessor);
-            DA.SetData(0, robotSystem);
-        }
-        catch (Exception e)
-        {
-            var message = e is XmlException ex
-                ? $" Invalid XML format in \"{Path.GetFileName(ex.SourceUri)}\""
-                : e.Message;
-
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, message);
-            DA.AbortComponentSolution();
-        }
+        var robotSystem = FileIO.LoadRobotSystem(DA.Get<string>(0), DA.Get<Plane>(1), postProcessor: DA.Maybe<IPostProcessor>(2));
+        _ = DA.SetData(0, robotSystem);
     }
-
-    // form
 
     public override void CreateAttributes()
     {
@@ -68,11 +44,10 @@ public class LoadRobotSystem : GH_Component
     {
         base.RemovedFromDocument(document);
 
-        if (_form is not null)
-            _form.Visible = false;
+        _ = (_form?.Visible = false);
 
         if (LibraryParam.IsConnected(this, out var libraryParam))
-            document.RemoveObject(libraryParam, false);
+            _ = document.RemoveObject(libraryParam, false);
     }
 
     void ToggleForm()
@@ -90,5 +65,12 @@ public class LoadRobotSystem : GH_Component
         }
 
         _form.Visible = !_form.Visible;
+    }
+
+    public void Dispose()
+    {
+        _form?.Dispose();
+        _form = null;
+        GC.SuppressFinalize(this);
     }
 }

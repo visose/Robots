@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="Robots.props" />
+
+  <PropertyGroup>
+    <AssemblyName>Robots</AssemblyName>
+    <DefineConstants>$(DefineConstants);RHINOCOMMON</DefineConstants>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="RhinoCommon" Version="8.21.25188.17001" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+</Project>

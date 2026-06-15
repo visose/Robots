@@ -1,3 +1,4 @@
+﻿using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -17,7 +18,7 @@ public class URRealTime
 
     public URRealTime(string IP)
     {
-        _ipEndPoint = new IPEndPoint(IPAddress.Parse(IP), 30003);
+        _ipEndPoint = new(IPAddress.Parse(IP), 30003);
         FeedbackData = [.. MakeDataTypes()];
     }
 
@@ -43,18 +44,18 @@ public class URRealTime
         using var reader = Util.GetResource("URRealTime.csv");
         int start = 0;
 
-        string line;
+        string? line;
         while ((line = reader.ReadLine()) is not null)
         {
             var data = line.Split(',');
-            int length = Convert.ToInt32(data[2]);
+            int length = Convert.ToInt32(data[2], CultureInfo.InvariantCulture);
+            int size = Convert.ToInt32(data[3], CultureInfo.InvariantCulture);
 
-            var dataType = new FeedbackType
+            FeedbackType dataType = new()
             {
                 Meaning = data[0],
                 Type = data[1],
-                Length = length,
-                Size = Convert.ToInt32(data[3]),
+                Size = size,
                 Start = start,
                 Notes = data[5],
                 Value = new double[length]
@@ -95,8 +96,7 @@ public class URRealTime
 
         if (isInteger)
         {
-            if (type.Length > 1)
-                throw new ArgumentException("Integer data type can only have length 1");
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(type.Length, 1, nameof(type));
 
             int reverseIndex = _bufferLength - type.Start - 4;
             result[0] = BitConverter.ToInt32(_buffer, reverseIndex);
@@ -113,11 +113,11 @@ public class URRealTime
 
 public class FeedbackType
 {
-    public string Meaning { get; set; } = default!;
-    public string Notes { get; set; } = default!;
-    internal string Type { get; set; } = default!;
-    public double[] Value { get; set; } = default!;
-    internal int Length { get; set; }
-    internal int Size { get; set; }
-    internal int Start { get; set; }
+    public required string Meaning { get; init; }
+    public required string Notes { get; init; }
+    public required double[] Value { get; init; }
+    internal string Type { get; init; } = "";
+    internal int Length => Value.Length;
+    internal int Size { get; init; }
+    internal int Start { get; init; }
 }

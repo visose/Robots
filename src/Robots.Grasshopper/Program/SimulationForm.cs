@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using Eto.Drawing;
 using Eto.Forms;
 
@@ -15,9 +15,9 @@ class SimulationForm : ComponentForm
         _component = component;
 
         Title = "Playback";
-        MinimumSize = new Size(0, 200);
+        MinimumSize = new(0, 200);
 
-        Padding = new Padding(5);
+        Padding = new(5);
 
         var font = new Font(FontFamilies.Sans, 14, FontStyle.None, FontDecoration.None);
         var size = new Size(35, 35);
@@ -46,7 +46,7 @@ class SimulationForm : ComponentForm
         var slider = new Slider
         {
             Orientation = Orientation.Vertical,
-            Size = new Size(-1, -1),
+            Size = new(-1, -1),
             TabIndex = 2,
             MaxValue = 400,
             MinValue = -200,
@@ -55,7 +55,7 @@ class SimulationForm : ComponentForm
             Value = 100,
         };
 
-        slider.ValueChanged += (s, e) => component.Speed = (double)slider.Value / 100.0; ;
+        slider.ValueChanged += (s, e) => component.Speed = slider.Value / 100.0; ;
 
         var speedLabel = new Label
         {
@@ -64,10 +64,10 @@ class SimulationForm : ComponentForm
         };
 
         var layout = new DynamicLayout();
-        layout.BeginVertical();
-        layout.AddSeparateRow(padding: new Padding(10), spacing: new Size(10, 0), controls: [Play, stop]);
-        layout.BeginGroup("Speed");
-        layout.AddSeparateRow(slider, speedLabel);
+        _ = layout.BeginVertical();
+        _ = layout.AddSeparateRow(padding: new(10), spacing: new(10, 0), controls: [Play, stop]);
+        _ = layout.BeginGroup("Speed");
+        _ = layout.AddSeparateRow(slider, speedLabel);
         layout.EndGroup();
         layout.EndVertical();
 

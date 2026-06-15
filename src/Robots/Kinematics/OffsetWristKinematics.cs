@@ -1,12 +1,13 @@
+﻿using static System.Math;
 using Rhino.Geometry;
-using static System.Math;
+using static Robots.GeometryUtil;
 using static Robots.Util;
 
 namespace Robots;
 
 class OffsetWristKinematics(RobotArm robot) : RobotKinematics(robot)
 {
-    readonly Transform _flangeRot = Transform.Rotation(-HalfPI, Point3d.Origin);
+    readonly Transform _flangeRot = RotationZ(-HalfPI);
 
     /// <summary>
     /// Inverse kinematics for a offset wrist 6 axis robot.
@@ -32,7 +33,7 @@ class OffsetWristKinematics(RobotArm robot) : RobotKinematics(robot)
         double[] joints = new double[6];
         bool isUnreachable = false;
 
-        _flangeRot.TryGetInverse(out var flangeRotInverse);
+        _ = _flangeRot.TryGetInverse(out var flangeRotInverse);
         t *= flangeRotInverse;
 
         // shoulder
@@ -55,7 +56,7 @@ class OffsetWristKinematics(RobotArm robot) : RobotKinematics(robot)
 
         // wrist 2
         {
-            double numer = (t.M03 * Sin(joints[0]) - t.M13 * Cos(joints[0]) - _d[3]);
+            double numer = t.M03 * Sin(joints[0]) - t.M13 * Cos(joints[0]) - _d[3];
             double div = numer / _d[5];
 
             double arccos = Acos(div);
@@ -96,7 +97,7 @@ class OffsetWristKinematics(RobotArm robot) : RobotKinematics(robot)
 
             double denom = _a[1] * _a[1] + _a[2] * _a[2] + 2 * _a[1] * _a[2] * c3;
             double s3 = Sin(arccos);
-            double A = (_a[1] + _a[2] * c3);
+            double A = _a[1] + _a[2] * c3;
             double B = _a[2] * s3;
 
             joints[1] = !elbow

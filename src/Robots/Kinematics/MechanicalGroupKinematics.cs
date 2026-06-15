@@ -1,4 +1,4 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 
 namespace Robots;
 
@@ -14,86 +14,98 @@ class MechanicalGroupKinematics
     internal KinematicSolution Solve(Target target, double[]? prevJoints, Plane? coupledPlane, Plane? basePlane)
     {
         KinematicSolution solution = new();
-        var errors = solution.Errors;
         var group = _group;
-        var jointCount = group.Joints.Count;
+        var jointCount = group.Joints.Length;
 
-        if (prevJoints is not null && prevJoints.Length != jointCount)
-        {
-            solution.Errors.Add($"Previous joints set but contain {prevJoints.Length} value(s), should contain {jointCount} values.");
-            prevJoints = null;
-        }
+        if (prevJoints is not null)
+            Exception.ThrowIfNotEqual(prevJoints.Length, jointCount, $"Previous joints must contain {jointCount} value(s), but {prevJoints.Length} were supplied.");
 
         solution.Joints = new double[jointCount];
-        var planes = new List<Plane>(jointCount + 2);
+        var planes = new Plane[jointCount + group.Externals.Length + 2];
+        int planeIndex = 0;
 
         Plane? robotBase = basePlane;
+        Mechanism? coupledMechanism = GetCoupledMechanism(target, group);
 
-        target = target.ShallowClone();
-        Mechanism? coupledMech = null;
-
-        if (target.Frame.CoupledMechanism != -1 && target.Frame.CoupledMechanicalGroup == group.Index)
-        {
-            coupledMech = group.Externals[target.Frame.CoupledMechanism];
-        }
-
-        // Externals
         foreach (var external in group.Externals)
         {
-            var externalPrevJoints = prevJoints?.Subset(external.Joints.Map(x => x.Number));
+            var externalPrevJoints = GetPreviousJoints(prevJoints, external);
             var externalKinematics = external.Kinematics(target, externalPrevJoints, basePlane);
 
-            for (int i = 0; i < external.Joints.Length; i++)
-                solution.Joints[external.Joints[i].Number] = externalKinematics.Joints[i];
+            CopyJoints(solution.Joints, external, externalKinematics);
+            AddPlanes(externalKinematics, planes, ref planeIndex);
 
-            planes.AddRange(externalKinematics.Planes);
             solution.Errors.AddRange(externalKinematics.Errors);
 
-            if (external == coupledMech)
+            if (external == coupledMechanism)
                 coupledPlane = externalKinematics.Planes[^1];
 
             if (external.MovesRobot)
-            {
-                Plane externalPlane = externalKinematics.Planes[^1];
-                robotBase = externalPlane;
-            }
+                robotBase = externalKinematics.Planes[^1];
         }
 
-        // Coupling
         if (coupledPlane is not null)
-        {
-            var coupledFrame = target.Frame.ShallowClone();
-            var plane = coupledFrame.Plane;
-            var cPlane = (Plane)coupledPlane;
-            plane.Orient(ref cPlane);
-            coupledFrame.Plane = plane;
-            target.Frame = coupledFrame;
-        }
+            target = WithCoupledFrame(target, coupledPlane.Value);
 
-        // Robot
         var robot = group.Robot;
+        var robotPrevJoints = GetPreviousJoints(prevJoints, robot);
+        var robotKinematics = robot.Kinematics(target, robotPrevJoints, robotBase);
 
-        if (robot is not null)
-        {
-            var robotPrevJoints = prevJoints?.Subset(robot.Joints.Map(x => x.Number));
-            var robotKinematics = robot.Kinematics(target, robotPrevJoints, robotBase);
+        CopyJoints(solution.Joints, robot, robotKinematics);
+        AddPlanes(robotKinematics, planes, ref planeIndex);
+        solution.Configuration = robotKinematics.Configuration;
+        solution.Errors.AddRange(robotKinematics.Errors);
 
-            for (int j = 0; j < robot.Joints.Length; j++)
-                solution.Joints[robot.Joints[j].Number] = robotKinematics.Joints[j];
-
-            planes.AddRange(robotKinematics.Planes);
-            solution.Configuration = robotKinematics.Configuration;
-
-            errors.AddRange(robotKinematics.Errors);
-        }
-
-        // Tool
         Plane toolPlane = target.Tool.Tcp;
-        var lastPlane = planes[^1];
+        var lastPlane = planes[planeIndex - 1];
         toolPlane.Orient(ref lastPlane);
-        planes.Add(toolPlane);
+        planes[planeIndex++] = toolPlane;
 
-        solution.Planes = [.. planes];
+        if (planeIndex != planes.Length)
+            throw new InvalidOperationException("Mechanical group kinematics produced an unexpected number of planes.");
+
+        solution.Planes = planes;
         return solution;
+    }
+
+    static Mechanism? GetCoupledMechanism(Target target, MechanicalGroup group) =>
+        target.Frame.CoupledMechanism == -1 || target.Frame.CoupledMechanicalGroup != group.Index
+            ? null
+            : group.Externals[target.Frame.CoupledMechanism];
+
+    static double[]? GetPreviousJoints(double[]? prevJoints, Mechanism mechanism)
+    {
+        if (prevJoints is null)
+            return null;
+
+        var result = new double[mechanism.Joints.Length];
+
+        for (int i = 0; i < result.Length; i++)
+            result[i] = prevJoints[mechanism.Joints[i].Number];
+
+        return result;
+    }
+
+    static void CopyJoints(double[] joints, Mechanism mechanism, KinematicSolution kinematics)
+    {
+        for (int i = 0; i < mechanism.Joints.Length; i++)
+            joints[mechanism.Joints[i].Number] = kinematics.Joints[i];
+    }
+
+    static void AddPlanes(KinematicSolution kinematics, Plane[] planes, ref int index)
+    {
+        Array.Copy(kinematics.Planes, 0, planes, index, kinematics.Planes.Length);
+        index += kinematics.Planes.Length;
+    }
+
+    static Target WithCoupledFrame(Target target, Plane coupledPlane)
+    {
+        target = target.ShallowClone();
+        var coupledFrame = target.Frame.ShallowClone();
+        var plane = coupledFrame.Plane;
+        plane.Orient(ref coupledPlane);
+        coupledFrame.Plane = plane;
+        target.Frame = coupledFrame;
+        return target;
     }
 }

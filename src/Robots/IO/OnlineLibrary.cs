@@ -1,12 +1,13 @@
+﻿using System.Globalization;
 using System.Security.Cryptography;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace Robots;
 
 class FileDto
 {
-    public string Name { get; set; } = default!;
-    public string Sha { get; set; } = default!;
+    public required string Name { get; init; }
+    public required string Sha { get; init; }
 }
 
 public class LibraryItem(string name)
@@ -21,9 +22,11 @@ public class LibraryItem(string name)
     public bool IsUpdateAvailable => IsOnline && (OnlineSha != DownloadedSha);
 }
 
-public class OnlineLibrary
+public class OnlineLibrary : IDisposable
 {
-    readonly System.Net.Http.HttpClient _http = new();
+    static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+    readonly HttpClient _http = new();
     public Dictionary<string, LibraryItem> Libraries { get; } = new(StringComparer.OrdinalIgnoreCase);
     public event Action? LibraryChanged;
 
@@ -54,7 +57,7 @@ public class OnlineLibrary
         var sha = GetLocalSha(xmlPath);
 
         if (sha != library.OnlineSha)
-            throw new InvalidOperationException(" Downloaded file does not match on line file.");
+            throw new InvalidOperationException("Downloaded file does not match online file.");
 
         library.DownloadedSha = sha;
         LibraryChanged?.Invoke();
@@ -77,8 +80,8 @@ public class OnlineLibrary
     {
         var uri = new Uri("https://api.github.com/repos/visose/robots/contents?ref=libraries");
         var json = await _http.GetStringAsync(uri);
-        var files = JsonConvert.DeserializeObject<List<FileDto>>(json)
-            ?? throw new ArgumentNullException(" Could not list libraries.");
+        var files = JsonSerializer.Deserialize<List<FileDto>>(json, JsonOptions)
+            ?? throw new InvalidOperationException("Could not list libraries.");
 
         foreach (var file in files)
         {
@@ -91,7 +94,7 @@ public class OnlineLibrary
 
             if (!Libraries.TryGetValue(name, out var value))
             {
-                value = new LibraryItem(name);
+                value = new(name);
                 Libraries.Add(name, value);
             }
 
@@ -100,7 +103,7 @@ public class OnlineLibrary
             {
                 ".xml" => file.Sha + sha,
                 ".3dm" => sha + file.Sha,
-                _ => throw new ArgumentException(" Invalid extension.", nameof(extension)),
+                _ => throw new ArgumentException("Invalid extension.", nameof(extension)),
             };
         }
     }
@@ -129,14 +132,18 @@ public class OnlineLibrary
 
             if (!Libraries.TryGetValue(name, out var value))
             {
-                value = new LibraryItem(name);
+                value = new(name);
                 Libraries.Add(name, value);
             }
 
             if (isLocal)
+            {
                 value.IsLocal = true;
+            }
             else
+            {
                 value.DownloadedSha = GetLocalSha(file);
+            }
         }
     }
 
@@ -160,10 +167,10 @@ public class OnlineLibrary
         var headerBytes = encoding.GetBytes(header);
 
         var bytes = Util.Combine(headerBytes, contentBytes);
-
-        var sha1 = SHA1.Create();
-        var hash = sha1.ComputeHash(bytes);
-        var hashText = string.Concat(hash.Select(b => b.ToString("x2")));
+#pragma warning disable CA5350 // GitHub content API uses Git blob SHA-1s; this is not used for security.
+        var hash = SHA1.HashData(bytes);
+#pragma warning restore CA5350
+        var hashText = string.Concat(hash.Select(b => b.ToString("x2", CultureInfo.InvariantCulture)));
         return hashText;
     }
 
@@ -172,7 +179,7 @@ public class OnlineLibrary
         var folder = FileIO.OnlineLibraryPath;
 
         if (!Directory.Exists(folder))
-            Directory.CreateDirectory(folder);
+            _ = Directory.CreateDirectory(folder);
 
         string downloadPath = Path.Combine(folder, fileName);
 
@@ -181,5 +188,11 @@ public class OnlineLibrary
 
         var bytes = await _http.GetByteArrayAsync(uri);
         File.WriteAllBytes(downloadPath, bytes);
+    }
+
+    public void Dispose()
+    {
+        _http.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

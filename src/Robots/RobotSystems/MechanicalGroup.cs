@@ -1,4 +1,4 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 
 namespace Robots;
 
@@ -7,8 +7,12 @@ public class MechanicalGroup
     internal int Index { get; }
     internal string Name { get; }
     public RobotArm Robot { get; }
-    public List<Mechanism> Externals { get; }
-    public List<Joint> Joints { get; }
+    public Mechanism[] Externals { get; }
+    public Joint[] Joints { get; }
+    public int RobotJointCount => Robot.Joints.Length;
+    public int ExternalJointCount => Joints.Length - RobotJointCount;
+    internal int PlaneCount => Joints.Length + Externals.Length + 2;
+    internal int RobotFlangePlaneIndex => PlaneCount - 2;
 
     readonly MechanicalGroupKinematics _kinematics;
 
@@ -17,9 +21,18 @@ public class MechanicalGroup
         Index = index;
         Name = $"T_ROB{index + 1}";
         Joints = [.. mechanisms.SelectMany(x => x.Joints.OrderBy(y => y.Number))];
-        Robot = mechanisms.OfType<RobotArm>().FirstOrDefault();
-        mechanisms.Remove(Robot);
-        Externals = mechanisms;
+        RobotArm? robot = null;
+
+        foreach (var mechanism in mechanisms.OfType<RobotArm>())
+        {
+            if (robot is not null)
+                throw new ArgumentException("Mechanical groups must contain exactly one robot arm.", nameof(mechanisms));
+
+            robot = mechanism;
+        }
+
+        Robot = robot ?? throw new ArgumentException("Mechanical groups must contain exactly one robot arm.", nameof(mechanisms));
+        Externals = [.. mechanisms.Where(m => !ReferenceEquals(m, Robot))];
 
         _kinematics = new(this);
     }
@@ -27,44 +40,63 @@ public class MechanicalGroup
     public KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? coupledPlane = null, Plane? basePlane = null) =>
         _kinematics.Solve(target, prevJoints, coupledPlane, basePlane);
 
+    internal int ExternalFlangePlaneIndex(int mechanismIndex)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(mechanismIndex);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(mechanismIndex, Externals.Length);
+
+        int index = -1;
+
+        for (int i = 0; i <= mechanismIndex; i++)
+            index += Externals[i].Joints.Length + 1;
+
+        return index;
+    }
+
     public double DegreeToRadian(double degree, int i)
     {
-        return i < Robot.Joints.Length
+        return i < RobotJointCount
             ? Robot.DegreeToRadian(degree, i)
-            : Externals.First(x => x.Joints.Contains(Joints.First(y => y.Number == i))).DegreeToRadian(degree, i);
+            : GetExternal(i).DegreeToRadian(degree, i);
     }
 
     public double RadianToDegree(double radian, int i)
     {
-        return i < Robot.Joints.Length
+        return i < RobotJointCount
             ? Robot.RadianToDegree(radian, i)
-            : Externals.First(x => x.Joints.Contains(Joints.First(y => y.Number == i))).RadianToDegree(radian, i);
+            : GetExternal(i).RadianToDegree(radian, i);
+    }
+
+    Mechanism GetExternal(int jointNumber)
+    {
+        foreach (var external in Externals)
+        {
+            foreach (var joint in external.Joints)
+            {
+                if (joint.Number == jointNumber)
+                    return external;
+            }
+        }
+
+        throw new ArgumentOutOfRangeException(nameof(jointNumber), "Joint number is outside the mechanical group.");
     }
 
     public double[] RadiansToDegreesExternal(Target target)
     {
-        int externalCount = Externals.Sum(e => e.Joints.Length);
+        int externalCount = ExternalJointCount;
         double[] values = new double[externalCount];
-        int robotJointCount = Robot.Joints.Length;
-
-        var external = target.External;
-        Array.Resize(ref external, externalCount);
+        int robotJointCount = RobotJointCount;
 
         foreach (var mechanism in Externals)
         {
             foreach (var joint in mechanism.Joints)
             {
-                values[joint.Number - robotJointCount] = mechanism.RadianToDegree(external[joint.Number - robotJointCount], joint.Index);
+                int index = joint.Number - robotJointCount;
+                double value = index < target.External.Length ? target.External[index] : 0;
+                values[index] = mechanism.RadianToDegree(value, joint.Index);
             }
         }
 
         return values;
-    }
-
-    public double[] ExternalOrDefault(double[] external)
-    {
-        int externalCount = Externals.Sum(e => e.Joints.Length);
-        Array.Resize(ref external, externalCount);
-        return external;
     }
 }

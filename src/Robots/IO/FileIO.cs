@@ -1,7 +1,9 @@
-using System.Xml;
+﻿using System.Xml;
 using System.Xml.Linq;
 using Rhino.FileIO;
 using Rhino.Geometry;
+
+using static Robots.Util;
 
 namespace Robots;
 
@@ -30,13 +32,13 @@ public static class FileIO
     public static RobotSystem ParseRobotSystem(string xml, Plane basePlane, IPostProcessor? postProcessor = null)
     {
         var element = XElement.Parse(xml);
-        return CreateRobotSystem(element, basePlane, false, postProcessor);
+        return CreateRobotSystem(element, basePlane, false, postProcessor, libraryFile: null);
     }
 
-    public static RobotSystem LoadRobotSystem(string name, Plane basePlane, bool loadMeshes, IPostProcessor? postProcessor)
+    public static RobotSystem LoadRobotSystem(string name, Plane basePlane, bool loadMeshes = true, IPostProcessor? postProcessor = null)
     {
-        var (element, _) = LoadElement(name, ElementType.RobotSystem);
-        return CreateRobotSystem(element, basePlane, loadMeshes, postProcessor);
+        var (element, file) = LoadElement(name, ElementType.RobotSystem);
+        return CreateRobotSystem(element, basePlane, loadMeshes, postProcessor, file);
     }
 
     public static Tool LoadTool(string name)
@@ -116,10 +118,10 @@ public static class FileIO
                 return (element, file);
         }
 
-        throw new ArgumentException($" {type} \"{name}\" not found");
+        throw new ArgumentException($"{type} \"{name}\" was not found.");
     }
 
-    static RobotSystem CreateRobotSystem(XElement element, Plane basePlane, bool loadMeshes, IPostProcessor? postProcessor)
+    static RobotSystem CreateRobotSystem(XElement element, Plane basePlane, bool loadMeshes, IPostProcessor? postProcessor, string? libraryFile)
     {
         var typeName = element.Name.LocalName;
 
@@ -127,7 +129,7 @@ public static class FileIO
             && (!Enum.TryParse<ElementType>(typeName, out var type)
             || type != ElementType.RobotSystem))
         {
-            throw new ArgumentException($" Element '{typeName}' should be 'RobotSystem'");
+            throw new ArgumentException($"Element '{typeName}' should be 'RobotSystem'.");
         }
 
         var name = element.GetString("name");
@@ -135,12 +137,18 @@ public static class FileIO
         var controller = element.GetStringOrDefault("controller");
 
         if (!Enum.TryParse<Manufacturers>(manufacturerName, out var manufacturer))
-            throw new ArgumentException($" Manufacturer '{manufacturerName}' not valid.");
+            throw new ArgumentException($"Manufacturer '{manufacturerName}' is invalid.");
 
+        var meshDoc = loadMeshes
+            ? GetRhinoDoc(libraryFile.NotNull("Robot systems loaded with meshes must come from a library file."))
+            : null;
         var mechanicalGroups = new List<MechanicalGroup>();
 
         foreach (var mechanicalGroup in element.Elements(XName.Get("Mechanisms")))
-            mechanicalGroups.Add(CreateMechanicalGroup(mechanicalGroup, loadMeshes));
+            mechanicalGroups.Add(CreateMechanicalGroup(mechanicalGroup, loadMeshes, meshDoc));
+
+        if (mechanicalGroups.Count == 0)
+            throw new ArgumentException("Robot systems must contain at least one mechanical group.");
 
         var io = CreateIO(element.GetElementOrDefault("IO"), manufacturer);
         SystemAttributes attributes = new(name, controller, io, basePlane, postProcessor);
@@ -149,37 +157,49 @@ public static class FileIO
         {
             Manufacturers.ABB => new SystemAbb(attributes, mechanicalGroups),
             Manufacturers.KUKA => new SystemKuka(attributes, mechanicalGroups),
-            Manufacturers.UR => new SystemUR(attributes, (RobotUR)mechanicalGroups[0].Robot),
+            Manufacturers.UR => new SystemUR(attributes, GetCobotRobot<RobotUR>(mechanicalGroups, manufacturer)),
             Manufacturers.Staubli => new SystemStaubli(attributes, mechanicalGroups),
-            Manufacturers.FrankaEmika => new SystemFranka(attributes, (RobotFranka)mechanicalGroups[0].Robot),
-            Manufacturers.Doosan => new SystemDoosan(attributes, (RobotDoosan)mechanicalGroups[0].Robot),
+            Manufacturers.FrankaEmika => new SystemFranka(attributes, GetCobotRobot<RobotFranka>(mechanicalGroups, manufacturer)),
+            Manufacturers.Doosan => new SystemDoosan(attributes, GetCobotRobot<RobotDoosan>(mechanicalGroups, manufacturer)),
             Manufacturers.Fanuc => new SystemFanuc(attributes, mechanicalGroups),
             Manufacturers.Igus => new SystemIgus(attributes, mechanicalGroups),
             Manufacturers.Jaka => new SystemJaka(attributes, mechanicalGroups),
-
-            _ => throw new ArgumentException($" Manufacturer '{manufacturer} is not supported.")
+            Manufacturers.All => throw new ArgumentException("Manufacturer 'All' is not valid for a robot system."),
+            _ => throw Unsupported(manufacturer)
         };
+
+        static T GetCobotRobot<T>(List<MechanicalGroup> mechanicalGroups, Manufacturers manufacturer) where T : RobotArm
+        {
+            if (mechanicalGroups.Count != 1)
+                throw new ArgumentException($"{manufacturer} robot systems must contain exactly one mechanical group.");
+
+            return mechanicalGroups[0].Robot as T
+                ?? throw new ArgumentException($"{manufacturer} robot systems must contain a {typeof(T).Name} robot arm.");
+        }
     }
 
-    static MechanicalGroup CreateMechanicalGroup(XElement element, bool loadMeshes)
+    static MechanicalGroup CreateMechanicalGroup(XElement element, bool loadMeshes, File3dm? meshDoc)
     {
-        var index = element.GetIntAttributeOrDefault("group") ?? 0;
+        var index = element.GetIntOrNull("group") ?? 0;
         var mechanisms = new List<Mechanism>();
 
         foreach (var mechanismElement in element.Elements())
-            mechanisms.Add(CreateMechanism(mechanismElement, loadMeshes));
+            mechanisms.Add(CreateMechanism(mechanismElement, loadMeshes, meshDoc));
 
-        return new MechanicalGroup(index, mechanisms);
+        return new(index, mechanisms);
     }
 
-    static Mechanism CreateMechanism(XElement element, bool loadMeshes)
+    static Mechanism CreateMechanism(XElement element, bool loadMeshes, File3dm? meshDoc)
     {
-        var systemName = element.Parent.Parent.GetString("name");
+        var systemElement = element.Parent?.Parent
+            ?? throw new ArgumentException($"Mechanism element '{element.Name}' must be nested under a robot system.");
+
+        var systemName = systemElement.GetString("name");
         var mechanism = element.Name.LocalName;
         var model = element.GetString("model");
-        var manufacturer = (Manufacturers)Enum.Parse(typeof(Manufacturers), element.GetString("manufacturer"));
+        var manufacturer = Enum.Parse<Manufacturers>(element.GetString("manufacturer"));
 
-        bool movesRobot = element.GetBoolAttributeOrDefault("movesRobot");
+        bool movesRobot = element.GetBoolOrDefault("movesRobot");
         double payload = element.GetDoubleAttribute("payload");
 
         var baseElement = element.GetElement("Base");
@@ -190,7 +210,7 @@ public static class FileIO
         var joints = new Joint[jointCount];
 
         var meshes = loadMeshes
-            ? GetMechanismMeshes(systemName, mechanism, model, manufacturer, jointCount)
+            ? GetMechanismMeshes(meshDoc.NotNull($"Robot system '{systemName}' is missing its mesh document."), mechanism, model, manufacturer, jointCount)
             : [.. Enumerable.Repeat(EmptyMesh, jointCount + 1)];
 
         Mesh baseMesh = meshes[0];
@@ -200,9 +220,9 @@ public static class FileIO
             var jointElement = jointElements[i];
             double a = jointElement.GetDoubleAttribute("a");
             double d = jointElement.GetDoubleAttribute("d");
-            double α = jointElement.GetDoubleAttributeOrDefault("α") ?? double.NaN;
-            double θ = jointElement.GetDoubleAttributeOrDefault("θ") ?? double.NaN;
-            int sign = jointElement.GetIntAttributeOrDefault("sign") ?? 0;
+            double α = jointElement.GetDoubleOrNull("α") ?? double.NaN;
+            double θ = jointElement.GetDoubleOrNull("θ") ?? double.NaN;
+            int sign = jointElement.GetIntOrNull("sign") ?? 0;
 
             double minRange = jointElement.GetDoubleAttribute("minrange");
             double maxRange = jointElement.GetDoubleAttribute("maxrange");
@@ -216,7 +236,7 @@ public static class FileIO
             {
                 "Revolute" => new RevoluteJoint { Index = i, Number = number, A = a, D = d, Alpha = α, Theta = θ, Sign = sign, Range = range, MaxSpeed = maxSpeed, Mesh = mesh },
                 "Prismatic" => new PrismaticJoint { Index = i, Number = number, A = a, D = d, Alpha = α, Theta = θ, Sign = sign, Range = range, MaxSpeed = maxSpeed, Mesh = mesh },
-                _ => throw new ArgumentException(" Invalid joint type.")
+                _ => throw new ArgumentException("Invalid joint type.")
             };
         }
 
@@ -233,13 +253,13 @@ public static class FileIO
                 Manufacturers.Fanuc => new RobotFanuc(model, payload, basePlane, baseMesh, joints),
                 Manufacturers.Igus => new RobotIgus(model, payload, basePlane, baseMesh, joints),
                 Manufacturers.Jaka => new RobotJaka(model, payload, basePlane, baseMesh, joints),
-
-                _ => throw new ArgumentException($" Manufacturer '{manufacturer}' not supported."),
+                Manufacturers.All => throw new ArgumentException("Manufacturer 'All' is not valid for a robot arm."),
+                _ => throw Unsupported(manufacturer),
             },
             "Positioner" => new Positioner(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
             "Track" => new Track(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
             "Custom" => new Custom(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
-            _ => throw new ArgumentException($" Unknown mechanism type '{element.Name}'.")
+            _ => throw new ArgumentException($"Unknown mechanism type '{element.Name}'.")
         };
     }
 
@@ -250,9 +270,9 @@ public static class FileIO
         var ao = GetNames(element, "AO");
         var ai = GetNames(element, "AI");
 
-        var useControllerNumbering = element is not null && element.GetBoolAttributeOrDefault("useControllerNumbering");
+        var useControllerNumbering = element is not null && element.GetBoolOrDefault("useControllerNumbering");
 
-        return new IO(manufacturer, useControllerNumbering, @do, di, ao, ai);
+        return new(manufacturer, useControllerNumbering, @do, di, ao, ai);
 
         static string[] GetNames(XElement? ioElement, string element)
         {
@@ -270,7 +290,7 @@ public static class FileIO
         var type = element.Name.LocalName;
 
         if (type != "Tool")
-            throw new ArgumentException($" Element '{type}' should be 'Tool'");
+            throw new ArgumentException($"Element '{type}' should be 'Tool'.");
 
         var name = element.GetString("name");
 
@@ -281,8 +301,8 @@ public static class FileIO
         var weight = mass.GetDoubleAttribute("weight");
         var centroid = CreatePoint(mass);
 
-        var useController = element.GetBoolAttributeOrDefault("useController");
-        var number = element.GetIntAttributeOrDefault("number");
+        var useController = element.GetBoolOrDefault("useController");
+        var number = element.GetIntOrNull("number");
 
         Mesh mesh = GetToolMesh(name);
         var tool = new Tool(plane, name, weight, centroid, mesh, useController: useController, number: number);
@@ -294,18 +314,18 @@ public static class FileIO
         var type = element.Name.LocalName;
 
         if (type != "Frame")
-            throw new ArgumentException($" Element '{type}' should be 'Frame'");
+            throw new ArgumentException($"Element '{type}' should be 'Frame'.");
 
         var name = element.GetString("name");
-        var useController = element.GetBoolAttributeOrDefault("useController");
-        var number = element.GetIntAttributeOrDefault("number");
+        var useController = element.GetBoolOrDefault("useController");
+        var number = element.GetIntOrNull("number");
 
         var baseElement = element.GetElement("Base");
         var plane = CreatePlane(baseElement);
 
         var couplingElement = element.GetElementOrDefault("Coupling");
-        var mechanism = couplingElement?.GetIntAttributeOrDefault("mechanism") ?? -1;
-        var group = couplingElement?.GetIntAttributeOrDefault("group") ?? -1;
+        var mechanism = couplingElement?.GetIntOrNull("mechanism") ?? -1;
+        var group = couplingElement?.GetIntOrNull("group") ?? -1;
 
         var frame = new Frame(plane, mechanism, group, name, useController, number);
         return frame;
@@ -321,9 +341,7 @@ public static class FileIO
         double q3 = element.GetDoubleAttribute("q3");
         double q4 = element.GetDoubleAttribute("q4");
 
-        var point = new Point3d(x, y, z);
-        var quaternion = new Quaternion(q1, q2, q3, q4);
-        return quaternion.ToPlane(point);
+        return GeometryUtil.QuaternionToPlane(x, y, z, q1, q2, q3, q4);
     }
 
     static Point3d? CreatePoint(XElement element)
@@ -338,24 +356,28 @@ public static class FileIO
         double x = element.GetDoubleAttribute("x");
         double y = element.GetDoubleAttribute("y");
         double z = element.GetDoubleAttribute("z");
-        return new Point3d(x, y, z);
+        return new(x, y, z);
     }
 
     static File3dm GetRhinoDoc(string name, ElementType type)
     {
         var (_, file) = LoadElement(name, type);
+        return GetRhinoDoc(file);
+    }
+
+    static File3dm GetRhinoDoc(string file)
+    {
         var path3dm = Path.ChangeExtension(file, ".3dm");
 
         if (!File.Exists(path3dm))
-            throw new FileNotFoundException($@" File ""{Path.GetFileName(path3dm)}"" not found");
+            throw new FileNotFoundException($@"File ""{Path.GetFileName(path3dm)}"" was not found.");
 
         return File3dm.Read(path3dm);
     }
 
-    static List<Mesh> GetMechanismMeshes(string systemName, string mechanism, string model, Manufacturers manufacturer, int jointCount)
+    static List<Mesh> GetMechanismMeshes(File3dm doc, string mechanism, string model, Manufacturers manufacturer, int jointCount)
     {
         var meshCount = jointCount + 1;
-        var doc = GetRhinoDoc(systemName, ElementType.RobotSystem);
         var parentName = $"{mechanism}.{manufacturer}.{model}";
         var parentLayer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(parentName));
 
@@ -366,7 +388,7 @@ public static class FileIO
 
         for (int i = 0; i < meshCount; i++)
         {
-            var layerName = i.ToString();
+            var layerName = i.Text();
             var jointLayer = doc.AllLayers.FirstOrDefault(l => l.Name.EqualsIgnoreCase(layerName) && (l.ParentLayerId == parentLayer.Id));
 
             if (jointLayer is null)
@@ -388,7 +410,7 @@ public static class FileIO
         var doc = GetRhinoDoc(name, type);
         var layerName = $"{type}.{name}";
         var layer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(layerName))
-            ?? throw new ArgumentException($" \"{name}\" is not in the 3dm file.");
+            ?? throw new ArgumentException($"\"{name}\" is not in the 3dm file.");
 
         var objects = doc.Objects.Where(x => x.Attributes.LayerIndex == layer.Index);
         var meshes = objects.Select(o => o.Geometry).OfType<Mesh>();
@@ -402,59 +424,62 @@ public static class FileIO
 
     // Extensions
 
-    static XElement GetElement(this XElement element, string name)
+    extension(XElement element)
     {
-        return element.Element(XName.Get(name))
-            ?? throw new ArgumentException($" XML tag '{element.Name} is missing '{name}' element.");
-    }
+        XElement GetElement(string name)
+        {
+            return element.Element(XName.Get(name))
+                ?? throw new ArgumentException($"XML tag '{element.Name}' is missing the '{name}' element.");
+        }
 
-    static XElement? GetElementOrDefault(this XElement element, string name)
-    {
-        return element.Element(XName.Get(name));
-    }
+        XElement? GetElementOrDefault(string name)
+        {
+            return element.Element(XName.Get(name));
+        }
 
-    static string? GetStringOrDefault(this XElement element, string name)
-    {
-        return element.Attribute(name)?.Value ?? null;
-    }
+        string? GetStringOrDefault(string name)
+        {
+            return element.Attribute(name)?.Value ?? null;
+        }
 
-    static string GetString(this XElement element, string name)
-    {
-        return element.GetStringOrDefault(name).NotNull($" XML tag '{element.Name} is missing '{name}' attribute.");
-    }
+        string GetString(string name)
+        {
+            return element.GetStringOrDefault(name).NotNull($"XML tag '{element.Name}' is missing the '{name}' attribute.");
+        }
 
-    static bool GetBoolAttributeOrDefault(this XElement element, string name)
-    {
-        string? s = element.GetStringOrDefault(name);
-        return s is not null && XmlConvert.ToBoolean(s);
-    }
+        bool GetBoolOrDefault(string name)
+        {
+            string? s = element.GetStringOrDefault(name);
+            return s is not null && XmlConvert.ToBoolean(s);
+        }
 
-    static bool AttributeExists(this XElement element, string name)
-    {
-        return element.Attribute(XName.Get(name)) is not null;
-    }
+        bool AttributeExists(string name)
+        {
+            return element.Attribute(XName.Get(name)) is not null;
+        }
 
-    static double GetDoubleAttribute(this XElement element, string name)
-    {
-        var s = element.GetString(name);
-        return XmlConvert.ToDouble(s);
-    }
+        double GetDoubleAttribute(string name)
+        {
+            var s = element.GetString(name);
+            return XmlConvert.ToDouble(s);
+        }
 
-    static double? GetDoubleAttributeOrDefault(this XElement element, string name)
-    {
-        string? s = element.GetStringOrDefault(name);
-        return s is null ? null : XmlConvert.ToDouble(s);
-    }
+        double? GetDoubleOrNull(string name)
+        {
+            string? s = element.GetStringOrDefault(name);
+            return s is null ? null : XmlConvert.ToDouble(s);
+        }
 
-    static int GetIntAttribute(this XElement element, string name)
-    {
-        var s = element.GetString(name);
-        return XmlConvert.ToInt32(s);
-    }
+        int GetIntAttribute(string name)
+        {
+            var s = element.GetString(name);
+            return XmlConvert.ToInt32(s);
+        }
 
-    static int? GetIntAttributeOrDefault(this XElement element, string name)
-    {
-        string? s = element.GetStringOrDefault(name);
-        return s is null ? null : XmlConvert.ToInt32(s);
+        int? GetIntOrNull(string name)
+        {
+            string? s = element.GetStringOrDefault(name);
+            return s is null ? null : XmlConvert.ToInt32(s);
+        }
     }
 }

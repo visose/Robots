@@ -1,8 +1,8 @@
-namespace Robots.Commands;
+﻿namespace Robots.Commands;
 
 public class Wait(double seconds) : Command
 {
-    public double Seconds { get; } = seconds;
+    public double Seconds { get; } = CheckNonNegative(seconds, nameof(seconds));
 
     protected override void Populate()
     {
@@ -46,18 +46,16 @@ public class Wait(double seconds) : Command
 
     string CodeAbb(RobotSystem robotSystem, Target target)
     {
-        if (target.Zone.IsFlyBy)
-            return $"WaitTime {Name};";
-        else
-            return $@"WaitTime \InPos,{Name};";
+        return target.Zone.IsFlyBy
+            ? $"WaitTime {Name};"
+            : $@"WaitTime \InPos,{Name};";
     }
 
     string CodeKuka(RobotSystem robotSystem, Target target)
     {
-        if (target.Zone.IsFlyBy)
-            return $"CONTINUE\r\nWAIT SEC {Name}";
-        else
-            return $"WAIT SEC {Name}";
+        return target.Zone.IsFlyBy
+            ? $"CONTINUE\r\nWAIT SEC {Name}"
+            : $"WAIT SEC {Name}";
     }
 
     string CodePython(RobotSystem robotSystem, Target target)

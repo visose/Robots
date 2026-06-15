@@ -1,6 +1,5 @@
+﻿using static System.Math;
 using Rhino.Geometry;
-using static System.Math;
-using static Rhino.RhinoMath;
 using static Robots.Util;
 
 namespace Robots;
@@ -72,13 +71,7 @@ DEFDAT {_program.Name}_{groupName} PUBLIC"
                 code.Add($"DECL GLOBAL REAL {zone.Name} = {distance:0.###}");
             }
 
-            foreach (var command in attributes.OfType<Command>())
-            {
-                string declaration = command.Declaration(_program);
-
-                if (!string.IsNullOrWhiteSpace(declaration))
-                    code.Add(declaration);
-            }
+            PostProcessorUtil.AddDeclarations(code, _program);
 
             var first = _program.Targets[0].ProgramTargets[0].Target;
 
@@ -107,8 +100,7 @@ $APO.CPTP = 100"
                 };
 
             // Init commands
-            foreach (var command in _program.InitCommands)
-                code.Add(command.Code(_program, Target.Default));
+            PostProcessorUtil.AddInitCommands(code, _program);
 
             for (int i = 0; i < _program.MultiFileIndices.Count; i++)
             {
@@ -122,8 +114,7 @@ $APO.CPTP = 100"
         List<string> SrcFile(int file, int group)
         {
             string groupName = _system.MechanicalGroups[group].Name;
-            int start = _program.MultiFileIndices[file];
-            int end = (file == _program.MultiFileIndices.Count - 1) ? _program.Targets.Count : _program.MultiFileIndices[file + 1];
+            var (start, end) = _program.GetTargetRange(file);
 
             var code = new List<string>
                 {
@@ -251,27 +242,24 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                         case Motions.Joint:
                             {
                                 string bits = "";
-                                //  if (target.ChangesConfiguration)
-                                {
-                                    double[] jointDegrees = programTarget.Kinematics.Joints.Map((x, i) => _system.MechanicalGroups[group].Robot.RadianToDegree(x, i));
-                                    int turnNum = 0;
-                                    for (int i = 0; i < 6; i++) if (jointDegrees[i] < 0) turnNum += (int)Pow(2, i);
+                                double[] jointDegrees = programTarget.Kinematics.Joints.Map((x, i) => _system.MechanicalGroups[group].Robot.RadianToDegree(x, i));
+                                int turnNum = 0;
+                                for (int i = 0; i < 6; i++) if (jointDegrees[i] < 0) turnNum += (int)Pow(2, i);
 
-                                    var configuration = programTarget.Kinematics.Configuration;
-                                    bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
-                                    bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
-                                    elbow = !elbow;
-                                    bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
+                                var configuration = programTarget.Kinematics.Configuration;
+                                bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
+                                bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
+                                elbow = !elbow;
+                                bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
 
-                                    int configNum = 0;
-                                    if (shoulder) configNum += 1;
-                                    if (elbow) configNum += 2;
-                                    if (wrist) configNum += 4;
+                                int configNum = 0;
+                                if (shoulder) configNum += 1;
+                                if (elbow) configNum += 2;
+                                if (wrist) configNum += 4;
 
-                                    string status = Convert.ToString(configNum, 2);
-                                    string turn = Convert.ToString(turnNum, 2);
-                                    bits = $",S'B{status:000}',T'B{turn:000000}'";
-                                }
+                                string status = Convert.ToString(configNum, 2);
+                                string turn = Convert.ToString(turnNum, 2);
+                                bits = $",S'B{status:000}',T'B{turn:000000}'";
 
                                 moveText = Motion("PTP", "P", GetXyzAbc(plane), bits);
 
@@ -292,17 +280,15 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                             }
 
                         default:
-                            throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.");
+                            throw new InvalidOperationException($"Motion '{cartesian.Motion}' is invalid.");
                     }
                 }
 
-                foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
-                    code.Add(command.Code(_program, target));
+                PostProcessorUtil.AddTargetCommands(code, _program, programTarget, true);
 
                 code.Add(moveText);
 
-                foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
-                    code.Add(command.Code(_program, target));
+                PostProcessorUtil.AddTargetCommands(code, _program, programTarget, false);
 
                 string Motion(string motion, string name, string pos, string? bits = null)
                 {
@@ -352,7 +338,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                 _ => throw new ArgumentException(nameof(joint)),
             };
 
-            var percentSpeed = Clamp(speed / joint.MaxSpeed, 0.0, 1.0);
+            var percentSpeed = GeometryUtil.Clamp(speed / joint.MaxSpeed, 0.0, 1.0);
             var externalSpeedCode = $"$VEL_EXTAX[{target.LeadingJoint + 1 - 6}] = {percentSpeed * 100:0.###}";
 
             return externalSpeedCode;

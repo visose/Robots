@@ -1,6 +1,6 @@
+﻿using static System.Math;
 using Rhino.Geometry;
 using static Robots.Util;
-using static System.Math;
 
 namespace Robots;
 
@@ -13,38 +13,41 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
         if (target is JointTarget jointTarget)
         {
             solution.Joints = jointTarget.Joints;
+            return;
         }
-        else if (target is CartesianTarget cartesianTarget)
+
+        if (target is not CartesianTarget cartesianTarget)
+            throw new NotSupportedException($"Target type '{target.GetType().Name}' is not supported.");
+
+        Plane tcp = cartesianTarget.Tool.Tcp;
+        _ = tcp.Rotate(PI, Vector3d.ZAxis, Point3d.Origin);
+
+        Plane targetPlane = cartesianTarget.Plane;
+        targetPlane.Orient(ref cartesianTarget.Frame.Plane);
+
+        var tcpTransform = tcp.PlaneToPlane(ref targetPlane);
+        var transform = solution.Planes[0].ToInverseTransform() * tcpTransform;
+
+        List<string> errors;
+        double[] robotJoints;
+        bool forceConfiguration = cartesianTarget.Configuration is not null;
+
+        if (forceConfiguration || prevJoints is null)
         {
-            Plane tcp = target.Tool.Tcp;
-
-            tcp.Rotate(PI, Vector3d.ZAxis, Point3d.Origin);
-
-            Plane targetPlane = cartesianTarget.Plane;
-            targetPlane.Orient(ref target.Frame.Plane);
-
-            var transform = solution.Planes[0].ToInverseTransform() * Transform.PlaneToPlane(tcp, targetPlane);
-
-            List<string> errors;
-            double[] robJoints;
-
-            if (cartesianTarget.Configuration is not null || prevJoints is null)
-            {
-                solution.Configuration = cartesianTarget.Configuration ?? RobotConfigurations.None;
-                robJoints = InverseKinematics(transform, solution.Configuration, target.External, prevJoints, out errors);
-            }
-            else
-            {
-                robJoints = GetClosestSolution(transform, target.External, prevJoints, out var configuration, out errors, out _);
-                solution.Configuration = configuration;
-            }
-
-            solution.Joints = prevJoints is not null
-                ? JointTarget.GetAbsoluteJoints(robJoints, prevJoints)
-                : robJoints;
-
-            solution.Errors.AddRange(errors);
+            solution.Configuration = forceConfiguration ? cartesianTarget.Configuration.GetValueOrDefault() : RobotConfigurations.None;
+            robotJoints = InverseKinematics(transform, solution.Configuration, cartesianTarget.External, prevJoints, out errors);
         }
+        else
+        {
+            robotJoints = GetClosestSolution(transform, cartesianTarget.External, prevJoints, out var configuration, out errors, out _);
+            solution.Configuration = configuration;
+        }
+
+        solution.Joints = prevJoints is not null
+            ? JointTarget.GetAbsoluteJoints(robotJoints, prevJoints)
+            : robotJoints;
+
+        solution.Errors.AddRange(errors);
     }
 
     protected override void SetPlanes(KinematicSolution solution, Target target)
@@ -70,13 +73,14 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
         for (int i = 0; i < jointCount; i++)
         {
             var plane = jointTransforms[i].ToPlane();
-            plane.Rotate(PI, plane.ZAxis);
+            _ = plane.Rotate(PI, plane.ZAxis);
             planes[i + 1] = plane;
         }
     }
 
     protected abstract double[] InverseKinematics(Transform transform, RobotConfigurations configuration, double[] external, double[]? prevJoints, out List<string> errors);
-    protected abstract Transform[] ForwardKinematics(double[] joints);
+
+    protected virtual Transform[] ForwardKinematics(double[] joints) => DH(joints);
 
     static double SquaredDifference(double a, double b)
     {

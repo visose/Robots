@@ -1,10 +1,9 @@
+﻿using System.Diagnostics;
 using System.Linq.Expressions;
-using System.Diagnostics;
 using Eto.Drawing;
 using Eto.Forms;
 using Rhino.Resources;
 using static Robots.Grasshopper.LibraryForm;
-using EtoCommand = Eto.Forms.Command;
 
 namespace Robots.Grasshopper;
 
@@ -29,7 +28,7 @@ class LibraryForm : ComponentForm
 
     const string _helpUrl = "https://github.com/visose/Robots/wiki/Robot-libraries";
 
-    public static Label NewLabel(Expression<Func<LibraryItem, string>> bindText, TextAlignment align = TextAlignment.Left, Font? font = null)
+    internal static Label NewLabel(Expression<Func<LibraryItem, string>> bindText, TextAlignment align = TextAlignment.Left, Font? font = null)
     {
         var label = new Label
         {
@@ -37,7 +36,7 @@ class LibraryForm : ComponentForm
             Font = font ?? EtoFonts.NormalFont
         };
 
-        label.TextBinding.BindDataContext(bindText);
+        _ = label.TextBinding.BindDataContext(bindText);
         return label;
     }
 
@@ -62,10 +61,10 @@ class LibraryForm : ComponentForm
         _library = library;
 
         Title = "Robot libraries";
-        BackgroundColor = Colors.Transparent;
-        MinimumSize = new Size(600, 300);
+        MinimumSize = new(600, 300);
         Content = new StackLayout
         {
+            Style = Rhino.UI.Panels.EtoPanelStyleName,
             Orientation = Orientation.Horizontal,
             Spacing = 20,
             Padding = 10,
@@ -103,21 +102,23 @@ class LibraryForm : ComponentForm
         }
         catch (Exception e)
         {
-            string rateLimit = e.Message.Contains(": 403") ? " It is possible you reached your rate limit, please wait one hour for the limit to reset." : "";
-            MessageBox.Show(this, $"Error refreshing list of libraries.{rateLimit}\n\n{e.Message}", MessageBoxType.Error);
+            string rateLimit = e.Message.Contains(": 403")
+                ? "\n\nIt is possible you reached your rate limit. Please wait one hour for the limit to reset."
+                : "";
+
+            _ = MessageBox.Show(this, $"Error refreshing the library list.{rateLimit}\n\n{e.Message}", MessageBoxType.Error);
             return;
         }
 
         var values = _library.Libraries.Values;
         var ordered = values.OrderBy(i => i.Name).ToList();
 
-        var selected = _grid.SelectedItem as LibraryItem;
         _grid.DataStore = ordered;
 
         if (ordered.Count == 0)
             return;
 
-        int index = selected is null
+        int index = _grid.SelectedItem is not LibraryItem selected
             ? 0 : ordered.FindIndex(i => selected.Name.Equals(i.Name, StringComparison.OrdinalIgnoreCase));
         index = Math.Max(index, 0);
 
@@ -127,7 +128,9 @@ class LibraryForm : ComponentForm
 
     async Task DownloadAsync()
     {
-        var item = (LibraryItem)_detailView.DataContext;
+        if (_detailView.DataContext is not LibraryItem item)
+            return;
+
         var action = ItemActions(item);
 
         try
@@ -141,12 +144,12 @@ class LibraryForm : ComponentForm
                     _library.RemoveDownloadedLibrary(item);
                     break;
                 default:
-                    throw new InvalidOperationException("Invalid action");
+                    throw new InvalidOperationException("Invalid action.");
             }
         }
         catch (Exception e)
         {
-            MessageBox.Show(this, $"{action} error on {item.Name}.\n\n{e.Message}", MessageBoxType.Error);
+            _ = MessageBox.Show(this, $"{action} error on {item.Name}.\n\n{e.Message}", MessageBoxType.Error);
         }
 
         _detailView.UpdateBindings(BindingUpdateMode.Destination);
@@ -163,7 +166,7 @@ class LibraryForm : ComponentForm
 
     static GridView Grid() => new()
     {
-        Size = new Size(300, 300),
+        Size = new(300, 300),
         Border = BorderType.None,
         GridLines = GridLines.Horizontal,
         ShowHeader = false,
@@ -203,7 +206,7 @@ class LibraryForm : ComponentForm
                     new LinkButton
                     {
                         Text = "Help",
-                        Command = new EtoCommand((s, e) => Process.Start(_helpUrl))
+                        Command = new Eto.Forms.Command((s, e) => Process.Start(new ProcessStartInfo(_helpUrl) { UseShellExecute = true }))
                     }
                 }
             }
@@ -225,12 +228,12 @@ class LibraryForm : ComponentForm
     static string Description(LibraryItem item) => item switch
     {
         { IsLocal: true, IsDownloaded: true } => "❕📁 Installed, local override",
-        { IsLocal: true, IsOnline: true } => "📁 Local, available on-line",
+        { IsLocal: true, IsOnline: true } => "📁 Local, available online",
         { IsLocal: true } => "📁 Local",
         { IsDownloaded: true, IsUpdateAvailable: true } => "⬆✔ Installed, update available",
-        { IsDownloaded: true, IsOnline: false } => "✔⚠ Installed, on-line missing",
+        { IsDownloaded: true, IsOnline: false } => "✔⚠ Installed, online copy missing",
         { IsDownloaded: true } => "✔ Installed",
-        { IsOnline: true } => "💾 Available on-line",
+        { IsOnline: true } => "💾 Available online",
         _ => "⚠ Unknown error"
     };
 
@@ -238,8 +241,8 @@ class LibraryForm : ComponentForm
     {
         var detailButton = NewAsyncButton(DownloadAsync);
         var button = (Button)detailButton.Items[0].Control;
-        button.TextBinding.BindDataContext((LibraryItem i) => ItemActions(i));
-        button.BindDataContext(s => s.Visible, (LibraryItem i) => ItemActions(i) != "");
+        _ = button.TextBinding.BindDataContext((LibraryItem i) => ItemActions(i));
+        _ = button.BindDataContext(s => s.Visible, (LibraryItem i) => ItemActions(i) != "");
         return detailButton;
     }
 
@@ -278,11 +281,16 @@ class LibraryForm : ComponentForm
             spinner.Visible = true;
             spinner.Enabled = true;
 
-            await actionAsync();
-
-            button.Enabled = true;
-            spinner.Visible = false;
-            spinner.Enabled = false;
+            try
+            {
+                await actionAsync();
+            }
+            finally
+            {
+                button.Enabled = true;
+                spinner.Visible = false;
+                spinner.Enabled = false;
+            }
         }
     }
 }

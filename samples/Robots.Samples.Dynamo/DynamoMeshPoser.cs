@@ -1,21 +1,18 @@
-﻿using HelixToolkit.Wpf.SharpDX;
-using SharpDX;
-using Rhino.Geometry;
 using Transform3D = System.Windows.Media.Media3D.Transform3D;
+using HelixToolkit.SharpDX.Core;
+using HelixToolkit.Wpf.SharpDX;
+using SharpDX;
+using MeshGeometry3D = HelixToolkit.SharpDX.Core.MeshGeometry3D;
+using Rhino.Geometry;
 
 namespace Robots.Dynamo;
 
-class DynamoMeshPoser : IMeshPoser, IDisposable
+class DynamoMeshPoser(RobotSystem robot) : IMeshPoser, IDisposable
 {
-    readonly DefaultPose _default;
-    readonly List<MeshGeometryModel3D> _meshes = new();
+    readonly DefaultPose _default = robot.DefaultPose;
+    readonly List<MeshGeometryModel3D> _meshes = [];
 
-    public DynamoMeshPoser(RobotSystem robot)
-    {
-        _default = robot.DefaultPose;
-    }
-
-    public void Pose(List<KinematicSolution> solutions, Tool[] tools)
+    public void Pose(IReadOnlyList<KinematicSolution> solutions, Tool[] tools)
     {
         // TODO: tool display not implemented
 
@@ -78,11 +75,10 @@ class DynamoMeshPoser : IMeshPoser, IDisposable
 
     static MeshGeometry3D ToWPF(Mesh m) => new()
     {
-        Positions = new(m.Vertices.Select(ToVector3)),
-        Indices = new(m.Faces.ToIntArray(true)),
-        Normals = new(m.Normals.Select(ToVector3)),
+        Positions = [.. m.Vertices.Select(ToVector3)],
+        Indices = [.. m.Faces.ToIntArray(true)],
+        Normals = [.. m.Normals.Select(ToVector3)],
     };
-
 
     static Vector3 ToVector3(Point3f p) => new(p.X, p.Z, -p.Y);
     static Vector3 ToVector3(Vector3f p) => new(p.X, p.Z, -p.Y);

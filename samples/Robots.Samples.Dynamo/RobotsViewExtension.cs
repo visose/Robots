@@ -1,7 +1,7 @@
-﻿using System.Windows.Controls;
+using System.Windows.Controls;
 using Autodesk.DesignScript.Runtime;
-using Dynamo.Wpf.Extensions;
 using Dynamo.Controls;
+using Dynamo.Wpf.Extensions;
 using HelixToolkit.Wpf.SharpDX;
 
 namespace Robots.Dynamo;
@@ -10,7 +10,7 @@ namespace Robots.Dynamo;
 public class RobotsViewExtension : IViewExtension
 {
     internal static RobotsViewExtension Instance { get; private set; } = default!;
-    
+
     Panel _content = default!;
     public string UniqueId => "073FBA9B-49C6-41D1-95FD-8335D6E8F305";
     public string Name => nameof(RobotsViewExtension);
@@ -33,12 +33,14 @@ public class RobotsViewExtension : IViewExtension
         foreach (var item in _content.Children)
             queue.Enqueue(item);
 
-        while (queue.Any())
+        while (queue.Count > 0)
         {
             var child = queue.Dequeue();
 
             if (child is Watch3DView watch3Dview)
+#pragma warning disable CS0618
                 return watch3Dview.View;
+#pragma warning restore CS0618
 
             if (child is Panel next)
             {
@@ -58,5 +60,8 @@ public class RobotsViewExtension : IViewExtension
             viewport.Items.Add(model);
     }
 
-    public void Dispose() { }
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+    }
 }

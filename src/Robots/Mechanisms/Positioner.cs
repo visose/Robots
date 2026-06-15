@@ -1,5 +1,5 @@
+﻿using static System.Math;
 using Rhino.Geometry;
-using static System.Math;
 
 namespace Robots;
 
@@ -12,12 +12,12 @@ public class Positioner : Mechanism
     {
         if (Joints.Length == 1)
         {
-            Joints[0].Plane = new Plane(new Point3d(Joints[0].A, 0, Joints[0].D), Vector3d.XAxis, Vector3d.YAxis);
+            Joints[0].Plane = new(new(Joints[0].A, 0, Joints[0].D), Vector3d.XAxis, Vector3d.YAxis);
         }
         else
         {
-            Joints[0].Plane = new Plane(new Point3d(0, 0, Joints[0].D), Vector3d.XAxis, Vector3d.ZAxis);
-            Joints[1].Plane = new Plane(new Point3d(0, Joints[1].A, Joints[0].D + Joints[1].D), Vector3d.XAxis, Vector3d.YAxis);
+            Joints[0].Plane = new(new(0, 0, Joints[0].D), Vector3d.XAxis, Vector3d.ZAxis);
+            Joints[1].Plane = new(new(0, Joints[1].A, Joints[0].D + Joints[1].D), Vector3d.XAxis, Vector3d.YAxis);
         }
     }
 

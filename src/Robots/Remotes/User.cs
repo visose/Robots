@@ -1,4 +1,4 @@
-namespace Robots;
+﻿namespace Robots;
 
 class User
 {
@@ -9,8 +9,7 @@ class User
 
     public User(string? ip)
     {
-        if (ip is null)
-            throw new ArgumentNullException(nameof(ip));
+        ArgumentNullException.ThrowIfNull(ip);
 
         Uri uri = new(ip);
         IP = uri.Host;

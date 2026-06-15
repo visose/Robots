@@ -1,4 +1,4 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 
 namespace Robots;
 
@@ -10,15 +10,15 @@ public class SystemTarget
     public double DeltaTime { get; internal set; }
     internal double MinTime { get; set; }
 
-    public Plane[] Planes => [.. ProgramTargets.SelectMany(x => x.Kinematics.Planes)];
-    public double[] Joints => [.. ProgramTargets.SelectMany(x => x.Kinematics.Joints)];
+    public Plane[] Planes => ProgramTargets.FlattenToArray(x => x.Kinematics.Planes);
+    public double[] Joints => ProgramTargets.FlattenToArray(x => x.Kinematics.Joints);
 
-    internal SystemTarget(List<ProgramTarget> programTargets, int index)
+    internal SystemTarget(List<ProgramTarget> groupTargets, int index)
     {
-        foreach (var programTarget in programTargets)
-            programTarget.SystemTarget = this;
+        foreach (var target in groupTargets)
+            target.SystemTarget = this;
 
-        ProgramTargets = programTargets;
+        ProgramTargets = groupTargets;
         Index = index;
     }
 
@@ -33,14 +33,19 @@ public class SystemTarget
         return systemTarget;
     }
 
-    internal IEnumerable<Target> Lerp(SystemTarget prevTarget, RobotSystem robot, double t, double start, double end)
+    internal Target[] Lerp(SystemTarget prevTarget, RobotSystem robot, double t, double start, double end)
     {
-        return ProgramTargets.Select((x, i) => x.Lerp(prevTarget.ProgramTargets[i], robot, t, start, end));
+        var targets = new Target[ProgramTargets.Count];
+
+        for (int i = 0; i < targets.Length; i++)
+            targets[i] = ProgramTargets[i].Lerp(prevTarget.ProgramTargets[i], robot, t, start, end);
+
+        return targets;
     }
 
-    internal void SetTargetKinematics(List<KinematicSolution> kinematics, List<string> errors, List<string> warnings, SystemTarget? prevTarget = null)
+    internal void SetTargetKinematics(List<KinematicSolution> kinematics, Program program, SystemTarget? prevTarget = null)
     {
         foreach (var target in ProgramTargets)
-            target.SetTargetKinematics(kinematics[target.Group], errors, warnings, prevTarget?.ProgramTargets[target.Group]);
+            target.SetTargetKinematics(kinematics[target.Group], program, prevTarget?.ProgramTargets[target.Group]);
     }
 }

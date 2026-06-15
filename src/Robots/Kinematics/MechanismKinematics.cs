@@ -1,11 +1,13 @@
+﻿using static System.Math;
 using Rhino.Geometry;
-using static System.Math;
 
 namespace Robots;
 
 abstract class MechanismKinematics
 {
-    protected Mechanism _mechanism;
+    const int ExternalAxisNumberOffset = 6;
+
+    protected readonly Mechanism _mechanism;
 
     protected readonly double[] _a;
     protected readonly double[] _d;
@@ -32,6 +34,9 @@ abstract class MechanismKinematics
 
         int jointCount = _mechanism.Joints.Length;
 
+        if (prevJoints is not null)
+            Exception.ThrowIfNotEqual(prevJoints.Length, jointCount, $"Previous joints must contain {jointCount} value(s), but {prevJoints.Length} were supplied.");
+
         // Init properties
         solution.Joints = new double[jointCount];
         solution.Planes = new Plane[jointCount + 1];
@@ -54,15 +59,39 @@ abstract class MechanismKinematics
         var transform = solution.Planes[0].ToTransform();
 
         for (int i = 1; i < jointCount + 1; i++)
-            solution.Planes[i].Transform(transform);
+            _ = solution.Planes[i].Transform(transform);
 
         return solution;
     }
 
-    protected virtual double[] AlphaValues => [];
+    internal virtual bool RequiresContinuation => false;
+    internal virtual int? RedundantJointIndex => null;
 
-    protected abstract void SetJoints(KinematicSolution solution, Target target, double[]? prevJoints);
+    protected virtual void SetJoints(KinematicSolution solution, Target target, double[]? prevJoints) =>
+        SetExternalJoints(solution, target);
+
     protected abstract void SetPlanes(KinematicSolution solution, Target target);
+
+    protected void SetExternalJoints(KinematicSolution solution, Target target)
+    {
+        foreach (var joint in _mechanism.Joints)
+        {
+            int externalIndex = joint.Number - ExternalAxisNumberOffset;
+
+            if (externalIndex < 0)
+                throw new InvalidOperationException("External mechanism joints must be numbered after the robot joints.");
+
+            solution.Joints[joint.Index] = externalIndex < target.External.Length
+                ? target.External[externalIndex]
+                : 0;
+        }
+    }
+
+    protected void SetStartPlanes(KinematicSolution solution)
+    {
+        for (int i = 0; i < _mechanism.Joints.Length; i++)
+            solution.Planes[i + 1] = _mechanism.Joints[i].Plane;
+    }
 
     void JointsOutOfRange(KinematicSolution solution)
     {
@@ -83,15 +112,15 @@ abstract class MechanismKinematics
     {
         var t = new Transform[joints.Length];
 
-        var c = joints.Map(x => Cos(x));
-        var s = joints.Map(x => Sin(x));
-
         for (int i = 0; i < joints.Length; i++)
         {
+            var c = Cos(joints[i]);
+            var s = Sin(joints[i]);
+
             t[i].Set(
-            c[i], -s[i], 0, _a[i],
-            s[i] * _cα[i], c[i] * _cα[i], -_sα[i], -_d[i] * _sα[i],
-            s[i] * _sα[i], c[i] * _sα[i], _cα[i], _d[i] * _cα[i]
+            c, -s, 0, _a[i],
+            s * _cα[i], c * _cα[i], -_sα[i], -_d[i] * _sα[i],
+            s * _sα[i], c * _sα[i], _cα[i], _d[i] * _cα[i]
             );
         }
 
@@ -105,14 +134,14 @@ abstract class MechanismKinematics
     {
         var t = new Transform[joints.Length];
 
-        var c = joints.Map(x => Cos(x));
-        var s = joints.Map(x => Sin(x));
-
         for (int i = 0; i < joints.Length; i++)
         {
+            var c = Cos(joints[i]);
+            var s = Sin(joints[i]);
+
             t[i].Set(
-                c[i], -s[i] * _cα[i], s[i] * _sα[i], _a[i] * c[i],
-                s[i], c[i] * _cα[i], -c[i] * _sα[i], _a[i] * s[i],
+                c, -s * _cα[i], s * _sα[i], _a[i] * c,
+                s, c * _cα[i], -c * _sα[i], _a[i] * s,
                    0, _sα[i], _cα[i], _d[i]
                 );
         }

@@ -1,4 +1,4 @@
-
+﻿
 namespace Robots;
 
 class FanucPostProcessor : IPostProcessor
@@ -14,13 +14,15 @@ class FanucPostProcessor : IPostProcessor
         readonly SystemFanuc _system;
         readonly Program _program;
         public List<List<List<string>>> Code { get; }
-        //internal int LineCount;
 
         public PostInstance(SystemFanuc system, Program program)
         {
             _system = system;
             _program = program;
             Code = [];
+
+            PostProcessorUtil.RejectMultiRobot(program, _system, "Fanuc");
+            PostProcessorUtil.RejectExternalAxes(program, _system, "Fanuc");
 
             for (int i = 0; i < _system.MechanicalGroups.Count; i++)
             {
@@ -56,22 +58,13 @@ class FanucPostProcessor : IPostProcessor
                         code.Add($": {codeLine}");
                 }
 
-                foreach (var command in attributes.OfType<Command>())
-                {
-                    string declaration = command.Declaration(_program);
-
-                    if (!string.IsNullOrWhiteSpace(declaration))
-                        code.Add(declaration);
-                }
+                PostProcessorUtil.AddDeclarations(code, _program);
             }
 
             // Init commands
 
             if (group == 0)
-            {
-                foreach (var command in _program.InitCommands)
-                    code.Add(command.Code(_program, Target.Default));
-            }
+                PostProcessorUtil.AddInitCommands(code, _program);
 
             if (multiProgram)
             {
@@ -91,10 +84,7 @@ class FanucPostProcessor : IPostProcessor
         List<string> SubModule(int file, int group)
         {
             bool multiProgram = _program.MultiFileIndices.Count > 1;
-            string groupName = _system.MechanicalGroups[group].Name;
-
-            int start = _program.MultiFileIndices[file];
-            int end = (file == _program.MultiFileIndices.Count - 1) ? _program.Targets.Count : _program.MultiFileIndices[file + 1];
+            var (start, end) = _program.GetTargetRange(file);
 
             List<string> code = [];
 
@@ -114,7 +104,7 @@ class FanucPostProcessor : IPostProcessor
                 var programTarget = _program.Targets[j].ProgramTargets[group];
                 var target = programTarget.Target;
                 string moveText;
-                string zone = (target.Zone.IsFlyBy ? $"CNT{target.Zone.Distance}" : "FINE").NotNull(" Zone name cannot be null.");
+                string zone = (target.Zone.IsFlyBy ? $"CNT{target.Zone.Distance}" : "FINE").NotNull("Zone name cannot be null.");
 
                 if (programTarget.IsJointTarget)
                 {
@@ -152,9 +142,9 @@ class FanucPostProcessor : IPostProcessor
                                 if (shoulder) elbow = !elbow;
                                 bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
 
-                                string cfw = (wrist ? "F" : "N");
-                                string cfe = (elbow ? "D" : "U");
-                                string cfb = (shoulder ? "B" : "T");
+                                string cfw = wrist ? "F" : "N";
+                                string cfe = elbow ? "D" : "U";
+                                string cfb = shoulder ? "B" : "T";
 
                                 int percentSpeed = GetAxisSpeed(programTarget, _system.MechanicalGroups[group].Robot.Joints);
 
@@ -179,9 +169,9 @@ class FanucPostProcessor : IPostProcessor
                                 if (shoulder) elbow = !elbow;
                                 bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
 
-                                string cfw = (wrist ? "F" : "N");
-                                string cfe = (elbow ? "D" : "U");
-                                string cfb = (shoulder ? "B" : "T");
+                                string cfw = wrist ? "F" : "N";
+                                string cfe = elbow ? "D" : "U";
+                                string cfb = shoulder ? "B" : "T";
 
                                 moveText = $"L P[{pointCounter}] {target.Speed.TranslationSpeed:0}mm/sec {zone}  ;";
 
@@ -196,17 +186,15 @@ class FanucPostProcessor : IPostProcessor
                                 break;
                             }
                         default:
-                            throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.");
+                            throw new InvalidOperationException($"Motion '{cartesian.Motion}' is invalid.");
                     }
                 }
 
-                foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
-                    code.Add($":{command.Code(_program, target)}");
+                PostProcessorUtil.AddTargetCommands(code, _program, programTarget, true, TargetCommand);
 
                 code.Add($":{moveText}");
 
-                foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
-                    code.Add($":{command.Code(_program, target)}");
+                PostProcessorUtil.AddTargetCommands(code, _program, programTarget, false, TargetCommand);
             }
 
             code.Add("/POS");
@@ -220,17 +208,15 @@ class FanucPostProcessor : IPostProcessor
             return code;
         }
 
+        static string TargetCommand(string command) =>
+            command.StartsWith(':') ? command : $":{command}";
+
         List<string> Tool(Tool tool)
         {
             var tcp = tool.Tcp;
             var values = _system.PlaneToNumbers(tcp);
 
-            //TODO: Weight and centroid not used.
-            //double weight = (tool.Weight > 0.001) ? tool.Weight : 0.001;
-
-            //Point3d centroid = tool.Centroid;
-            //if (centroid.DistanceTo(Point3d.Origin) < 0.001)
-            //    centroid = new Point3d(0, 0, 0.001);
+            // TODO: Weight and centroid are not used.
 
             List<string> toolCode = [];
             toolCode.Add($"UTOOL_NUM=1 ;");
@@ -241,26 +227,7 @@ class FanucPostProcessor : IPostProcessor
             return toolCode;
         }
 
-        //TODO: Frame not used.
-        //List<string> Frame(Frame frame)
-        //{
-        //    Plane plane = frame.Plane;
-        //    plane.InverseOrient(ref _system.BasePlane);
-
-        //    var values = _system.PlaneToNumbers(plane);
-
-        //    var FrameCode = new List<string>();
-        //    FrameCode.Add($"PR[9,1]={values[0]:0.000} ;");
-        //    FrameCode.Add($"PR[9,2]={values[1]:0.000} ;");
-        //    FrameCode.Add($"PR[9,3]={values[2]:0.000} ;");
-        //    FrameCode.Add($"PR[9,4]={values[5]:0.000} ;");
-        //    FrameCode.Add($"PR[9,5]={values[4]:0.000} ;");
-        //    FrameCode.Add($"PR[9,6]={values[3]:0.000} ;");
-        //    FrameCode.Add($"UFRAME[9]=PR[9] ;");
-        //    FrameCode.Add($"UFRAME_NUM=9 ;");
-
-        //    return FrameCode;
-        //}
+        // TODO: Frames are not used.
 
         static int GetAxisSpeed(ProgramTarget programTarget, Joint[] joints)
         {
@@ -269,7 +236,7 @@ class FanucPostProcessor : IPostProcessor
 
             if (programTarget.SystemTarget.DeltaTime > 0)
             {
-                percentSpeed = Math.Round((programTarget.SystemTarget.MinTime / programTarget.SystemTarget.DeltaTime) * 100.0, 0);
+                percentSpeed = Math.Round(programTarget.SystemTarget.MinTime / programTarget.SystemTarget.DeltaTime * 100.0, 0);
             }
             else
             {

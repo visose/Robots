@@ -1,4 +1,4 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 using static Robots.Util;
 
 namespace Robots;
@@ -24,9 +24,7 @@ class URScriptPostProcessor : IPostProcessor
             List<List<string>> groupCode = [Program()];
             Code = [groupCode];
 
-            // MultiFile warning
-            if (program.MultiFileIndices.Count > 1)
-                program.Warnings.Add("Multi-file input not supported on UR robots");
+            PostProcessorUtil.RejectMultiFile(program, "UR");
         }
 
         List<string> Program()
@@ -68,21 +66,11 @@ class URScriptPostProcessor : IPostProcessor
                 code.Add(indent + $"{zone.Name} = {zoneDistance:0.#####}");
             }
 
-            foreach (var command in attributes.OfType<Command>())
-            {
-                string declaration = command.Declaration(_program);
-
-                if (!string.IsNullOrWhiteSpace(declaration))
-                    code.Add(indent + declaration);
-            }
+            PostProcessorUtil.AddDeclarations(code, _program, indent);
 
             // Init commands
 
-            foreach (var command in _program.InitCommands)
-            {
-                string commands = command.Code(_program, Target.Default);
-                code.Add(indent + commands);
-            }
+            PostProcessorUtil.AddInitCommands(code, _program, indent);
 
             Tool? currentTool = null;
 
@@ -137,25 +125,15 @@ class URScriptPostProcessor : IPostProcessor
                                 break;
                             }
                         default:
-                            throw new ArgumentException($" Motion '{cartesian.Motion}' not supported.", nameof(cartesian.Motion));
+                            throw new InvalidOperationException($"Motion '{cartesian.Motion}' is invalid.");
                     }
                 }
 
-                foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
-                {
-                    string commands = command.Code(_program, target);
-                    commands = indent + commands;
-                    code.Add(commands);
-                }
+                PostProcessorUtil.AddTargetCommands(code, _program, programTarget, true, command => indent + command);
 
                 code.Add(moveText);
 
-                foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
-                {
-                    string commands = command.Code(_program, target);
-                    commands = indent + commands;
-                    code.Add(commands);
-                }
+                PostProcessorUtil.AddTargetCommands(code, _program, programTarget, false, command => indent + command);
 
                 string GetAxisSpeed()
                 {

@@ -1,6 +1,6 @@
+﻿using static System.Math;
 using Rhino.Geometry;
 using static Robots.Util;
-using static System.Math;
 
 namespace Robots;
 
@@ -41,7 +41,7 @@ class SphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
 
         joints[0] = !shoulder ? tmp1 - tmp2 : tmp1 + tmp2 - PI;
 
-        var tmp3 = (c.Z - c1);
+        var tmp3 = c.Z - c1;
         var kappa_2 = a2 * a2 + c3 * c3;
         var c2_2 = c2 * c2;
 
@@ -178,11 +178,5 @@ class SphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
             errors.Add($"Target near singularity.");
 
         return joints;
-    }
-
-    protected override Transform[] ForwardKinematics(double[] joints)
-    {
-        var t = DH(joints);
-        return t;
     }
 }

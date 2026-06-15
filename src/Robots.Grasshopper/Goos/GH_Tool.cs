@@ -1,40 +1,17 @@
-using Grasshopper.Kernel.Types;
+﻿using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
-public class GH_Tool : GH_Goo<Tool>
+public class GH_Tool() : Goo<Tool, GH_Tool>("Tool", Tool.Default)
 {
-    public GH_Tool() { Value = Tool.Default; }
-    public GH_Tool(GH_Tool goo) { Value = goo.Value; }
-    public GH_Tool(Tool native) { Value = native; }
-    public override IGH_Goo Duplicate() => new GH_Tool(this);
-    public override bool IsValid => true;
-    public override string TypeName => "Tool";
-    public override string TypeDescription => "Tool";
-    public override string ToString() => Value.ToString();
-    public override bool CastFrom(object source)
+    public override bool CastTo<TGoo>(ref TGoo target)
     {
-        switch (source)
-        {
-            case Tool tool:
-                Value = tool;
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    public override bool CastTo<Q>(ref Q target)
-    {
-        if (typeof(Q).IsAssignableFrom(typeof(Tool)))
-        {
-            target = (Q)(object)Value;
+        if (base.CastTo(ref target))
             return true;
-        }
 
-        if (typeof(Q) == typeof(GH_Plane))
+        if (Value is not null && typeof(TGoo) == typeof(GH_Plane))
         {
-            target = (Q)(object)new GH_Plane(Value.Tcp);
+            target = (TGoo)(object)new GH_Plane(Value.Tcp);
             return true;
         }
 

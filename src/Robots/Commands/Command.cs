@@ -1,14 +1,15 @@
-
+﻿
 namespace Robots;
 
-public abstract class Command(string? name = null) : TargetAttribute(name)
+public abstract class Command(string? name = null) : TargetProperty(name)
 {
-    public static Command Default { get; } = new Commands.Custom("DefaultCommand");
+    public static Command Default { get; } = new DefaultCommand();
 
     protected Dictionary<Manufacturers, Func<RobotSystem, string>> _declarations = new(8);
     protected Dictionary<Manufacturers, Func<RobotSystem, Target, string>> _commands = new(8);
 
-    protected virtual void ErrorChecking(RobotSystem robotSystem) { }
+    protected virtual bool Validate(RobotSystem robotSystem) => true;
+    protected virtual bool Validate(Program program) => Validate(program.RobotSystem);
 
     protected virtual void Populate() { }
     public bool RunBefore { get; set; }
@@ -19,19 +20,23 @@ public abstract class Command(string? name = null) : TargetAttribute(name)
             yield return this;
     }
 
-    void Init(RobotSystem robot)
+    bool Init(Program program)
     {
-        if (_commands.Count > 0 || _declarations.Count > 0)
-            return;
+        if (!Validate(program))
+            return false;
 
-        ErrorChecking(robot);
-        Populate();
+        if (_commands.Count == 0 && _declarations.Count == 0)
+            Populate();
+
+        return true;
     }
 
     internal string Declaration(Program program)
     {
         var robot = program.RobotSystem;
-        Init(robot);
+
+        if (!Init(program))
+            return "";
 
         if (_declarations.TryGetValue(robot.Manufacturer, out var declaration))
             return declaration(robot);
@@ -45,7 +50,9 @@ public abstract class Command(string? name = null) : TargetAttribute(name)
     internal string Code(Program program, Target target)
     {
         var robot = program.RobotSystem;
-        Init(robot);
+
+        if (!Init(program))
+            return "";
 
         if (_commands.TryGetValue(robot.Manufacturer, out var command))
             return command(robot, target);
@@ -53,8 +60,10 @@ public abstract class Command(string? name = null) : TargetAttribute(name)
         if (_commands.TryGetValue(Manufacturers.All, out command))
             return command(robot, target);
 
-        program.Warnings.Add($"Command {Name} not implemented for {robot.Manufacturer} robots.");
+        program.AddError(IssueKind.CommandInvalid, $"Command {Name} is not implemented for {robot.Manufacturer} robots.", source: GetType().Name);
 
         return "";
     }
+
+    sealed class DefaultCommand() : Command("DefaultCommand");
 }

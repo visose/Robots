@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel;
-using Eto.Drawing;
 using Eto.Forms;
 
 namespace Robots.Grasshopper;
@@ -14,6 +13,7 @@ class ComponentForm : Form
         Topmost = true;
         ShowInTaskbar = true;
         Owner = Rhino.UI.RhinoEtoApp.MainWindow;
+        Style = Rhino.UI.Panels.EtoPanelStyleName;
     }
 
     public override bool Visible
@@ -33,7 +33,7 @@ class ComponentForm : Form
         var mousePos = Mouse.Position;
         int x = (int)mousePos.X + 20;
         int y = (int)mousePos.Y - MinimumSize.Height / 2;
-        Location = new Point(x, y);
+        Location = new(x, y);
     }
 
     protected override void OnClosing(CancelEventArgs e)

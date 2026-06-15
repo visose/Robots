@@ -1,4 +1,4 @@
-using static System.Math;
+﻿using static System.Math;
 
 namespace Robots;
 
@@ -22,8 +22,9 @@ class JKSPostProcessor : IPostProcessor
             _system = system;
             _program = program;
 
-            if (_system.MechanicalGroups.Count > 1)
-                program.Errors.Add("Multi-Robot not supported for JAKA robots yet!");
+            PostProcessorUtil.RejectMultiRobot(program, _system, "Jaka");
+            PostProcessorUtil.RejectExternalAxes(program, _system, "Jaka");
+            PostProcessorUtil.RejectDeclarations(program, "Jaka");
 
             List<List<string>> groupCode = [MainModule()];
 
@@ -33,16 +34,15 @@ class JKSPostProcessor : IPostProcessor
         List<string> MainModule()
         {
             List<string> code = [];
-            bool is_multiProgram = _program.MultiFileIndices.Count > 1;
+            bool multiProgram = _program.MultiFileIndices.Count > 1;
 
             code.Add("#Begin");
             code.Add("endPosJ =[0,0,0,0,0,0]\r\nendPosL =[0,0,0,0,0,0]\r\npos_mvl =[0,0,0,0,0,0]\r\npos_waypoint =[0,0,0,0,0,0]");
             code.Add("set_tool_id(0)");
             code.Add("set_user_frame_id(0)");
 
-            if (is_multiProgram)
+            if (multiProgram)
             {
-
                 for (int j = 0; j < _program.MultiFileIndices.Count; j++)
                 {
                     code.AddRange(SubModule(j));
@@ -65,18 +65,8 @@ class JKSPostProcessor : IPostProcessor
                 "#beginSubmodule"
             ];
 
-            if (index == 0)
-            {
-                code.AddRange(TargetsCode(0, _program.MultiFileIndices[index + 1]));
-            }
-            else if (index == _program.MultiFileIndices.Count - 1)
-            {
-                code.AddRange(TargetsCode(_program.MultiFileIndices.Last(), _program.Targets.Count));
-            }
-            else
-            {
-                code.AddRange(TargetsCode(_program.MultiFileIndices[index], _program.MultiFileIndices[index + 1]));
-            }
+            var (start, end) = _program.GetTargetRange(index);
+            code.AddRange(TargetsCode(start, end));
 
             code.Add("#end");
 
@@ -86,7 +76,6 @@ class JKSPostProcessor : IPostProcessor
         List<string> TargetsCode(int startIndex, int endIndex)
         {
             List<string> instructions = [];
-            int lineCounter = 1;
 
             Tool? lastTool = null;
 
@@ -96,7 +85,6 @@ class JKSPostProcessor : IPostProcessor
                 {
                     var programTarget = _program.Targets[j].ProgramTargets[group];
                     var target = programTarget.Target;
-                    var tool = target.Tool.Name;
 
                     if (lastTool is null || target.Tool != lastTool)
                     {
@@ -113,23 +101,16 @@ class JKSPostProcessor : IPostProcessor
                         {
                             var instructionsStr = command.Code(_program, target);
                             instructions.Add(instructionsStr);
-                            lineCounter++;
                         }
                     }
 
                     string moveText = "";
-
-                    if (_system.MechanicalGroups[group].Externals.Count > 0)
-                    {
-                        _program.Warnings.Add("External axes not implemented in Jaka.");
-                    }
 
                     if (programTarget.IsJointTarget)
                     {
                         var jointTarget = (JointTarget)programTarget.Target;
                         double[] joints = jointTarget.Joints;
                         joints = joints.Map((x, i) => _system.MechanicalGroups[group].RadianToDegree(x, i));
-                        var speedPercent = (target.Speed.RotationSpeed * 180.0 / PI) * (100.0 / 180.0);
 
                         moveText = $"endPosJ = [{joints[0]:0.000}, {-joints[1]:0.000}, {-joints[2]:0.000}, {joints[3]:0.000}, {-joints[4]:0.000}, {joints[5]:0.000}]\r\n" +
                         $"movj(endPosJ,0,{target.Speed.RotationSpeed * 180.0 / PI},5000,2.0)";
@@ -157,37 +138,15 @@ class JKSPostProcessor : IPostProcessor
                                 }
 
                             default:
-                                {
-                                    _program.Warnings.Add($"Movement type not supported.");
-                                    continue;
-                                }
+                                throw new InvalidOperationException($"Motion '{cartesian.Motion}' is invalid.");
                         }
                     }
 
-                    foreach (var command in programTarget.Commands)
-                    {
-                        var declaration = command.Declaration(_program);
-
-                        if (!string.IsNullOrWhiteSpace(declaration))
-                            throw new NotImplementedException("Declaration of a command is not implemented for Jaka robots.");
-                    }
-
-                    foreach (var command in programTarget.Commands.Where(c => c.RunBefore))
-                    {
-                        var instructionsStr = command.Code(_program, target);
-                        instructions.Add(instructionsStr);
-                        lineCounter++;
-                    }
+                    PostProcessorUtil.AddTargetCommands(instructions, _program, programTarget, true);
 
                     instructions.Add(moveText);
-                    lineCounter++;
 
-                    foreach (var command in programTarget.Commands.Where(c => !c.RunBefore))
-                    {
-                        var instructionsStr = command.Code(_program, target);
-                        instructions.Add(instructionsStr);
-                        lineCounter++;
-                    }
+                    PostProcessorUtil.AddTargetCommands(instructions, _program, programTarget, false);
                 }
             }
 

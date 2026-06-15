@@ -1,27 +1,18 @@
-using Grasshopper.Kernel.Types;
+﻿using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
-public class GH_Speed : GH_Goo<Speed>
+public class GH_Speed() : Goo<Speed, GH_Speed>("Speed", Speed.Default)
 {
-    public GH_Speed() { Value = Speed.Default; }
-    public GH_Speed(GH_Speed goo) { Value = goo.Value; }
-    public GH_Speed(Speed native) { Value = native; }
-    public override IGH_Goo Duplicate() => new GH_Speed(this);
-    public override bool IsValid => true;
-    public override string TypeName => "Speed";
-    public override string TypeDescription => "Speed";
-    public override string ToString() => Value.ToString();
-
     public override bool CastFrom(object source)
     {
+        if (base.CastFrom(source))
+            return true;
+
         switch (source)
         {
-            case Speed speed:
-                Value = speed;
-                return true;
             case GH_Number number:
-                Value = new Speed(number.Value);
+                Value = new(number.Value);
                 return true;
             case GH_String text:
                 {
@@ -36,29 +27,18 @@ public class GH_Speed : GH_Goo<Speed>
 
                     if (texts.Length == 1)
                     {
-                        Value = new Speed(values[0]);
+                        Value = new(values[0]);
                         return true;
                     }
                     else if (texts.Length == 2)
                     {
-                        Value = new Speed(values[0], values[1]);
+                        Value = new(values[0], values[1]);
                         return true;
                     }
 
                     break;
                 }
         }
-        return false;
-    }
-
-    public override bool CastTo<Q>(ref Q target)
-    {
-        if (typeof(Q).IsAssignableFrom(typeof(Speed)))
-        {
-            target = (Q)(object)Value;
-            return true;
-        }
-
         return false;
     }
 }

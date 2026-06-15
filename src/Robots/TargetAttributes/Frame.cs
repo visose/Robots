@@ -1,8 +1,8 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 
 namespace Robots;
 
-public class Frame : TargetAttribute, IEquatable<Frame>
+public class Frame : TargetProperty, IEquatable<Frame>
 {
     public static Frame Default { get; } = new(Plane.WorldXY, -1, -1, "DefaultFrame");
 
@@ -31,23 +31,32 @@ public class Frame : TargetAttribute, IEquatable<Frame>
     public Frame(Plane plane, int coupledMechanism = -1, int coupledMechanicalGroup = -1, string? name = null, bool useController = false, int? number = null)
         : base(name)
     {
+        if (!plane.IsValid)
+            throw new ArgumentException("Frame plane is invalid.", nameof(plane));
+
+        ArgumentOutOfRangeException.ThrowIfLessThan(coupledMechanism, -1);
+        ArgumentOutOfRangeException.ThrowIfLessThan(coupledMechanicalGroup, -1);
+
         Plane = plane;
         CoupledMechanism = coupledMechanism;
         CoupledMechanicalGroup = coupledMechanicalGroup;
         UseController = number is not null || useController;
         Number = number;
 
-        if (number is not null && number.Value < 1)
-            throw new ArgumentOutOfRangeException(nameof(number), " Frame number out of range.");
+        if (number is not null)
+            ArgumentOutOfRangeException.ThrowIfLessThan(number.Value, 1, nameof(number));
     }
 
     public Frame ShallowClone() => (Frame)MemberwiseClone();
 
     public override int GetHashCode() => Plane.GetHashCode();
-    public override bool Equals(object obj) => obj is Frame other && Equals(other);
+    public override bool Equals(object? obj) => obj is Frame other && Equals(other);
 
-    public bool Equals(Frame other)
+    public bool Equals(Frame? other)
     {
+        if (other is null)
+            return false;
+
         return Plane == other.Plane
             && CoupledMechanism == other.CoupledMechanism
             && CoupledMechanicalGroup == other.CoupledMechanicalGroup

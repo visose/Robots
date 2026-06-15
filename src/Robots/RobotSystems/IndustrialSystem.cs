@@ -1,4 +1,4 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 
 namespace Robots;
 
@@ -13,14 +13,15 @@ public abstract class IndustrialSystem : RobotSystem
 
         foreach (var group in mechanicalGroups)
         {
-            var movesRobot = group.Externals.Find(m => m.MovesRobot);
+            var movesRobot = group.Externals.FirstOrDefault(m => m.MovesRobot);
             var robotDisplay = group.Robot.DisplayMesh;
 
             if (movesRobot is not null)
             {
+                robotDisplay = robotDisplay.DuplicateMesh();
                 var movableBase = movesRobot.Joints.Last().Plane;
                 movableBase.Orient(ref movesRobot.BasePlane);
-                robotDisplay.Transform(movableBase.ToTransform());
+                _ = robotDisplay.Transform(movableBase.ToTransform());
             }
 
             DisplayMesh.Append(robotDisplay);
@@ -29,14 +30,14 @@ public abstract class IndustrialSystem : RobotSystem
                 DisplayMesh.Append(external.DisplayMesh);
         }
 
-        DisplayMesh.Transform(BasePlane.ToTransform());
+        _ = DisplayMesh.Transform(BasePlane.ToTransform());
     }
 
     static DefaultPose GetDefaultPose(List<MechanicalGroup> groups)
     {
-        return new DefaultPose(
-            [.. groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY)).SelectMany(p => p).ToList())],
-            [.. groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Mesh).Prepend(e.BaseMesh)).SelectMany(p => p).ToList())]
+        return new(
+            [.. groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY)).SelectMany(p => p).ToArray())],
+            [.. groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Mesh).Prepend(e.BaseMesh)).SelectMany(p => p).ToArray())]
             );
     }
 
@@ -45,44 +46,34 @@ public abstract class IndustrialSystem : RobotSystem
         return MechanicalGroups[group].Robot.Payload;
     }
 
-    internal override IList<Joint> GetJoints(int group)
+    internal override IReadOnlyList<Joint> GetJoints(int group)
     {
         return MechanicalGroups[group].Joints;
     }
 
-    internal int GetPlaneIndex(Frame frame)
+    internal override RobotArm GetRobot(int group)
     {
-        if (frame.CoupledMechanism != -1)
-        {
-            int index = -1;
-
-            for (int i = 0; i < frame.CoupledMechanicalGroup; i++)
-            {
-                index += MechanicalGroups[i].Joints.Count + 2;
-            }
-
-            for (int i = 0; i <= frame.CoupledMechanism; i++)
-            {
-                index += MechanicalGroups[frame.CoupledMechanicalGroup].Externals[i].Joints.Length + 1;
-            }
-
-            return index;
-        }
-        else
-        {
-            int index = -1;
-
-            for (int i = 0; i <= frame.CoupledMechanicalGroup; i++)
-            {
-                index += MechanicalGroups[i].Joints.Count + 2;
-            }
-
-            return index;
-        }
+        return MechanicalGroups[group].Robot;
     }
 
-    public override List<KinematicSolution> Kinematics(IEnumerable<Target> target, IEnumerable<double[]>? prevJoints = null) =>
-        new IndustrialSystemKinematics(this, target, prevJoints).Solutions;
+    internal int GetPlaneIndex(Frame frame)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(frame.CoupledMechanicalGroup);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(frame.CoupledMechanicalGroup, MechanicalGroups.Count);
 
-    public override double DegreeToRadian(double degree, int i, int group = 0) => MechanicalGroups[group].DegreeToRadian(degree, i);
+        int index = 0;
+
+        for (int i = 0; i < frame.CoupledMechanicalGroup; i++)
+            index += MechanicalGroups[i].PlaneCount;
+
+        var group = MechanicalGroups[frame.CoupledMechanicalGroup];
+        return index + (frame.CoupledMechanism == -1
+            ? group.RobotFlangePlaneIndex
+            : group.ExternalFlangePlaneIndex(frame.CoupledMechanism));
+    }
+
+    public override List<KinematicSolution> Kinematics(IReadOnlyList<Target> target, IReadOnlyList<double[]?>? prevJoints = null) =>
+        new IndustrialSystemKinematics(this, target, prevJoints).ToList();
+
+    public override double DegreeToRadian(double degree, int i, int group = 0) => MechanicalGroups[group].DegreeToRadian(CheckFinite(degree, nameof(degree)), i);
 }

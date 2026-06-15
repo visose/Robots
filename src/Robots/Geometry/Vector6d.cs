@@ -1,4 +1,4 @@
-
+﻿
 namespace Robots;
 
 public struct Vector6d
@@ -7,8 +7,7 @@ public struct Vector6d
 
     public static Vector6d Map<T>(T[] array, Func<T, double> projection)
     {
-        if (array.Length != 6)
-            throw new ArgumentOutOfRangeException(nameof(array), " Array length should be 6");
+        ArgumentOutOfRangeException.ThrowIfNotEqual(array.Length, 6, nameof(array));
 
         Vector6d result = default;
 
@@ -39,8 +38,7 @@ public struct Vector6d
 
     public Vector6d(double[] joints)
     {
-        if (joints.Length != 6)
-            throw new ArgumentOutOfRangeException(nameof(joints), " Array length should be 6");
+        ArgumentOutOfRangeException.ThrowIfNotEqual(joints.Length, 6, nameof(joints));
 
         A1 = joints[0];
         A2 = joints[1];
@@ -52,19 +50,25 @@ public struct Vector6d
 
     public double this[int i]
     {
-        readonly get => i switch
+        readonly get
         {
-            0 => A1,
-            1 => A2,
-            2 => A3,
-            3 => A4,
-            4 => A5,
-            5 => A6,
-            _ => throw new ArgumentOutOfRangeException(nameof(i), " Invalid Vector6 index"),
-        };
+            CheckIndex(i);
+
+            return i switch
+            {
+                0 => A1,
+                1 => A2,
+                2 => A3,
+                3 => A4,
+                4 => A5,
+                _ => A6,
+            };
+        }
 
         set
         {
+            CheckIndex(i);
+
             switch (i)
             {
                 case 0: A1 = value; break;
@@ -72,11 +76,15 @@ public struct Vector6d
                 case 2: A3 = value; break;
                 case 3: A4 = value; break;
                 case 4: A5 = value; break;
-                case 5: A6 = value; break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(i), " Invalid Vector6 index");
+                default: A6 = value; break;
             }
         }
+    }
+
+    static void CheckIndex(int i)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(i);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(i, 5);
     }
 
     public readonly double[] ToArray()

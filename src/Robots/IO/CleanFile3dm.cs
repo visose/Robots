@@ -1,7 +1,8 @@
+﻿using System.Globalization;
 using System.Text;
+using Rhino.DocObjects;
 using Rhino.FileIO;
 using Rhino.Geometry;
-using Rhino.DocObjects;
 
 namespace Robots;
 
@@ -20,7 +21,6 @@ public static class File3dmCleaner
         foreach (var file in files)
         {
             var library = Path.GetFileNameWithoutExtension(file);
-            void Log(string name, string message) => log.AppendLine($"{library} | {message} ({name})");
 
             var doc = File3dm.Read(file);
             var delete = new List<Guid>();
@@ -30,8 +30,8 @@ public static class File3dmCleaner
 
             foreach (var obj in doc.Objects)
             {
-                var att = obj.Attributes.Duplicate();
-                var layer = doc.AllLayers.FindIndex(att.LayerIndex);
+                var attributes = obj.Attributes;
+                var layer = doc.AllLayers.FindIndex(attributes.LayerIndex);
                 var parent = doc.AllLayers.FindId(layer.ParentLayerId);
 
                 bool isTool = parent is null && layer.Name.StartsWith("Tool.", StringComparison.OrdinalIgnoreCase);
@@ -41,17 +41,17 @@ public static class File3dmCleaner
                 if (obj.Geometry is not Mesh)
                 {
                     delete.Add(obj.Id);
-                    Log(objName, $"Deleted {obj.Geometry.GetType().Name}");
+                    Log(library, objName, $"Deleted {obj.Geometry.GetType().Name}");
                     continue;
                 }
 
                 if (!isTool && !isJoint)
                 {
                     delete.Add(obj.Id);
-                    Log(objName, $"Deleted {obj.Geometry.GetType().Name} in wrong layer");
+                    Log(library, objName, $"Deleted {obj.Geometry.GetType().Name} in wrong layer");
                     continue;
                 }
-#if NET48
+#if RHINOCOMMON
                 var mesh = (Mesh)obj.Geometry;
                 var isValid = IsValidMesh(mesh);
 
@@ -62,11 +62,11 @@ public static class File3dmCleaner
 
                 if (results is null || results.Length != 1 || results[0] is null)
                 {
-                    Log(objName, "Failed to fix Mesh");
+                    Log(library, objName, "Failed to fix Mesh");
                     continue;
                 }
-                modify.Add((obj.Id, results[0], att));
-                Log(objName, "Fixed Mesh");
+                modify.Add((obj.Id, results[0], attributes.Duplicate()));
+                Log(library, objName, "Fixed Mesh");
 #endif
             }
 
@@ -86,7 +86,7 @@ public static class File3dmCleaner
             foreach (var (name, i) in blocks)
             {
                 doc.AllInstanceDefinitions.Delete(i);
-                Log(name, "Deleted Block definition");
+                Log(library, name, "Deleted Block definition");
             }
 
             // materials
@@ -96,7 +96,7 @@ public static class File3dmCleaner
             foreach (var (name, i) in materials)
             {
                 doc.AllMaterials.Delete(i);
-                Log(name, "Deleted Material");
+                Log(library, name, "Deleted Material");
             }
 
             // layers
@@ -115,7 +115,7 @@ public static class File3dmCleaner
             foreach (var (name, i) in emptyLayers)
             {
                 doc.AllLayers.Delete(i);
-                Log(name, "Deleted empty layer");
+                Log(library, name, "Deleted empty layer");
             }
 
             // save
@@ -126,13 +126,18 @@ public static class File3dmCleaner
             var options = new File3dmWriteOptions();
             var success = doc.WriteWithLog(file, options, out var errors);
             var fileName = Path.GetFileName(file);
-            Log(fileName, success ? "Saved" : errors);
+            Log(library, fileName, success ? "Saved" : errors);
+        }
+
+        void Log(string library, string name, string message)
+        {
+            log.AppendLine(CultureInfo.InvariantCulture, $"{library} | {message} ({name})");
         }
 
         return log.ToString();
     }
 
-#if NET48
+#if RHINOCOMMON
     static bool IsValidMesh(Mesh? mesh)
     {
         if (mesh is null)

@@ -1,5 +1,5 @@
-﻿using Autodesk.DesignScript.Runtime;
 using Autodesk.DesignScript.Geometry;
+using Autodesk.DesignScript.Runtime;
 
 namespace Robots.Dynamo;
 
@@ -19,6 +19,7 @@ public class Program : IDisposable
     {
         var poser = _program.MeshPoser as IDisposable;
         poser?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -32,7 +33,7 @@ public class Program : IDisposable
         var planes = _program.CurrentSimulationPose.Kinematics
              .SelectMany(k => k.Planes.Select(p => p.ToDPlane()));
 
-        return planes.ToList();
+        return [.. planes];
     }
 
     public override string ToString() => $"Program(Name = {_program.Name})";

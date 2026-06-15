@@ -1,6 +1,6 @@
 <div align="center">
     
-# ![Robots](../docs/Images/iconRobot.svg)<br/>robots
+# ![Robots](../docs/Images/robots-icon.svg)<br/>robots
 **Create and simulate ABB, KUKA, UR, Staubli, Doosan and Franka Emika robot programs**
 
 [![License](https://img.shields.io/github/license/visose/Robots?style=flat-square)](../LICENSE)
@@ -49,6 +49,5 @@ The continued development and maintenance of this project is made possible by ou
 
 ### Our top sponsors
 
-[![B-made](../docs/Sponsors/Bmade_light.png)](https://www.ucl.ac.uk/bartlett/about-us/our-resources/b-made-bartlett-workshops#gh-light-mode-only)
-[![B-made](../docs/Sponsors/Bmade_dark.png)](https://www.ucl.ac.uk/bartlett/about-us/our-resources/b-made-bartlett-workshops#gh-dark-mode-only)
-
+[![B-made](../docs/Sponsors/b-made-light.png)](https://www.ucl.ac.uk/bartlett/about-us/our-resources/b-made-bartlett-workshops#gh-light-mode-only)
+[![B-made](../docs/Sponsors/b-made-dark.png)](https://www.ucl.ac.uk/bartlett/about-us/our-resources/b-made-bartlett-workshops#gh-dark-mode-only)

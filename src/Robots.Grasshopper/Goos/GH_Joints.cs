@@ -1,28 +1,26 @@
-using GH_IO.Serialization;
+﻿using GH_IO.Serialization;
 using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
-public class GH_Joints : GH_Goo<double[]>
+public class GH_Joints() : Goo<double[], GH_Joints>("Joints", [])
 {
-    public GH_Joints() { Value = []; }
-    public GH_Joints(GH_Joints goo) { Value = goo.Value; }
-    public GH_Joints(double[] native) { Value = native; }
-    public override IGH_Goo Duplicate() => new GH_Joints(this);
-    public override bool IsValid => true;
-    public override string TypeName => "Joints";
-    public override string TypeDescription => "Joints";
-    public override string ToString() => string.Join(",", Value.Select(x => $"{x:0.#####}"));
+    public override string ToString() => Value is null ? NullText : string.Join(",", Value.Select(x => $"{x:0.#####}"));
+
+    protected override double[] Validate(double[] value) => Check(value);
 
     public override bool CastFrom(object source)
     {
         switch (source)
         {
+            case double[] values:
+                Value = Check(values);
+                return true;
             case GH_Number number:
-                Value = [number.Value];
+                Value = Check([number.Value]);
                 return true;
             case GH_Integer integer:
-                Value = [(double)integer.Value];
+                Value = [integer.Value];
                 return true;
             case GH_String text:
                 {
@@ -41,20 +39,9 @@ public class GH_Joints : GH_Goo<double[]>
                             return false;
                     }
 
-                    Value = values;
+                    Value = Check(values);
                     return true;
                 }
-        }
-
-        return false;
-    }
-
-    public override bool CastTo<Q>(ref Q target)
-    {
-        if (typeof(Q).IsAssignableFrom(typeof(double[])))
-        {
-            target = (Q)(object)Value;
-            return true;
         }
 
         return false;
@@ -68,7 +55,17 @@ public class GH_Joints : GH_Goo<double[]>
 
     public override bool Read(GH_IReader reader)
     {
-        Value = reader.GetDoubleArray("Value");
+        Value = Check(reader.GetDoubleArray("Value"));
         return true;
+    }
+
+    static double[] Check(double[] values)
+    {
+        ArgumentNullException.ThrowIfNull(values);
+
+        if (Array.Exists(values, static value => !double.IsFinite(value)))
+            throw new ArgumentException("Joint values must be finite.", nameof(values));
+
+        return values;
     }
 }

@@ -1,4 +1,4 @@
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 using static Robots.Util;
 
 namespace Robots;
@@ -8,7 +8,7 @@ public class RobotStaubli : RobotArm
     internal RobotStaubli(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints)
         : base(model, Manufacturers.Staubli, payload, basePlane, baseMesh, joints) { }
 
-    private protected override MechanismKinematics CreateSolver() => new SphericalWristKinematics(this);
+    private protected override SphericalWristKinematics CreateSolver() => new(this);
 
     public override double DegreeToRadian(double degree, int i)
     {

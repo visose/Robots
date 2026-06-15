@@ -1,3 +1,22 @@
+- version: 2.0.0
+  changes:
+  - Dropped Rhino 7 and .NET Framework plug-in builds; this release targets Rhino 8 on .NET 8.
+  - Breaking API changes: modernized the core library, package layout, collections, and serialization.
+  - Removed bundled ABB PC SDK and Newtonsoft.Json DLLs. ABB remote control is temporarily unavailable.
+  - Existing Grasshopper definitions using supported components should continue to open; obsolete components now show clearer migration messages.
+  - Added Cartesian joint motions for robots using numerical IK.
+  - Added a RhinoCommon developer package that avoids copying Robots runtime assemblies to consumer plug-ins.
+  - Simplified `FileIO.LoadRobotSystem` defaults for loading meshes and using the default post processor.
+  - Updated non-Rhino build, test, and sample projects to .NET 10.
+  - Reorganized icons, package resources, samples, and documentation assets.
+  - Moved package metadata out of root build defaults.
+  - Fixed program-checking issues around numerical IK, external axes, undefined configurations, and invalid target states.
+  - Fixed error reporting so invalid robot libraries fail early and robot program errors are collected consistently.
+  - Fixed Message command escaping for ABB, KUKA, UR, Staubli, Franka, Doosan, Fanuc, Igus, and Jaka.
+  - Fixed KUKA Cartesian joint motions to include status and turn data.
+  - Fixed unsupported external axes, command declarations, and frame coupling to report program errors on Igus, Jaka, and Staubli.
+  - Other bug fixes, validation improvements, and cleanup.
+
 - version: 1.9.0
   changes:
   - Added support for Igus robot.
