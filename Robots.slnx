@@ -8,4 +8,5 @@
   <Project Path="tests\Robots.Tests\Robots.Tests.csproj">
     <BuildDependency Project="src\Robots\Robots.csproj" />
   </Project>
+  <Project Path="tools\Robots.Icons\Robots.Icons.csproj" />
 </Solution>

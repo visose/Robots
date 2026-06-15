@@ -3,11 +3,10 @@ using System.Windows.Forms;
 
 using Grasshopper.GUI;
 using Grasshopper.GUI.Canvas;
-using Grasshopper.Kernel.Attributes;
 
 namespace Robots.Grasshopper;
 
-class ComponentButton(GH_Component owner, string label, Action action) : GH_ComponentAttributes(owner)
+class ComponentButton(GH_Component owner, string label, Action action) : ComponentAttributes(owner)
 {
     const int _buttonSize = 18;
 

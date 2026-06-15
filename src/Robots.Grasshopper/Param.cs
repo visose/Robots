@@ -14,6 +14,11 @@ public abstract class Param<T, TGoo>(
     public override Guid ComponentGuid => new(id);
     protected override Bitmap Icon => Util.GetIcon(GetType());
 
+    public override void CreateAttributes()
+    {
+        m_attributes = new ParameterAttributes(this);
+    }
+
     protected override TGoo PreferredCast(object data) =>
         data is T value ? New(value) : CastFailed();
 
@@ -38,6 +43,11 @@ public abstract class PersistentParam<T, TGoo>(
     public override GH_Exposure Exposure => exposure;
     public override Guid ComponentGuid => new(id);
     protected override Bitmap Icon => Util.GetIcon(GetType());
+
+    public override void CreateAttributes()
+    {
+        m_attributes = new ParameterAttributes(this);
+    }
 
     protected override TGoo PreferredCast(object data) =>
         data is T value ? Param<T, TGoo>.New(value) : CastFailed();

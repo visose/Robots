@@ -27,6 +27,11 @@ public abstract class Component(
     public override Guid ComponentGuid => new(id);
     protected override Bitmap Icon => Util.GetIcon(GetType());
 
+    public override void CreateAttributes()
+    {
+        m_attributes = new ComponentAttributes(this);
+    }
+
     protected override void RegisterInputParams(GH_InputParamManager pManager) { }
     protected override void RegisterOutputParams(GH_OutputParamManager pManager) { }
     protected abstract void SolveComponent(IGH_DataAccess DA);
