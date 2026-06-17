@@ -26,11 +26,13 @@ public class CreateSpeedAccel() : Component(
 
     protected override void SolveComponent(IGH_DataAccess DA)
     {
-        Speed speed = new(DA.Get<double>(0), DA.Get<double>(1), DA.Get<double>(2), DA.Get<double>(3))
-        {
-            TranslationAccel = DA.Get<double>(4),
-            AxisAccel = DA.Get<double>(5)
-        };
+        Speed speed = new(
+            DA.Get<double>(0),
+            DA.Get<double>(1),
+            DA.Get<double>(2),
+            DA.Get<double>(3),
+            translationAccel: DA.Get<double>(4),
+            axisAccel: DA.Get<double>(5));
 
         _ = DA.SetData(0, speed);
     }

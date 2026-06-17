@@ -1,9 +1,21 @@
-﻿using Grasshopper.Kernel.Types;
+﻿using GH_IO.Serialization;
+using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
 public class GH_Zone() : Goo<Zone, GH_Zone>("Zone", Zone.Default)
 {
+    const string DataKey = "Data";
+
+    readonly record struct ZoneData(double Distance, double Rotation, double RotationExternal, string? Name)
+    {
+        internal static ZoneData From(Zone zone) =>
+            new(zone.Distance, zone.Rotation, zone.RotationExternal, zone.HasName ? zone.Name : null);
+
+        internal Zone ToZone() =>
+            new(Distance, Rotation, RotationExternal, Name);
+    }
+
     public override bool CastFrom(object source)
     {
         if (base.CastFrom(source))
@@ -51,4 +63,25 @@ public class GH_Zone() : Goo<Zone, GH_Zone>("Zone", Zone.Default)
             return false;
         }
     }
+
+    public override bool Write(GH_IWriter writer)
+    {
+        if (Value is null)
+            return false;
+
+        writer.SetJson(DataKey, ZoneData.From(Value));
+        return true;
+    }
+
+    public override bool Read(GH_IReader reader)
+    {
+        if (!reader.TryGetJson<ZoneData>(DataKey, out var data))
+            return false;
+
+        Value = data.ToZone();
+        return true;
+    }
+
+    protected override Zone DuplicateValue(Zone value) =>
+        ZoneData.From(value).ToZone();
 }

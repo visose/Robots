@@ -9,6 +9,30 @@ namespace Robots.Grasshopper;
 
 class ParameterAttributes(IGH_Param owner) : GH_FloatingParamAttributes(owner)
 {
+    GH_StateTagList? _stateTags;
+    Rectangle _iconBounds;
+
+    protected override void Layout()
+    {
+        base.Layout();
+
+        _iconBounds = GH_Convert.ToRectangle(new RectangleF(
+            Pivot.X - DefaultWidth * 0.5f,
+            Pivot.Y - IconHeight * 0.5f,
+            DefaultWidth,
+            IconHeight));
+
+        _stateTags = Owner.StateTags;
+
+        if (_stateTags.Count == 0)
+        {
+            _stateTags = null;
+            return;
+        }
+
+        _stateTags.Layout(_iconBounds, GH_StateTagLayoutDirection.Left);
+    }
+
     protected override void Render(GH_Canvas canvas, Graphics graphics, GH_CanvasChannel channel)
     {
         if (channel != GH_CanvasChannel.Objects || !IsIconMode(Owner.IconDisplayMode))
@@ -17,11 +41,35 @@ class ParameterAttributes(IGH_Param owner) : GH_FloatingParamAttributes(owner)
             return;
         }
 
-        base.Render(canvas, graphics, channel);
-        RenderIcon(canvas, graphics);
+        RenderCapsule(canvas, graphics);
     }
 
-    void RenderIcon(GH_Canvas _, Graphics graphics)
+    void RenderCapsule(GH_Canvas canvas, Graphics graphics)
+    {
+        var bounds = Bounds;
+
+        if (!canvas.Viewport.IsVisible(ref bounds, 10))
+            return;
+
+        Bounds = bounds;
+
+        var hidden = Owner is not IGH_PreviewObject { IsPreviewCapable: true } preview || preview.Hidden;
+        using var capsule = GH_Capsule.CreateCapsule(Bounds, GH_CapsuleRenderEngine.GetImpliedPalette(Owner));
+
+        if (HasInputGrip)
+            capsule.AddInputGrip(InputGrip.Y);
+
+        if (HasOutputGrip)
+            capsule.AddOutputGrip(OutputGrip.Y);
+
+        capsule.Render(graphics, Selected, Owner.Locked, hidden);
+
+        RenderIcon(graphics, _iconBounds);
+
+        _stateTags?.RenderStateTags(graphics);
+    }
+
+    void RenderIcon(Graphics graphics, RectangleF iconBounds)
     {
         var icon = Owner.Locked
             ? Owner.Icon_24x24_Locked ?? Owner.Icon_24x24
@@ -29,12 +77,6 @@ class ParameterAttributes(IGH_Param owner) : GH_FloatingParamAttributes(owner)
 
         if (icon is null || GH_Canvas.ZoomFadeLow < 5)
             return;
-
-        var iconBounds = Bounds;
-        var tagBounds = Owner.StateTags.BoundingBox;
-
-        if (!tagBounds.IsEmpty && tagBounds.IntersectsWith(GH_Convert.ToRectangle(Bounds)))
-            iconBounds = RectangleF.FromLTRB(tagBounds.Right, iconBounds.Top, iconBounds.Right, iconBounds.Bottom);
 
         IconDrawing.RenderScaledIcon(graphics, icon, iconBounds, offsetY: 1);
 

@@ -159,12 +159,7 @@ public class CreateProgramVariable() : Component(
         if (param is ToolpathParameter)
             return new SimpleToolpath(DA.List<IToolpath>(index));
 
-        var toolpath = new SimpleToolpath();
-
-        foreach (var target in DA.List<Target>(index))
-            toolpath.Add(target);
-
-        return toolpath;
+        return new(DA.List<Target>(index));
     }
 
     bool IGH_VariableParameterComponent.CanInsertParameter(GH_ParameterSide side, int index) => false;

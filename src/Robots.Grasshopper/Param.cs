@@ -1,5 +1,7 @@
 ﻿using System.Drawing;
 
+using Rhino.Geometry;
+
 namespace Robots.Grasshopper;
 
 public abstract class Param<T, TGoo>(
@@ -32,6 +34,22 @@ public abstract class Param<T, TGoo>(
     static TGoo CastFailed() => null!;
 }
 
+public abstract class PreviewParam<T, TGoo>(
+    string nickname,
+    string description,
+    string id,
+    GH_Exposure exposure = GH_Exposure.primary)
+    : Param<T, TGoo>(nickname, description, id, exposure),
+    IGH_PreviewObject
+    where TGoo : Goo<T, TGoo>, IGH_PreviewData, new()
+{
+    public bool Hidden { get; set; }
+    public bool IsPreviewCapable => true;
+    public BoundingBox ClippingBox => Preview_ComputeClippingBox();
+    public void DrawViewportWires(IGH_PreviewArgs args) => DrawViewportMeshes(args);
+    public void DrawViewportMeshes(IGH_PreviewArgs args) => Preview_DrawMeshes(args);
+}
+
 public abstract class PersistentParam<T, TGoo>(
     string nickname,
     string description,
@@ -54,14 +72,12 @@ public abstract class PersistentParam<T, TGoo>(
 
     protected override GH_GetterResult Prompt_Singular(ref TGoo value)
     {
-        value = new TGoo();
-        return GH_GetterResult.success;
+        return GH_GetterResult.cancel;
     }
 
     protected override GH_GetterResult Prompt_Plural(ref List<TGoo> values)
     {
-        values = [];
-        return GH_GetterResult.success;
+        return GH_GetterResult.cancel;
     }
 
     static TGoo CastFailed() => null!;

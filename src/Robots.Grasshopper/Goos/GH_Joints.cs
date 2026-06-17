@@ -20,7 +20,7 @@ public class GH_Joints() : Goo<double[], GH_Joints>("Joints", [])
                 Value = Check([number.Value]);
                 return true;
             case GH_Integer integer:
-                Value = [integer.Value];
+                Value = Check([integer.Value]);
                 return true;
             case GH_String text:
                 {
@@ -49,23 +49,29 @@ public class GH_Joints() : Goo<double[], GH_Joints>("Joints", [])
 
     public override bool Write(GH_IWriter writer)
     {
+        if (Value is null)
+            return false;
+
         writer.SetDoubleArray("Value", Value);
         return true;
     }
 
     public override bool Read(GH_IReader reader)
     {
+        if (!reader.ItemExists("Value"))
+            return false;
+
         Value = Check(reader.GetDoubleArray("Value"));
         return true;
     }
 
     static double[] Check(double[] values)
     {
-        ArgumentNullException.ThrowIfNull(values);
-
         if (Array.Exists(values, static value => !double.IsFinite(value)))
             throw new ArgumentException("Joint values must be finite.", nameof(values));
 
-        return values;
+        return [.. values];
     }
+
+    protected override double[] DuplicateValue(double[] value) => [.. value];
 }

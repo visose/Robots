@@ -5,12 +5,11 @@ public class GH_Toolpath() : Goo<IToolpath, GH_Toolpath>("Toolpath", new SimpleT
 {
     public override string ToString()
     {
-        return Value?.Targets switch
+        return Value switch
         {
-            IList<Target> targets => $"Toolpath with ({targets.Count} targets)",
             Target target => target.ToString() ?? "Target",
+            IToolpath toolpath => $"Toolpath with ({toolpath.Targets.Count} targets)",
             null => "Null Toolpath",
-            _ => "Toolpath",
         };
     }
 

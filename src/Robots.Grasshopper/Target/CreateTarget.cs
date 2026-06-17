@@ -84,6 +84,7 @@ public sealed class CreateTarget() : Component(
         var command = Maybe(Input.Command, source?.Command);
         var frame = Maybe(Input.Frame, source?.Frame);
         var external = Maybe(Input.External, source?.External);
+        var externalCustom = source is not null && InputIndex(Input.External) == -1 ? source.ExternalCustom : null;
 
         Target target;
 
@@ -99,7 +100,7 @@ public sealed class CreateTarget() : Component(
 
             var motion = ReadMotion(DA, InputIndex(Input.Motion), sourceCartesian);
 
-            target = new CartesianTarget(plane, configuration, motion, tool, speed, zone, command, frame, external);
+            target = new CartesianTarget(plane, configuration, motion, tool, speed, zone, command, frame, external, externalCustom);
         }
         else
         {
@@ -107,11 +108,8 @@ public sealed class CreateTarget() : Component(
                 ? DA.Get<double[]>(jointsIndex)
                 : sourceJoint?.Joints ?? throw new RuntimeWarningException("Joints input is required. Add a Joints input or connect a joint target to the Target input.");
 
-            target = new JointTarget(joints, tool, speed, zone, command, frame, external);
+            target = new JointTarget(joints, tool, speed, zone, command, frame, external, externalCustom);
         }
-
-        if (source is not null && InputIndex(Input.External) == -1)
-            target.ExternalCustom = source.ExternalCustom;
 
         _ = DA.SetData(0, target);
 

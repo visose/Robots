@@ -25,6 +25,8 @@ public abstract class Component(
 
     public override GH_Exposure Exposure => exposure;
     public override Guid ComponentGuid => new(id);
+    public override bool IsPreviewCapable => Params.Output.Any(static param =>
+        param is IGH_PreviewObject { IsPreviewCapable: true });
     protected override Bitmap Icon => Util.GetIcon(GetType());
 
     public override void CreateAttributes()
