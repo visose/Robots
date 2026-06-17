@@ -3,7 +3,6 @@
 using Rhino.Geometry;
 
 using GH_IO.Serialization;
-using Grasshopper;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Special;
 
@@ -294,19 +293,10 @@ public sealed class CreateTarget() : Component(
 
     void AddValueList(IGH_Param parameter, GH_ValueList list, int xOffset, int yOffset, Action<GH_ValueList> configure)
     {
-        parameter.CreateAttributes();
-        list.CreateAttributes();
-        list.Attributes.Pivot = new(parameter.Attributes.InputGrip.X + xOffset, parameter.Attributes.InputGrip.Y + yOffset);
         list.ListItems.Clear();
         configure(list);
 
-        var document = OnPingDocument()
-            ?? Instances.ActiveCanvas?.Document
-            ?? throw new InvalidOperationException("Could not find the active Grasshopper document.");
-
-        _ = document.AddObject(list, false);
-        parameter.AddSource(list);
-        parameter.CollectData();
+        ValueListUtil.AddToInput(this, parameter, list, xOffset, yOffset);
     }
 
     void Changed()

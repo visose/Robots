@@ -4,7 +4,10 @@ namespace Robots.Tests;
 
 static class TestRobots
 {
+    const string PostProcessorIOXml = """<IO><DO names="DO1"/><DI names="DI1"/><AO names="AO1"/><AI names="AI1"/></IO>""";
+
     static readonly string AbbIrb120ArmXml = AbbArmXml("IRB120", 3);
+    static readonly string AbbCustomSlideXml = CustomExternalXml(Manufacturers.ABB, "Slide", x: 100, y: 20, movesRobot: true);
 
     static string AbbArmXml(string model, int payload) => $"""
         <RobotArm model="{model}" manufacturer="ABB" payload="{payload}">
@@ -20,38 +23,20 @@ static class TestRobots
         </RobotArm>
         """;
 
-    const string CustomSlideXml = """
-        <Custom model="Slide" manufacturer="ABB" payload="0" movesRobot="true">
-          <Base x="100" y="20" z="0" q1="1" q2="0" q3="0" q4="0"/>
-          <Joints>
-            <Prismatic number="7" a="0" d="0" minrange="-1000" maxrange="1000" maxspeed="1000"/>
-          </Joints>
-        </Custom>
-        """;
-
-    const string AbbIOXml = """
-        <IO>
-          <DO names="DO10_1,DO10_2"/>
-          <DI names="DI10_1,DI10_2"/>
-        </IO>
-        """;
-
     static readonly string AbbIrb120Xml = $"""
         <RobotSystem name="IRB120" manufacturer="ABB">
           <Mechanisms>
             {AbbIrb120ArmXml}
           </Mechanisms>
-          {AbbIOXml}
         </RobotSystem>
         """;
 
     static readonly string AbbIrb120WithCustomExternalXml = $"""
         <RobotSystem name="IRB120External" manufacturer="ABB">
           <Mechanisms>
-            {CustomSlideXml}
+            {AbbCustomSlideXml}
             {AbbIrb120ArmXml}
           </Mechanisms>
-          {AbbIOXml}
         </RobotSystem>
         """;
 
@@ -61,10 +46,9 @@ static class TestRobots
             {AbbIrb120ArmXml}
           </Mechanisms>
           <Mechanisms group="1">
-            {CustomSlideXml}
+            {AbbCustomSlideXml}
             {AbbIrb120ArmXml}
           </Mechanisms>
-          {AbbIOXml}
         </RobotSystem>
         """;
 
@@ -73,10 +57,6 @@ static class TestRobots
           <Mechanisms>
             {AbbArmXml("CRB15000Test", 5)}
           </Mechanisms>
-          <IO>
-            <DO names="DO10_1"/>
-            <DI names="DI10_1"/>
-          </IO>
         </RobotSystem>
         """;
 
@@ -95,12 +75,6 @@ static class TestRobots
               </Joints>
             </RobotArm>
           </Mechanisms>
-          <IO>
-            <DO names="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-            <DI names="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16"/>
-            <AO names="0,1"/>
-            <AI names="0,1"/>
-          </IO>
         </RobotSystem>
         """;
 
@@ -111,6 +85,9 @@ static class TestRobots
     public static RobotSystem AbbTwoGroupWithCustomExternal() => Parse(AbbTwoGroupWithCustomExternalXml);
 
     public static RobotSystem AbbNumerical() => Parse(AbbNumericalXml);
+
+    public static RobotSystem KukaWithCustomExternal() =>
+        Parse(PostProcessorXml(Manufacturers.KUKA, 6, model: "KR", external: CustomExternalXml(Manufacturers.KUKA), io: ""));
 
     public static RobotSystem UR10() => Parse(UR10Xml);
 
@@ -166,7 +143,7 @@ static class TestRobots
         return new(name, robot, [Toolpath(targetA, targetB)]);
     }
 
-    static string PostProcessorXml(Manufacturers manufacturer, int jointCount)
+    static string PostProcessorXml(Manufacturers manufacturer, int jointCount, string? model = null, string? external = null, string io = PostProcessorIOXml)
     {
         var joints = (manufacturer, jointCount) switch
         {
@@ -186,18 +163,21 @@ static class TestRobots
         return $"""
             <RobotSystem name="{manufacturer}" manufacturer="{manufacturer}">
               <Mechanisms>
-                <RobotArm model="{manufacturer}" manufacturer="{manufacturer}" payload="10">
+                <RobotArm model="{model ?? manufacturer.ToString()}" manufacturer="{manufacturer}" payload="10">
                   <Base x="0" y="0" z="0" q1="1" q2="0" q3="0" q4="0"/>
                   <Joints>{joints}</Joints>
                 </RobotArm>
+                {external}
               </Mechanisms>
-              <IO>
-                <DO names="DO1"/>
-                <DI names="DI1"/>
-                <AO names="AO1"/>
-                <AI names="AI1"/>
-              </IO>
+              {io}
             </RobotSystem>
             """;
     }
+
+    static string CustomExternalXml(Manufacturers manufacturer, string model = "External", int x = 0, int y = 0, bool movesRobot = false) => $"""
+            <Custom model="{model}" manufacturer="{manufacturer}" payload="0"{(movesRobot ? " movesRobot=\"true\"" : "")}>
+              <Base x="{x}" y="{y}" z="0" q1="1" q2="0" q3="0" q4="0"/>
+              <Joints><Prismatic number="7" a="0" d="0" minrange="-1000" maxrange="1000" maxspeed="1000"/></Joints>
+            </Custom>
+            """;
 }

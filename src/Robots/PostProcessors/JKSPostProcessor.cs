@@ -138,7 +138,7 @@ class JKSPostProcessor : IPostProcessor
                                 }
 
                             default:
-                                throw new InvalidOperationException($"Motion '{cartesian.Motion}' is invalid.");
+                                throw PostProcessorUtil.InvalidMotion(cartesian.Motion);
                         }
                     }
 

@@ -280,7 +280,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                             }
 
                         default:
-                            throw new InvalidOperationException($"Motion '{cartesian.Motion}' is invalid.");
+                            throw PostProcessorUtil.InvalidMotion(cartesian.Motion);
                     }
                 }
 

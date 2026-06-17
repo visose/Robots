@@ -215,6 +215,22 @@ public class PostProcessorTests
         Assert.That(program.Errors, Is.Empty);
     }
 
+    [Test]
+    public void KukaExternalAxisSpeedUsesExternalVelocity()
+    {
+        var robot = TestRobots.KukaWithCustomExternal();
+        var toolpath = TestRobots.Toolpath(
+            new JointTarget(new double[6], external: [0]),
+            new JointTarget(new double[6], external: [100]));
+
+        var program = new Program("P", robot, [toolpath]);
+        var code = TestRobots.FlattenCode(program);
+
+        Assert.That(program.Errors, Is.Empty);
+        Assert.That(code, Does.Contain("$VEL_EXTAX[1] = "));
+        Assert.That(code, Does.Not.Contain("$VEL_AXIS[0]"));
+    }
+
     static Program CreateProgram(Manufacturers manufacturer, int jointCount, Command command)
     {
         var robot = TestRobots.PostProcessorRobot(manufacturer, jointCount);

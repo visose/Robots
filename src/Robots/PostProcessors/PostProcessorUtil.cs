@@ -2,6 +2,8 @@
 
 static class PostProcessorUtil
 {
+    internal static InvalidOperationException InvalidMotion(Motions? motion) => new($"Motion '{motion}' is invalid.");
+
     internal static void RejectMultiFile(Program program, string robotName)
     {
         if (program.MultiFileIndices.Count > 1)

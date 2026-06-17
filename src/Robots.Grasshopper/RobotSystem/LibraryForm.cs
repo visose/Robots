@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using Eto.Drawing;
 using Eto.Forms;
 using Rhino.Resources;
@@ -206,7 +205,7 @@ class LibraryForm : ComponentForm
                     new LinkButton
                     {
                         Text = "Help",
-                        Command = new Eto.Forms.Command((s, e) => Process.Start(new ProcessStartInfo(_helpUrl) { UseShellExecute = true }))
+                        Command = new Eto.Forms.Command((s, e) => Application.Instance.Open(_helpUrl))
                     }
                 }
             }

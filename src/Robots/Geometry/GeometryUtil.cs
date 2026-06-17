@@ -688,6 +688,13 @@ public static class GeometryUtil
         // adapted from System.Numerics.Vectors
         internal Transform ToTransform()
         {
+            double lengthSquared = quaternion.A * quaternion.A + quaternion.B * quaternion.B + quaternion.C * quaternion.C + quaternion.D * quaternion.D;
+
+            if (lengthSquared == 0.0)
+                throw new ArgumentException("Quaternion must not be zero.", nameof(quaternion));
+
+            double scale = 2.0 / lengthSquared;
+
             Transform result = default;
 
             double xx = quaternion.B * quaternion.B;
@@ -702,9 +709,9 @@ public static class GeometryUtil
             double wx = quaternion.B * quaternion.A;
 
             result.SetRotation(
-                1.0 - 2.0 * (yy + zz), 2.0 * (xy - wz), 2.0 * (xz + wy),
-                2.0 * (xy + wz), 1.0 - 2.0 * (zz + xx), 2.0 * (yz - wx),
-                2.0 * (xz - wy), 2.0 * (yz + wx), 1.0 - 2.0 * (yy + xx));
+                1.0 - scale * (yy + zz), scale * (xy - wz), scale * (xz + wy),
+                scale * (xy + wz), 1.0 - scale * (zz + xx), scale * (yz - wx),
+                scale * (xz - wy), scale * (yz + wx), 1.0 - scale * (yy + xx));
 
             return result;
         }

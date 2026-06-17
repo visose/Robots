@@ -140,7 +140,7 @@ def program():
                             case Motions.Linear:
                                 break;
                             default:
-                                throw new InvalidOperationException($"Motion '{currentMotion}' is invalid.");
+                                throw PostProcessorUtil.InvalidMotion(currentMotion);
                         }
                     }
 

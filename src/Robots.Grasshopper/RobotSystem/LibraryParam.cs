@@ -41,10 +41,7 @@ public class LibraryParam : GH_ValueList
         }
 
         libraryParam.Update();
-        var pivot = component.Attributes.Pivot;
-        libraryParam.Attributes.Pivot = new(pivot.X - 240, pivot.Y - 21);
-        _ = document.AddObject(libraryParam, false);
-        inputParam.AddSource(libraryParam);
+        ValueListUtil.AddNearComponent(document, component, inputParam, libraryParam, -240, -21);
         return true;
     }
 
