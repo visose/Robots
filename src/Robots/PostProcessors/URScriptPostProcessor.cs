@@ -103,30 +103,16 @@ class URScriptPostProcessor : IPostProcessor
                     plane.Orient(ref target.Frame.Plane);
                     plane.InverseOrient(ref _system.BasePlane);
                     var axisAngle = _system.PlaneToNumbers(plane);
+                    string pose = $"p[{axisAngle[0]:0.#####}, {axisAngle[1]:0.#####}, {axisAngle[2]:0.#####}, {axisAngle[3]:0.#####}, {axisAngle[4]:0.#####}, {axisAngle[5]:0.#####}]";
 
-                    switch (cartesian.Motion)
+                    moveText = cartesian.Motion switch
                     {
-                        case Motions.Joint:
-                            {
-                                var speed = GetAxisSpeed();
-                                moveText = $"  movej(p[{axisAngle[0]:0.#####}, {axisAngle[1]:0.#####}, {axisAngle[2]:0.#####}, {axisAngle[3]:0.#####}, {axisAngle[4]:0.#####}, {axisAngle[5]:0.#####}], {speed}, r={zoneDistance})";
-                                break;
-                            }
-
-                        case Motions.Linear:
-                            {
-                                double linearAccel = target.Speed.TranslationAccel.ToMeters();
-
-                                string speed = target.Speed.Time > 0 ?
-                                    $"t={target.Speed.Time: 0.####}" :
-                                    $"a={linearAccel:0.#####}, v={target.Speed.Name}";
-
-                                moveText = $"  movel(p[{axisAngle[0]:0.#####}, {axisAngle[1]:0.#####}, {axisAngle[2]:0.#####}, {axisAngle[3]:0.#####}, {axisAngle[4]:0.#####}, {axisAngle[5]:0.#####}], {speed}, r={zoneDistance})";
-                                break;
-                            }
-                        default:
-                            throw new InvalidOperationException($"Motion '{cartesian.Motion}' is invalid.");
-                    }
+                        Motions.Joint => $"  movej({pose}, {GetAxisSpeed()}, r={zoneDistance})",
+                        Motions.Linear => $"  movel({pose}, {GetTcpSpeed(target.Speed)}, r={zoneDistance})",
+                        Motions.Process when target.Speed.Time > 0 => throw new InvalidOperationException("Preflight missed invalid UR Process motion speed."),
+                        Motions.Process => $"  movep({pose}, {GetTcpSpeed(target.Speed)}, r={zoneDistance})",
+                        _ => throw PostProcessorUtil.InvalidMotion(cartesian.Motion)
+                    };
                 }
 
                 PostProcessorUtil.AddTargetCommands(code, _program, programTarget, true, command => indent + command);
@@ -168,6 +154,15 @@ class URScriptPostProcessor : IPostProcessor
 
             code.Add("end");
             return code;
+        }
+
+        static string GetTcpSpeed(Speed speed)
+        {
+            if (speed.Time > 0)
+                return $"t={speed.Time: 0.####}";
+
+            double linearAccel = speed.TranslationAccel.ToMeters();
+            return $"a={linearAccel:0.#####}, v={speed.Name}";
         }
 
         static string Tool(Tool tool)

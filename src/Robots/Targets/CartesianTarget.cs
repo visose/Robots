@@ -4,7 +4,7 @@ namespace Robots;
 
 [Flags]
 public enum RobotConfigurations { None = 0, Shoulder = 1, Elbow = 2, Wrist = 4, Undefined = 8 }
-public enum Motions { Joint, Linear }
+public enum Motions { Joint, Linear, Process }
 
 public class CartesianTarget(Plane plane, RobotConfigurations? configuration = null, Motions motion = Motions.Joint, Tool? tool = null, Speed? speed = null, Zone? zone = null, Command? command = null, Frame? frame = null, double[]? external = null)
     : Target(tool, speed, zone, command, frame, external)

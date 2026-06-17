@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using Rhino.Geometry;
 using Robots.Commands;
 
 namespace Robots.Tests;
@@ -229,6 +230,54 @@ public class PostProcessorTests
         Assert.That(program.Errors, Is.Empty);
         Assert.That(code, Does.Contain("$VEL_EXTAX[1] = "));
         Assert.That(code, Does.Not.Contain("$VEL_AXIS[0]"));
+    }
+
+    [Test]
+    public void UrProcessMotionGeneratesMoveP()
+    {
+        var robot = TestRobots.UR10();
+        var planeA = Plane.WorldZX;
+        var planeB = Plane.WorldZX;
+        planeA.Origin = new(200, 100, 600);
+        planeB.Origin = new(700, 250, 600);
+        var toolpath = TestRobots.Toolpath(
+            new CartesianTarget(planeA, RobotConfigurations.Wrist, Motions.Joint),
+            new CartesianTarget(planeB, motion: Motions.Process));
+
+        var program = new Program("P", robot, [toolpath]);
+        var code = TestRobots.FlattenCode(program);
+
+        Assert.That(program.Errors, Is.Empty);
+        Assert.That(code, Does.Contain("  movep(p["));
+        Assert.That(code, Does.Not.Contain("  movel(p["));
+    }
+
+    [Test]
+    public void UrProcessMotionWithTimeFails()
+    {
+        var speed = new Speed { Time = 2 };
+        var program = CreateProcessProgram(TestRobots.UR10(), speed);
+
+        Assert.That(program.Code, Is.Null);
+        Assert.That(program.Errors, Has.One.EqualTo("Process motion does not support time-based speed on UR robots; target 1 in robot 0 uses Speed.Time."));
+    }
+
+    [Test]
+    public void ProcessMotionFailsOnNonUrRobots()
+    {
+        var program = CreateProcessProgram(TestRobots.AbbIrb120());
+
+        Assert.That(program.Code, Is.Null);
+        Assert.That(program.Errors, Has.One.EqualTo("Process motion is only supported on UR robots; target 1 in robot 0 is unsupported."));
+    }
+
+    static Program CreateProcessProgram(RobotSystem robot, Speed? speed = null)
+    {
+        var start = new JointTarget(new double[6]);
+        var endPlane = robot.Kinematics([start])[0].Planes[^1];
+        var processTarget = new CartesianTarget(endPlane, motion: Motions.Process, speed: speed);
+
+        return new("P", robot, [TestRobots.Toolpath(start, processTarget)]);
     }
 
     static Program CreateProgram(Manufacturers manufacturer, int jointCount, Command command)

@@ -9,6 +9,7 @@ class ProgramPreflight(Program program)
     {
         var targets = GetProgramTargets(systemTargets);
         ValidateTargetAxes(targets);
+        ValidateMotions(targets);
         WarnDefaults(targets);
         WarnPayloads(targets);
 
@@ -41,14 +42,35 @@ class ProgramPreflight(Program program)
         }
     }
 
+    void ValidateMotions(IReadOnlyList<ProgramTarget> targets)
+    {
+        foreach (var target in targets)
+        {
+            if (target.Target is not CartesianTarget { Motion: Motions.Process } cartesian)
+                continue;
+
+            if (_robotSystem is not SystemUR)
+            {
+                AddMotionError(target, $"Process motion is only supported on UR robots; target {target.Index} in robot {target.Group} is unsupported.");
+                continue;
+            }
+
+            if (cartesian.Speed.Time > 0)
+                AddMotionError(target, $"Process motion does not support time-based speed on UR robots; target {target.Index} in robot {target.Group} uses Speed.Time.");
+        }
+    }
+
+    void AddMotionError(ProgramTarget target, string message) =>
+        _program.AddError(IssueKind.UnsupportedPostProcessorFeature, message, target.Index, target.Group, nameof(ProgramPreflight));
+
     void WarnDefaults(IReadOnlyList<ProgramTarget> targets)
     {
         WarnMatching(targets, t => t.Tool.Equals(Tool.Default), "have their tool set to default");
         WarnMatching(targets, t => t.Speed.Equals(Speed.Default), "have their speed set to default");
         WarnMatching(
             targets,
-            t => t is CartesianTarget cartesian && cartesian.Motion == Motions.Linear && cartesian.Configuration is not null,
-            "are set to linear with a forced configuration (configuration is ignored for linear motions)");
+            t => t is CartesianTarget { Motion: not Motions.Joint, Configuration: not null },
+            "are set to non-joint motion with a forced configuration (configuration is ignored for non-joint motions)");
     }
 
     void WarnMatching(IReadOnlyList<ProgramTarget> targets, Func<Target, bool> condition, string message)

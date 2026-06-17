@@ -286,8 +286,8 @@ public sealed class CreateTarget() : Component(
         var list = new GH_ValueList();
         AddValueList(parameter, list, -130, -11, valueList =>
         {
-            valueList.ListItems.Add(new("Joint", "\"Joint\""));
-            valueList.ListItems.Add(new("Linear", "\"Linear\""));
+            foreach (var motion in Enum.GetValues<Motions>())
+                valueList.ListItems.Add(new(motion.ToString(), $"\"{motion}\""));
         });
     }
 

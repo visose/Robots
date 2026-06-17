@@ -454,7 +454,8 @@ class VAL3PostProcessor : IPostProcessor
                     {
                         Motions.Joint => "movej",
                         Motions.Linear => "movel",
-                        _ => throw new InvalidOperationException($"Motion '{cartesian.Motion}' is invalid.")
+                        Motions.Process => throw new InvalidOperationException("Preflight missed unsupported Process motion."),
+                        _ => throw PostProcessorUtil.InvalidMotion(cartesian.Motion)
                     };
 
                     moveText = $"{move}({targetName}, {tool}, {speed})";
