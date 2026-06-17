@@ -1,7 +1,7 @@
 ﻿
 namespace Robots;
 
-public abstract class Command(string? name = null) : TargetProperty(name)
+public abstract class Command(string? name = null, bool runBefore = false) : TargetProperty(name)
 {
     public static Command Default { get; } = new DefaultCommand();
 
@@ -12,7 +12,7 @@ public abstract class Command(string? name = null) : TargetProperty(name)
     protected virtual bool Validate(Program program) => Validate(program.RobotSystem);
 
     protected virtual void Populate() { }
-    public bool RunBefore { get; set; }
+    public bool RunBefore { get; init; } = runBefore;
 
     internal virtual IEnumerable<Command> Flatten()
     {

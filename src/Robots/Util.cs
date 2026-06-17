@@ -180,12 +180,6 @@ static class Util
             return subset;
         }
 
-        public T[] RangeSubset(int startIndex, int length)
-        {
-            T[] subset = new T[length];
-            Array.Copy(array, startIndex, subset, 0, length);
-            return subset;
-        }
     }
 
     extension<T>(IReadOnlyList<IReadOnlyList<T>> source)

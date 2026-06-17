@@ -7,10 +7,8 @@ class User
     public string Password { get; set; } = "easybot";
     public string ProgramsDir { get; set; } = "/programs";
 
-    public User(string? ip)
+    public User(string ip)
     {
-        ArgumentNullException.ThrowIfNull(ip);
-
         Uri uri = new(ip);
         IP = uri.Host;
 
@@ -18,7 +16,7 @@ class User
         {
             var split = uri.UserInfo.Split(':');
 
-            if (split is not null && split.Length == 2)
+            if (split.Length == 2)
             {
                 Username = split[0];
                 Password = split[1];

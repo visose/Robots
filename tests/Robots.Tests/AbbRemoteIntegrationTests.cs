@@ -52,11 +52,9 @@ public class AbbRemoteIntegrationTests
         var planeB = Plane.WorldYZ;
         planeA.Origin = new(300, 200, 610);
         planeB.Origin = new(300, -200, 610);
-        var toolpath = new SimpleToolpath()
-        {
+        var toolpath = new SimpleToolpath(
             new CartesianTarget(planeA, RobotConfigurations.Wrist, Motions.Joint),
-            new CartesianTarget(planeB, null, Motions.Linear, speed: new(300)),
-        };
+            new CartesianTarget(planeB, null, Motions.Linear, speed: new(300)));
 
         return new("TestProgram", robot, [toolpath]);
     }

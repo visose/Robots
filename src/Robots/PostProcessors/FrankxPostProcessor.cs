@@ -147,7 +147,8 @@ def program():
                     var plane = cartesian.Plane;
 
                     // Bake frame
-                    plane.Orient(ref target.Frame.Plane);
+                    var framePlane = target.Frame.Plane;
+                    plane.Orient(ref framePlane);
 
                     // Bake base
                     plane.InverseOrient(ref _system.BasePlane);
@@ -179,10 +180,10 @@ program()
             void MotionMove()
             {
                 if (currentTool is null)
-                    throw new ArgumentNullException(nameof(currentTool));
+                    throw new InvalidOperationException("Missing Frankx motion tool.");
 
                 if (currentMotion is null)
-                    throw new ArgumentNullException(nameof(currentMotion));
+                    throw new InvalidOperationException("Missing Frankx motion.");
 
                 code.Add($"  ])");
                 code.Add($"  robot.move({currentTool.Name}, motion, data)");

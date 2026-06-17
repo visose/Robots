@@ -7,13 +7,15 @@ public enum SpeedType { Tcp, Rotation, Axis, External };
 public class ProgramTarget
 {
     KinematicSolution? _kinematics;
+    List<Command> _commands;
 
     public Target Target { get; internal set; }
     public int Group { get; internal set; }
-    public List<Command> Commands { get; private set; }
+    public IReadOnlyList<Command> Commands { get; private set; }
     internal bool ChangesConfiguration { get; set; }
     internal int LeadingJoint { get; set; }
     internal SpeedType SpeedType { get; set; }
+    internal int CoupledPlaneIndex { get; set; } = -1;
 
     public int Index => SystemTarget.Index;
     public bool IsJointMotion => IsJointTarget || ((CartesianTarget)Target).Motion == Motions.Joint;
@@ -24,7 +26,8 @@ public class ProgramTarget
             if (_kinematics is null && Target is CartesianTarget cartesianTarget)
             {
                 Plane targetPlane = cartesianTarget.Plane;
-                targetPlane.Orient(ref cartesianTarget.Frame.Plane);
+                var framePlane = GetFramePlane(SystemTarget);
+                targetPlane.Orient(ref framePlane);
                 return targetPlane;
             }
 
@@ -51,14 +54,7 @@ public class ProgramTarget
         get
         {
             Plane plane = WorldPlane;
-            Plane framePlane = Target.Frame.Plane;
-
-            if (Target.Frame.IsCoupled)
-            {
-                var planes = SystemTarget.Planes;
-                Plane coupledPlane = planes[Target.Frame.CoupledPlaneIndex];
-                framePlane.Orient(ref coupledPlane);
-            }
+            Plane framePlane = GetFramePlane(SystemTarget);
 
             plane.InverseOrient(ref framePlane);
             return plane;
@@ -80,18 +76,29 @@ public class ProgramTarget
     {
         Target = target;
         Group = group;
-        Commands = [.. target.Command.Flatten()];
+        _commands = [.. target.Command.Flatten()];
+        Commands = _commands.AsReadOnly();
     }
 
-    public ProgramTarget ShallowClone(SystemTarget systemTarget)
+    internal ProgramTarget ShallowClone(SystemTarget systemTarget)
     {
         var target = (ProgramTarget)MemberwiseClone();
         target.SystemTarget = systemTarget;
-        target.Commands = [];
+        target._commands = [];
+        target.Commands = target._commands.AsReadOnly();
         return target;
     }
 
-    public Plane GetPrevPlane(ProgramTarget prevTarget)
+    internal void ReplaceCommand(TargetProperty attribute, Command command)
+    {
+        for (int i = 0; i < _commands.Count; i++)
+        {
+            if (_commands[i].Equals(attribute))
+                _commands[i] = command;
+        }
+    }
+
+    internal Plane GetPrevPlane(ProgramTarget prevTarget)
     {
         Plane prevPlane = prevTarget.WorldPlane;
 
@@ -104,19 +111,13 @@ public class ProgramTarget
             prevPlane = toolPlane;
         }
 
-        Plane framePlane = Target.Frame.Plane;
-
-        if (Target.Frame.IsCoupled)
-        {
-            var planes = prevTarget.SystemTarget.Planes;
-            framePlane.Orient(ref planes[Target.Frame.CoupledPlaneIndex]);
-        }
+        Plane framePlane = GetFramePlane(prevTarget.SystemTarget);
 
         prevPlane.InverseOrient(ref framePlane);
         return prevPlane;
     }
 
-    public Target Lerp(ProgramTarget prevTarget, RobotSystem robot, double t, double start, double end)
+    internal Target Lerp(ProgramTarget prevTarget, RobotSystem robot, double t, double start, double end)
     {
         int robotJointCount = robot.GetRobotJointCount(Group);
 
@@ -130,7 +131,7 @@ public class ProgramTarget
 
         if (IsJointMotion)
         {
-            var joints = allJoints.RangeSubset(0, robotJointCount);
+            var joints = allJoints[..robotJointCount];
             return new JointTarget(joints, Target, external);
         }
         else
@@ -165,5 +166,21 @@ public class ProgramTarget
         {
             ChangesConfiguration = false;
         }
+    }
+
+    Plane GetFramePlane(SystemTarget systemTarget)
+    {
+        Plane framePlane = Target.Frame.Plane;
+
+        if (!Target.Frame.IsCoupled)
+            return framePlane;
+
+        if (CoupledPlaneIndex < 0)
+            throw new InvalidOperationException($"Coupled frame in target {Index} has not been validated.");
+
+        var planes = systemTarget.Planes;
+        Plane coupledPlane = planes[CoupledPlaneIndex];
+        framePlane.Orient(ref coupledPlane);
+        return framePlane;
     }
 }

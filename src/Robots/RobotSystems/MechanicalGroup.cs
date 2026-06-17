@@ -37,7 +37,7 @@ public class MechanicalGroup
         _kinematics = new(this);
     }
 
-    public KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? coupledPlane = null, Plane? basePlane = null) =>
+    internal KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? coupledPlane = null, Plane? basePlane = null) =>
         _kinematics.Solve(target, prevJoints, coupledPlane, basePlane);
 
     internal int ExternalFlangePlaneIndex(int mechanismIndex)
@@ -53,14 +53,14 @@ public class MechanicalGroup
         return index;
     }
 
-    public double DegreeToRadian(double degree, int i)
+    internal double DegreeToRadian(double degree, int i)
     {
         return i < RobotJointCount
             ? Robot.DegreeToRadian(degree, i)
             : GetExternal(i).DegreeToRadian(degree, i);
     }
 
-    public double RadianToDegree(double radian, int i)
+    internal double RadianToDegree(double radian, int i)
     {
         return i < RobotJointCount
             ? Robot.RadianToDegree(radian, i)
@@ -81,7 +81,7 @@ public class MechanicalGroup
         throw new ArgumentOutOfRangeException(nameof(jointNumber), "Joint number is outside the mechanical group.");
     }
 
-    public double[] RadiansToDegreesExternal(Target target)
+    internal double[] RadiansToDegreesExternal(Target target)
     {
         int externalCount = ExternalJointCount;
         double[] values = new double[externalCount];

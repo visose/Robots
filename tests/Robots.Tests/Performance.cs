@@ -31,7 +31,7 @@ class Performance
         JointTarget targetA = new([0, Math.PI * 0.5, 0, 0, 0, 0]);
         CartesianTarget targetB = new(planeA, RobotConfigurations.Wrist, Motions.Joint);
         CartesianTarget targetC = new(planeB, null, Motions.Linear, speed: speed);
-        SimpleToolpath toolpath = [targetA, targetB, targetC];
+        SimpleToolpath toolpath = new(targetA, targetB, targetC);
 
         return new("TestProgram", robot, [toolpath], stepSize: 0.02);
     }
@@ -45,7 +45,7 @@ class Performance
         Speed speed = new(300);
         CartesianTarget targetA = new(planeA, RobotConfigurations.Wrist, Motions.Joint);
         CartesianTarget targetB = new(planeB, null, Motions.Linear, speed: speed);
-        SimpleToolpath toolpath = [targetA, targetB];
+        SimpleToolpath toolpath = new(targetA, targetB);
 
         return new("URTest", robot, [toolpath], stepSize: 0.01);
     }

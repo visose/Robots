@@ -1,6 +1,6 @@
 ﻿namespace Robots.Commands;
 
-public class Message(string message) : Command
+public class Message(string message, bool runBefore = false) : Command(runBefore: runBefore)
 {
     readonly string _message = message;
 

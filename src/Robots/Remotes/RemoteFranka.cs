@@ -19,6 +19,13 @@ public class RemoteFranka : IRemote, IDisposable
         get => _user?.IP;
         set
         {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                _user = null;
+                LogAdd("Invalid address.");
+                return;
+            }
+
             try
             {
                 _user = new(value);

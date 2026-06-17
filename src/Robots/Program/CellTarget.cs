@@ -4,7 +4,7 @@ namespace Robots;
 
 public class SystemTarget
 {
-    public List<ProgramTarget> ProgramTargets { get; internal set; }
+    public IReadOnlyList<ProgramTarget> ProgramTargets { get; internal set; }
     public int Index { get; internal set; }
     public double TotalTime { get; internal set; }
     public double DeltaTime { get; internal set; }
@@ -18,7 +18,7 @@ public class SystemTarget
         foreach (var target in groupTargets)
             target.SystemTarget = this;
 
-        ProgramTargets = groupTargets;
+        ProgramTargets = groupTargets.AsReadOnly();
         Index = index;
     }
 
@@ -29,7 +29,7 @@ public class SystemTarget
         if (index != -1)
             systemTarget.Index = index;
 
-        systemTarget.ProgramTargets = systemTarget.ProgramTargets.MapToList(x => x.ShallowClone(systemTarget));
+        systemTarget.ProgramTargets = systemTarget.ProgramTargets.MapToList(x => x.ShallowClone(systemTarget)).AsReadOnly();
         return systemTarget;
     }
 

@@ -23,7 +23,8 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
         _ = tcp.Rotate(PI, Vector3d.ZAxis, Point3d.Origin);
 
         Plane targetPlane = cartesianTarget.Plane;
-        targetPlane.Orient(ref cartesianTarget.Frame.Plane);
+        Plane framePlane = cartesianTarget.Frame.Plane;
+        targetPlane.Orient(ref framePlane);
 
         var tcpTransform = tcp.PlaneToPlane(ref targetPlane);
         var transform = solution.Planes[0].ToInverseTransform() * tcpTransform;
@@ -47,7 +48,7 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
             ? JointTarget.GetAbsoluteJoints(robotJoints, prevJoints)
             : robotJoints;
 
-        solution.Errors.AddRange(errors);
+        solution.AddErrors(errors);
     }
 
     protected override void SetPlanes(KinematicSolution solution, Target target)

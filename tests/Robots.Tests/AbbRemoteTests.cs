@@ -203,7 +203,7 @@ public class AbbRemoteTests
         public RobotSystem RobotSystem { get; } = robotSystem;
         public List<List<List<string>>>? Code => null;
         public bool HasSimulation => false;
-        public List<int> MultiFileIndices { get; } = [0];
+        public IReadOnlyList<int> MultiFileIndices { get; } = [0];
 
         public void Save(string folder)
         {

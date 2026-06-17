@@ -32,7 +32,7 @@ class DrlPostProcessor : IPostProcessor
 
             if (!isMultiProgram)
             {
-                List<string> code = [.. declaration, .. initCommands, .. Program(_program.Targets)];
+                List<string> code = [.. declaration, .. initCommands, .. Program(_program.TargetSpan)];
 
                 groupCode.Add(code);
             }
@@ -49,7 +49,7 @@ class DrlPostProcessor : IPostProcessor
                 for (int i = 0; i < program.MultiFileIndices.Count; i++)
                 {
                     var (start, end) = program.GetTargetRange(i);
-                    var targets = program.Targets.GetRange(start, end - start);
+                    var targets = program.GetTargetSpan(start, end - start);
                     List<string> code =
                     [
                         "from DRCF import *"
@@ -114,15 +114,16 @@ class DrlPostProcessor : IPostProcessor
             return code;
         }
 
-        List<string> Program(IReadOnlyList<SystemTarget> systemTargets)
+        List<string> Program(ReadOnlySpan<SystemTarget> systemTargets)
         {
             List<string> code = [];
             Tool? currentTool = null;
 
             // Targets
 
-            foreach (var systemTarget in systemTargets)
+            for (int i = 0; i < systemTargets.Length; i++)
             {
+                var systemTarget = systemTargets[i];
                 var programTarget = systemTarget.ProgramTargets[0];
                 var target = programTarget.Target;
                 var tool = target.Tool;
@@ -146,8 +147,8 @@ class DrlPostProcessor : IPostProcessor
                     var r = jointTarget.Joints;
                     var d = new double[6];
 
-                    for (int i = 0; i < 6; i++)
-                        d[i] = _system.Robot.RadianToDegree(r[i], i);
+                    for (int j = 0; j < 6; j++)
+                        d[j] = _system.Robot.RadianToDegree(r[j], j);
 
                     var speed = GetAxisSpeed();
                     moveText = $"movej({NumbersToPose(d)}, {speed}, r={zoneName})";

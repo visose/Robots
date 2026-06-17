@@ -6,7 +6,8 @@ public class Custom : Command
     readonly Dictionary<Manufacturers, string> _customCommands = [];
     readonly Dictionary<Manufacturers, string> _customDeclarations = [];
 
-    public Custom(string name = "CustomCommand", Manufacturers manufacturer = Manufacturers.All, string? command = null, string? declaration = null) : base(name)
+    public Custom(string name = "CustomCommand", Manufacturers manufacturer = Manufacturers.All, string? command = null, string? declaration = null, bool runBefore = false)
+        : base(name, runBefore)
     {
         AddCommand(manufacturer, command, declaration);
     }

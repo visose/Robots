@@ -5,10 +5,15 @@ namespace Robots;
 
 public class JointTarget : Target
 {
-    public double[] Joints { get; set; }
+    public double[] Joints { get; init => field = ValidateJoints(value); }
 
-    public JointTarget(double[] joints, Tool? tool = null, Speed? speed = null, Zone? zone = null, Command? command = null, Frame? frame = null, double[]? external = null)
-        : base(tool, speed, zone, command, frame, external)
+    public JointTarget(double[] joints, Tool? tool = null, Speed? speed = null, Zone? zone = null, Command? command = null, Frame? frame = null, double[]? external = null, string[]? externalCustom = null)
+        : base(tool, speed, zone, command, frame, external, externalCustom)
+    {
+        Joints = joints;
+    }
+
+    static double[] ValidateJoints(double[] joints)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(joints.Length, 6, nameof(joints));
         ArgumentOutOfRangeException.ThrowIfGreaterThan(joints.Length, 7, nameof(joints));
@@ -16,11 +21,14 @@ public class JointTarget : Target
         for (int i = 0; i < joints.Length; i++)
             _ = CheckFinite(joints[i], nameof(joints), $"Joint value {i} must be finite.");
 
-        Joints = joints;
+        return joints;
     }
 
     public JointTarget(double[] joints, Target target, double[]? external = null)
-        : this(joints, target.Tool, target.Speed, target.Zone, target.Command, target.Frame, external ?? target.External) { }
+        : this(joints, target.Tool, target.Speed, target.Zone, target.Command, target.Frame, external ?? target.External, target.ExternalCustom) { }
+
+    protected override Target WithProperties(Tool tool, Speed speed, Zone zone, Command command, Frame frame, double[] external, string[]? externalCustom) =>
+        new JointTarget(Joints, tool, speed, zone, command, frame, external, externalCustom);
 
     public static double[] Lerp(double[] a, double[] b, double t, double min, double max)
     {

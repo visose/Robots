@@ -63,7 +63,7 @@ class ProgramMotionPlanner
             }
 
             int robotJointCount = _robotSystem.GetRobotJointCount(programTarget.Group);
-            programTarget.Target = new JointTarget(kinematic.Joints.RangeSubset(0, robotJointCount), programTarget.Target);
+            programTarget.Target = new JointTarget(kinematic.Joints[..robotJointCount], programTarget.Target);
 
             if (_robotSystem.RequiresContinuation(programTarget.Group))
             {

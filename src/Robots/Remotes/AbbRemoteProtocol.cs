@@ -88,8 +88,6 @@ internal static class AbbRemoteProtocol
 
     static void ValidateRequest(AbbRemoteRequest request)
     {
-        ArgumentNullException.ThrowIfNull(request);
-
         if (string.IsNullOrWhiteSpace(request.Id))
             throw new JsonException("ABB remote request is missing id.");
 
@@ -111,8 +109,6 @@ internal static class AbbRemoteProtocol
 
     static void ValidateResponse(AbbRemoteResponse response)
     {
-        ArgumentNullException.ThrowIfNull(response);
-
         if (string.IsNullOrWhiteSpace(response.Id))
             throw new JsonException("ABB remote response is missing id.");
 

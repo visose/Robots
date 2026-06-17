@@ -255,7 +255,7 @@ public class PostProcessorTests
     [Test]
     public void UrProcessMotionWithTimeFails()
     {
-        var speed = new Speed { Time = 2 };
+        var speed = new Speed(time: 2);
         var program = CreateProcessProgram(TestRobots.UR10(), speed);
 
         Assert.That(program.Code, Is.Null);

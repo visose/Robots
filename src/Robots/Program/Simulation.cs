@@ -5,7 +5,7 @@ namespace Robots;
 
 public class SimulationPose(List<KinematicSolution> kinematics, int index)
 {
-    public List<KinematicSolution> Kinematics { get; internal set; } = kinematics;
+    public IReadOnlyList<KinematicSolution> Kinematics { get; internal set; } = kinematics.AsReadOnly();
     public int TargetIndex { get; internal set; } = index;
     public double CurrentTime { get; internal set; }
     public Plane GetLastPlane(int group)
@@ -71,7 +71,7 @@ class Simulation
         var prevJoints = previous.ProgramTargets.Map(x => x.Kinematics.Joints);
 
         var targets = systemTarget.Lerp(previous, _program.RobotSystem, time, previous.TotalTime, systemTarget.TotalTime);
-        CurrentSimulationPose.Kinematics = _program.RobotSystem.Kinematics(targets, prevJoints);
+        CurrentSimulationPose.Kinematics = _program.RobotSystem.Kinematics(targets, prevJoints).AsReadOnly();
         CurrentSimulationPose.TargetIndex = systemTarget.Index;
         CurrentSimulationPose.CurrentTime = time;
     }

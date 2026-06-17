@@ -1,6 +1,6 @@
 ﻿namespace Robots.Commands;
 
-public class SetAO(int ao, double value) : Command
+public class SetAO(int ao, double value, bool runBefore = false) : Command(runBefore: runBefore)
 {
     public int AO { get; } = ao;
     public double Value { get; } = CheckFinite(value, nameof(value));

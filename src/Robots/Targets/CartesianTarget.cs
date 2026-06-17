@@ -6,19 +6,18 @@ namespace Robots;
 public enum RobotConfigurations { None = 0, Shoulder = 1, Elbow = 2, Wrist = 4, Undefined = 8 }
 public enum Motions { Joint, Linear, Process }
 
-public class CartesianTarget(Plane plane, RobotConfigurations? configuration = null, Motions motion = Motions.Joint, Tool? tool = null, Speed? speed = null, Zone? zone = null, Command? command = null, Frame? frame = null, double[]? external = null)
-    : Target(tool, speed, zone, command, frame, external)
+public class CartesianTarget(Plane plane, RobotConfigurations? configuration = null, Motions motion = Motions.Joint, Tool? tool = null, Speed? speed = null, Zone? zone = null, Command? command = null, Frame? frame = null, double[]? external = null, string[]? externalCustom = null)
+    : Target(tool, speed, zone, command, frame, external, externalCustom)
 {
-    public Plane Plane { get; set => field = ValidatePlane(value); } = ValidatePlane(plane);
-    public RobotConfigurations? Configuration { get; set => field = ValidateConfiguration(value); } = ValidateConfiguration(configuration);
-    public Motions Motion
-    {
-        get;
-        set => field = ValidateMotion(value);
-    } = ValidateMotion(motion);
+    public Plane Plane { get; init => field = ValidatePlane(value); } = ValidatePlane(plane);
+    public RobotConfigurations? Configuration { get; init => field = ValidateConfiguration(value); } = ValidateConfiguration(configuration);
+    public Motions Motion { get; init => field = ValidateMotion(value); } = ValidateMotion(motion);
 
     public CartesianTarget(Plane plane, Target target, RobotConfigurations? configuration = null, Motions motion = Motions.Joint, double[]? external = null)
-        : this(plane, configuration, motion, target.Tool, target.Speed, target.Zone, target.Command, target.Frame, external ?? target.External) { }
+        : this(plane, configuration, motion, target.Tool, target.Speed, target.Zone, target.Command, target.Frame, external ?? target.External, target.ExternalCustom) { }
+
+    protected override Target WithProperties(Tool tool, Speed speed, Zone zone, Command command, Frame frame, double[] external, string[]? externalCustom) =>
+        new CartesianTarget(Plane, Configuration, Motion, tool, speed, zone, command, frame, external, externalCustom);
 
     public override string ToString()
     {

@@ -20,7 +20,7 @@ class ProgramPreflight(Program program)
         foreach (var target in targets)
             ValidateFrame(target);
 
-        _program.Attributes.AddRange(attributes);
+        _program.AddAttributes(attributes);
     }
 
     static ProgramTarget[] GetProgramTargets(List<SystemTarget> systemTargets) =>
@@ -216,7 +216,7 @@ class ProgramPreflight(Program program)
             return;
         }
 
-        frame.CoupledPlaneIndex = industrialSystem.GetPlaneIndex(frame);
+        programTarget.CoupledPlaneIndex = industrialSystem.GetPlaneIndex(frame);
     }
 
     void AddFrameError(string message, ProgramTarget programTarget) =>
@@ -232,16 +232,16 @@ class ProgramPreflight(Program program)
         switch (namedAttribute)
         {
             case Tool tool:
-                ReplaceTargetProperty(targets, attribute, tool, target => target.Tool, (target, value) => target.Tool = value);
+                ReplaceTargetProperty(targets, attribute, target => target.Tool, target => target.WithTool(tool));
                 break;
             case Frame frame:
-                ReplaceTargetProperty(targets, attribute, frame, target => target.Frame, (target, value) => target.Frame = value);
+                ReplaceTargetProperty(targets, attribute, target => target.Frame, target => target.WithFrame(frame));
                 break;
             case Speed speed:
-                ReplaceTargetProperty(targets, attribute, speed, target => target.Speed, (target, value) => target.Speed = value);
+                ReplaceTargetProperty(targets, attribute, target => target.Speed, target => target.WithSpeed(speed));
                 break;
             case Zone zone:
-                ReplaceTargetProperty(targets, attribute, zone, target => target.Zone, (target, value) => target.Zone = value);
+                ReplaceTargetProperty(targets, attribute, target => target.Zone, target => target.WithZone(zone));
                 break;
             case Command command:
                 ReplaceCommand(attribute, targets, command);
@@ -251,25 +251,13 @@ class ProgramPreflight(Program program)
 
     void ReplaceCommand(TargetProperty attribute, IReadOnlyList<ProgramTarget> targets, Command command)
     {
-        for (int i = 0; i < _program.InitCommands.Count; i++)
-        {
-            if (_program.InitCommands[i].Equals(attribute))
-                _program.InitCommands[i] = command;
-        }
+        _program.ReplaceInitCommand(attribute, command);
 
         foreach (var target in targets)
-        {
-            var group = target.Commands;
-
-            for (int i = 0; i < group.Count; i++)
-            {
-                if (group[i].Equals(attribute))
-                    group[i] = command;
-            }
-        }
+            target.ReplaceCommand(attribute, command);
     }
 
-    static void ReplaceTargetProperty<T>(IReadOnlyList<ProgramTarget> targets, TargetProperty attribute, T replacement, Func<Target, T> get, Action<Target, T> set)
+    static void ReplaceTargetProperty<T>(IReadOnlyList<ProgramTarget> targets, TargetProperty attribute, Func<Target, T> get, Func<Target, Target> replace)
         where T : TargetProperty
     {
         foreach (var programTarget in targets)
@@ -277,9 +265,7 @@ class ProgramPreflight(Program program)
             if (!get(programTarget.Target).Equals(attribute))
                 continue;
 
-            var target = programTarget.Target.ShallowClone();
-            set(target, replacement);
-            programTarget.Target = target;
+            programTarget.Target = replace(programTarget.Target);
         }
     }
 }

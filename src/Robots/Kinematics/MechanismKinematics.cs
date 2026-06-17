@@ -103,7 +103,7 @@ abstract class MechanismKinematics
 
             if (!(r.T0 - 1e-10 < n && n < r.T1 + 1e-10))
             {
-                solution.Errors.Add($"Axis {i + 1} is outside the permitted range.");
+                solution.AddError($"Axis {i + 1} is outside the permitted range.");
             }
         }
     }

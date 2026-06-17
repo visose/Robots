@@ -4,12 +4,12 @@ namespace Robots;
 
 public abstract class IndustrialSystem : RobotSystem
 {
-    public List<MechanicalGroup> MechanicalGroups { get; }
+    public IReadOnlyList<MechanicalGroup> MechanicalGroups { get; }
 
     internal IndustrialSystem(SystemAttributes attributes, List<MechanicalGroup> mechanicalGroups)
         : base(attributes, GetDefaultPose(mechanicalGroups))
     {
-        MechanicalGroups = mechanicalGroups;
+        MechanicalGroups = mechanicalGroups.AsReadOnly();
 
         foreach (var group in mechanicalGroups)
         {

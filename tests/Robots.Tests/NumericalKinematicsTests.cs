@@ -14,7 +14,7 @@ public class NumericalKinematicsTests
 
         JointTarget startTarget = new(startJoints);
         CartesianTarget endTarget = new(endPlane, motion: Motions.Joint);
-        var program = new Program("NumericalJointMove", robot, [new SimpleToolpath() { startTarget, endTarget }]);
+        var program = new Program("NumericalJointMove", robot, [new SimpleToolpath(startTarget, endTarget)]);
 
         Assert.That(program.Errors, Is.Empty);
         Assert.That(program.Code, Is.Not.Null);

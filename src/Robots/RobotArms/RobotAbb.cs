@@ -18,7 +18,7 @@ public class RobotAbb : RobotArm
             : new SphericalWristKinematics(this);
     }
 
-    public static double ABBDegreeToRadian(double degree, int i)
+    static double ABBDegreeToRadian(double degree, int i)
     {
         double radian = degree.ToRadians();
         if (i == 1) radian = -radian + PI * 0.5;

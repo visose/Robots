@@ -35,7 +35,7 @@ class MechanicalGroupKinematics
             CopyJoints(solution.Joints, external, externalKinematics);
             AddPlanes(externalKinematics, planes, ref planeIndex);
 
-            solution.Errors.AddRange(externalKinematics.Errors);
+            solution.AddErrors(externalKinematics.Errors);
 
             if (external == coupledMechanism)
                 coupledPlane = externalKinematics.Planes[^1];
@@ -54,7 +54,7 @@ class MechanicalGroupKinematics
         CopyJoints(solution.Joints, robot, robotKinematics);
         AddPlanes(robotKinematics, planes, ref planeIndex);
         solution.Configuration = robotKinematics.Configuration;
-        solution.Errors.AddRange(robotKinematics.Errors);
+        solution.AddErrors(robotKinematics.Errors);
 
         Plane toolPlane = target.Tool.Tcp;
         var lastPlane = planes[planeIndex - 1];
@@ -100,12 +100,10 @@ class MechanicalGroupKinematics
 
     static Target WithCoupledFrame(Target target, Plane coupledPlane)
     {
-        target = target.ShallowClone();
-        var coupledFrame = target.Frame.ShallowClone();
-        var plane = coupledFrame.Plane;
+        var frame = target.Frame;
+        var plane = frame.Plane;
         plane.Orient(ref coupledPlane);
-        coupledFrame.Plane = plane;
-        target.Frame = coupledFrame;
-        return target;
+        var coupledFrame = new Frame(plane, frame.CoupledMechanism, frame.CoupledMechanicalGroup, frame.HasName ? frame.Name : null, frame.UseController, frame.Number);
+        return target.WithFrame(coupledFrame);
     }
 }

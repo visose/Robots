@@ -1,6 +1,6 @@
 ﻿namespace Robots.Commands;
 
-public class PulseDO(int @do, double length = 0.2) : Command
+public class PulseDO(int @do, double length = 0.2, bool runBefore = false) : Command(runBefore: runBefore)
 {
     public int DO { get; } = @do;
 

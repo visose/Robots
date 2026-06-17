@@ -10,7 +10,7 @@ public class RobotFanuc : RobotArm
         : base(model, Manufacturers.Fanuc, payload, basePlane, baseMesh, joints) { }
     private protected override SphericalWristKinematics CreateSolver() => new(this);
 
-    public static double FanucDegreeToRadian(double degree, int i)
+    static double FanucDegreeToRadian(double degree, int i)
     {
         double radian = degree.ToRadians();
         if (i == 1) radian = -radian + PI * 0.5;

@@ -19,6 +19,7 @@
 
 - Fail fast. Throw when required data is missing, invalid, or an invariant is broken.
 - Use `null` only for genuinely optional or lifecycle-driven values. Validate deserialized configuration immediately after loading.
+- Nullable reference types are enabled; avoid redundant null-only guards on non-nullable parameters. Validation that also happens to check null, such as `ThrowIfNullOrWhiteSpace`, is fine when the non-null validation is useful.
 - Prefer current C# syntax when it removes ceremony without hiding intent.
 - Order C# `using` directives by source: `System`, third-party, `Rhino`, `Grasshopper`, then `Robots`; keep normal imports before aliases/static imports within each group.
 - Leave a blank line above unbraced single-statement `if`s unless they are the first statement in a block.

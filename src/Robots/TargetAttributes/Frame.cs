@@ -10,8 +10,7 @@ public class Frame : TargetProperty, IEquatable<Frame>
     /// Reference frame of plane for a target
     /// </summary>
 
-    Plane _plane;
-    public ref Plane Plane => ref _plane;
+    public Plane Plane { get; }
     public int CoupledMechanism { get; }
     public int CoupledMechanicalGroup { get; }
 
@@ -24,8 +23,6 @@ public class Frame : TargetProperty, IEquatable<Frame>
     /// Used only in KUKA to load from the BASE_DATA array.
     /// </summary>
     public int? Number { get; }
-    internal int CoupledPlaneIndex { get; set; }
-
     public bool IsCoupled => CoupledMechanicalGroup != -1;
 
     public Frame(Plane plane, int coupledMechanism = -1, int coupledMechanicalGroup = -1, string? name = null, bool useController = false, int? number = null)
@@ -47,8 +44,6 @@ public class Frame : TargetProperty, IEquatable<Frame>
             ArgumentOutOfRangeException.ThrowIfLessThan(number.Value, 1, nameof(number));
     }
 
-    public Frame ShallowClone() => (Frame)MemberwiseClone();
-
     public override int GetHashCode() => Plane.GetHashCode();
     public override bool Equals(object? obj) => obj is Frame other && Equals(other);
 
@@ -62,7 +57,6 @@ public class Frame : TargetProperty, IEquatable<Frame>
             && CoupledMechanicalGroup == other.CoupledMechanicalGroup
             && UseController == other.UseController
             && Number == other.Number
-            && CoupledPlaneIndex == other.CoupledPlaneIndex
             && _name == other._name;
     }
 

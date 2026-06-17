@@ -118,12 +118,7 @@ static class TestRobots
 
     public static SimpleToolpath Toolpath(params Target[] targets)
     {
-        var toolpath = new SimpleToolpath();
-
-        foreach (var target in targets)
-            toolpath.Add(target);
-
-        return toolpath;
+        return new(targets);
     }
 
     public static string FlattenCode(Program program)

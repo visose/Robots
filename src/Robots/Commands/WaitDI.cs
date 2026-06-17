@@ -1,6 +1,6 @@
 ﻿namespace Robots.Commands;
 
-public class WaitDI(int di, bool value = true) : Command
+public class WaitDI(int di, bool value = true, bool runBefore = false) : Command(runBefore: runBefore)
 {
     public int DI { get; } = di;
     public bool Value { get; } = value;

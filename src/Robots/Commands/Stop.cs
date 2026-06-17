@@ -2,10 +2,8 @@
 
 namespace Robots.Commands;
 
-public class Stop : Command
+public class Stop(bool runBefore = false) : Command(runBefore: runBefore)
 {
-    public Stop() { }
-
     protected override void Populate()
     {
         _commands.Add(Manufacturers.ABB, (_, _) => "Stop;");

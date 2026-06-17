@@ -1,6 +1,6 @@
 ﻿namespace Robots.Commands;
 
-public class SetDO(int @do, bool value) : Command
+public class SetDO(int @do, bool value, bool runBefore = false) : Command(runBefore: runBefore)
 {
     public int DO { get; } = @do;
     public bool Value { get; } = value;

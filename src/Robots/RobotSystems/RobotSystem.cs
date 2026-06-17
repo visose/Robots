@@ -113,7 +113,10 @@ public abstract class RobotSystem
         int externalCount = GetExternalJointCount(group);
 
         if (externalCount > 0)
-            return allJoints.RangeSubset(GetRobotJointCount(group), externalCount);
+        {
+            int robotJointCount = GetRobotJointCount(group);
+            return allJoints[robotJointCount..(robotJointCount + externalCount)];
+        }
 
         if (RedundantJointIndex(group) is int index && target.External.Length == 1)
         {

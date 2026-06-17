@@ -12,7 +12,7 @@ public interface IProgram
     RobotSystem RobotSystem { get; }
     List<List<List<string>>>? Code { get; }
     bool HasSimulation { get; }
-    List<int> MultiFileIndices { get; }
+    IReadOnlyList<int> MultiFileIndices { get; }
     void Save(string folder);
 }
 
@@ -55,17 +55,23 @@ public class Program : IProgram
 
     readonly Simulation? _simulation;
     readonly List<ProgramIssue> _issues = [];
-    readonly HashSet<string> _warnings = [];
-    readonly HashSet<string> _errors = [];
+    readonly HashSet<string> _uniqueWarnings = [];
+    readonly HashSet<string> _uniqueErrors = [];
+    readonly List<string> _warnings = [];
+    readonly List<string> _errors = [];
+    readonly List<int> _multiFileIndices = [];
+    readonly List<TargetProperty> _attributes = [];
+    readonly List<Command> _initCommands;
+    readonly SystemTarget[] _targets;
 
     public string Name { get; }
     public RobotSystem RobotSystem { get; }
-    public List<SystemTarget> Targets { get; }
-    public List<int> MultiFileIndices { get; }
-    public List<TargetProperty> Attributes { get; } = [];
-    public List<Command> InitCommands { get; }
-    public List<string> Warnings { get; } = [];
-    public List<string> Errors { get; } = [];
+    public IReadOnlyList<SystemTarget> Targets { get; }
+    public IReadOnlyList<int> MultiFileIndices { get; }
+    public IReadOnlyList<TargetProperty> Attributes { get; }
+    public IReadOnlyList<Command> InitCommands { get; }
+    public IReadOnlyList<string> Warnings { get; }
+    public IReadOnlyList<string> Errors { get; }
     public List<List<List<string>>>? Code { get; }
     public double Duration { get; internal set; }
     internal IReadOnlyList<ProgramIssue> Issues => _issues;
@@ -79,7 +85,13 @@ public class Program : IProgram
     public Program(string name, RobotSystem robotSystem, IReadOnlyList<IToolpath> toolpaths, Commands.Group? initCommands = null, IReadOnlyList<int>? multiFileIndices = null, double stepSize = 1.0)
     {
         RobotSystem = robotSystem;
-        InitCommands = initCommands?.Flatten().ToList() ?? [];
+        _initCommands = initCommands?.Flatten().ToList() ?? [];
+        MultiFileIndices = _multiFileIndices.AsReadOnly();
+        Attributes = _attributes.AsReadOnly();
+        InitCommands = _initCommands.AsReadOnly();
+        Warnings = _warnings.AsReadOnly();
+        Errors = _errors.AsReadOnly();
+
         var targets = CreateSystemTargets(toolpaths);
 
         if (targets.Count > 0)
@@ -101,11 +113,12 @@ public class Program : IProgram
             targets = targets.GetRange(0, 1);
         }
 
-        Targets = targets;
+        _targets = [.. targets];
+        Targets = Array.AsReadOnly(_targets);
 
         Name = name;
         CheckName(name, robotSystem);
-        MultiFileIndices = FixMultiFileIndices(multiFileIndices, Targets.Count);
+        _multiFileIndices.AddRange(FixMultiFileIndices(multiFileIndices, _targets.Length));
 
         if (Errors.Count == 0)
         {
@@ -117,10 +130,22 @@ public class Program : IProgram
     }
 
     internal void AddError(IssueKind kind, string message, int? targetIndex = null, int? robotGroup = null, string? source = null) =>
-        AddIssue(IssueLevel.Error, kind, Errors, _errors, message, targetIndex, robotGroup, source);
+        AddIssue(IssueLevel.Error, kind, _errors, _uniqueErrors, message, targetIndex, robotGroup, source);
 
     internal void AddWarning(IssueKind kind, string message, int? targetIndex = null, int? robotGroup = null, string? source = null) =>
-        AddIssue(IssueLevel.Warning, kind, Warnings, _warnings, message, targetIndex, robotGroup, source);
+        AddIssue(IssueLevel.Warning, kind, _warnings, _uniqueWarnings, message, targetIndex, robotGroup, source);
+
+    internal void AddAttributes(IEnumerable<TargetProperty> attributes) =>
+        _attributes.AddRange(attributes);
+
+    internal void ReplaceInitCommand(TargetProperty attribute, Command command)
+    {
+        for (int i = 0; i < _initCommands.Count; i++)
+        {
+            if (_initCommands[i].Equals(attribute))
+                _initCommands[i] = command;
+        }
+    }
 
     void AddIssue(IssueLevel level, IssueKind kind, List<string> messages, HashSet<string> unique, string message, int? targetIndex, int? robotGroup, string? source)
     {
@@ -251,6 +276,10 @@ public class Program : IProgram
 
         return (start, end);
     }
+
+    internal ReadOnlySpan<SystemTarget> TargetSpan => _targets;
+
+    internal ReadOnlySpan<SystemTarget> GetTargetSpan(int start, int length) => _targets.AsSpan(start, length);
 
     public IProgram CustomCode(List<List<List<string>>> code) => new CustomProgram(Name, RobotSystem, MultiFileIndices, code);
 

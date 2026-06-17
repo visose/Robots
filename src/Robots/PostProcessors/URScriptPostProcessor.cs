@@ -100,7 +100,8 @@ class URScriptPostProcessor : IPostProcessor
                 {
                     var cartesian = (CartesianTarget)target;
                     var plane = cartesian.Plane;
-                    plane.Orient(ref target.Frame.Plane);
+                    var framePlane = target.Frame.Plane;
+                    plane.Orient(ref framePlane);
                     plane.InverseOrient(ref _system.BasePlane);
                     var axisAngle = _system.PlaneToNumbers(plane);
                     string pose = $"p[{axisAngle[0]:0.#####}, {axisAngle[1]:0.#####}, {axisAngle[2]:0.#####}, {axisAngle[3]:0.#####}, {axisAngle[4]:0.#####}, {axisAngle[5]:0.#####}]";

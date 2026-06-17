@@ -8,9 +8,6 @@ internal sealed class AbbRemoteServer(PcSdkAbbClient client)
 {
     public async Task<int> RunAsync(TextReader input, TextWriter output)
     {
-        ArgumentNullException.ThrowIfNull(input);
-        ArgumentNullException.ThrowIfNull(output);
-
         string id = "unknown";
         AbbRemoteResponse response;
 
