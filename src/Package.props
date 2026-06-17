@@ -2,10 +2,10 @@
 
   <PropertyGroup>
     <Product>Robots</Product>
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
     <Authors>Robots Authors</Authors>
-    <Description>Create and simulate ABB, KUKA, UR, and Staubli robot programs.</Description>
-    <PackageTags>Robots;ABB;KUKA;UR;Staubli;Robotics</PackageTags>
+    <Description>Create and simulate ABB, KUKA, UR, Staubli, Franka Emika, Doosan, Fanuc, Igus, and Jaka robot programs in Rhino 8, Grasshopper, and .NET.</Description>
+    <PackageTags>Robots;Robotics;ABB;KUKA;UR;Staubli;FrankaEmika;Doosan;Fanuc;Igus;Jaka</PackageTags>
     <PackageProjectUrl>https://github.com/visose/robots</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Icon>robots-icon.png</Icon>

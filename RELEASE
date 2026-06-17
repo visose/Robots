@@ -1,3 +1,17 @@
+- version: 2.1.0
+  changes:
+  - Added UR Process motion output through `movep` and exposed Process in the Create Target motion list.
+  - Added explicit Grasshopper persistence for Frame, Speed, and Zone parameters and safer value duplication for persistent Robots parameters.
+  - Changed Grasshopper Command, Target, Tool, and Toolpath parameters to be volatile runtime data instead of unsupported persistent data.
+  - Changed Grasshopper preview toggles to appear only for preview-capable Robots objects.
+  - Changed robot targets, target attributes, toolpaths, and command groups to use init-only or read-only public APIs.
+  - Changed `Command.RunBefore` to init-only.
+  - Changed public API to reduce unused surface area.
+  - Fixed robot library XML quaternions that are not normalized, matching Rhino's previous behavior.
+  - Fixed Grasshopper value-list placement when adding Create Target inputs.
+  - Fixed robot library help links opening from Grasshopper.
+  - Fixed KUKA external-axis speed output.
+
 - version: 2.0.0
   changes:
   - Dropped Rhino 7 and .NET Framework plug-in builds; this release targets Rhino 8 on .NET 8.

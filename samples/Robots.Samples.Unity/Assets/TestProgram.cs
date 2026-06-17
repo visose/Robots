@@ -12,14 +12,14 @@ namespace Robots.Samples.Unity
 
             var planeA = Plane.WorldYZ;
             var planeB = Plane.WorldYZ;
-            planeA.Origin = new Point3d(300, 200, 610);
-            planeB.Origin = new Point3d(300, -200, 610);
-            var speed = new Speed(300);
-            var targetA = new CartesianTarget(planeA, RobotConfigurations.Wrist, Motions.Joint);
-            var targetB = new CartesianTarget(planeB, null, Motions.Linear, speed: speed);
-            var toolpath = new SimpleToolpath() { targetA, targetB };
+            planeA.Origin = new(300, 200, 610);
+            planeB.Origin = new(300, -200, 610);
+            Speed speed = new(300);
+            CartesianTarget targetA = new(planeA, RobotConfigurations.Wrist, Motions.Joint);
+            CartesianTarget targetB = new(planeB, null, Motions.Linear, speed: speed);
+            SimpleToolpath toolpath = new(targetA, targetB);
 
-            return new Program("TestProgram", robot, new[] { toolpath });
+            return new("TestProgram", robot, new[] { toolpath });
         }
 
         static async Task<RobotSystem> GetRobotAsync()
@@ -43,7 +43,7 @@ namespace Robots.Samples.Unity
 
         static async Task DownloadLibraryAsync()
         {
-            var online = new OnlineLibrary();
+            OnlineLibrary online = new();
             await online.UpdateLibraryAsync();
             var bartlett = online.Libraries["Bartlett"];
             await online.DownloadLibraryAsync(bartlett);

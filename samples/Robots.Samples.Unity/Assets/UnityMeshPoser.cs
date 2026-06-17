@@ -36,7 +36,7 @@ namespace Robots.Samples.Unity
             }
         }
 
-        public void Pose(List<KinematicSolution> solutions, Tool[] tools)
+        public void Pose(IReadOnlyList<KinematicSolution> solutions, Tool[] tools)
         {
             // TODO: tool display not implemented
 
