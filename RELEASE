@@ -1,3 +1,8 @@
+- version: 2.1.1
+  changes:
+  - Changed the Rhino package to target Rhino 8.21 or newer.
+  - Fixed older Create Program components failing after opening in newer versions.
+
 - version: 2.1.0
   changes:
   - Added UR Process motion output through `movep` and exposed Process in the Create Target motion list.

@@ -27,7 +27,7 @@ app.Add(
             sourceFolder: "artifacts/bin/Robots.Grasshopper/release",
             tags:
             [
-                "rh8_0-any"
+                "rh8_21-any"
             ],
             exclude:
             [

@@ -78,8 +78,8 @@ public class CreateProgramVariable() : Component(
 
     protected override void SolveComponent(IGH_DataAccess DA)
     {
-        var name = DA.Get<string>(InputIndex("Name"));
-        var robotSystem = DA.Get<RobotSystem>(InputIndex("Robot System"));
+        var name = DA.Get<string>(RequiredInputIndex("Name"));
+        var robotSystem = DA.Get<RobotSystem>(RequiredInputIndex("Robot System"));
 
         if (robotSystem != _robotSystem)
         {
@@ -116,7 +116,16 @@ public class CreateProgramVariable() : Component(
         }
     }
 
-    int InputIndex(string name) => Params.Input.FindIndex(p => p.Name == name);
+    int RequiredInputIndex(string name)
+    {
+        int index = InputIndex(name);
+
+        return index == -1
+            ? throw new InvalidOperationException($"Create Program input '{name}' is missing.")
+            : index;
+    }
+
+    int InputIndex(string name) => Params.Input.FindIndex(p => p.Name.EqualsIgnoreCase(name));
 
     T[] MaybeList<T>(IGH_DataAccess DA, string name)
     {
