@@ -1,31 +1,32 @@
-﻿using System.Collections;
-
-using static Robots.Util;
+﻿using static Robots.Util;
 
 namespace Robots;
 
-public abstract class Target(Tool? tool, Speed? speed, Zone? zone, Command? command, Frame? frame, double[]? external, string[]? externalCustom) : IToolpath, IReadOnlyList<Target>
+public abstract class Target : IToolpath
 {
+    protected Target(Tool? tool, Speed? speed, Zone? zone, Command? command, Frame? frame, double[]? external, string[]? externalCustom)
+    {
+        Tool = tool ?? Tool.Default;
+        Frame = frame ?? Frame.Default;
+        Speed = speed ?? Speed.Default;
+        Zone = zone ?? Zone.Default;
+        Command = command ?? Command.Default;
+        External = external ?? [];
+        ExternalCustom = externalCustom;
+        Targets = [this];
+    }
+
     public static Target Default { get; } = new JointTarget([0, HalfPI, 0, 0, 0, 0]);
 
-    public Tool Tool { get; init; } = tool ?? Tool.Default;
-    public Frame Frame { get; init; } = frame ?? Frame.Default;
-    public Speed Speed { get; init; } = speed ?? Speed.Default;
-    public Zone Zone { get; init; } = zone ?? Zone.Default;
-    public Command Command { get; init; } = command ?? Command.Default;
-    public double[] External { get; init => field = ValidateExternal(value); } = ValidateExternal(external ?? []);
-    public string[]? ExternalCustom { get; init; } = externalCustom;
+    public Tool Tool { get; init; }
+    public Frame Frame { get; init; }
+    public Speed Speed { get; init; }
+    public Zone Zone { get; init; }
+    public Command Command { get; init; }
+    public double[] External { get; init => field = ValidateExternal(value); }
+    public string[]? ExternalCustom { get; init; }
 
-    public IReadOnlyList<Target> Targets => this;
-    public int Count => 1;
-    public Target this[int index]
-    {
-        get
-        {
-            ArgumentOutOfRangeException.ThrowIfNotEqual(index, 0);
-            return this;
-        }
-    }
+    public IReadOnlyList<Target> Targets { get; }
 
     internal Target WithTool(Tool tool) =>
         WithProperties(tool, Speed, Zone, Command, Frame, External, ExternalCustom);
@@ -41,13 +42,6 @@ public abstract class Target(Tool? tool, Speed? speed, Zone? zone, Command? comm
 
     protected abstract Target WithProperties(Tool tool, Speed speed, Zone zone, Command command, Frame frame, double[] external, string[]? externalCustom);
 
-    public IEnumerator<Target> GetEnumerator()
-    {
-        yield return this;
-    }
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
     static double[] ValidateExternal(double[] external)
     {
         for (int i = 0; i < external.Length; i++)
@@ -55,4 +49,5 @@ public abstract class Target(Tool? tool, Speed? speed, Zone? zone, Command? comm
 
         return external;
     }
+
 }
