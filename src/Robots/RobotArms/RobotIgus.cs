@@ -1,13 +1,12 @@
 ﻿using static System.Math;
-using Rhino.Geometry;
 using static Robots.Util;
 
 namespace Robots;
 
 public class RobotIgus : RobotArm
 {
-    internal RobotIgus(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints)
-        : base(model, Manufacturers.Igus, payload, basePlane, baseMesh, joints) { }
+    internal RobotIgus(string model, double payload, MechanismBase mechanismBase, Joint[] joints)
+        : base(model, Manufacturers.Igus, payload, mechanismBase, joints) { }
 
     private protected override SphericalWristKinematics CreateSolver() => new(this);
 

@@ -15,6 +15,7 @@ public abstract class Joint
     public double MaxSpeed { get; internal set; }
     public Plane Plane { get; set; }
     public Mesh Mesh { get; set; } = default!;
+    public Mesh CollisionMesh { get; set; } = default!;
 }
 
 public class BaseJoint

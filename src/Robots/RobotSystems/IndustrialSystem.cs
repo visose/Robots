@@ -38,7 +38,10 @@ public abstract class IndustrialSystem : RobotSystem
         return new(
             [.. groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY)).SelectMany(p => p).ToArray())],
             [.. groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.Mesh).Prepend(e.BaseMesh)).SelectMany(p => p).ToArray())]
-            );
+            )
+        {
+            CollisionMeshes = [.. groups.Select(g => g.Externals.Append(g.Robot).Select(e => e.Joints.Select(j => j.CollisionMesh).Prepend(e.BaseCollisionMesh)).SelectMany(p => p).ToArray())]
+        };
     }
 
     internal override double Payload(int group)

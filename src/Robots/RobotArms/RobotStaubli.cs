@@ -5,8 +5,8 @@ namespace Robots;
 
 public class RobotStaubli : RobotArm
 {
-    internal RobotStaubli(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints)
-        : base(model, Manufacturers.Staubli, payload, basePlane, baseMesh, joints) { }
+    internal RobotStaubli(string model, double payload, MechanismBase mechanismBase, Joint[] joints)
+        : base(model, Manufacturers.Staubli, payload, mechanismBase, joints) { }
 
     private protected override SphericalWristKinematics CreateSolver() => new(this);
 

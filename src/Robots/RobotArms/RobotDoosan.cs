@@ -1,13 +1,12 @@
 ﻿using static System.Math;
-using Rhino.Geometry;
 using static Robots.Util;
 
 namespace Robots;
 
 public class RobotDoosan : RobotArm
 {
-    internal RobotDoosan(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints)
-        : base(model, Manufacturers.Doosan, payload, basePlane, baseMesh, joints) { }
+    internal RobotDoosan(string model, double payload, MechanismBase mechanismBase, Joint[] joints)
+        : base(model, Manufacturers.Doosan, payload, mechanismBase, joints) { }
 
     private protected override SphericalWristKinematics CreateSolver() => new(this);
 

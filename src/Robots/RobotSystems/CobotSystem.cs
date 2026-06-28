@@ -19,7 +19,10 @@ public abstract class CobotSystem : RobotSystem
         return new(
             [[.. robot.Joints.Select(j => j.Plane).Prepend(Plane.WorldXY)]],
             [[.. robot.Joints.Select(j => j.Mesh).Prepend(robot.BaseMesh)]]
-            );
+            )
+        {
+            CollisionMeshes = [[.. robot.Joints.Select(j => j.CollisionMesh).Prepend(robot.BaseCollisionMesh)]]
+        };
     }
 
     public override double DegreeToRadian(double degree, int i, int group = 0)

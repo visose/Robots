@@ -10,6 +10,7 @@ public class Tool : TargetProperty
     public double Weight { get; }
     public Point3d Centroid { get; }
     public Mesh Mesh { get; }
+    public Mesh CollisionMesh { get; }
 
     /// <summary>
     /// Specifies that it will use a tool that exists in the controller and does not need to be defined in the generated program.
@@ -21,7 +22,7 @@ public class Tool : TargetProperty
     /// </summary>
     public int? Number { get; }
 
-    public Tool(Plane tcp, string name = "DefaultTool", double weight = 0, Point3d? centroid = null, Mesh? mesh = null, IReadOnlyList<Plane>? calibrationPlanes = null, bool useController = false, int? number = null)
+    public Tool(Plane tcp, string name = "DefaultTool", double weight = 0, Point3d? centroid = null, Mesh? mesh = null, IReadOnlyList<Plane>? calibrationPlanes = null, bool useController = false, int? number = null, Mesh? collisionMesh = null)
         : base(name)
     {
         if (!tcp.IsValid)
@@ -30,6 +31,7 @@ public class Tool : TargetProperty
         Weight = CheckNonNegative(weight, nameof(weight));
         Centroid = (centroid is null) ? tcp.Origin : (Point3d)centroid;
         Mesh = mesh ?? FileIO.EmptyMesh;
+        CollisionMesh = collisionMesh ?? Mesh;
         UseController = number is not null || useController;
         Number = number;
 

@@ -10,6 +10,7 @@ public abstract class Mechanism
     public double Payload { get; }
     public ref Plane BasePlane => ref _basePlane;
     public Mesh BaseMesh { get; }
+    public Mesh BaseCollisionMesh { get; }
     public Joint[] Joints { get; }
     public bool MovesRobot { get; }
     public Mesh DisplayMesh { get; }
@@ -17,13 +18,14 @@ public abstract class Mechanism
 
     internal MechanismKinematics Solver { get => field ??= CreateSolver(); private set; }
 
-    internal Mechanism(string model, Manufacturers manufacturer, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints, bool movesRobot)
+    internal Mechanism(string model, Manufacturers manufacturer, double payload, MechanismBase mechanismBase, Joint[] joints, bool movesRobot)
     {
         Manufacturer = manufacturer;
         Model = $"{manufacturer}.{model}";
         Payload = payload;
-        BasePlane = basePlane;
-        BaseMesh = baseMesh;
+        BasePlane = mechanismBase.Plane;
+        BaseMesh = mechanismBase.Mesh;
+        BaseCollisionMesh = mechanismBase.CollisionMesh;
         MovesRobot = movesRobot;
         Joints = joints;
         InitJoints();

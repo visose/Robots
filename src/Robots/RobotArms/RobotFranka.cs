@@ -1,13 +1,12 @@
 ﻿using static System.Math;
-using Rhino.Geometry;
 using static Robots.Util;
 
 namespace Robots;
 
 public class RobotFranka : RobotArm
 {
-    internal RobotFranka(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints)
-        : base(model, Manufacturers.FrankaEmika, payload, basePlane, baseMesh, joints) { }
+    internal RobotFranka(string model, double payload, MechanismBase mechanismBase, Joint[] joints)
+        : base(model, Manufacturers.FrankaEmika, payload, mechanismBase, joints) { }
 
     private protected override NumericalKinematics CreateSolver() => new(this, true, 2);
 

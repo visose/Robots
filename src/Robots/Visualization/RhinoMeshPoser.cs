@@ -17,11 +17,20 @@ public class RhinoMeshPoser : IMeshPoser
     public Mesh[] Meshes { get; }
 
     readonly DefaultPose _default;
+    readonly Mesh[][] _defaultMeshes;
+    readonly bool _collisionMeshes;
 
     public RhinoMeshPoser(RobotSystem robot)
+        : this(robot.DefaultPose, collisionMeshes: false) { }
+
+    internal static RhinoMeshPoser CreateCollision(RobotSystem robot) => new(robot.DefaultPose, collisionMeshes: true);
+
+    RhinoMeshPoser(DefaultPose defaultPose, bool collisionMeshes)
     {
-        _default = robot.DefaultPose;
-        Meshes = new Mesh[_default.Meshes.Sum(m => m.Length + 1)];
+        _default = defaultPose;
+        _defaultMeshes = collisionMeshes ? defaultPose.CollisionMeshes : defaultPose.Meshes;
+        _collisionMeshes = collisionMeshes;
+        Meshes = new Mesh[_defaultMeshes.Sum(m => m.Length + 1)];
     }
 
     public void Pose(IReadOnlyList<KinematicSolution> solutions, Tool[] tools)
@@ -29,7 +38,10 @@ public class RhinoMeshPoser : IMeshPoser
         int index = 0;
 
         for (int i = 0; i < solutions.Count; i++)
-            index = AddGroupPose(Meshes, index, solutions[i].Planes, tools[i].Mesh, _default.Planes[i], _default.Meshes[i]);
+        {
+            var toolMesh = _collisionMeshes ? tools[i].CollisionMesh : tools[i].Mesh;
+            index = AddGroupPose(Meshes, index, solutions[i].Planes, toolMesh, _default.Planes[i], _defaultMeshes[i]);
+        }
     }
 
     static int AddGroupPose(Mesh[] meshes, int index, Plane[] planes, Mesh tool, Plane[] defaultPlanes, Mesh[] defaultMeshes)

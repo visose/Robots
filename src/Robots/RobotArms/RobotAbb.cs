@@ -1,13 +1,12 @@
 ﻿using static System.Math;
-using Rhino.Geometry;
 using static Robots.Util;
 
 namespace Robots;
 
 public class RobotAbb : RobotArm
 {
-    internal RobotAbb(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints)
-        : base(model, Manufacturers.ABB, payload, basePlane, baseMesh, joints) { }
+    internal RobotAbb(string model, double payload, MechanismBase mechanismBase, Joint[] joints)
+        : base(model, Manufacturers.ABB, payload, mechanismBase, joints) { }
 
     private protected override MechanismKinematics CreateSolver()
     {

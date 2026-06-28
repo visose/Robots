@@ -10,7 +10,10 @@ public interface IPostProcessor
 
 public enum Manufacturers { ABB, KUKA, UR, Staubli, FrankaEmika, Doosan, Fanuc, Igus, Jaka, All };
 
-public record DefaultPose(Plane[][] Planes, Mesh[][] Meshes);
+public record DefaultPose(Plane[][] Planes, Mesh[][] Meshes)
+{
+    public Mesh[][] CollisionMeshes { get; init; } = Meshes;
+}
 record SystemAttributes(string Name, string? Controller, IO IO, Plane BasePlane, IPostProcessor? PostProcessor);
 
 public abstract class RobotSystem

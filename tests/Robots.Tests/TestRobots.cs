@@ -23,12 +23,19 @@ static class TestRobots
         </RobotArm>
         """;
 
-    static readonly string AbbIrb120Xml = $"""
+    public static readonly string AbbIrb120Xml = $"""
         <RobotSystem name="IRB120" manufacturer="ABB">
           <Mechanisms>
             {AbbIrb120ArmXml}
           </Mechanisms>
         </RobotSystem>
+        """;
+
+    public const string GripperToolXml = """
+        <Tool name="Gripper">
+          <Tcp x="0" y="0" z="0" q1="1" q2="0" q3="0" q4="0"/>
+          <Mass weight="0" x="0" y="0" z="0"/>
+        </Tool>
         """;
 
     static readonly string FanucLrMateXml = """

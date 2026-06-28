@@ -48,7 +48,7 @@ public class Collision
         _environmentPlane = environmentPlane;
 
         var motionSamples = GetMotionSamples();
-        int meshCount = new RhinoMeshPoser(_program.RobotSystem).Meshes.Length + (_environment is null ? 0 : 1);
+        int meshCount = RhinoMeshPoser.CreateCollision(_program.RobotSystem).Meshes.Length + (_environment is null ? 0 : 1);
         _first = ValidateSet(first, nameof(first), meshCount);
         _second = ValidateSet(second, nameof(second), meshCount);
         ValidateEnvironmentPlane(motionSamples, environmentPlane);
@@ -113,7 +113,7 @@ public class Collision
 
             int divisions = GetDivisions(systemTarget, previous);
 
-            RhinoMeshPoser meshPoser = new(_program.RobotSystem);
+            var meshPoser = RhinoMeshPoser.CreateCollision(_program.RobotSystem);
 
             int j = position == 1 ? 0 : 1;
             var prevJoints = previous.ProgramTargets.Map(x => x.Kinematics.Joints);

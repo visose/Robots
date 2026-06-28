@@ -1,13 +1,12 @@
 ﻿using static System.Math;
-using Rhino.Geometry;
 using static Robots.Util;
 
 namespace Robots;
 
 public class RobotUR : RobotArm
 {
-    internal RobotUR(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints)
-        : base(model, Manufacturers.UR, payload, basePlane, baseMesh, joints) { }
+    internal RobotUR(string model, double payload, MechanismBase mechanismBase, Joint[] joints)
+        : base(model, Manufacturers.UR, payload, mechanismBase, joints) { }
 
     private protected override OffsetWristKinematics CreateSolver() => new(this);
     public override double DegreeToRadian(double degree, int i) => degree * (PI / 180.0);

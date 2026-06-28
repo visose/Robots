@@ -1,13 +1,12 @@
 ﻿using static System.Math;
-using Rhino.Geometry;
 using static Robots.Util;
 
 namespace Robots;
 
 public class RobotFanuc : RobotArm
 {
-    internal RobotFanuc(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints)
-        : base(model, Manufacturers.Fanuc, payload, basePlane, baseMesh, joints) { }
+    internal RobotFanuc(string model, double payload, MechanismBase mechanismBase, Joint[] joints)
+        : base(model, Manufacturers.Fanuc, payload, mechanismBase, joints) { }
     private protected override SphericalWristKinematics CreateSolver() => new(this);
 
     static double FanucDegreeToRadian(double degree, int i)

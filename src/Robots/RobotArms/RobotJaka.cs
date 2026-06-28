@@ -5,8 +5,8 @@ namespace Robots;
 
 public class RobotJaka : RobotArm
 {
-    internal RobotJaka(string model, double payload, Plane basePlane, Mesh baseMesh, Joint[] joints)
-        : base(model, Manufacturers.Jaka, payload, basePlane, baseMesh, joints) { }
+    internal RobotJaka(string model, double payload, MechanismBase mechanismBase, Joint[] joints)
+        : base(model, Manufacturers.Jaka, payload, mechanismBase, joints) { }
 
     private protected override SphericalWristKinematics CreateSolver() => new(this);
 

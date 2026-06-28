@@ -1,5 +1,6 @@
 ﻿using System.Xml;
 using System.Xml.Linq;
+using Rhino.DocObjects;
 using Rhino.FileIO;
 using Rhino.Geometry;
 
@@ -11,7 +12,11 @@ public enum ElementType { RobotSystem, Tool, Frame }
 
 public static class FileIO
 {
+    const string CollisionLayerSuffix = ".Collision";
+
     public static readonly Mesh EmptyMesh = new();
+
+    readonly record struct MechanismMeshes(Mesh[] Display, Mesh[] Collision);
 
     public static List<string> List(ElementType type)
     {
@@ -32,13 +37,26 @@ public static class FileIO
     public static RobotSystem ParseRobotSystem(string xml, Plane basePlane, IPostProcessor? postProcessor = null)
     {
         var element = XElement.Parse(xml);
-        return CreateRobotSystem(element, basePlane, false, postProcessor, libraryFile: null);
+        return CreateRobotSystem(element, basePlane, null, postProcessor);
+    }
+
+    internal static RobotSystem ParseRobotSystem(string xml, Plane basePlane, File3dm meshDoc, IPostProcessor? postProcessor = null)
+    {
+        var element = XElement.Parse(xml);
+        return CreateRobotSystem(element, basePlane, meshDoc, postProcessor);
+    }
+
+    internal static Tool ParseTool(string xml, File3dm meshDoc)
+    {
+        var element = XElement.Parse(xml);
+        return CreateTool(element, meshDoc);
     }
 
     public static RobotSystem LoadRobotSystem(string name, Plane basePlane, bool loadMeshes = true, IPostProcessor? postProcessor = null)
     {
         var (element, file) = LoadElement(name, ElementType.RobotSystem);
-        return CreateRobotSystem(element, basePlane, loadMeshes, postProcessor, file);
+        var meshDoc = loadMeshes ? GetRhinoDoc(file) : null;
+        return CreateRobotSystem(element, basePlane, meshDoc, postProcessor);
     }
 
     public static Tool LoadTool(string name)
@@ -112,7 +130,7 @@ public static class FileIO
             var elements = GetTypeElements(root, type);
 
             var element = elements
-                ?.FirstOrDefault(e => e.GetString("name").EqualsIgnoreCase(name));
+                .FirstOrDefault(e => e.GetString("name").EqualsIgnoreCase(name));
 
             if (element is not null)
                 return (element, file);
@@ -121,7 +139,7 @@ public static class FileIO
         throw new ArgumentException($"{type} \"{name}\" was not found.");
     }
 
-    static RobotSystem CreateRobotSystem(XElement element, Plane basePlane, bool loadMeshes, IPostProcessor? postProcessor, string? libraryFile)
+    static RobotSystem CreateRobotSystem(XElement element, Plane basePlane, File3dm? meshDoc, IPostProcessor? postProcessor)
     {
         var typeName = element.Name.LocalName;
 
@@ -139,13 +157,10 @@ public static class FileIO
         if (!Enum.TryParse<Manufacturers>(manufacturerName, out var manufacturer))
             throw new ArgumentException($"Manufacturer '{manufacturerName}' is invalid.");
 
-        var meshDoc = loadMeshes
-            ? GetRhinoDoc(libraryFile.NotNull("Robot systems loaded with meshes must come from a library file."))
-            : null;
         var mechanicalGroups = new List<MechanicalGroup>();
 
         foreach (var mechanicalGroup in element.Elements(XName.Get("Mechanisms")))
-            mechanicalGroups.Add(CreateMechanicalGroup(mechanicalGroup, loadMeshes, meshDoc));
+            mechanicalGroups.Add(CreateMechanicalGroup(mechanicalGroup, meshDoc));
 
         if (mechanicalGroups.Count == 0)
             throw new ArgumentException("Robot systems must contain at least one mechanical group.");
@@ -178,23 +193,19 @@ public static class FileIO
         }
     }
 
-    static MechanicalGroup CreateMechanicalGroup(XElement element, bool loadMeshes, File3dm? meshDoc)
+    static MechanicalGroup CreateMechanicalGroup(XElement element, File3dm? meshDoc)
     {
         var index = element.GetIntOrNull("group") ?? 0;
         var mechanisms = new List<Mechanism>();
 
         foreach (var mechanismElement in element.Elements())
-            mechanisms.Add(CreateMechanism(mechanismElement, loadMeshes, meshDoc));
+            mechanisms.Add(CreateMechanism(mechanismElement, meshDoc));
 
         return new(index, mechanisms);
     }
 
-    static Mechanism CreateMechanism(XElement element, bool loadMeshes, File3dm? meshDoc)
+    static Mechanism CreateMechanism(XElement element, File3dm? meshDoc)
     {
-        var systemElement = element.Parent?.Parent
-            ?? throw new ArgumentException($"Mechanism element '{element.Name}' must be nested under a robot system.");
-
-        var systemName = systemElement.GetString("name");
         var mechanism = element.Name.LocalName;
         var model = element.GetString("model");
         var manufacturer = Enum.Parse<Manufacturers>(element.GetString("manufacturer"));
@@ -208,12 +219,8 @@ public static class FileIO
         var jointElements = element.GetElement("Joints").Descendants().ToList();
         var jointCount = jointElements.Count;
         var joints = new Joint[jointCount];
-
-        var meshes = loadMeshes
-            ? GetMechanismMeshes(meshDoc.NotNull($"Robot system '{systemName}' is missing its mesh document."), mechanism, model, manufacturer, jointCount)
-            : [.. Enumerable.Repeat(EmptyMesh, jointCount + 1)];
-
-        Mesh baseMesh = meshes[0];
+        var meshes = GetMechanismMeshes(meshDoc, mechanism, model, manufacturer, jointCount);
+        MechanismBase mechanismBase = new(basePlane, meshes.Display[0], meshes.Collision[0]);
 
         for (int i = 0; i < jointCount; i++)
         {
@@ -229,13 +236,14 @@ public static class FileIO
             var range = new Interval(minRange, maxRange);
 
             double maxSpeed = jointElement.GetDoubleAttribute("maxspeed");
-            Mesh mesh = meshes[i + 1];
+            Mesh mesh = meshes.Display[i + 1];
+            Mesh collisionMesh = meshes.Collision[i + 1];
             int number = jointElement.GetIntAttribute("number") - 1;
 
             joints[i] = jointElement.Name.LocalName switch
             {
-                "Revolute" => new RevoluteJoint { Index = i, Number = number, A = a, D = d, Alpha = α, Theta = θ, Sign = sign, Range = range, MaxSpeed = maxSpeed, Mesh = mesh },
-                "Prismatic" => new PrismaticJoint { Index = i, Number = number, A = a, D = d, Alpha = α, Theta = θ, Sign = sign, Range = range, MaxSpeed = maxSpeed, Mesh = mesh },
+                "Revolute" => new RevoluteJoint { Index = i, Number = number, A = a, D = d, Alpha = α, Theta = θ, Sign = sign, Range = range, MaxSpeed = maxSpeed, Mesh = mesh, CollisionMesh = collisionMesh },
+                "Prismatic" => new PrismaticJoint { Index = i, Number = number, A = a, D = d, Alpha = α, Theta = θ, Sign = sign, Range = range, MaxSpeed = maxSpeed, Mesh = mesh, CollisionMesh = collisionMesh },
                 _ => throw new ArgumentException("Invalid joint type.")
             };
         }
@@ -244,21 +252,21 @@ public static class FileIO
         {
             "RobotArm" => manufacturer switch
             {
-                Manufacturers.ABB => new RobotAbb(model, payload, basePlane, baseMesh, joints),
-                Manufacturers.KUKA => new RobotKuka(model, payload, basePlane, baseMesh, joints),
-                Manufacturers.UR => new RobotUR(model, payload, basePlane, baseMesh, joints),
-                Manufacturers.Staubli => new RobotStaubli(model, payload, basePlane, baseMesh, joints),
-                Manufacturers.FrankaEmika => new RobotFranka(model, payload, basePlane, baseMesh, joints),
-                Manufacturers.Doosan => new RobotDoosan(model, payload, basePlane, baseMesh, joints),
-                Manufacturers.Fanuc => new RobotFanuc(model, payload, basePlane, baseMesh, joints),
-                Manufacturers.Igus => new RobotIgus(model, payload, basePlane, baseMesh, joints),
-                Manufacturers.Jaka => new RobotJaka(model, payload, basePlane, baseMesh, joints),
+                Manufacturers.ABB => new RobotAbb(model, payload, mechanismBase, joints),
+                Manufacturers.KUKA => new RobotKuka(model, payload, mechanismBase, joints),
+                Manufacturers.UR => new RobotUR(model, payload, mechanismBase, joints),
+                Manufacturers.Staubli => new RobotStaubli(model, payload, mechanismBase, joints),
+                Manufacturers.FrankaEmika => new RobotFranka(model, payload, mechanismBase, joints),
+                Manufacturers.Doosan => new RobotDoosan(model, payload, mechanismBase, joints),
+                Manufacturers.Fanuc => new RobotFanuc(model, payload, mechanismBase, joints),
+                Manufacturers.Igus => new RobotIgus(model, payload, mechanismBase, joints),
+                Manufacturers.Jaka => new RobotJaka(model, payload, mechanismBase, joints),
                 Manufacturers.All => throw new ArgumentException("Manufacturer 'All' is not valid for a robot arm."),
                 _ => throw Unsupported(manufacturer),
             },
-            "Positioner" => new Positioner(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
-            "Track" => new Track(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
-            "Custom" => new Custom(model, manufacturer, payload, basePlane, baseMesh, joints, movesRobot),
+            "Positioner" => new Positioner(model, manufacturer, payload, mechanismBase, joints, movesRobot),
+            "Track" => new Track(model, manufacturer, payload, mechanismBase, joints, movesRobot),
+            "Custom" => new Custom(model, manufacturer, payload, mechanismBase, joints, movesRobot),
             _ => throw new ArgumentException($"Unknown mechanism type '{element.Name}'.")
         };
     }
@@ -285,7 +293,7 @@ public static class FileIO
         }
     }
 
-    static Tool CreateTool(XElement element)
+    static Tool CreateTool(XElement element, File3dm? sourceMeshDoc = null)
     {
         var type = element.Name.LocalName;
 
@@ -304,8 +312,10 @@ public static class FileIO
         var useController = element.GetBoolOrDefault("useController");
         var number = element.GetIntOrNull("number");
 
-        Mesh mesh = GetToolMesh(name);
-        var tool = new Tool(plane, name, weight, centroid, mesh, useController: useController, number: number);
+        var meshDoc = sourceMeshDoc ?? GetRhinoDoc(name, ElementType.Tool);
+        Mesh mesh = GetToolMesh(meshDoc, name);
+        Mesh collisionMesh = GetToolCollisionMesh(meshDoc, name, mesh);
+        Tool tool = new(plane, name, weight, centroid, mesh, useController: useController, number: number, collisionMesh: collisionMesh);
         return tool;
     }
 
@@ -327,7 +337,7 @@ public static class FileIO
         var mechanism = couplingElement?.GetIntOrNull("mechanism") ?? -1;
         var group = couplingElement?.GetIntOrNull("group") ?? -1;
 
-        var frame = new Frame(plane, mechanism, group, name, useController, number);
+        Frame frame = new(plane, mechanism, group, name, useController, number);
         return frame;
     }
 
@@ -375,51 +385,116 @@ public static class FileIO
         return File3dm.Read(path3dm);
     }
 
-    static List<Mesh> GetMechanismMeshes(File3dm doc, string mechanism, string model, Manufacturers manufacturer, int jointCount)
+    static MechanismMeshes GetMechanismMeshes(File3dm? doc, string mechanism, string model, Manufacturers manufacturer, int jointCount)
     {
         var meshCount = jointCount + 1;
-        var parentName = $"{mechanism}.{manufacturer}.{model}";
-        var parentLayer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(parentName));
+
+        if (doc is null)
+        {
+            var meshes = EmptyMeshes(meshCount);
+            return new(meshes, meshes);
+        }
+
+        var parentName = GetMechanismLayerName(mechanism, model, manufacturer);
+        var displayMeshes = GetMechanismDisplayMeshes(doc, parentName, meshCount);
+        var collisionMeshes = GetMechanismCollisionMeshes(doc, parentName, displayMeshes);
+
+        return new(displayMeshes, collisionMeshes);
+    }
+
+    static Mesh[] GetMechanismDisplayMeshes(File3dm doc, string parentName, int meshCount)
+    {
+        var parentLayer = FindLayer(doc, parentName);
 
         if (parentLayer is null)
-            return [.. Enumerable.Repeat(EmptyMesh, meshCount)];
+            return EmptyMeshes(meshCount);
 
-        var meshes = new List<Mesh>(meshCount);
+        var meshes = new Mesh[meshCount];
 
         for (int i = 0; i < meshCount; i++)
         {
             var layerName = i.Text();
-            var jointLayer = doc.AllLayers.FirstOrDefault(l => l.Name.EqualsIgnoreCase(layerName) && (l.ParentLayerId == parentLayer.Id));
-
-            if (jointLayer is null)
-            {
-                meshes.Add(EmptyMesh);
-                continue;
-            }
-
-            var mesh = doc.Objects.FirstOrDefault(x => x.Attributes.LayerIndex == jointLayer.Index && x.Geometry is Mesh)?.Geometry as Mesh ?? EmptyMesh;
-            meshes.Add(mesh);
+            meshes[i] = GetChildLayerMesh(doc, parentLayer, layerName, append: false) ?? EmptyMesh;
         }
 
         return meshes;
     }
 
-    static Mesh GetToolMesh(string name)
+    static Mesh[] GetMechanismCollisionMeshes(File3dm doc, string displayParentName, Mesh[] displayMeshes)
     {
-        const ElementType type = ElementType.Tool;
-        var doc = GetRhinoDoc(name, type);
-        var layerName = $"{type}.{name}";
-        var layer = doc.AllLayers.FirstOrDefault(x => x.Name.EqualsIgnoreCase(layerName))
+        var parentLayer = FindLayer(doc, $"{displayParentName}{CollisionLayerSuffix}");
+
+        if (parentLayer is null)
+            return displayMeshes;
+
+        var meshes = new Mesh[displayMeshes.Length];
+
+        for (int i = 0; i < meshes.Length; i++)
+        {
+            var layerName = i.Text();
+            meshes[i] = GetChildLayerMesh(doc, parentLayer, layerName, append: true) ?? displayMeshes[i];
+        }
+
+        return meshes;
+    }
+
+    static Mesh[] EmptyMeshes(int count) => [.. Enumerable.Repeat(EmptyMesh, count)];
+
+    static string GetMechanismLayerName(string mechanism, string model, Manufacturers manufacturer) =>
+        $"{mechanism}.{manufacturer}.{model}";
+
+    static Mesh GetToolMesh(File3dm doc, string name)
+    {
+        var layerName = GetToolLayerName(name);
+        var layer = FindLayer(doc, layerName)
             ?? throw new ArgumentException($"\"{name}\" is not in the 3dm file.");
 
-        var objects = doc.Objects.Where(x => x.Attributes.LayerIndex == layer.Index);
-        var meshes = objects.Select(o => o.Geometry).OfType<Mesh>();
-        var mesh = new Mesh();
+        return GetLayerMesh(doc, layer.Index, append: true) ?? EmptyMesh;
+    }
+
+    static Mesh GetToolCollisionMesh(File3dm doc, string name, Mesh displayMesh)
+    {
+        var layerName = $"{GetToolLayerName(name)}{CollisionLayerSuffix}";
+        var layer = FindLayer(doc, layerName);
+
+        return layer is null
+            ? displayMesh
+            : GetLayerMesh(doc, layer.Index, append: true) ?? displayMesh;
+    }
+
+    static string GetToolLayerName(string name) => $"{ElementType.Tool}.{name}";
+
+    static Layer? FindLayer(File3dm doc, string name) =>
+        doc.AllLayers.FirstOrDefault(layer => layer.Name.EqualsIgnoreCase(name));
+
+    static Mesh? GetChildLayerMesh(File3dm doc, Layer parentLayer, string layerName, bool append)
+    {
+        var layer = doc.AllLayers.FirstOrDefault(l => l.Name.EqualsIgnoreCase(layerName) && l.ParentLayerId == parentLayer.Id);
+        return layer is null
+            ? null
+            : GetLayerMesh(doc, layer.Index, append);
+    }
+
+    static Mesh? GetLayerMesh(File3dm doc, int layerIndex, bool append)
+    {
+        var meshes = doc.Objects
+            .Where(x => x.Attributes.LayerIndex == layerIndex)
+            .Select(x => x.Geometry)
+            .OfType<Mesh>();
+
+        if (!append)
+            return meshes.FirstOrDefault();
+
+        Mesh mesh = new();
+        var hasMesh = false;
 
         foreach (var part in meshes)
+        {
             mesh.Append(part);
+            hasMesh = true;
+        }
 
-        return mesh;
+        return hasMesh ? mesh : null;
     }
 
     // Extensions
