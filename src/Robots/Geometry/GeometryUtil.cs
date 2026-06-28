@@ -517,6 +517,15 @@ public static class GeometryUtil
         }
     }
 
+    extension(Plane plane)
+    {
+        internal Plane WithOrigin(double x, double y, double z)
+        {
+            plane.Origin = new(CheckFinite(x, nameof(x)), CheckFinite(y, nameof(y)), CheckFinite(z, nameof(z)));
+            return plane;
+        }
+    }
+
     extension(ref Plane a)
     {
         internal void InverseOrient(ref Plane b)

@@ -78,6 +78,25 @@ public class ProgramTests
         });
     }
 
+    [Test]
+    public void ProgramUsesSpeedTimeForDuration()
+    {
+        var robot = TestRobots.UR10();
+        Plane planeA = Plane.WorldZX.WithOrigin(200, 100, 600);
+        Plane planeB = Plane.WorldZX.WithOrigin(700, 250, 600);
+        CartesianTarget start = new(planeA, RobotConfigurations.Wrist, Motions.Joint);
+        CartesianTarget end = new(planeB, motion: Motions.Linear, speed: new(time: 2));
+
+        Program program = new("P", robot, [TestRobots.Toolpath(start, end)]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(program.Duration, Is.EqualTo(2).Within(1e-12));
+            Assert.That(program.Targets[1].DeltaTime, Is.EqualTo(2).Within(1e-12));
+        });
+    }
+
     static IEnumerable<TestCaseData> SamplePrograms()
     {
         yield return new TestCaseData(Abb()).SetName("ABB sample program");

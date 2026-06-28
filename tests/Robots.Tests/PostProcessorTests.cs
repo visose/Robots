@@ -32,7 +32,7 @@ public class PostProcessorTests
     [TestCase(Manufacturers.Staubli, 6, "movej(joints[0], DefaultTool, mdesc0000)")]
     [TestCase(Manufacturers.FrankaEmika, 7, "  motion = JointMotion([0, 0, 0, 0, 0, 0, 0])")]
     [TestCase(Manufacturers.Doosan, 6, "movej([180, -90, -90, 0, 0, -180], a=180, v=18, r=DefaultZone)")]
-    [TestCase(Manufacturers.Fanuc, 6, ":J P[1] 0% FINE ;")]
+    [TestCase(Manufacturers.Fanuc, 6, ":J P[1] 10% FINE ;")]
     [TestCase(Manufacturers.Igus, 6, """<Joint AbortCondition="False" Nr="1" Source="Numerical" velPercent="100" acc="90" smooth="0" a1="0.000" a2="90.000" a3="90.000" a4="-0.000" a5="-0.000" a6="0.000" e1="0" e2="0" e3="0" Descr="" />""")]
     [TestCase(Manufacturers.Jaka, 6, "movj(endPosJ,0,180,5000,2.0)")]
     public void PostProcessorsGenerateRepresentativeJointMove(Manufacturers manufacturer, int jointCount, string expected)
@@ -159,7 +159,7 @@ public class PostProcessorTests
         var code = TestRobots.FlattenCode(program);
 
         int beforeIndex = code.IndexOf(":CALL BEFORE ;", StringComparison.Ordinal);
-        int motionIndex = code.IndexOf(":J P[1] 0% FINE ;", StringComparison.Ordinal);
+        int motionIndex = code.IndexOf(":J P[1] 10% FINE ;", StringComparison.Ordinal);
         int afterIndex = code.IndexOf(":CALL AFTER ;", StringComparison.Ordinal);
 
         Assert.That(program.Errors, Is.Empty);
@@ -230,6 +230,52 @@ public class PostProcessorTests
         Assert.That(program.Errors, Is.Empty);
         Assert.That(code, Does.Contain("$VEL_EXTAX[1] = "));
         Assert.That(code, Does.Not.Contain("$VEL_AXIS[0]"));
+    }
+
+    [Test]
+    public void FanucCartesianJointMoveUsesPercentSpeed()
+    {
+        var robot = TestRobots.FanucLrMate();
+        JointTarget start = new([0.1, 1.1, 0.2, 0.15, 0.4, 0.2]);
+        var plane = robot.Kinematics([start])[0].Planes[^1];
+        CartesianTarget target = new(plane, motion: Motions.Joint);
+
+        Program program = new("P", robot, [TestRobots.Toolpath(start, target)]);
+        Assert.That(program.Errors, Is.Empty);
+
+        var code = TestRobots.FlattenCode(program);
+
+        Assert.That(code, Does.Contain(":J P[2] 10% FINE ;"));
+    }
+
+    [Test]
+    public void FanucCustomToolFailsUntilToolSupportIsImplemented()
+    {
+        var tcp = Plane.WorldXY;
+        tcp.Origin = new(10, 0, 0);
+        var tool = new Tool(tcp, "CustomTool");
+        var target = new JointTarget(new double[6], tool: tool);
+        var robot = TestRobots.PostProcessorRobot(Manufacturers.Fanuc, 6);
+
+        var program = new Program("P", robot, [TestRobots.Toolpath(target)]);
+
+        Assert.That(program.Code, Is.Null);
+        Assert.That(program.Errors, Has.One.EqualTo("Fanuc postprocessor currently supports only the default tool/TCP."));
+    }
+
+    [Test]
+    public void FanucCustomFrameFailsUntilFrameSupportIsImplemented()
+    {
+        var plane = Plane.WorldXY;
+        plane.Origin = new(10, 0, 0);
+        var frame = new Frame(plane, name: "CustomFrame");
+        var target = new JointTarget(new double[6], frame: frame);
+        var robot = TestRobots.PostProcessorRobot(Manufacturers.Fanuc, 6);
+
+        var program = new Program("P", robot, [TestRobots.Toolpath(target)]);
+
+        Assert.That(program.Code, Is.Null);
+        Assert.That(program.Errors, Has.One.EqualTo("Fanuc postprocessor currently supports only the default frame."));
     }
 
     [Test]

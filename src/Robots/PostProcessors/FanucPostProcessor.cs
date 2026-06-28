@@ -23,6 +23,7 @@ class FanucPostProcessor : IPostProcessor
 
             PostProcessorUtil.RejectMultiRobot(program, _system, "Fanuc");
             PostProcessorUtil.RejectExternalAxes(program, _system, "Fanuc");
+            RejectUnsupportedToolFrame();
 
             for (int i = 0; i < _system.MechanicalGroups.Count; i++)
             {
@@ -54,7 +55,7 @@ class FanucPostProcessor : IPostProcessor
 
                 foreach (var tool in attributes.OfType<Tool>().Where(t => !t.UseController))
                 {
-                    foreach (string codeLine in Tool(tool))
+                    foreach (string codeLine in ToolCode(tool))
                         code.Add($": {codeLine}");
                 }
 
@@ -113,7 +114,7 @@ class FanucPostProcessor : IPostProcessor
                     joints = joints.Map((x, i) => _system.MechanicalGroups[group].RadianToDegree(x, i));
                     joints[2] -= joints[1];
 
-                    int percentSpeed = GetAxisSpeed(programTarget, _system.MechanicalGroups[group].Robot.Joints);
+                    int percentSpeed = GetAxisSpeed(programTarget);
 
                     moveText = $"J P[{pointCounter}] {percentSpeed:0}% {zone} ;";
 
@@ -146,7 +147,7 @@ class FanucPostProcessor : IPostProcessor
                                 string cfe = elbow ? "D" : "U";
                                 string cfb = shoulder ? "B" : "T";
 
-                                int percentSpeed = GetAxisSpeed(programTarget, _system.MechanicalGroups[group].Robot.Joints);
+                                int percentSpeed = GetAxisSpeed(programTarget);
 
                                 moveText = $"J P[{pointCounter}] {percentSpeed:0}% {zone} ;";
 
@@ -211,7 +212,26 @@ class FanucPostProcessor : IPostProcessor
         static string TargetCommand(string command) =>
             command.StartsWith(':') ? command : $":{command}";
 
-        List<string> Tool(Tool tool)
+        void RejectUnsupportedToolFrame()
+        {
+            if (_program.Attributes.OfType<Tool>().Any(tool => !ReferenceEquals(tool, Tool.Default)))
+            {
+                _program.AddError(
+                    IssueKind.UnsupportedPostProcessorFeature,
+                    "Fanuc postprocessor currently supports only the default tool/TCP.",
+                    source: "Fanuc");
+            }
+
+            if (_program.Attributes.OfType<Frame>().Any(frame => !ReferenceEquals(frame, Frame.Default)))
+            {
+                _program.AddError(
+                    IssueKind.UnsupportedPostProcessorFeature,
+                    "Fanuc postprocessor currently supports only the default frame.",
+                    source: "Fanuc");
+            }
+        }
+
+        List<string> ToolCode(Tool tool)
         {
             var tcp = tool.Tcp;
             var values = _system.PlaneToNumbers(tcp);
@@ -229,22 +249,12 @@ class FanucPostProcessor : IPostProcessor
 
         // TODO: Frames are not used.
 
-        static int GetAxisSpeed(ProgramTarget programTarget, Joint[] joints)
+        static int GetAxisSpeed(ProgramTarget programTarget)
         {
-            double percentSpeed;
-            var jointTarget = (JointTarget)programTarget.Target;
-
-            if (programTarget.SystemTarget.DeltaTime > 0)
-            {
-                percentSpeed = Math.Round(programTarget.SystemTarget.MinTime / programTarget.SystemTarget.DeltaTime * 100.0, 0);
-            }
-            else
-            {
-                const double maxTranslationSpeed = 1000.0;
-                double leadAxisSpeed = joints.Max(j => j.MaxSpeed);
-                double percentage = Math.Min(jointTarget.Speed.TranslationSpeed / maxTranslationSpeed, 1);
-                percentSpeed = Math.Round(percentage * leadAxisSpeed, 0);
-            }
+            var speed = programTarget.Target.Speed;
+            const double maxTranslationSpeed = 1000.0;
+            double percentage = Math.Min(speed.TranslationSpeed / maxTranslationSpeed, 1);
+            double percentSpeed = Math.Max(1.0, Math.Round(percentage * 100.0, 0));
 
             return (int)percentSpeed;
         }

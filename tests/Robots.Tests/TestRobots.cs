@@ -31,6 +31,24 @@ static class TestRobots
         </RobotSystem>
         """;
 
+    static readonly string FanucLrMateXml = """
+        <RobotSystem name="LRMate" manufacturer="Fanuc">
+          <Mechanisms>
+            <RobotArm model="LRMate" manufacturer="Fanuc" payload="7">
+              <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
+              <Joints>
+                <Revolute number="1" a="0" d="330" minrange="-170" maxrange="170" maxspeed="350"/>
+                <Revolute number="2" a="260" d="0" minrange="-100" maxrange="145" maxspeed="350"/>
+                <Revolute number="3" a="75" d="0" minrange="-170" maxrange="170" maxspeed="400"/>
+                <Revolute number="4" a="0" d="290" minrange="-190" maxrange="190" maxspeed="450"/>
+                <Revolute number="5" a="0" d="0" minrange="-140" maxrange="140" maxspeed="450"/>
+                <Revolute number="6" a="0" d="80" minrange="-360" maxrange="360" maxspeed="720"/>
+              </Joints>
+            </RobotArm>
+          </Mechanisms>
+        </RobotSystem>
+        """;
+
     static readonly string AbbIrb120WithCustomExternalXml = $"""
         <RobotSystem name="IRB120External" manufacturer="ABB">
           <Mechanisms>
@@ -90,6 +108,8 @@ static class TestRobots
         Parse(PostProcessorXml(Manufacturers.KUKA, 6, model: "KR", external: CustomExternalXml(Manufacturers.KUKA), io: ""));
 
     public static RobotSystem UR10() => Parse(UR10Xml);
+
+    public static RobotSystem FanucLrMate() => Parse(FanucLrMateXml);
 
     public static RobotSystem PostProcessorRobot(Manufacturers manufacturer, int jointCount) =>
         manufacturer == Manufacturers.UR && jointCount == 6

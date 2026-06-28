@@ -155,7 +155,7 @@ class ProgramMotionPlanner
             prevJoints = kinematics.Map(k => k.Joints);
             interTarget.SetTargetKinematics(kinematics, _program, prevStep);
 
-            var speed = GetSegmentSpeed(interTarget, prevStep);
+            var speed = GetSegmentSpeed(interTarget, prevStep, 1.0 / divisions);
 
             if ((step > 1) && ShouldStartNewKeyframe(modes, speed.DeltaTime, lastDeltaTime))
             {
@@ -368,13 +368,13 @@ class ProgramMotionPlanner
 
     static double[][] MergePreviousJoints(double[][]? previous, IReadOnlyList<KinematicSolution> kinematics, IReadOnlyList<EndpointMode> modes, EndpointMode mode)
     {
-        Exception.ThrowIfNotEqual(modes.Count, kinematics.Count, $"Endpoint modes count ({modes.Count}) must match the kinematics count ({kinematics.Count}).");
+        ArgumentOutOfRangeException.ThrowIfNotEqual(modes.Count, kinematics.Count, nameof(modes));
 
         var result = new double[kinematics.Count][];
 
         if (previous is not null)
         {
-            Exception.ThrowIfNotEqual(previous.Length, result.Length, $"Previous joints must contain {result.Length} set(s), but {previous.Length} were supplied.");
+            ArgumentOutOfRangeException.ThrowIfNotEqual(previous.Length, result.Length, nameof(previous));
 
             for (int i = 0; i < previous.Length; i++)
                 result[i] = previous[i] ?? throw new ArgumentException($"Previous joints for group {i} are missing.");
@@ -415,14 +415,14 @@ class ProgramMotionPlanner
         }
     }
 
-    SegmentSpeed GetSegmentSpeed(SystemTarget systemTarget, SystemTarget previous)
+    SegmentSpeed GetSegmentSpeed(SystemTarget systemTarget, SystemTarget previous, double timeScale)
     {
         double slowestDelta = 0;
         double slowestMinTime = 0;
 
         foreach (var target in systemTarget.ProgramTargets)
         {
-            var speed = GetTargetSpeed(target, previous.ProgramTargets[target.Group]);
+            var speed = GetTargetSpeed(target, previous.ProgramTargets[target.Group], timeScale);
             slowestDelta = Max(slowestDelta, speed.DeltaTime);
             slowestMinTime = Max(slowestMinTime, speed.MinTime);
             target.LeadingJoint = speed.LeadingJoint;
@@ -432,13 +432,13 @@ class ProgramMotionPlanner
         return new(slowestDelta, slowestMinTime);
     }
 
-    TargetSpeed GetTargetSpeed(ProgramTarget target, ProgramTarget prevTarget)
+    TargetSpeed GetTargetSpeed(ProgramTarget target, ProgramTarget prevTarget, double timeScale)
     {
         Plane prevPlane = target.GetPrevPlane(prevTarget);
         var joints = _robotSystem.GetJoints(target.Group);
         var axis = GetAxisSpeed(target, prevTarget, joints);
         var external = GetExternalSpeed(target, prevTarget, joints);
-        var deltaTimes = GetDeltaTimes(target, prevPlane, axis.Time, external.Time);
+        var deltaTimes = GetDeltaTimes(target, prevPlane, axis.Time, external.Time, timeScale);
         var delta = MaxDelta(deltaTimes);
         int leadingJoint = axis.LeadingJoint;
         var speedType = ClassifySpeed(target, delta.Time, delta.Index, external.LeadingJoint, ref leadingJoint);
@@ -499,12 +499,12 @@ class ProgramMotionPlanner
         return new(deltaTime, leadingJoint);
     }
 
-    static Vector6d GetDeltaTimes(ProgramTarget target, Plane prevPlane, double axisTime, double externalTime)
+    static Vector6d GetDeltaTimes(ProgramTarget target, Plane prevPlane, double axisTime, double externalTime, double timeScale)
     {
         var speed = target.Target.Speed;
 
         if (speed.Time > 0)
-            return new(speed.Time, double.MaxValue, axisTime, externalTime, 0, 0);
+            return new(speed.Time * timeScale, 0, 0, 0, 0, 0);
 
         double distance = prevPlane.Origin.DistanceTo(target.Plane.Origin);
         double linearTime = distance / speed.TranslationSpeed;

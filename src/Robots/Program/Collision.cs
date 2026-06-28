@@ -99,12 +99,14 @@ public class Collision
             var meshPoser = new RhinoMeshPoser(_program.RobotSystem);
 
             int j = (systemTarget.Index == 1) ? 0 : 1;
+            var prevJoints = previous.ProgramTargets.Map(x => x.Kinematics.Joints);
 
             for (int i = j; i < divisions; i++)
             {
                 double t = i / (double)divisions;
                 var targets = systemTarget.Lerp(previous, _system, t, 0.0, 1.0);
-                var kinematics = _program.RobotSystem.Kinematics(targets);
+                var kinematics = _program.RobotSystem.Kinematics(targets, prevJoints);
+                prevJoints = kinematics.Map(k => k.Joints);
 
                 meshPoser.Pose(kinematics, systemTarget);
                 var meshes = meshPoser.Meshes;
