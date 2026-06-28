@@ -249,33 +249,78 @@ public class PostProcessorTests
     }
 
     [Test]
-    public void FanucCustomToolFailsUntilToolSupportIsImplemented()
+    public void FanucCustomToolUsesToolNumber()
     {
-        var tcp = Plane.WorldXY;
-        tcp.Origin = new(10, 0, 0);
-        var tool = new Tool(tcp, "CustomTool");
-        var target = new JointTarget(new double[6], tool: tool);
+        Tool tool = new(Plane.WorldXY.WithOrigin(10, 0, 0), "CustomTool");
+        JointTarget target = new([0, 0, 0, 0, 0, 0], tool: tool);
         var robot = TestRobots.PostProcessorRobot(Manufacturers.Fanuc, 6);
 
-        var program = new Program("P", robot, [TestRobots.Toolpath(target)]);
+        Program program = new("P", robot, [TestRobots.Toolpath(target)]);
+        var code = TestRobots.FlattenCode(program);
 
-        Assert.That(program.Code, Is.Null);
-        Assert.That(program.Errors, Has.One.EqualTo("Fanuc postprocessor currently supports only the default tool/TCP."));
+        Assert.That(program.Errors, Is.Empty);
+        Assert.That(code, Does.Contain(": UTOOL_NUM=1 ;"));
+        Assert.That(code, Does.Contain(": ! Tool 1 CustomTool TCP ;"));
+        Assert.That(code, Does.Contain("    UF : 0, UT : 1,"));
     }
 
     [Test]
-    public void FanucCustomFrameFailsUntilFrameSupportIsImplemented()
+    public void FanucCustomFrameUsesFrameNumber()
     {
-        var plane = Plane.WorldXY;
-        plane.Origin = new(10, 0, 0);
-        var frame = new Frame(plane, name: "CustomFrame");
-        var target = new JointTarget(new double[6], frame: frame);
+        Frame frame = new(Plane.WorldXY.WithOrigin(10, 0, 0), name: "CustomFrame");
+        JointTarget target = new([0, 0, 0, 0, 0, 0], frame: frame);
         var robot = TestRobots.PostProcessorRobot(Manufacturers.Fanuc, 6);
 
-        var program = new Program("P", robot, [TestRobots.Toolpath(target)]);
+        Program program = new("P", robot, [TestRobots.Toolpath(target)]);
+        var code = TestRobots.FlattenCode(program);
+
+        Assert.That(program.Errors, Is.Empty);
+        Assert.That(code, Does.Contain(": UFRAME_NUM=1 ;"));
+        Assert.That(code, Does.Contain(": ! Frame 1 CustomFrame ;"));
+        Assert.That(code, Does.Contain("    UF : 1, UT : 1,"));
+    }
+
+    [Test]
+    public void FanucControllerNumberedToolAndFrameUseConfiguredNumbers()
+    {
+        Tool tool = new(Plane.WorldXY, "ControllerTool", number: 7);
+        Frame frame = new(Plane.WorldXY, name: "ControllerFrame", number: 3);
+        JointTarget target = new([0, 0, 0, 0, 0, 0], tool: tool, frame: frame);
+        var robot = TestRobots.PostProcessorRobot(Manufacturers.Fanuc, 6);
+
+        Program program = new("P", robot, [TestRobots.Toolpath(target)]);
+        var code = TestRobots.FlattenCode(program);
+
+        Assert.That(program.Errors, Is.Empty);
+        Assert.That(code, Does.Contain("    UF : 3, UT : 7,"));
+        Assert.That(code, Does.Not.Contain("ControllerTool TCP"));
+        Assert.That(code, Does.Not.Contain("ControllerFrame"));
+    }
+
+    [Test]
+    public void FanucControllerToolWithoutNumberFails()
+    {
+        Tool tool = new(Plane.WorldXY, "ControllerTool", useController: true);
+        JointTarget target = new([0, 0, 0, 0, 0, 0], tool: tool);
+        var robot = TestRobots.PostProcessorRobot(Manufacturers.Fanuc, 6);
+
+        Program program = new("P", robot, [TestRobots.Toolpath(target)]);
 
         Assert.That(program.Code, Is.Null);
-        Assert.That(program.Errors, Has.One.EqualTo("Fanuc postprocessor currently supports only the default frame."));
+        Assert.That(program.Errors, Has.One.EqualTo("Fanuc controller tools require a tool number."));
+    }
+
+    [Test]
+    public void FanucControllerFrameWithoutNumberFails()
+    {
+        Frame frame = new(Plane.WorldXY, name: "ControllerFrame", useController: true);
+        JointTarget target = new([0, 0, 0, 0, 0, 0], frame: frame);
+        var robot = TestRobots.PostProcessorRobot(Manufacturers.Fanuc, 6);
+
+        Program program = new("P", robot, [TestRobots.Toolpath(target)]);
+
+        Assert.That(program.Code, Is.Null);
+        Assert.That(program.Errors, Has.One.EqualTo("Fanuc controller frames require a frame number."));
     }
 
     [Test]

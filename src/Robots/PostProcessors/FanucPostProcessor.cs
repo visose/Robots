@@ -13,6 +13,8 @@ class FanucPostProcessor : IPostProcessor
     {
         readonly SystemFanuc _system;
         readonly Program _program;
+        readonly Dictionary<Tool, int> _tools = [];
+        readonly Dictionary<Frame, int> _frames = [];
         public List<List<List<string>>> Code { get; }
 
         public PostInstance(SystemFanuc system, Program program)
@@ -23,7 +25,7 @@ class FanucPostProcessor : IPostProcessor
 
             PostProcessorUtil.RejectMultiRobot(program, _system, "Fanuc");
             PostProcessorUtil.RejectExternalAxes(program, _system, "Fanuc");
-            RejectUnsupportedToolFrame();
+            NumberToolsAndFrames();
 
             for (int i = 0; i < _system.MechanicalGroups.Count; i++)
             {
@@ -56,6 +58,12 @@ class FanucPostProcessor : IPostProcessor
                 foreach (var tool in attributes.OfType<Tool>().Where(t => !t.UseController))
                 {
                     foreach (string codeLine in ToolCode(tool))
+                        code.Add($": {codeLine}");
+                }
+
+                foreach (var frame in attributes.OfType<Frame>().Where(f => !f.UseController && !ReferenceEquals(f, Frame.Default)))
+                {
+                    foreach (string codeLine in FrameCode(frame))
                         code.Add($": {codeLine}");
                 }
 
@@ -106,6 +114,8 @@ class FanucPostProcessor : IPostProcessor
                 var target = programTarget.Target;
                 string moveText;
                 string zone = (target.Zone.IsFlyBy ? $"CNT{target.Zone.Distance}" : "FINE").NotNull("Zone name cannot be null.");
+                int frameNumber = _frames[target.Frame];
+                int toolNumber = _tools[target.Tool];
 
                 if (programTarget.IsJointTarget)
                 {
@@ -120,7 +130,7 @@ class FanucPostProcessor : IPostProcessor
 
                     pointsText.Add($"P[{pointCounter}]{{");
                     pointsText.Add($"   GP1:");
-                    pointsText.Add($"    UF : 0, UT : 1,");
+                    pointsText.Add($"    UF : {frameNumber}, UT : {toolNumber},");
                     pointsText.Add($"   J1  =  {joints[0],9:0.000} deg,   J2  =  {joints[1],9:0.000} deg,   J3  =  {joints[2],9:0.000} deg,");
                     pointsText.Add($"   J4  =  {joints[3],9:0.000} deg,   J5  =  {joints[4],9:0.000} deg,   J6  =  {joints[5],9:0.000} deg");
                     pointsText.Add($"}};");
@@ -153,7 +163,7 @@ class FanucPostProcessor : IPostProcessor
 
                                 pointsText.Add($"P[{pointCounter}]{{");
                                 pointsText.Add($"   GP1:");
-                                pointsText.Add($"    UF : 0, UT : 1,        CONFIG : '{cfw} {cfe} {cfb}, 0, 0, 0',");
+                                pointsText.Add($"    UF : {frameNumber}, UT : {toolNumber},        CONFIG : '{cfw} {cfe} {cfb}, 0, 0, 0',");
                                 pointsText.Add($"   X  =  {planeValues[0],9:0.000}  mm,   Y  =  {planeValues[1],9:0.000}  mm,   Z  =  {planeValues[2],9:0.000}  mm,");
                                 pointsText.Add($"   W  =  {planeValues[5],9:0.000} deg,   P  =  {planeValues[4],9:0.000} deg,   R  =  {planeValues[3],9:0.000} deg");
                                 pointsText.Add($"}};");
@@ -178,7 +188,7 @@ class FanucPostProcessor : IPostProcessor
 
                                 pointsText.Add($"P[{pointCounter}]{{");
                                 pointsText.Add($"   GP1:");
-                                pointsText.Add($"    UF : 0, UT : 1,        CONFIG : '{cfw} {cfe} {cfb}, 0, 0, 0',");
+                                pointsText.Add($"    UF : {frameNumber}, UT : {toolNumber},        CONFIG : '{cfw} {cfe} {cfb}, 0, 0, 0',");
                                 pointsText.Add($"   X  =  {planeValues[0],9:0.000}  mm,   Y  =  {planeValues[1],9:0.000}  mm,   Z  =  {planeValues[2],9:0.000}  mm,");
                                 pointsText.Add($"   W  =  {planeValues[5],9:0.000} deg,   P  =  {planeValues[4],9:0.000} deg,   R  =  {planeValues[3],9:0.000} deg");
                                 pointsText.Add($"}};");
@@ -212,22 +222,61 @@ class FanucPostProcessor : IPostProcessor
         static string TargetCommand(string command) =>
             command.StartsWith(':') ? command : $":{command}";
 
-        void RejectUnsupportedToolFrame()
+        void NumberToolsAndFrames()
         {
-            if (_program.Attributes.OfType<Tool>().Any(tool => !ReferenceEquals(tool, Tool.Default)))
+            int nextTool = 1;
+            int nextFrame = 1;
+
+            var tools = _program.Targets.SelectMany(t => t.ProgramTargets).Select(t => t.Target.Tool).Distinct();
+            var frames = _program.Targets.SelectMany(t => t.ProgramTargets).Select(t => t.Target.Frame).Distinct();
+
+            foreach (var tool in tools)
             {
-                _program.AddError(
-                    IssueKind.UnsupportedPostProcessorFeature,
-                    "Fanuc postprocessor currently supports only the default tool/TCP.",
-                    source: "Fanuc");
+                if (tool.Number is int number)
+                {
+                    _tools[tool] = number;
+                    nextTool = Math.Max(nextTool, number + 1);
+                }
+                else if (ReferenceEquals(tool, Tool.Default))
+                {
+                    _tools[tool] = 1;
+                    nextTool = Math.Max(nextTool, 2);
+                }
+                else if (tool.UseController)
+                {
+                    _program.AddError(IssueKind.UnsupportedPostProcessorFeature, "Fanuc controller tools require a tool number.", source: "Fanuc");
+                    _tools[tool] = 1;
+                }
             }
 
-            if (_program.Attributes.OfType<Frame>().Any(frame => !ReferenceEquals(frame, Frame.Default)))
+            foreach (var tool in tools)
             {
-                _program.AddError(
-                    IssueKind.UnsupportedPostProcessorFeature,
-                    "Fanuc postprocessor currently supports only the default frame.",
-                    source: "Fanuc");
+                if (!_tools.ContainsKey(tool) && !tool.UseController)
+                    _tools[tool] = nextTool++;
+            }
+
+            foreach (var frame in frames)
+            {
+                if (frame.Number is int number)
+                {
+                    _frames[frame] = number;
+                    nextFrame = Math.Max(nextFrame, number + 1);
+                }
+                else if (ReferenceEquals(frame, Frame.Default))
+                {
+                    _frames[frame] = 0;
+                }
+                else if (frame.UseController)
+                {
+                    _program.AddError(IssueKind.UnsupportedPostProcessorFeature, "Fanuc controller frames require a frame number.", source: "Fanuc");
+                    _frames[frame] = 0;
+                }
+            }
+
+            foreach (var frame in frames)
+            {
+                if (!_frames.ContainsKey(frame) && !frame.UseController)
+                    _frames[frame] = nextFrame++;
             }
         }
 
@@ -239,15 +288,28 @@ class FanucPostProcessor : IPostProcessor
             // TODO: Weight and centroid are not used.
 
             List<string> toolCode = [];
-            toolCode.Add($"UTOOL_NUM=1 ;");
-            toolCode.Add($"! Tool 1 TCP Configuration ;");
+            toolCode.Add($"UTOOL_NUM={_tools[tool]} ;");
+            toolCode.Add($"! Tool {_tools[tool]} {tool.Name} TCP ;");
             toolCode.Add($"! X: {-1 * values[0]:0.000}, Y:{values[1]:0.000}, Z: {values[2]:0.000} ;");
             toolCode.Add($"! W: {values[5]:0.000}, P:{values[4]:0.000}, R: {-1 * values[3]:0.000} ;");
 
             return toolCode;
         }
 
-        // TODO: Frames are not used.
+        List<string> FrameCode(Frame frame)
+        {
+            var plane = frame.Plane;
+            plane.InverseOrient(ref _system.BasePlane);
+            var values = _system.PlaneToNumbers(plane);
+
+            return
+            [
+                $"UFRAME_NUM={_frames[frame]} ;",
+                $"! Frame {_frames[frame]} {frame.Name} ;",
+                $"! X: {values[0]:0.000}, Y:{values[1]:0.000}, Z: {values[2]:0.000} ;",
+                $"! W: {values[5]:0.000}, P:{values[4]:0.000}, R: {values[3]:0.000} ;"
+            ];
+        }
 
         static int GetAxisSpeed(ProgramTarget programTarget)
         {
