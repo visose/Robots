@@ -40,6 +40,12 @@ public abstract class Target : IToolpath
     internal Target WithZone(Zone zone) =>
         WithProperties(Tool, Speed, zone, Command, Frame, External, ExternalCustom);
 
+    public Target WithExternal(double[] external, string[]? externalCustom = null) =>
+        WithProperties(Tool, Speed, Zone, Command, Frame, external, externalCustom);
+
+    public Target WithExternalCustom(string[] externalCustom) =>
+        WithProperties(Tool, Speed, Zone, Command, Frame, External, externalCustom);
+
     protected abstract Target WithProperties(Tool tool, Speed speed, Zone zone, Command command, Frame frame, double[] external, string[]? externalCustom);
 
     static double[] ValidateExternal(double[] external)

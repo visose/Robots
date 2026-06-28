@@ -76,6 +76,15 @@ public abstract class RobotSystem
         if (target is JointTarget jointTarget && jointTarget.Joints.Length != robotJointCount)
             return $"has {jointTarget.Joints.Length} joint value(s), but {robotJointCount} are required";
 
+        if (target.ExternalCustom is { Length: > 0 } externalCustom)
+        {
+            if (externalCount == 0)
+                return "has custom external axis values, but the robot does not have external axes";
+
+            if (externalCustom.Length > externalCount)
+                return $"has {externalCustom.Length} custom external axis value(s), but at most {externalCount} are supported";
+        }
+
         return (externalCount, RedundantJointIndex(group), target.External.Length) switch
         {
             ( > 0, _, var count) when count != externalCount => $"has {count} external axis value(s), but {externalCount} are required",

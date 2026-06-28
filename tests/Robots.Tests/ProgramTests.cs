@@ -142,6 +142,24 @@ public class ProgramTests
             Throws.TypeOf<NotSupportedException>().With.Message.EqualTo("Collisions are not available when Robots is built against rhino3dm."));
     }
 
+    [Test]
+    public void ProgramRejectsCustomExternalAxesWithoutExternalMechanism()
+    {
+        JointTarget target = new([0, 0, 0, 0, 0, 0], externalCustom: ExternalAxes.Custom("E1"));
+        Program program = new("P", TestRobots.AbbIrb120(), [TestRobots.Toolpath(target)]);
+
+        Assert.That(program.Errors, Has.One.EqualTo("Target 0 of robot 0 has custom external axis values, but the robot does not have external axes."));
+    }
+
+    [Test]
+    public void ProgramRejectsTooManyCustomExternalAxes()
+    {
+        JointTarget target = new([0, 0, 0, 0, 0, 0], external: [0], externalCustom: ExternalAxes.Custom("E1", "E2"));
+        Program program = new("P", TestRobots.AbbIrb120WithCustomExternal(), [TestRobots.Toolpath(target)]);
+
+        Assert.That(program.Errors, Has.One.EqualTo("Target 0 of robot 0 has 2 custom external axis value(s), but at most 1 are supported."));
+    }
+
     static IEnumerable<TestCaseData> SamplePrograms()
     {
         yield return new TestCaseData(Abb()).SetName("ABB sample program");

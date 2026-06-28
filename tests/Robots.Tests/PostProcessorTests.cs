@@ -233,6 +233,17 @@ public class PostProcessorTests
     }
 
     [Test]
+    public void AbbExternalAxisHelperCanLeaveControllerValueUnspecified()
+    {
+        JointTarget target = new([0, 0, 0, 0, 0, 0], external: [0], externalCustom: ExternalAxes.AbbUnspecifiedAxes(1));
+        Program program = new("P", TestRobots.AbbIrb120WithCustomExternal(), [TestRobots.Toolpath(target)]);
+        var code = TestRobots.FlattenCode(program);
+
+        Assert.That(program.Errors, Is.Empty);
+        Assert.That(code, Does.Contain("[9E9,9E9,9E9,9E9,9E9,9E9]"));
+    }
+
+    [Test]
     public void FanucCartesianJointMoveUsesPercentSpeed()
     {
         var robot = TestRobots.FanucLrMate();
