@@ -99,6 +99,32 @@ public class ProgramTests
     }
 
     [Test]
+    public void ProgramWarnsWhenAccelerationMakesVelocityTimingOptimistic()
+    {
+        var robot = TestRobots.UR10();
+        Plane planeA = Plane.WorldZX.WithOrigin(200, 100, 600);
+        Plane planeB = Plane.WorldZX.WithOrigin(300, 100, 600);
+        CartesianTarget start = new(planeA, RobotConfigurations.Wrist, Motions.Joint);
+        CartesianTarget end = new(planeB, motion: Motions.Linear, speed: new(1000, translationAccel: 10));
+
+        Program program = new("P", robot, [TestRobots.Toolpath(start, end)]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(program.Warnings, Has.Some.Contains("Acceleration limits may require"));
+        });
+    }
+
+    [Test]
+    public void ProgramDoesNotWarnForDefaultAccelerationTiming()
+    {
+        var program = TestRobots.URSampleProgram();
+
+        Assert.That(program.Warnings, Has.None.Contains("Acceleration limits may require"));
+    }
+
+    [Test]
     public void CommandTargetWithFlyByZoneBecomesStopPoint()
     {
         var program = CreateLinearCornerProgram(new Message("Reached"));

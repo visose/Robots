@@ -8,8 +8,8 @@ public class Speed(
     double translationExternal = 5000,
     double rotationExternal = PI * 6,
     string? name = null,
-    double translationAccel = 1000,
-    double axisAccel = PI,
+    double translationAccel = 2500,
+    double axisAccel = 4 * PI,
     double time = 0)
     : TargetProperty(name), IEquatable<Speed>
 {

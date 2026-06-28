@@ -28,10 +28,10 @@ public class PostProcessorTests
 
     [TestCase(Manufacturers.ABB, 6, "MoveAbsJ [[0,90,-0,0,-0,0],extj],DefaultSpeed,fine,DefaultTool;")]
     [TestCase(Manufacturers.KUKA, 6, "PTP {A1 -0,A2 -0,A3 90,A4 -0,A5 -0,A6 -0}")]
-    [TestCase(Manufacturers.UR, 6, "  movej([0, 0, 0, 0, 0, 0], a=3.1416, v=0.3142, r=DefaultZone)")]
+    [TestCase(Manufacturers.UR, 6, "  movej([0, 0, 0, 0, 0, 0], a=12.5664, v=0.3142, r=DefaultZone)")]
     [TestCase(Manufacturers.Staubli, 6, "movej(joints[0], DefaultTool, mdesc0000)")]
     [TestCase(Manufacturers.FrankaEmika, 7, "  motion = JointMotion([0, 0, 0, 0, 0, 0, 0])")]
-    [TestCase(Manufacturers.Doosan, 6, "movej([180, -90, -90, 0, 0, -180], a=180, v=18, r=DefaultZone)")]
+    [TestCase(Manufacturers.Doosan, 6, "movej([180, -90, -90, 0, 0, -180], a=720, v=18, r=DefaultZone)")]
     [TestCase(Manufacturers.Fanuc, 6, ":J P[1] 10% FINE ;")]
     [TestCase(Manufacturers.Igus, 6, """<Joint AbortCondition="False" Nr="1" Source="Numerical" velPercent="100" acc="90" smooth="0" a1="0.000" a2="90.000" a3="90.000" a4="-0.000" a5="-0.000" a6="0.000" e1="0" e2="0" e3="0" Descr="" />""")]
     [TestCase(Manufacturers.Jaka, 6, "movj(endPosJ,0,180,5000,2.0)")]
@@ -428,8 +428,8 @@ public class PostProcessorTests
               DefaultZone = 0
               set_tcp(DefaultToolTcp)
               set_payload(DefaultToolWeight, DefaultToolCog)
-              movej([2.2208, -2.4093, 2.5006, 3.0503, 0.9208, -3.1416], a=3.1416, v=0.3142, r=DefaultZone)
-              movel(p[0.7, 0.25, 0.6, -1.2092, -1.2092, -1.2092], a=1, v=Speed000, r=DefaultZone)
+              movej([2.2208, -2.4093, 2.5006, 3.0503, 0.9208, -3.1416], a=12.5664, v=0.3142, r=DefaultZone)
+              movel(p[0.7, 0.25, 0.6, -1.2092, -1.2092, -1.2092], a=2.5, v=Speed000, r=DefaultZone)
             end
             """)).SetName("UR sample program code");
     }

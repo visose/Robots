@@ -7,6 +7,8 @@ namespace Robots;
 class ProgramMotionPlanner
 {
     const double ContinuationStep = 50.0;
+    const double AccelerationWarningRatio = 1.25;
+    const double AccelerationWarningDelta = 0.1;
 
     readonly record struct TargetSpeed(double DeltaTime, double MinTime, int LeadingJoint, SpeedType Type);
     readonly record struct SegmentSpeed(double DeltaTime, double MinTime);
@@ -134,6 +136,7 @@ class ProgramMotionPlanner
         SetInterpolatedEndpoint(systemTarget, prevStep, modes);
         CheckUndefined(systemTarget, systemTargets);
         FinalizeTarget(systemTarget, prevStep, time, segmentTime);
+        WarnAccelerationLimits(systemTarget, previous);
 
         return prevJoints;
     }
@@ -487,6 +490,70 @@ class ProgramMotionPlanner
 
         foreach (var programTarget in systemTarget.ProgramTargets)
             CopyEndpoint(programTarget, prevStep.ProgramTargets[programTarget.Group]);
+    }
+
+    void WarnAccelerationLimits(SystemTarget systemTarget, SystemTarget previous)
+    {
+        if (systemTarget.DeltaTime <= TimeTol)
+            return;
+
+        foreach (var target in systemTarget.ProgramTargets)
+        {
+            var prevTarget = previous.ProgramTargets[target.Group];
+            double requiredTime = GetAccelerationTime(target, prevTarget);
+
+            if (requiredTime <= TimeTol)
+                continue;
+
+            if (requiredTime <= Max(systemTarget.DeltaTime * AccelerationWarningRatio, systemTarget.DeltaTime + AccelerationWarningDelta))
+                continue;
+
+            _program.AddWarning(
+                IssueKind.MotionWarning,
+                $"Acceleration limits may require about {requiredTime:0.###} s for target {target.Index} of robot {target.Group}, but the velocity-only simulation uses {systemTarget.DeltaTime:0.###} s.",
+                target.Index,
+                target.Group,
+                nameof(ProgramMotionPlanner));
+        }
+    }
+
+    double GetAccelerationTime(ProgramTarget target, ProgramTarget prevTarget)
+    {
+        var speed = target.Target.Speed;
+        double time = 0;
+
+        if (!target.IsJointMotion)
+        {
+            Plane prevPlane = target.GetPrevPlane(prevTarget);
+            double distance = prevPlane.Origin.DistanceTo(target.Plane.Origin);
+            time = Max(time, GetProfileTime(distance, speed.TranslationSpeed, speed.TranslationAccel));
+        }
+
+        var joints = _robotSystem.GetJoints(target.Group);
+        int jointCount = Min(target.Kinematics.Joints.Length, joints.Count);
+
+        for (int i = 0; i < jointCount; i++)
+        {
+            double distance = Abs(target.Kinematics.Joints[i] - prevTarget.Kinematics.Joints[i]);
+            double acceleration = joints[i] is PrismaticJoint
+                ? speed.TranslationAccel
+                : speed.AxisAccel;
+            time = Max(time, GetProfileTime(distance, joints[i].MaxSpeed, acceleration));
+        }
+
+        return time;
+    }
+
+    static double GetProfileTime(double distance, double speed, double acceleration)
+    {
+        if (distance <= UnitTol)
+            return 0;
+
+        double accelerationDistance = speed * speed / acceleration;
+
+        return distance <= accelerationDistance
+            ? 2.0 * Sqrt(distance / acceleration)
+            : (distance / speed) + (speed / acceleration);
     }
 
     static void CopyEndpoint(ProgramTarget target, ProgramTarget source)
