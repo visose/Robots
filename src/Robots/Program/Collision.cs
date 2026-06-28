@@ -28,8 +28,8 @@ public class Collision
     readonly RobotSystem _system;
     readonly double _linearStep;
     readonly double _angularStep;
-    readonly IReadOnlyList<int> _first;
-    readonly IReadOnlyList<int> _second;
+    readonly int[] _first;
+    readonly int[] _second;
     readonly Mesh? _environment;
     readonly int _environmentPlane;
 
@@ -39,26 +39,53 @@ public class Collision
 
     internal Collision(Program program, IReadOnlyList<int> first, IReadOnlyList<int> second, Mesh? environment, int environmentPlane, double linearStep, double angularStep)
     {
-        ValidateSet(first, nameof(first));
-        ValidateSet(second, nameof(second));
-
         _program = program;
         _system = program.RobotSystem;
         _linearStep = CheckPositive(linearStep, nameof(linearStep));
         _angularStep = CheckPositive(angularStep, nameof(angularStep));
-        _first = first;
-        _second = second;
         _environment = environment;
         ArgumentOutOfRangeException.ThrowIfLessThan(environmentPlane, -1);
         _environmentPlane = environmentPlane;
 
-        Collide();
+        var motionSamples = GetMotionSamples();
+        int meshCount = new RhinoMeshPoser(_program.RobotSystem).Meshes.Length + (_environment is null ? 0 : 1);
+        _first = ValidateSet(first, nameof(first), meshCount);
+        _second = ValidateSet(second, nameof(second), meshCount);
+        ValidateEnvironmentPlane(motionSamples, environmentPlane);
+
+        Collide(motionSamples);
     }
 
-    static void ValidateSet(IReadOnlyList<int> indices, string name)
+    IReadOnlyList<SystemTarget> GetMotionSamples() =>
+        _program.MotionSamples.Count > 0
+            ? _program.MotionSamples
+            : _program.Targets;
+
+    static int[] ValidateSet(IReadOnlyList<int> indices, string name, int meshCount)
     {
         for (int i = 0; i < indices.Count; i++)
-            ArgumentOutOfRangeException.ThrowIfNegative(indices[i], name);
+        {
+            int index = indices[i];
+
+            if (index < 0 || index >= meshCount)
+                throw new ArgumentOutOfRangeException(name, index, $"Collision mesh index {index} is outside the available mesh range 0..{meshCount - 1}.");
+        }
+
+        return [.. indices];
+    }
+
+    void ValidateEnvironmentPlane(IReadOnlyList<SystemTarget> motionSamples, int environmentPlane)
+    {
+        if (_environment is null || _environmentPlane == -1)
+            return;
+
+        if (motionSamples.Count == 0)
+            throw new InvalidOperationException("Collision checking requires at least one motion sample.");
+
+        int planeCount = motionSamples[0].Planes.Length;
+
+        if (_environmentPlane >= planeCount)
+            throw new ArgumentOutOfRangeException(nameof(environmentPlane), environmentPlane, $"Environment plane index is outside the posed robot plane range 0..{planeCount - 1}.");
     }
 
     static double CheckPositive(double value, string name)
@@ -68,12 +95,9 @@ public class Collision
         return value;
     }
 
-    void Collide()
+    void Collide(IReadOnlyList<SystemTarget> motionSamples)
     {
-        var motionSamples = _program.MotionSamples.Count > 0
-            ? _program.MotionSamples
-            : _program.Targets;
-        var gate = new object();
+        object gate = new();
         int collisionPosition = int.MaxValue;
 
         _ = Parallel.For(1, motionSamples.Count, (position, state) =>
@@ -87,59 +111,25 @@ public class Collision
             var systemTarget = motionSamples[position];
             var previous = motionSamples[position - 1];
 
-            double divisions = 1;
+            int divisions = GetDivisions(systemTarget, previous);
 
-            int groupCount = systemTarget.ProgramTargets.Count;
-
-            for (int group = 0; group < groupCount; group++)
-            {
-                var target = systemTarget.ProgramTargets[group];
-                var prevTarget = previous.ProgramTargets[group];
-
-                double distance = prevTarget.WorldPlane.Origin.DistanceTo(target.WorldPlane.Origin);
-                double linearDivisions = Ceiling(distance / _linearStep);
-
-                double maxAngle = target.Kinematics.Joints.Zip(prevTarget.Kinematics.Joints, (x, y) => Abs(x - y)).Max();
-                double angularDivisions = Ceiling(maxAngle / _angularStep);
-
-                double tempDivisions = Max(linearDivisions, angularDivisions);
-                if (tempDivisions > divisions) divisions = tempDivisions;
-            }
-
-            var meshPoser = new RhinoMeshPoser(_program.RobotSystem);
+            RhinoMeshPoser meshPoser = new(_program.RobotSystem);
 
             int j = position == 1 ? 0 : 1;
             var prevJoints = previous.ProgramTargets.Map(x => x.Kinematics.Joints);
 
-            for (int i = j; i < divisions; i++)
+            for (int i = j; i <= divisions; i++)
             {
                 double t = i / (double)divisions;
                 var targets = systemTarget.Lerp(previous, _system, t, 0.0, 1.0);
                 var kinematics = _program.RobotSystem.Kinematics(targets, prevJoints);
+                ThrowIfKinematicErrors(kinematics);
                 prevJoints = kinematics.Map(k => k.Joints);
 
-                meshPoser.Pose(kinematics, systemTarget);
-                var meshes = meshPoser.Meshes;
+                var meshes = PoseMeshes(meshPoser, kinematics, systemTarget);
 
-                if (_environment is not null)
-                {
-                    var temp = new Mesh[meshes.Length + 1];
-                    Array.Copy(meshes, temp, meshes.Length);
-                    temp[^1] = _environmentPlane == -1
-                        ? _environment
-                        : _environment.DuplicateMesh();
-
-                    if (_environmentPlane != -1)
-                    {
-                        var plane = GetPlane(kinematics, _environmentPlane);
-                        _ = temp[^1].Transform(plane.ToTransform());
-                    }
-
-                    meshes = temp;
-                }
-
-                var setA = _first.Select(x => meshes[x]);
-                var setB = _second.Select(x => meshes[x]);
+                var setA = SelectMeshes(meshes, _first);
+                var setB = SelectMeshes(meshes, _second);
 
                 var meshClash = Rhino.Geometry.Intersect.MeshClash.Search(setA, setB, 1, 1);
 
@@ -159,6 +149,79 @@ public class Collision
                 }
             }
         });
+    }
+
+    int GetDivisions(SystemTarget systemTarget, SystemTarget previous)
+    {
+        int divisions = 1;
+
+        for (int group = 0; group < systemTarget.ProgramTargets.Count; group++)
+        {
+            var target = systemTarget.ProgramTargets[group];
+            var prevTarget = previous.ProgramTargets[group];
+
+            double distance = prevTarget.WorldPlane.Origin.DistanceTo(target.WorldPlane.Origin);
+            double linearDivisions = Ceiling(distance / _linearStep);
+            double maxAngle = MaxJointDelta(target.Kinematics.Joints, prevTarget.Kinematics.Joints);
+            double angularDivisions = Ceiling(maxAngle / _angularStep);
+            int currentDivisions = (int)Max(linearDivisions, angularDivisions);
+            divisions = Max(divisions, currentDivisions);
+        }
+
+        return divisions;
+    }
+
+    static double MaxJointDelta(double[] current, double[] previous)
+    {
+        ArgumentOutOfRangeException.ThrowIfNotEqual(current.Length, previous.Length, nameof(current));
+
+        double max = 0;
+
+        for (int i = 0; i < current.Length; i++)
+            max = Max(max, Abs(current[i] - previous[i]));
+
+        return max;
+    }
+
+    Mesh[] PoseMeshes(RhinoMeshPoser meshPoser, IReadOnlyList<KinematicSolution> kinematics, SystemTarget systemTarget)
+    {
+        meshPoser.Pose(kinematics, systemTarget);
+        var meshes = meshPoser.Meshes;
+
+        if (_environment is null)
+            return meshes;
+
+        var result = new Mesh[meshes.Length + 1];
+        Array.Copy(meshes, result, meshes.Length);
+        result[^1] = _environmentPlane == -1
+            ? _environment
+            : _environment.DuplicateMesh();
+
+        if (_environmentPlane != -1)
+        {
+            var plane = GetPlane(kinematics, _environmentPlane);
+            _ = result[^1].Transform(plane.ToTransform());
+        }
+
+        return result;
+    }
+
+    static Mesh[] SelectMeshes(Mesh[] meshes, int[] indices)
+    {
+        var selected = new Mesh[indices.Length];
+
+        for (int i = 0; i < selected.Length; i++)
+            selected[i] = meshes[indices[i]];
+
+        return selected;
+    }
+
+    static void ThrowIfKinematicErrors(IReadOnlyList<KinematicSolution> kinematics)
+    {
+        var errors = kinematics.SelectMany(solution => solution.Errors).ToArray();
+
+        if (errors.Length > 0)
+            throw new InvalidOperationException($"Collision interpolation produced kinematic errors: {string.Join(" ", errors)}");
     }
 
     static Plane GetPlane(IReadOnlyList<KinematicSolution> kinematics, int index)

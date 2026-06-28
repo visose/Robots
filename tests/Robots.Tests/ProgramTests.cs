@@ -132,6 +132,16 @@ public class ProgramTests
         Assert.That(simulated.Origin.DistanceTo(corner), Is.GreaterThan(1.0));
     }
 
+    [Test]
+    public void CollisionCheckIsUnavailableInRhino3dmBuild()
+    {
+        var program = TestRobots.URSampleProgram();
+
+        Assert.That(
+            () => program.CheckCollisions(),
+            Throws.TypeOf<NotSupportedException>().With.Message.EqualTo("Collisions are not available when Robots is built against rhino3dm."));
+    }
+
     static IEnumerable<TestCaseData> SamplePrograms()
     {
         yield return new TestCaseData(Abb()).SetName("ABB sample program");
