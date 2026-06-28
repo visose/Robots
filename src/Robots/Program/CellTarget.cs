@@ -43,6 +43,18 @@ public class SystemTarget
         return targets;
     }
 
+    internal Target[] LerpFractions(SystemTarget prevTarget, RobotSystem robot, IReadOnlyList<double> fractions)
+    {
+        ArgumentOutOfRangeException.ThrowIfNotEqual(fractions.Count, ProgramTargets.Count, nameof(fractions));
+
+        var targets = new Target[ProgramTargets.Count];
+
+        for (int i = 0; i < targets.Length; i++)
+            targets[i] = ProgramTargets[i].Lerp(prevTarget.ProgramTargets[i], robot, fractions[i], 0.0, 1.0);
+
+        return targets;
+    }
+
     internal void SetTargetKinematics(List<KinematicSolution> kinematics, Program program, SystemTarget? prevTarget = null)
     {
         foreach (var target in ProgramTargets)

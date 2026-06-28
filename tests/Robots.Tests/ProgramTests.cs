@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using Rhino.Geometry;
+using Robots.Commands;
 
 namespace Robots.Tests;
 
@@ -97,6 +98,40 @@ public class ProgramTests
         });
     }
 
+    [Test]
+    public void CommandTargetWithFlyByZoneBecomesStopPoint()
+    {
+        var program = CreateLinearCornerProgram(new Message("Reached"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(program.Targets[1].ProgramTargets[0].Target.Zone, Is.EqualTo(Zone.Default));
+            Assert.That(program.Warnings, Has.Some.Contains("has commands and a fly-by zone"));
+        });
+    }
+
+    [Test]
+    public void FlyByMotionSamplesAvoidCornerTarget()
+    {
+        var program = CreateLinearCornerProgram();
+        Assert.That(program.Errors, Is.Empty);
+
+        var corner = program.Targets[1].ProgramTargets[0].WorldPlane.Origin;
+        var flybySamples = program.MotionSamples.Where(target => target.Index == 1).ToArray();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(flybySamples, Has.Length.GreaterThan(1));
+            Assert.That(flybySamples.Min(target => target.ProgramTargets[0].WorldPlane.Origin.DistanceTo(corner)), Is.GreaterThan(1.0));
+        });
+
+        program.Animate(program.Targets[1].TotalTime, isNormalized: false);
+        var simulated = program.CurrentSimulationPose.GetLastPlane(0);
+
+        Assert.That(simulated.Origin.DistanceTo(corner), Is.GreaterThan(1.0));
+    }
+
     static IEnumerable<TestCaseData> SamplePrograms()
     {
         yield return new TestCaseData(Abb()).SetName("ABB sample program");
@@ -139,6 +174,23 @@ public class ProgramTests
                 -3.141592653589793
             ],
             endPlane);
+    }
+
+    static Program CreateLinearCornerProgram(Command? command = null)
+    {
+        var robot = TestRobots.UR10();
+        Speed speed = new(300);
+        Zone zone = new(100);
+
+        Plane startPlane = Plane.WorldZX.WithOrigin(200, 100, 600);
+        Plane cornerPlane = Plane.WorldZX.WithOrigin(500, 100, 600);
+        Plane endPlane = Plane.WorldZX.WithOrigin(500, 400, 600);
+
+        CartesianTarget start = new(startPlane, RobotConfigurations.Wrist, Motions.Joint, speed: speed);
+        CartesianTarget corner = new(cornerPlane, motion: Motions.Linear, speed: speed, zone: zone, command: command);
+        CartesianTarget end = new(endPlane, motion: Motions.Linear, speed: speed);
+
+        return new("P", robot, [TestRobots.Toolpath(start, corner, end)], stepSize: 50);
     }
 
     public sealed record SampleProgram(Func<Program> CreateProgram, double Duration, double[] Joints, Plane EndPlane);

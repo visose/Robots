@@ -18,6 +18,7 @@ public class ProgramTarget
     internal int CoupledPlaneIndex { get; set; } = -1;
 
     public int Index => SystemTarget.Index;
+    internal bool HasCommands => Commands.Count > 0;
     public bool IsJointMotion => IsJointTarget || ((CartesianTarget)Target).Motion == Motions.Joint;
     public Plane WorldPlane
     {
@@ -115,6 +116,14 @@ public class ProgramTarget
 
         prevPlane.InverseOrient(ref framePlane);
         return prevPlane;
+    }
+
+    internal Plane ToTargetPlane(Plane worldPlane)
+    {
+        Plane plane = worldPlane;
+        var framePlane = GetFramePlane(SystemTarget);
+        plane.InverseOrient(ref framePlane);
+        return plane;
     }
 
     internal Target Lerp(ProgramTarget prevTarget, RobotSystem robot, double t, double start, double end)

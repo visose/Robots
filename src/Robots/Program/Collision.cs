@@ -70,12 +70,22 @@ public class Collision
 
     void Collide()
     {
-        _ = Parallel.ForEach(_program.Targets, (systemTarget, state) =>
-        {
-            if (systemTarget.Index == 0)
-                return;
+        var motionSamples = _program.MotionSamples.Count > 0
+            ? _program.MotionSamples
+            : _program.Targets;
+        var gate = new object();
+        int collisionPosition = int.MaxValue;
 
-            var previous = _program.Targets[systemTarget.Index - 1];
+        _ = Parallel.For(1, motionSamples.Count, (position, state) =>
+        {
+            lock (gate)
+            {
+                if (position >= collisionPosition)
+                    return;
+            }
+
+            var systemTarget = motionSamples[position];
+            var previous = motionSamples[position - 1];
 
             double divisions = 1;
 
@@ -98,7 +108,7 @@ public class Collision
 
             var meshPoser = new RhinoMeshPoser(_program.RobotSystem);
 
-            int j = (systemTarget.Index == 1) ? 0 : 1;
+            int j = position == 1 ? 0 : 1;
             var prevJoints = previous.ProgramTargets.Map(x => x.Kinematics.Joints);
 
             for (int i = j; i < divisions; i++)
@@ -133,10 +143,18 @@ public class Collision
 
                 var meshClash = Rhino.Geometry.Intersect.MeshClash.Search(setA, setB, 1, 1);
 
-                if (meshClash.Length > 0 && (CollisionTarget is null || CollisionTarget.Index > systemTarget.Index))
+                if (meshClash.Length > 0)
                 {
-                    Meshes = [meshClash[0].MeshA, meshClash[0].MeshB];
-                    CollisionTarget = systemTarget;
+                    lock (gate)
+                    {
+                        if (position < collisionPosition)
+                        {
+                            Meshes = [meshClash[0].MeshA, meshClash[0].MeshB];
+                            CollisionTarget = systemTarget;
+                            collisionPosition = position;
+                        }
+                    }
+
                     state.Break();
                 }
             }

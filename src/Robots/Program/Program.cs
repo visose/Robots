@@ -62,6 +62,7 @@ public class Program : IProgram
     readonly List<int> _multiFileIndices = [];
     readonly List<TargetProperty> _attributes = [];
     readonly List<Command> _initCommands;
+    readonly List<SystemTarget> _motionSamples = [];
     readonly SystemTarget[] _targets;
 
     public string Name { get; }
@@ -75,6 +76,7 @@ public class Program : IProgram
     public List<List<List<string>>>? Code { get; }
     public double Duration { get; internal set; }
     internal IReadOnlyList<ProgramIssue> Issues => _issues;
+    internal IReadOnlyList<SystemTarget> MotionSamples => _motionSamples;
 
     public IMeshPoser? MeshPoser { get; set; }
     public SimulationPose CurrentSimulationPose => _simulation?.CurrentSimulationPose
@@ -104,7 +106,10 @@ public class Program : IProgram
             var motionPlanner = new ProgramMotionPlanner(this, targets, stepSize);
 
             if (motionPlanner.Keyframes.Count > 0)
+            {
+                _motionSamples.AddRange(motionPlanner.Keyframes);
                 _simulation = new(this, motionPlanner.Keyframes);
+            }
 
             targets = motionPlanner.FixedTargets;
         }

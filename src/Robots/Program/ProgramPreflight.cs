@@ -10,6 +10,7 @@ class ProgramPreflight(Program program)
         var targets = GetProgramTargets(systemTargets);
         ValidateTargetAxes(targets);
         ValidateMotions(targets);
+        ForceCommandStops(targets);
         WarnDefaults(targets);
         WarnPayloads(targets);
 
@@ -62,6 +63,24 @@ class ProgramPreflight(Program program)
 
     void AddMotionError(ProgramTarget target, string message) =>
         _program.AddError(IssueKind.UnsupportedPostProcessorFeature, message, target.Index, target.Group, nameof(ProgramPreflight));
+
+    void ForceCommandStops(IReadOnlyList<ProgramTarget> targets)
+    {
+        foreach (var target in targets)
+        {
+            if (!target.HasCommands || !target.Target.Zone.IsFlyBy)
+                continue;
+
+            target.Target = target.Target.WithZone(Zone.Default);
+
+            _program.AddWarning(
+                IssueKind.MotionWarning,
+                $"Target {target.Index} in robot {target.Group} has commands and a fly-by zone; the target was changed to a stop point.",
+                target.Index,
+                target.Group,
+                nameof(ProgramPreflight));
+        }
+    }
 
     void WarnDefaults(IReadOnlyList<ProgramTarget> targets)
     {

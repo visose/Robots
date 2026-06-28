@@ -34,6 +34,9 @@ class ProgramMotionPlanner
             ? FixTargetMotions(systemTarget, stepSize)
             : 0;
 
+        if (indexError == -1 && _program.Errors.Count == 0)
+            ApplyFlybyKeyframes(systemTarget, stepSize);
+
         FixedTargets = (indexError != -1)
              ? systemTarget.GetRange(0, indexError + 1)
              : systemTarget;
@@ -198,6 +201,246 @@ class ProgramMotionPlanner
 
         return divisions;
     }
+
+    void ApplyFlybyKeyframes(List<SystemTarget> systemTargets, double stepSize)
+    {
+        if (!HasFlyby(systemTargets))
+            return;
+
+        List<SystemTarget> keyframes = [];
+        var first = ResetTiming(systemTargets[0].ShallowClone());
+        keyframes.Add(first);
+
+        var prevJoints = first.ProgramTargets.Map(x => x.Kinematics.Joints);
+
+        for (int i = 1; i < systemTargets.Count; i++)
+        {
+            var previous = systemTargets[i - 1];
+            var current = systemTargets[i];
+            var entryFractions = GetEntryFractions(systemTargets, i);
+            double entryTime = SegmentTime(previous.TotalTime, current.TotalTime, entryFractions.Min());
+            var entry = CreateFractionKeyframe(previous, current, entryFractions, entryTime, ref prevJoints, keyframes[^1]);
+            AddKeyframe(keyframes, entry);
+
+            if (_program.Errors.Count > 0)
+                return;
+
+            if (!HasFlyby(systemTargets, i))
+                continue;
+
+            var next = systemTargets[i + 1];
+            var exitFractions = GetExitFractions(systemTargets, i);
+            double exitTime = SegmentTime(current.TotalTime, next.TotalTime, exitFractions.Max());
+            var exitPreviewJoints = entry.ProgramTargets.Map(x => x.Kinematics.Joints);
+            var exitPreview = CreateFractionKeyframe(current, next, exitFractions, exitTime, ref exitPreviewJoints, entry);
+
+            if (_program.Errors.Count > 0)
+                return;
+
+            int divisions = GetFlybyDivisions(current, entry, exitPreview, stepSize);
+
+            for (int step = 1; step < divisions; step++)
+            {
+                double t = step / (double)divisions;
+                double time = SegmentTime(entry.TotalTime, exitTime, t);
+                var blend = CreateFlybyKeyframe(current, next, entry, exitPreview, t, time, ref prevJoints, keyframes[^1]);
+                AddKeyframe(keyframes, blend);
+
+                if (_program.Errors.Count > 0)
+                    return;
+            }
+
+            var exit = CreateFractionKeyframe(current, next, exitFractions, exitTime, ref prevJoints, keyframes[^1]);
+            AddKeyframe(keyframes, exit);
+
+            if (_program.Errors.Count > 0)
+                return;
+        }
+
+        Keyframes.Clear();
+        Keyframes.AddRange(keyframes);
+    }
+
+    static bool HasFlyby(List<SystemTarget> systemTargets)
+    {
+        for (int i = 1; i < systemTargets.Count - 1; i++)
+        {
+            if (HasFlyby(systemTargets, i))
+                return true;
+        }
+
+        return false;
+    }
+
+    static bool HasFlyby(List<SystemTarget> systemTargets, int index) =>
+        index > 0
+        && index < systemTargets.Count - 1
+        && systemTargets[index].ProgramTargets.Any(IsFlyby);
+
+    static bool IsFlyby(ProgramTarget target) =>
+        target.Target.Zone.IsFlyBy && !target.HasCommands;
+
+    static double[] GetEntryFractions(List<SystemTarget> systemTargets, int index)
+    {
+        var previous = systemTargets[index - 1];
+        var current = systemTargets[index];
+        var fractions = new double[current.ProgramTargets.Count];
+
+        for (int group = 0; group < fractions.Length; group++)
+        {
+            var target = current.ProgramTargets[group];
+            fractions[group] = IsFlyby(target)
+                ? 1.0 - GetZoneFraction(previous.ProgramTargets[group], target, target.Target.Zone)
+                : 1.0;
+        }
+
+        return fractions;
+    }
+
+    static double[] GetExitFractions(List<SystemTarget> systemTargets, int index)
+    {
+        var current = systemTargets[index];
+        var next = systemTargets[index + 1];
+        var fractions = new double[current.ProgramTargets.Count];
+
+        for (int group = 0; group < fractions.Length; group++)
+        {
+            var target = current.ProgramTargets[group];
+            fractions[group] = IsFlyby(target)
+                ? GetZoneFraction(target, next.ProgramTargets[group], target.Target.Zone)
+                : 0.0;
+        }
+
+        return fractions;
+    }
+
+    static double GetZoneFraction(ProgramTarget from, ProgramTarget to, Zone zone)
+    {
+        double distance = GetPathDistance(from, to);
+
+        if (distance <= DistanceTol)
+            return 0.0;
+
+        return Min(0.5, zone.Distance / distance);
+    }
+
+    static double GetPathDistance(ProgramTarget from, ProgramTarget to)
+    {
+        double distance = from.WorldPlane.Origin.DistanceTo(to.WorldPlane.Origin);
+
+        if (distance > DistanceTol)
+            return distance;
+
+        var fromJoints = from.Kinematics.Joints;
+        var toJoints = to.Kinematics.Joints;
+        double sum = 0;
+
+        for (int i = 0; i < fromJoints.Length; i++)
+        {
+            double delta = toJoints[i] - fromJoints[i];
+            sum += delta * delta;
+        }
+
+        return Sqrt(sum);
+    }
+
+    static double SegmentTime(double start, double end, double t) =>
+        start + (end - start) * Clamp(t, 0.0, 1.0);
+
+    SystemTarget CreateFractionKeyframe(SystemTarget previous, SystemTarget current, IReadOnlyList<double> fractions, double time, ref double[][] prevJoints, SystemTarget previousKeyframe)
+    {
+        var keyframe = current.ShallowClone();
+        var targets = current.LerpFractions(previous, _robotSystem, fractions);
+        var kinematics = _robotSystem.Kinematics(targets, prevJoints);
+        prevJoints = kinematics.Map(k => k.Joints);
+        keyframe.SetTargetKinematics(kinematics, _program, previousKeyframe);
+        SetKeyframeTiming(keyframe, time, previousKeyframe);
+        return keyframe;
+    }
+
+    SystemTarget CreateFlybyKeyframe(SystemTarget corner, SystemTarget next, SystemTarget entry, SystemTarget exit, double t, double time, ref double[][] prevJoints, SystemTarget previousKeyframe)
+    {
+        var keyframe = corner.ShallowClone();
+        var targets = new Target[corner.ProgramTargets.Count];
+
+        for (int group = 0; group < targets.Length; group++)
+        {
+            var cornerTarget = corner.ProgramTargets[group];
+            targets[group] = IsFlyby(cornerTarget)
+                ? CreateFlybyTarget(cornerTarget, next.ProgramTargets[group], entry.ProgramTargets[group], exit.ProgramTargets[group], t)
+                : cornerTarget.Target;
+        }
+
+        var kinematics = _robotSystem.Kinematics(targets, prevJoints);
+        prevJoints = kinematics.Map(k => k.Joints);
+        keyframe.SetTargetKinematics(kinematics, _program, previousKeyframe);
+        SetKeyframeTiming(keyframe, time, previousKeyframe);
+        return keyframe;
+    }
+
+    Target CreateFlybyTarget(ProgramTarget corner, ProgramTarget next, ProgramTarget entry, ProgramTarget exit, double t)
+    {
+        return UseJointBlend(corner, next)
+            ? CreateJointFlybyTarget(corner, entry, exit, t)
+            : CreateCartesianFlybyTarget(corner, entry, exit, t);
+    }
+
+    JointTarget CreateJointFlybyTarget(ProgramTarget corner, ProgramTarget entry, ProgramTarget exit, double t)
+    {
+        var joints = GeometryUtil.Quadratic(entry.Kinematics.Joints, corner.Kinematics.Joints, exit.Kinematics.Joints, t);
+        int robotJointCount = _robotSystem.GetRobotJointCount(corner.Group);
+        var external = joints[robotJointCount..];
+        return new JointTarget(joints[..robotJointCount], corner.Target, external);
+    }
+
+    CartesianTarget CreateCartesianFlybyTarget(ProgramTarget corner, ProgramTarget entry, ProgramTarget exit, double t)
+    {
+        Plane entryPlane = entry.WorldPlane;
+        Plane cornerPlane = corner.WorldPlane;
+        Plane exitPlane = exit.WorldPlane;
+
+        Plane plane = _robotSystem.CartesianLerp(entryPlane, exitPlane, t, 0.0, 1.0)
+            .WithOrigin(GeometryUtil.Quadratic(entryPlane.Origin, cornerPlane.Origin, exitPlane.Origin, t));
+        plane = corner.ToTargetPlane(plane);
+
+        var joints = GeometryUtil.Quadratic(entry.Kinematics.Joints, corner.Kinematics.Joints, exit.Kinematics.Joints, t);
+        int robotJointCount = _robotSystem.GetRobotJointCount(corner.Group);
+        var external = joints[robotJointCount..];
+        return new CartesianTarget(plane, corner.Target, corner.Kinematics.Configuration, Motions.Linear, external);
+    }
+
+    static bool UseJointBlend(ProgramTarget corner, ProgramTarget next) =>
+        corner.IsJointMotion || next.IsJointMotion;
+
+    static int GetFlybyDivisions(SystemTarget corner, SystemTarget entry, SystemTarget exit, double stepSize)
+    {
+        double length = 0;
+
+        for (int group = 0; group < corner.ProgramTargets.Count; group++)
+        {
+            if (!IsFlyby(corner.ProgramTargets[group]))
+                continue;
+
+            var entryPlane = entry.ProgramTargets[group].WorldPlane;
+            var cornerPlane = corner.ProgramTargets[group].WorldPlane;
+            var exitPlane = exit.ProgramTargets[group].WorldPlane;
+            double currentLength = entryPlane.Origin.DistanceTo(cornerPlane.Origin) + cornerPlane.Origin.DistanceTo(exitPlane.Origin);
+            length = Max(length, currentLength);
+        }
+
+        return Max(2, (int)Ceiling(length / stepSize));
+    }
+
+    static void SetKeyframeTiming(SystemTarget keyframe, double time, SystemTarget previous)
+    {
+        time = Max(time, previous.TotalTime);
+        keyframe.TotalTime = time;
+        keyframe.DeltaTime = time - previous.TotalTime;
+        keyframe.MinTime = keyframe.DeltaTime;
+    }
+
+    static void AddKeyframe(List<SystemTarget> keyframes, SystemTarget keyframe) =>
+        keyframes.Add(keyframe.ShallowClone());
 
     static SystemTarget ResetTiming(SystemTarget systemTarget)
     {

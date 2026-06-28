@@ -10,6 +10,30 @@ public static class GeometryUtil
 {
     internal static double Clamp(double value, double min, double max) => Min(Max(value, min), max);
 
+    internal static double[] Quadratic(double[] a, double[] b, double[] c, double t)
+    {
+        ArgumentOutOfRangeException.ThrowIfNotEqual(a.Length, b.Length, nameof(b));
+        ArgumentOutOfRangeException.ThrowIfNotEqual(a.Length, c.Length, nameof(c));
+
+        double u = 1.0 - t;
+        var values = new double[a.Length];
+
+        for (int i = 0; i < values.Length; i++)
+            values[i] = (u * u * a[i]) + (2.0 * u * t * b[i]) + (t * t * c[i]);
+
+        return values;
+    }
+
+    internal static Point3d Quadratic(Point3d a, Point3d b, Point3d c, double t)
+    {
+        double u = 1.0 - t;
+
+        return new(
+            (u * u * a.X) + (2.0 * u * t * b.X) + (t * t * c.X),
+            (u * u * a.Y) + (2.0 * u * t * b.Y) + (t * t * c.Y),
+            (u * u * a.Z) + (2.0 * u * t * b.Z) + (t * t * c.Z));
+    }
+
     extension(double n)
     {
         internal double ToRadians() => n * (PI / 180.0);
@@ -521,7 +545,12 @@ public static class GeometryUtil
     {
         internal Plane WithOrigin(double x, double y, double z)
         {
-            plane.Origin = new(CheckFinite(x, nameof(x)), CheckFinite(y, nameof(y)), CheckFinite(z, nameof(z)));
+            return plane.WithOrigin(new Point3d(CheckFinite(x, nameof(x)), CheckFinite(y, nameof(y)), CheckFinite(z, nameof(z))));
+        }
+
+        internal Plane WithOrigin(Point3d origin)
+        {
+            plane.Origin = origin;
             return plane;
         }
     }
