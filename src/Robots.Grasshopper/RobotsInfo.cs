@@ -2,7 +2,6 @@
 
 using System.Drawing;
 using System.Reflection;
-
 using Grasshopper;
 using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Types;

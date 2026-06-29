@@ -1,5 +1,5 @@
 ﻿using System.Drawing;
-
+using System.Windows.Forms;
 using Rhino.Geometry;
 
 namespace Robots.Grasshopper;
@@ -16,9 +16,19 @@ public abstract class Param<T, TGoo>(
     public override Guid ComponentGuid => new(id);
     protected override Bitmap Icon => Util.GetIcon(GetType());
 
+    protected override string HtmlHelp_Source() => throw new NotSupportedException("Robots help opens in the system browser.");
+
     public override void CreateAttributes()
     {
         m_attributes = new ParameterAttributes(this);
+    }
+
+    public override bool AppendMenuItems(ToolStripDropDown menu)
+    {
+        var result = base.AppendMenuItems(menu);
+        Util.ReplaceHelpMenuItem(menu, Util.ParameterHelpUrl(this));
+
+        return result;
     }
 
     protected override TGoo PreferredCast(object data) =>
@@ -62,9 +72,19 @@ public abstract class PersistentParam<T, TGoo>(
     public override Guid ComponentGuid => new(id);
     protected override Bitmap Icon => Util.GetIcon(GetType());
 
+    protected override string HtmlHelp_Source() => throw new NotSupportedException("Robots help opens in the system browser.");
+
     public override void CreateAttributes()
     {
         m_attributes = new ParameterAttributes(this);
+    }
+
+    public override bool AppendMenuItems(ToolStripDropDown menu)
+    {
+        var result = base.AppendMenuItems(menu);
+        Util.ReplaceHelpMenuItem(menu, Util.ParameterHelpUrl(this));
+
+        return result;
     }
 
     protected override TGoo PreferredCast(object data) =>

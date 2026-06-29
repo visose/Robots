@@ -2,8 +2,6 @@
 using System.Reflection;
 using System.Runtime.Loader;
 
-using Robots;
-
 namespace Robots.AbbRemote;
 
 internal sealed class PcSdkAbbClient

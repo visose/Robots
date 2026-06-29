@@ -1,6 +1,4 @@
-﻿using Rhino.Geometry;
-
-namespace Robots;
+﻿namespace Robots;
 
 class CustomKinematics : MechanismKinematics
 {

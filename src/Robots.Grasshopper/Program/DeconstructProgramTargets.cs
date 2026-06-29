@@ -1,6 +1,4 @@
-﻿using Grasshopper.Kernel.Types;
-
-namespace Robots.Grasshopper;
+﻿namespace Robots.Grasshopper;
 
 public class DeconstructProgramTargets() : Component(
     "Deconstruct Program Targets",

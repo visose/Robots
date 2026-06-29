@@ -1,6 +1,4 @@
-﻿using Grasshopper.Kernel.Types;
-
-namespace Robots.Grasshopper;
+﻿namespace Robots.Grasshopper;
 
 public class CreateProgramVariable() : Component(
     "Create Program",

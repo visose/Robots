@@ -1,8 +1,5 @@
 ﻿using System.Drawing;
-
 using GH_IO.Serialization;
-using Grasshopper;
-using Grasshopper.Kernel.Parameters;
 
 namespace Robots.Grasshopper;
 

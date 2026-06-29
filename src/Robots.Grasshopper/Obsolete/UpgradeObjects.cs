@@ -1,6 +1,5 @@
 ﻿using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
-
 using Robots.Grasshopper.Commands;
 
 namespace Robots.Grasshopper;

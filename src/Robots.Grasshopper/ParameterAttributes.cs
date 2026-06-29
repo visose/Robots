@@ -1,5 +1,4 @@
 ﻿using System.Drawing;
-
 using Grasshopper;
 using Grasshopper.GUI;
 using Grasshopper.GUI.Canvas;

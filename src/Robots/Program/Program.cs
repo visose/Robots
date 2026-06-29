@@ -1,7 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using static System.Math;
 using Rhino.Geometry;
-
 using static Robots.Util;
 
 namespace Robots;

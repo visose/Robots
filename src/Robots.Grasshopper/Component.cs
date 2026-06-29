@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Windows.Forms;
 
 namespace Robots.Grasshopper;
 
@@ -29,9 +30,19 @@ public abstract class Component(
         param is IGH_PreviewObject { IsPreviewCapable: true });
     protected override Bitmap Icon => Util.GetIcon(GetType());
 
+    protected override string HtmlHelp_Source() => throw new NotSupportedException("Robots help opens in the system browser.");
+
     public override void CreateAttributes()
     {
         m_attributes = new ComponentAttributes(this);
+    }
+
+    public override bool AppendMenuItems(ToolStripDropDown menu)
+    {
+        var result = base.AppendMenuItems(menu);
+        Util.ReplaceHelpMenuItem(menu, Util.ComponentHelpUrl(this));
+
+        return result;
     }
 
     protected override void RegisterInputParams(GH_InputParamManager pManager) { }

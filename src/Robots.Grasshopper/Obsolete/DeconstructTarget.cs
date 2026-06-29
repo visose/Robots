@@ -1,7 +1,5 @@
 ﻿using System.Drawing;
 
-using Grasshopper;
-
 namespace Robots.Grasshopper;
 
 [Obsolete("Replace with the new Deconstruct Target component.")]

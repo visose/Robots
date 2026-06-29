@@ -1,16 +1,14 @@
 ﻿using static System.Math;
-
 using Rhino.Geometry;
-
 using static Robots.Util;
 
 namespace Robots;
 
-public static class GeometryUtil
+static class GeometryUtil
 {
-    internal static double Clamp(double value, double min, double max) => Min(Max(value, min), max);
+    public static double Clamp(double value, double min, double max) => Min(Max(value, min), max);
 
-    internal static double[] Quadratic(double[] a, double[] b, double[] c, double t)
+    public static double[] Quadratic(double[] a, double[] b, double[] c, double t)
     {
         ArgumentOutOfRangeException.ThrowIfNotEqual(a.Length, b.Length, nameof(b));
         ArgumentOutOfRangeException.ThrowIfNotEqual(a.Length, c.Length, nameof(c));
@@ -24,7 +22,7 @@ public static class GeometryUtil
         return values;
     }
 
-    internal static Point3d Quadratic(Point3d a, Point3d b, Point3d c, double t)
+    public static Point3d Quadratic(Point3d a, Point3d b, Point3d c, double t)
     {
         double u = 1.0 - t;
 
@@ -36,18 +34,18 @@ public static class GeometryUtil
 
     extension(double n)
     {
-        internal double ToRadians() => n * (PI / 180.0);
+        public double ToRadians() => n * (PI / 180.0);
 
-        internal double ToDegrees() => n * (180.0 / PI);
+        public double ToDegrees() => n * (180.0 / PI);
 
-        internal double ToMeters() => n * 0.001;
+        public double ToMeters() => n * 0.001;
 
-        internal double FromMeters() => n * 1000.0;
+        public double FromMeters() => n * 1000.0;
     }
 
     extension(Point3d n)
     {
-        internal Point3d ToMeters() => n * 0.001;
+        public Point3d ToMeters() => n * 0.001;
     }
 
     /// <summary>
@@ -82,7 +80,7 @@ public static class GeometryUtil
         return result.ToPlane();
     }
 
-    internal static Plane CheckPlane(Plane plane, string name) =>
+    public static Plane CheckPlane(Plane plane, string name) =>
         plane.IsValid ? plane : throw new ArgumentException("Plane is invalid.", name);
 
     public static Plane QuaternionToPlane(double x, double y, double z, double q1, double q2, double q3, double q4)
@@ -108,7 +106,7 @@ public static class GeometryUtil
         return [plane.OriginX, plane.OriginY, plane.OriginZ, q.A, q.B, q.C, q.D];
     }
 
-    internal static double[] PlaneToEulerZYXDegrees(Plane plane)
+    public static double[] PlaneToEulerZYXDegrees(Plane plane)
     {
         plane = CheckPlane(plane, nameof(plane));
         var t = plane.ToTransform();
@@ -116,7 +114,7 @@ public static class GeometryUtil
         return [e.A1, e.A2, e.A3, e.A4.ToDegrees(), e.A5.ToDegrees(), e.A6.ToDegrees()];
     }
 
-    internal static double[] PlaneToEulerZYZDegrees(Plane plane)
+    public static double[] PlaneToEulerZYZDegrees(Plane plane)
     {
         plane = CheckPlane(plane, nameof(plane));
         var t = plane.ToTransform();
@@ -124,14 +122,14 @@ public static class GeometryUtil
         return [e.A1, e.A2, e.A3, e.A4.ToDegrees(), e.A5.ToDegrees(), e.A6.ToDegrees()];
     }
 
-    internal static Vector6d PlaneToEulerXYZ(Plane plane)
+    public static Vector6d PlaneToEulerXYZ(Plane plane)
     {
         plane = CheckPlane(plane, nameof(plane));
         var t = plane.ToTransform();
         return t.ToEulerXYZ();
     }
 
-    internal static double[] PlaneToReversedEulerZYXDegrees(Plane plane)
+    public static double[] PlaneToReversedEulerZYXDegrees(Plane plane)
     {
         plane = CheckPlane(plane, nameof(plane));
         var t = plane.ToTransform();
@@ -139,7 +137,7 @@ public static class GeometryUtil
         return [e.A1, e.A2, e.A3, e.A6.ToDegrees(), e.A5.ToDegrees(), e.A4.ToDegrees()];
     }
 
-    internal static Plane EulerZYXDegreesToPlane(double[] numbers)
+    public static Plane EulerZYXDegreesToPlane(double[] numbers)
     {
         numbers = CheckNumbers(numbers, 6);
         var euler = new Vector6d(numbers[0], numbers[1], numbers[2], numbers[3].ToRadians(), numbers[4].ToRadians(), numbers[5].ToRadians());
@@ -147,7 +145,7 @@ public static class GeometryUtil
         return t.ToPlane();
     }
 
-    internal static Plane EulerZYZDegreesToPlane(double[] numbers)
+    public static Plane EulerZYZDegreesToPlane(double[] numbers)
     {
         numbers = CheckNumbers(numbers, 6);
         var euler = new Vector6d(numbers[0], numbers[1], numbers[2], numbers[3].ToRadians(), numbers[4].ToRadians(), numbers[5].ToRadians());
@@ -155,7 +153,7 @@ public static class GeometryUtil
         return t.ToPlane();
     }
 
-    internal static Plane ReversedEulerZYXDegreesToPlane(double[] numbers)
+    public static Plane ReversedEulerZYXDegreesToPlane(double[] numbers)
     {
         numbers = CheckNumbers(numbers, 6);
         var euler = new Vector6d(numbers[0], numbers[1], numbers[2], numbers[5].ToRadians(), numbers[4].ToRadians(), numbers[3].ToRadians());
@@ -163,7 +161,7 @@ public static class GeometryUtil
         return t.ToPlane();
     }
 
-    internal static Plane EulerXYZToPlane(Vector6d euler)
+    public static Plane EulerXYZToPlane(Vector6d euler)
     {
         euler = CheckFiniteEuler(euler, nameof(euler));
         var t = euler.EulerXYZToTransform();
@@ -173,7 +171,7 @@ public static class GeometryUtil
     /// <summary>
     /// Code lifted from http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToAngle/
     /// </summary>
-    internal static double[] PlaneToAxisAngle(Plane plane)
+    public static double[] PlaneToAxisAngle(Plane plane)
     {
         plane = CheckPlane(plane, nameof(plane));
         var t = plane.ToTransform();
@@ -194,7 +192,7 @@ public static class GeometryUtil
         return AxisAngleNumbers(plane, AxisAngleVector(ref t));
     }
 
-    internal static Plane AxisAngleToPlane(double x, double y, double z, double vx, double vy, double vz)
+    public static Plane AxisAngleToPlane(double x, double y, double z, double vx, double vy, double vz)
     {
         x = CheckFinite(x, nameof(x));
         y = CheckFinite(y, nameof(y));
@@ -327,12 +325,12 @@ public static class GeometryUtil
 
     extension(ref Transform t)
     {
-        internal Vector3d GetColumn3d(int col)
+        public Vector3d GetColumn3d(int col)
         {
             return new(t[0, col], t[1, col], t[2, col]);
         }
 
-        internal void Set(double m00, double m01, double m02, double m03, double m10, double m11, double m12, double m13, double m20, double m21, double m22, double m23)
+        public void Set(double m00, double m01, double m02, double m03, double m10, double m11, double m12, double m13, double m20, double m21, double m22, double m23)
         {
             t.M00 = m00; t.M01 = m01; t.M02 = m02; t.M03 = m03;
             t.M10 = m10; t.M11 = m11; t.M12 = m12; t.M13 = m13;
@@ -340,7 +338,7 @@ public static class GeometryUtil
             t.M33 = 1;
         }
 
-        internal void SetRotation(double m00, double m01, double m02, double m10, double m11, double m12, double m20, double m21, double m22)
+        public void SetRotation(double m00, double m01, double m02, double m10, double m11, double m12, double m20, double m21, double m22)
         {
             t.M00 = m00; t.M01 = m01; t.M02 = m02;
             t.M10 = m10; t.M11 = m11; t.M12 = m12;
@@ -348,7 +346,7 @@ public static class GeometryUtil
             t.M33 = 1;
         }
 
-        internal Plane ToPlane()
+        public Plane ToPlane()
         {
             var p = new Point3d(t.M03, t.M13, t.M23);
             var vx = new Vector3d(t.M00, t.M10, t.M20);
@@ -369,7 +367,7 @@ public static class GeometryUtil
             return result;
         }
 
-        internal Vector6d ToEulerZYX()
+        public Vector6d ToEulerZYX()
         {
             double a = Atan2(-t.M10, t.M00);
             double mult = 1.0 - t.M20 * t.M20;
@@ -396,7 +394,7 @@ public static class GeometryUtil
             return new(t.M03, t.M13, t.M23, -a, -b, -c);
         }
 
-        internal Vector6d ToEulerZYZ()
+        public Vector6d ToEulerZYZ()
         {
             double alpha, beta, gamma;
 
@@ -427,7 +425,7 @@ public static class GeometryUtil
             return new(t.M03, t.M13, t.M23, alpha, beta, gamma);
         }
 
-        internal Vector6d ToEulerXYZ()
+        public Vector6d ToEulerXYZ()
         {
             double a = Atan2(-t.M12, t.M22);
             double mult = 1.0 - t.M02 * t.M02;
@@ -455,7 +453,7 @@ public static class GeometryUtil
         }
     }
 
-    internal static Transform RotationZ(double angle)
+    public static Transform RotationZ(double angle)
     {
         double cos = Cos(angle);
         double sin = Sin(angle);
@@ -466,7 +464,7 @@ public static class GeometryUtil
 
     extension(Vector6d euler)
     {
-        internal Transform EulerZYXToTransform()
+        public Transform EulerZYXToTransform()
         {
             double a = -euler.A4;
             double b = -euler.A5;
@@ -487,7 +485,7 @@ public static class GeometryUtil
             return t;
         }
 
-        internal Transform EulerXYZToTransform()
+        public Transform EulerXYZToTransform()
         {
             double a = euler.A4;
             double b = euler.A5;
@@ -510,7 +508,7 @@ public static class GeometryUtil
             return t;
         }
 
-        internal Transform EulerZYZToTransform()
+        public Transform EulerZYZToTransform()
         {
             double a = euler.A4;
             double b = euler.A5;
@@ -528,7 +526,7 @@ public static class GeometryUtil
 
     extension(ref Vector3d v)
     {
-        internal void Normalize()
+        public void Normalize()
         {
             double x = v.X;
             double y = v.Y;
@@ -543,12 +541,12 @@ public static class GeometryUtil
 
     extension(Plane plane)
     {
-        internal Plane WithOrigin(double x, double y, double z)
+        public Plane WithOrigin(double x, double y, double z)
         {
             return plane.WithOrigin(new Point3d(CheckFinite(x, nameof(x)), CheckFinite(y, nameof(y)), CheckFinite(z, nameof(z))));
         }
 
-        internal Plane WithOrigin(Point3d origin)
+        public Plane WithOrigin(Point3d origin)
         {
             plane.Origin = origin;
             return plane;
@@ -557,22 +555,22 @@ public static class GeometryUtil
 
     extension(ref Plane a)
     {
-        internal void InverseOrient(ref Plane b)
+        public void InverseOrient(ref Plane b)
         {
             _ = a.Transform(b.ToInverseTransform());
         }
 
-        internal void Orient(ref Plane b)
+        public void Orient(ref Plane b)
         {
             _ = a.Transform(b.ToTransform());
         }
 
-        internal Transform PlaneToPlane(ref Plane to)
+        public Transform PlaneToPlane(ref Plane to)
         {
             return to.ToTransform() * a.ToInverseTransform();
         }
 
-        internal Transform ToTransform()
+        public Transform ToTransform()
         {
             Transform t = default;
             var vx = a.XAxis;
@@ -594,7 +592,7 @@ public static class GeometryUtil
             return t;
         }
 
-        internal Transform ToInverseTransform()
+        public Transform ToInverseTransform()
         {
             Transform t = default;
             var vx = a.XAxis;
@@ -618,7 +616,7 @@ public static class GeometryUtil
         }
 
         // adapted from System.Numerics.Vectors
-        internal Quaternion ToQuaternion()
+        public Quaternion ToQuaternion()
         {
             var matrix = a.ToTransform();
             double trace = matrix.M00 + matrix.M11 + matrix.M22;
@@ -670,7 +668,7 @@ public static class GeometryUtil
     }
 
     // adapted from System.Numerics.Vectors
-    internal static Quaternion Slerp(ref Quaternion q1, ref Quaternion q2, double t)
+    public static Quaternion Slerp(ref Quaternion q1, ref Quaternion q2, double t)
     {
         const double epsilon = 1e-6;
 
@@ -715,7 +713,7 @@ public static class GeometryUtil
 
     extension(ref Quaternion quaternion)
     {
-        internal Plane ToPlane(Point3d point)
+        public Plane ToPlane(Point3d point)
         {
             var transform = quaternion.ToTransform();
             var plane = transform.ToPlane();
@@ -724,7 +722,7 @@ public static class GeometryUtil
         }
 
         // adapted from System.Numerics.Vectors
-        internal Transform ToTransform()
+        public Transform ToTransform()
         {
             double lengthSquared = quaternion.A * quaternion.A + quaternion.B * quaternion.B + quaternion.C * quaternion.C + quaternion.D * quaternion.D;
 

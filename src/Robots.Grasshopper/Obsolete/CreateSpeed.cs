@@ -1,5 +1,4 @@
 ﻿using System.Drawing;
-
 using static System.Math;
 
 namespace Robots.Grasshopper;

@@ -3,7 +3,6 @@ using System.Xml.Linq;
 using Rhino.DocObjects;
 using Rhino.FileIO;
 using Rhino.Geometry;
-
 using static Robots.Util;
 
 namespace Robots;

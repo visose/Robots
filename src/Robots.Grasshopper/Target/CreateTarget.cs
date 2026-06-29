@@ -1,7 +1,5 @@
 ﻿using System.Windows.Forms;
-
 using Rhino.Geometry;
-
 using GH_IO.Serialization;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Special;

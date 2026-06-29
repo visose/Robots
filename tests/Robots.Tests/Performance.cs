@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics;
-
 using NUnit.Framework;
-
 using Rhino.Geometry;
 
 namespace Robots.Tests;

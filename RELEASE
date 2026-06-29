@@ -1,3 +1,13 @@
+- version: 2.2.0
+  changes:
+  - Added geometric fly-by motion samples while keeping command-bearing targets as stop points.
+  - Added optional robot library collision meshes for mechanisms and tools, with display meshes used as the fallback.
+  - Added FANUC tool and frame number output with validation for controller-managed tool and frame data.
+  - Improved collision checking validation, endpoint coverage, and deterministic collision selection.
+  - Added helpers and validation for custom external-axis values.
+  - Added warnings when acceleration settings make velocity-only program timing optimistic.
+  - Expanded the wiki with workflow, component, parameter, manufacturer, and troubleshooting guidance, and changed plugin Help menu items to open the relevant wiki section in the system browser.
+
 - version: 2.1.2
   changes:
   - Fixed raw Target objects returned from Grasshopper Python outputs being treated as recursive lists.
