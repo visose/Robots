@@ -280,10 +280,15 @@ class ProgramMotionPlanner
         && index < systemTargets.Count - 1
         && systemTargets[index].ProgramTargets.Any(IsFlyby);
 
+    static bool HasFlyby(List<SystemTarget> systemTargets, int index, int group) =>
+        index > 0
+        && index < systemTargets.Count - 1
+        && IsFlyby(systemTargets[index].ProgramTargets[group]);
+
     static bool IsFlyby(ProgramTarget target) =>
         target.Target.Zone.IsFlyBy && !target.HasCommands;
 
-    static double[] GetEntryFractions(List<SystemTarget> systemTargets, int index)
+    double[] GetEntryFractions(List<SystemTarget> systemTargets, int index)
     {
         var previous = systemTargets[index - 1];
         var current = systemTargets[index];
@@ -292,15 +297,15 @@ class ProgramMotionPlanner
         for (int group = 0; group < fractions.Length; group++)
         {
             var target = current.ProgramTargets[group];
-            fractions[group] = IsFlyby(target)
-                ? 1.0 - GetZoneFraction(previous.ProgramTargets[group], target, target.Target.Zone)
+            fractions[group] = HasFlyby(systemTargets, index, group)
+                ? 1.0 - GetZoneFraction(previous.ProgramTargets[group], target, target, "incoming")
                 : 1.0;
         }
 
         return fractions;
     }
 
-    static double[] GetExitFractions(List<SystemTarget> systemTargets, int index)
+    double[] GetExitFractions(List<SystemTarget> systemTargets, int index)
     {
         var current = systemTargets[index];
         var next = systemTargets[index + 1];
@@ -309,30 +314,48 @@ class ProgramMotionPlanner
         for (int group = 0; group < fractions.Length; group++)
         {
             var target = current.ProgramTargets[group];
-            fractions[group] = IsFlyby(target)
-                ? GetZoneFraction(target, next.ProgramTargets[group], target.Target.Zone)
+            fractions[group] = HasFlyby(systemTargets, index, group)
+                ? GetZoneFraction(target, next.ProgramTargets[group], target, "outgoing")
                 : 0.0;
         }
 
         return fractions;
     }
 
-    static double GetZoneFraction(ProgramTarget from, ProgramTarget to, Zone zone)
+    double GetZoneFraction(ProgramTarget from, ProgramTarget to, ProgramTarget corner, string side)
     {
-        double distance = GetPathDistance(from, to);
+        double distance = GetPathDistance(from, to, out bool isCartesianDistance);
 
         if (distance <= DistanceTol)
             return 0.0;
 
+        var zone = corner.Target.Zone;
+        double maxDistance = 0.5 * distance;
+
+        if (isCartesianDistance && zone.Distance > maxDistance + DistanceTol)
+        {
+            _program.AddWarning(
+                IssueKind.MotionWarning,
+                $"Fly-by zone {zone.Distance:0.###} mm at target {corner.Index} of robot {corner.Group} exceeds half of the {side} segment; simulation uses {maxDistance:0.###} mm on that side.",
+                corner.Index,
+                corner.Group,
+                nameof(ProgramMotionPlanner));
+        }
+
         return Min(0.5, zone.Distance / distance);
     }
 
-    static double GetPathDistance(ProgramTarget from, ProgramTarget to)
+    static double GetPathDistance(ProgramTarget from, ProgramTarget to, out bool isCartesianDistance)
     {
         double distance = from.WorldPlane.Origin.DistanceTo(to.WorldPlane.Origin);
 
         if (distance > DistanceTol)
+        {
+            isCartesianDistance = true;
             return distance;
+        }
+
+        isCartesianDistance = false;
 
         var fromJoints = from.Kinematics.Joints;
         var toJoints = to.Kinematics.Joints;

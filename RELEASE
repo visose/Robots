@@ -1,3 +1,8 @@
+- version: 2.2.1
+  changes:
+  - Fixed program simulation jumping to the wrong pose when the time input jumps directly to the end and the last target has a fly-by zone.
+  - Added warnings when a fly-by zone is larger than half of an adjacent segment and simulation caps the effective blend distance.
+
 - version: 2.2.0
   changes:
   - Added geometric fly-by motion samples while keeping command-bearing targets as stop points.

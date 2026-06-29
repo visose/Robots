@@ -159,6 +159,19 @@ public class ProgramTests
     }
 
     [Test]
+    public void OversizedFlyByZoneAddsWarning()
+    {
+        var program = CreateLinearCornerProgram(cornerZone: new(200));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(program.Warnings, Has.Some.Contains("exceeds half of the incoming segment"));
+            Assert.That(program.Warnings, Has.Some.Contains("exceeds half of the outgoing segment"));
+        });
+    }
+
+    [Test]
     public void CollisionCheckIsUnavailableInRhino3dmBuild()
     {
         var program = TestRobots.URSampleProgram();
@@ -230,11 +243,11 @@ public class ProgramTests
             endPlane);
     }
 
-    static Program CreateLinearCornerProgram(Command? command = null)
+    static Program CreateLinearCornerProgram(Command? command = null, Zone? cornerZone = null)
     {
         var robot = TestRobots.UR10();
         Speed speed = new(300);
-        Zone zone = new(100);
+        Zone zone = cornerZone ?? new(100);
 
         Plane startPlane = Plane.WorldZX.WithOrigin(200, 100, 600);
         Plane cornerPlane = Plane.WorldZX.WithOrigin(500, 100, 600);

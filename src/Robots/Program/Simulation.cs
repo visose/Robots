@@ -1,5 +1,6 @@
 ﻿using Rhino.Geometry;
 using static Robots.GeometryUtil;
+using static Robots.Util;
 
 namespace Robots;
 
@@ -21,7 +22,6 @@ class Simulation
     readonly List<SystemTarget> _keyframes;
     readonly double _duration;
 
-    int _currentTarget;
     internal SimulationPose CurrentSimulationPose;
 
     public Simulation(Program program, List<SystemTarget> keyframes)
@@ -43,35 +43,38 @@ class Simulation
         if (isNormalized) time *= _program.Duration;
         time = Clamp(time, 0, _duration);
 
-        if (time >= CurrentSimulationPose.CurrentTime)
+        int keyframeIndex = FindKeyframeIndex(time);
+        var systemTarget = _keyframes[keyframeIndex];
+
+        if (keyframeIndex == 0 || time >= systemTarget.TotalTime - TimeTol)
         {
-            for (int i = _currentTarget; i < _keyframes.Count - 1; i++)
-            {
-                if (_keyframes[i + 1].TotalTime >= time)
-                {
-                    _currentTarget = i;
-                    break;
-                }
-            }
-        }
-        else
-        {
-            for (int i = _currentTarget; i >= 0; i--)
-            {
-                if (_keyframes[i].TotalTime <= time)
-                {
-                    _currentTarget = i;
-                    break;
-                }
-            }
+            SetCurrentPose(systemTarget, time);
+            return;
         }
 
-        var systemTarget = _keyframes[_currentTarget + 1];
-        var previous = _keyframes[_currentTarget + 0];
+        var previous = _keyframes[keyframeIndex - 1];
         var prevJoints = previous.ProgramTargets.Map(x => x.Kinematics.Joints);
 
         var targets = systemTarget.Lerp(previous, _program.RobotSystem, time, previous.TotalTime, systemTarget.TotalTime);
         CurrentSimulationPose.Kinematics = _program.RobotSystem.Kinematics(targets, prevJoints).AsReadOnly();
+        CurrentSimulationPose.TargetIndex = systemTarget.Index;
+        CurrentSimulationPose.CurrentTime = time;
+    }
+
+    int FindKeyframeIndex(double time)
+    {
+        for (int i = 0; i < _keyframes.Count; i++)
+        {
+            if (_keyframes[i].TotalTime >= time - TimeTol)
+                return i;
+        }
+
+        return _keyframes.Count - 1;
+    }
+
+    void SetCurrentPose(SystemTarget systemTarget, double time)
+    {
+        CurrentSimulationPose.Kinematics = systemTarget.ProgramTargets.MapToList(t => t.Kinematics).AsReadOnly();
         CurrentSimulationPose.TargetIndex = systemTarget.Index;
         CurrentSimulationPose.CurrentTime = time;
     }
