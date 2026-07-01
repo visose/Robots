@@ -90,12 +90,12 @@ public class ProgramTarget
         return target;
     }
 
-    internal void ReplaceCommand(TargetProperty attribute, Command command)
+    internal void ReplaceCommands(IReadOnlyDictionary<TargetProperty, TargetProperty> replacements)
     {
         for (int i = 0; i < _commands.Count; i++)
         {
-            if (_commands[i].Equals(attribute))
-                _commands[i] = command;
+            if (replacements.TryGetValue(_commands[i], out var replacement))
+                _commands[i] = (Command)replacement;
         }
     }
 

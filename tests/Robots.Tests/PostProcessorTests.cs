@@ -170,6 +170,25 @@ public class PostProcessorTests
     }
 
     [Test]
+    public void FlyByTargetCommandsStayUnsynchronizedInPostProcessors()
+    {
+        var robot = TestRobots.PostProcessorRobot(Manufacturers.ABB, 6);
+        JointTarget target = new(new double[6], zone: new(100), command: new SetDO(0, true));
+
+        Program program = new("P", robot, [TestRobots.Toolpath(target)]);
+        var code = TestRobots.FlattenCode(program);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(program.Targets[0].ProgramTargets[0].Target.Zone.IsFlyBy, Is.True);
+            Assert.That(program.Warnings, Has.Some.Contains("command timing may not be synchronized"));
+            Assert.That(code, Does.Contain("SetDO DO1,1;"));
+            Assert.That(code, Does.Not.Contain(@"SetDO \Sync"));
+        });
+    }
+
+    [Test]
     public void UnsupportedPostProcessorFeatureKeepsPublicErrorAndIssueKind()
     {
         var robot = TestRobots.PostProcessorRobot(Manufacturers.UR, 6);

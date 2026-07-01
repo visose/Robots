@@ -99,41 +99,107 @@ public class ProgramTests
     }
 
     [Test]
-    public void ProgramWarnsWhenAccelerationMakesVelocityTimingOptimistic()
+    public void ProgramAggregatesRepeatedStationaryWarnings()
     {
-        var robot = TestRobots.UR10();
-        Plane planeA = Plane.WorldZX.WithOrigin(200, 100, 600);
-        Plane planeB = Plane.WorldZX.WithOrigin(300, 100, 600);
-        CartesianTarget start = new(planeA, RobotConfigurations.Wrist, Motions.Joint);
-        CartesianTarget end = new(planeB, motion: Motions.Linear, speed: new(1000, translationAccel: 10));
+        JointTarget first = new([0, 0, 0, 0, 0, 0]);
+        JointTarget second = new([0, 0, 0, 0, 0, 0]);
+        JointTarget third = new([0, 0, 0, 0, 0, 0]);
 
-        Program program = new("P", robot, [TestRobots.Toolpath(start, end)]);
+        Program program = new("P", TestRobots.AbbIrb120(), [TestRobots.Toolpath(first, second, third)]);
+        var warnings = program.Warnings.Where(warning => warning.Contains("Position and orientation do not change")).ToArray();
 
         Assert.Multiple(() =>
         {
             Assert.That(program.Errors, Is.Empty);
-            Assert.That(program.Warnings, Has.Some.Contains("Acceleration limits may require"));
+            Assert.That(warnings, Has.Length.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("2 target(s)"));
         });
     }
 
     [Test]
-    public void ProgramDoesNotWarnForDefaultAccelerationTiming()
+    public void ProgramNamesEqualUnnamedAttributesConsistently()
     {
-        var program = TestRobots.URSampleProgram();
+        Speed firstSpeed = new(200);
+        Speed secondSpeed = new(200);
+        JointTarget first = new([0, 0, 0, 0, 0, 0], speed: firstSpeed);
+        JointTarget second = new([0.1, 0, 0, 0, 0, 0], speed: secondSpeed);
 
-        Assert.That(program.Warnings, Has.None.Contains("Acceleration limits may require"));
+        Program program = new("P", TestRobots.AbbIrb120(), [TestRobots.Toolpath(first, second)]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(program.Targets[0].ProgramTargets[0].Target.Speed.Name, Is.EqualTo("Speed000"));
+            Assert.That(program.Targets[1].ProgramTargets[0].Target.Speed.Name, Is.EqualTo("Speed000"));
+            Assert.That(program.Attributes.OfType<Speed>().Count(speed => speed.Name == "Speed000"), Is.EqualTo(1));
+        });
     }
 
     [Test]
-    public void CommandTargetWithFlyByZoneBecomesStopPoint()
+    public void CommandTargetWithFlyByZoneKeepsFlyByZone()
     {
         var program = CreateLinearCornerProgram(new Message("Reached"));
 
         Assert.Multiple(() =>
         {
             Assert.That(program.Errors, Is.Empty);
+            Assert.That(program.Targets[1].ProgramTargets[0].Target.Zone.IsFlyBy, Is.True);
+            Assert.That(program.Warnings, Has.Some.Contains("command timing may not be synchronized"));
+        });
+    }
+
+    [Test]
+    public void CustomCommandWithFlyByZoneKeepsFlyByZone()
+    {
+        var program = CreateLinearCornerProgram(new Commands.Custom(command: "noop();"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(program.Targets[1].ProgramTargets[0].Target.Zone.IsFlyBy, Is.True);
+            Assert.That(program.Warnings, Has.Some.Contains("fly-by-compatible commands"));
+        });
+    }
+
+    [Test]
+    public void IncompatibleCommandWithFlyByZoneBecomesStopPoint()
+    {
+        var program = CreateLinearCornerProgram(new Wait(1.0));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Errors, Is.Empty);
             Assert.That(program.Targets[1].ProgramTargets[0].Target.Zone, Is.EqualTo(Zone.Default));
-            Assert.That(program.Warnings, Has.Some.Contains("has commands and a fly-by zone"));
+            Assert.That(program.Warnings, Has.Some.Contains("Wait and a fly-by zone"));
+            Assert.That(program.Warnings, Has.Some.Contains("changed to a stop point"));
+        });
+    }
+
+    [Test]
+    public void CommandTargetsWithFlyByZonesAddOneWarning()
+    {
+        var robot = TestRobots.UR10();
+        Speed speed = new(300);
+        Zone zone = new(100);
+        Plane startPlane = Plane.WorldZX.WithOrigin(200, 100, 600);
+        Plane firstPlane = Plane.WorldZX.WithOrigin(500, 100, 600);
+        Plane secondPlane = Plane.WorldZX.WithOrigin(500, 400, 600);
+        Plane endPlane = Plane.WorldZX.WithOrigin(200, 400, 600);
+        CartesianTarget start = new(startPlane, RobotConfigurations.Wrist, Motions.Joint, speed: speed);
+        CartesianTarget first = new(firstPlane, motion: Motions.Linear, speed: speed, zone: zone, command: new Message("First"));
+        CartesianTarget second = new(secondPlane, motion: Motions.Linear, speed: speed, zone: zone, command: new Message("Second"));
+        CartesianTarget end = new(endPlane, motion: Motions.Linear, speed: speed);
+
+        Program program = new("P", robot, [TestRobots.Toolpath(start, first, second, end)], stepSize: 50);
+        var warnings = program.Warnings.Where(warning => warning.Contains("commands and fly-by")).ToArray();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(program.Targets[1].ProgramTargets[0].Target.Zone.IsFlyBy, Is.True);
+            Assert.That(program.Targets[2].ProgramTargets[0].Target.Zone.IsFlyBy, Is.True);
+            Assert.That(warnings, Has.Length.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("2 targets"));
         });
     }
 
@@ -162,12 +228,13 @@ public class ProgramTests
     public void OversizedFlyByZoneAddsWarning()
     {
         var program = CreateLinearCornerProgram(cornerZone: new(200));
+        var warnings = program.Warnings.Where(warning => warning.Contains("fly-by zone segment")).ToArray();
 
         Assert.Multiple(() =>
         {
             Assert.That(program.Errors, Is.Empty);
-            Assert.That(program.Warnings, Has.Some.Contains("exceeds half of the incoming segment"));
-            Assert.That(program.Warnings, Has.Some.Contains("exceeds half of the outgoing segment"));
+            Assert.That(warnings, Has.Length.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("2 fly-by zone segment(s)"));
         });
     }
 

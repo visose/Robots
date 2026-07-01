@@ -4,6 +4,8 @@ namespace Robots.Commands;
 
 public class Stop(bool runBefore = false) : Command(runBefore: runBefore)
 {
+    public override bool IsFlyByCompatible => false;
+
     protected override void Populate()
     {
         _commands.Add(Manufacturers.ABB, (_, _) => "Stop;");

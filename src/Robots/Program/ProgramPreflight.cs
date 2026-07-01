@@ -10,7 +10,7 @@ class ProgramPreflight(Program program)
         var targets = GetProgramTargets(systemTargets);
         ValidateTargetAxes(targets);
         ValidateMotions(targets);
-        ForceCommandStops(targets);
+        WarnCommandFlybys(targets);
         WarnDefaults(targets);
         WarnPayloads(targets);
 
@@ -64,22 +64,69 @@ class ProgramPreflight(Program program)
     void AddMotionError(ProgramTarget target, string message) =>
         _program.AddError(IssueKind.UnsupportedPostProcessorFeature, message, target.Index, target.Group, nameof(ProgramPreflight));
 
-    void ForceCommandStops(IReadOnlyList<ProgramTarget> targets)
+    void WarnCommandFlybys(IReadOnlyList<ProgramTarget> targets)
     {
+        int compatibleCount = 0;
+        int incompatibleCount = 0;
+        ProgramTarget? firstCompatible = null;
+        ProgramTarget? firstIncompatible = null;
+        Command? firstIncompatibleCommand = null;
+
         foreach (var target in targets)
         {
             if (!target.HasCommands || !target.Target.Zone.IsFlyBy)
                 continue;
 
-            target.Target = target.Target.WithZone(Zone.Default);
+            var incompatibleCommand = target.Commands.FirstOrDefault(command => !command.IsFlyByCompatible);
 
-            _program.AddWarning(
-                IssueKind.MotionWarning,
-                $"Target {target.Index} in robot {target.Group} has commands and a fly-by zone; the target was changed to a stop point.",
-                target.Index,
-                target.Group,
-                nameof(ProgramPreflight));
+            if (incompatibleCommand is null)
+            {
+                firstCompatible ??= target;
+                compatibleCount++;
+                continue;
+            }
+
+            firstIncompatible ??= target;
+            firstIncompatibleCommand ??= incompatibleCommand;
+            incompatibleCount++;
+            target.Target = target.Target.WithZone(Zone.Default);
         }
+
+        AddCompatibleFlyByWarning(compatibleCount, firstCompatible);
+        AddIncompatibleFlyByWarning(incompatibleCount, firstIncompatible, firstIncompatibleCommand);
+    }
+
+    void AddCompatibleFlyByWarning(int count, ProgramTarget? first) =>
+        AddCommandFlyByWarning(
+            count,
+            first,
+            target => $"Target {target.Index} in robot {target.Group} has fly-by-compatible commands and a fly-by zone; command timing may not be synchronized with the target position.",
+            (total, target) => $"{total} targets have fly-by-compatible commands and fly-by zones; command timing may not be synchronized with target positions. First affected target is {target.Index} in robot {target.Group}.");
+
+    void AddIncompatibleFlyByWarning(int count, ProgramTarget? first, Command? command)
+    {
+        var commandName = command?.GetType().Name ?? "command";
+
+        AddCommandFlyByWarning(
+            count,
+            first,
+            target => $"Target {target.Index} in robot {target.Group} has {commandName} and a fly-by zone; the target was changed to a stop point.",
+            (total, target) => $"{total} targets have commands that require stop points and fly-by zones; they were changed to stop points. First affected target is {target.Index} in robot {target.Group} with {commandName}.");
+    }
+
+    void AddCommandFlyByWarning(int count, ProgramTarget? first, Func<ProgramTarget, string> singular, Func<int, ProgramTarget, string> plural)
+    {
+        if (first is null)
+            return;
+
+        _program.AddWarning(
+            IssueKind.MotionWarning,
+            count,
+            first.Index,
+            first.Group,
+            nameof(ProgramPreflight),
+            () => singular(first),
+            total => plural(total, first));
     }
 
     void WarnDefaults(IReadOnlyList<ProgramTarget> targets)
@@ -164,8 +211,9 @@ class ProgramPreflight(Program program)
     void NameUnnamed(HashSet<TargetProperty> attributes, IReadOnlyList<ProgramTarget> targets)
     {
         Dictionary<Type, int> types = [];
+        Dictionary<TargetProperty, string> renames = [];
 
-        foreach (var attribute in attributes.ToArray())
+        foreach (var attribute in attributes)
         {
             if (attribute.HasName)
                 continue;
@@ -176,12 +224,16 @@ class ProgramPreflight(Program program)
                 i = 0;
 
             types[type] = ++i;
-            SetAttributeName(attribute, attributes, targets, $"{type.Name}{i - 1:000}");
+            renames.Add(attribute, $"{type.Name}{i - 1:000}");
         }
+
+        ApplyNames(attributes, targets, renames);
     }
 
     void RenameDuplicates(HashSet<TargetProperty> attributes, IReadOnlyList<ProgramTarget> targets)
     {
+        Dictionary<TargetProperty, string> renames = [];
+
         foreach (var group in attributes.GroupBy(a => a.Name))
         {
             if (!group.Skip(1).Any())
@@ -191,8 +243,10 @@ class ProgramPreflight(Program program)
             int i = 0;
 
             foreach (var attribute in group)
-                SetAttributeName(attribute, attributes, targets, $"{attribute.Name}{i++:000}");
+                renames.Add(attribute, $"{attribute.Name}{i++:000}");
         }
+
+        ApplyNames(attributes, targets, renames);
     }
 
     void ValidateFrame(ProgramTarget programTarget)
@@ -241,50 +295,59 @@ class ProgramPreflight(Program program)
     void AddFrameError(string message, ProgramTarget programTarget) =>
         _program.AddError(IssueKind.FrameCouplingInvalid, message, programTarget.Index, programTarget.Group, nameof(ProgramPreflight));
 
-    void SetAttributeName(TargetProperty attribute, HashSet<TargetProperty> attributes, IReadOnlyList<ProgramTarget> targets, string name)
+    void ApplyNames(HashSet<TargetProperty> attributes, IReadOnlyList<ProgramTarget> targets, Dictionary<TargetProperty, string> renames)
     {
-        var namedAttribute = attribute.CloneWithName<TargetProperty>(name);
+        if (renames.Count == 0)
+            return;
 
-        _ = attributes.Remove(attribute);
-        _ = attributes.Add(namedAttribute);
+        Dictionary<TargetProperty, TargetProperty> replacements = [];
 
-        switch (namedAttribute)
+        foreach (var (attribute, name) in renames)
         {
-            case Tool tool:
-                ReplaceTargetProperty(targets, attribute, target => target.Tool, target => target.WithTool(tool));
-                break;
-            case Frame frame:
-                ReplaceTargetProperty(targets, attribute, target => target.Frame, target => target.WithFrame(frame));
-                break;
-            case Speed speed:
-                ReplaceTargetProperty(targets, attribute, target => target.Speed, target => target.WithSpeed(speed));
-                break;
-            case Zone zone:
-                ReplaceTargetProperty(targets, attribute, target => target.Zone, target => target.WithZone(zone));
-                break;
-            case Command command:
-                ReplaceCommand(attribute, targets, command);
-                break;
+            var namedAttribute = attribute.CloneWithName<TargetProperty>(name);
+
+            _ = attributes.Remove(attribute);
+            _ = attributes.Add(namedAttribute);
+            replacements.Add(attribute, namedAttribute);
         }
+
+        _program.ReplaceInitCommands(replacements);
+        ReplaceProperties(targets, replacements);
     }
 
-    void ReplaceCommand(TargetProperty attribute, IReadOnlyList<ProgramTarget> targets, Command command)
-    {
-        _program.ReplaceInitCommand(attribute, command);
-
-        foreach (var target in targets)
-            target.ReplaceCommand(attribute, command);
-    }
-
-    static void ReplaceTargetProperty<T>(IReadOnlyList<ProgramTarget> targets, TargetProperty attribute, Func<Target, T> get, Func<Target, Target> replace)
-        where T : TargetProperty
+    static void ReplaceProperties(IReadOnlyList<ProgramTarget> targets, IReadOnlyDictionary<TargetProperty, TargetProperty> replacements)
     {
         foreach (var programTarget in targets)
         {
-            if (!get(programTarget.Target).Equals(attribute))
-                continue;
+            var target = programTarget.Target;
 
-            programTarget.Target = replace(programTarget.Target);
+            if (TryReplace(replacements, target.Tool, out Tool tool))
+                target = target.WithTool(tool);
+
+            if (TryReplace(replacements, target.Frame, out Frame frame))
+                target = target.WithFrame(frame);
+
+            if (TryReplace(replacements, target.Speed, out Speed speed))
+                target = target.WithSpeed(speed);
+
+            if (TryReplace(replacements, target.Zone, out Zone zone))
+                target = target.WithZone(zone);
+
+            programTarget.Target = target;
+            programTarget.ReplaceCommands(replacements);
         }
+    }
+
+    static bool TryReplace<T>(IReadOnlyDictionary<TargetProperty, TargetProperty> replacements, T attribute, out T replacement)
+        where T : TargetProperty
+    {
+        if (replacements.TryGetValue(attribute, out var value))
+        {
+            replacement = (T)value;
+            return true;
+        }
+
+        replacement = attribute;
+        return false;
     }
 }

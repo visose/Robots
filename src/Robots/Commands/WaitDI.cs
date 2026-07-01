@@ -4,6 +4,7 @@ public class WaitDI(int di, bool value = true, bool runBefore = false) : Command
 {
     public int DI { get; } = di;
     public bool Value { get; } = value;
+    public override bool IsFlyByCompatible => false;
 
     protected override bool Validate(Program program)
     {

@@ -139,15 +139,23 @@ public class Program : IProgram
     internal void AddWarning(IssueKind kind, string message, int? targetIndex = null, int? robotGroup = null, string? source = null) =>
         AddIssue(IssueLevel.Warning, kind, _warnings, _uniqueWarnings, message, targetIndex, robotGroup, source);
 
+    internal void AddWarning(IssueKind kind, int count, int? targetIndex, int? robotGroup, string source, Func<string> singular, Func<int, string> plural)
+    {
+        if (count == 0)
+            return;
+
+        AddWarning(kind, count == 1 ? singular() : plural(count), targetIndex, robotGroup, source);
+    }
+
     internal void AddAttributes(IEnumerable<TargetProperty> attributes) =>
         _attributes.AddRange(attributes);
 
-    internal void ReplaceInitCommand(TargetProperty attribute, Command command)
+    internal void ReplaceInitCommands(IReadOnlyDictionary<TargetProperty, TargetProperty> replacements)
     {
         for (int i = 0; i < _initCommands.Count; i++)
         {
-            if (_initCommands[i].Equals(attribute))
-                _initCommands[i] = command;
+            if (replacements.TryGetValue(_initCommands[i], out var replacement))
+                _initCommands[i] = (Command)replacement;
         }
     }
 

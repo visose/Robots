@@ -7,17 +7,31 @@ namespace Robots;
 class ProgramMotionPlanner
 {
     const double ContinuationStep = 50.0;
-    const double AccelerationWarningRatio = 1.25;
-    const double AccelerationWarningDelta = 0.1;
 
     readonly record struct TargetSpeed(double DeltaTime, double MinTime, int LeadingJoint, SpeedType Type);
     readonly record struct SegmentSpeed(double DeltaTime, double MinTime);
     readonly record struct JointSpeed(double Time, int LeadingJoint);
+    readonly record struct MotionWarn(int Index, int Group, int Joint);
+    readonly record struct ZoneCap(int Index, int Group, string Side, double Requested, double Used);
     enum EndpointMode { Interpolated, Direct, Continuation }
 
     readonly Program _program;
     readonly RobotSystem _robotSystem;
-    int _lastIndex;
+    int _stationaryCount;
+    int _rotationCount;
+    int _axisCount;
+    int _externalCount;
+    int _zoneCapCount;
+    int _lastStationary = -1;
+    int _lastRotation = -1;
+    int _lastAxis = -1;
+    int _lastExternal = -1;
+    MotionWarn _firstStationary;
+    MotionWarn _firstRotation;
+    MotionWarn _firstAxis;
+    MotionWarn _firstExternal;
+    ZoneCap _firstZoneCap;
+    ZoneCap _worstZoneCap;
 
     internal List<SystemTarget> Keyframes { get; } = [];
     internal List<SystemTarget> FixedTargets { get; }
@@ -36,8 +50,13 @@ class ProgramMotionPlanner
             ? FixTargetMotions(systemTarget, stepSize)
             : 0;
 
+        AddMotionWarnings();
+
         if (indexError == -1 && _program.Errors.Count == 0)
+        {
             ApplyFlybyKeyframes(systemTarget, stepSize);
+            AddZoneCapWarnings();
+        }
 
         FixedTargets = (indexError != -1)
              ? systemTarget.GetRange(0, indexError + 1)
@@ -136,7 +155,6 @@ class ProgramMotionPlanner
         SetInterpolatedEndpoint(systemTarget, prevStep, modes);
         CheckUndefined(systemTarget, systemTargets);
         FinalizeTarget(systemTarget, prevStep, time, segmentTime);
-        WarnAccelerationLimits(systemTarget, previous);
 
         return prevJoints;
     }
@@ -286,7 +304,7 @@ class ProgramMotionPlanner
         && IsFlyby(systemTargets[index].ProgramTargets[group]);
 
     static bool IsFlyby(ProgramTarget target) =>
-        target.Target.Zone.IsFlyBy && !target.HasCommands;
+        target.Target.Zone.IsFlyBy;
 
     double[] GetEntryFractions(List<SystemTarget> systemTargets, int index)
     {
@@ -333,14 +351,7 @@ class ProgramMotionPlanner
         double maxDistance = 0.5 * distance;
 
         if (isCartesianDistance && zone.Distance > maxDistance + DistanceTol)
-        {
-            _program.AddWarning(
-                IssueKind.MotionWarning,
-                $"Fly-by zone {zone.Distance:0.###} mm at target {corner.Index} of robot {corner.Group} exceeds half of the {side} segment; simulation uses {maxDistance:0.###} mm on that side.",
-                corner.Index,
-                corner.Group,
-                nameof(ProgramMotionPlanner));
-        }
+            TrackZoneCap(corner, side, zone.Distance, maxDistance);
 
         return Min(0.5, zone.Distance / distance);
     }
@@ -515,69 +526,80 @@ class ProgramMotionPlanner
             CopyEndpoint(programTarget, prevStep.ProgramTargets[programTarget.Group]);
     }
 
-    void WarnAccelerationLimits(SystemTarget systemTarget, SystemTarget previous)
+    void TrackZoneCap(ProgramTarget target, string side, double requested, double used)
     {
-        if (systemTarget.DeltaTime <= TimeTol)
+        ZoneCap cap = new(target.Index, target.Group, side, requested, used);
+
+        if (_zoneCapCount == 0)
+        {
+            _firstZoneCap = cap;
+            _worstZoneCap = cap;
+        }
+        else if (CapDelta(cap) > CapDelta(_worstZoneCap))
+        {
+            _worstZoneCap = cap;
+        }
+
+        _zoneCapCount++;
+    }
+
+    void AddZoneCapWarnings()
+    {
+        if (_zoneCapCount == 0)
             return;
 
-        foreach (var target in systemTarget.ProgramTargets)
-        {
-            var prevTarget = previous.ProgramTargets[target.Group];
-            double requiredTime = GetAccelerationTime(target, prevTarget);
+        var first = _firstZoneCap;
+        var worst = _worstZoneCap;
 
-            if (requiredTime <= TimeTol)
-                continue;
-
-            if (requiredTime <= Max(systemTarget.DeltaTime * AccelerationWarningRatio, systemTarget.DeltaTime + AccelerationWarningDelta))
-                continue;
-
-            _program.AddWarning(
-                IssueKind.MotionWarning,
-                $"Acceleration limits may require about {requiredTime:0.###} s for target {target.Index} of robot {target.Group}, but the velocity-only simulation uses {systemTarget.DeltaTime:0.###} s.",
-                target.Index,
-                target.Group,
-                nameof(ProgramMotionPlanner));
-        }
+        _program.AddWarning(
+            IssueKind.MotionWarning,
+            _zoneCapCount,
+            first.Index,
+            first.Group,
+            nameof(ProgramMotionPlanner),
+            () => $"Fly-by zone {first.Requested:0.###} mm at target {first.Index} of robot {first.Group} exceeds half of the {first.Side} segment; simulation uses {first.Used:0.###} mm on that side.",
+            count => $"{count} fly-by zone segment(s) exceed half of an adjacent segment; simulation caps their effective blend distance. First affected target is {first.Index} of robot {first.Group}; largest cap uses {worst.Used:0.###} mm instead of {worst.Requested:0.###} mm at target {worst.Index} of robot {worst.Group}.");
     }
 
-    double GetAccelerationTime(ProgramTarget target, ProgramTarget prevTarget)
+    static double CapDelta(ZoneCap cap) =>
+        cap.Requested - cap.Used;
+
+    void AddMotionWarnings()
     {
-        var speed = target.Target.Speed;
-        double time = 0;
+        AddMotionWarning(
+            _stationaryCount,
+            _firstStationary,
+            first => $"Position and orientation do not change for target {first.Index}.",
+            (count, first) => $"Position and orientation do not change for {count} target(s); first is target {first.Index} in robot {first.Group}.");
 
-        if (!target.IsJointMotion)
-        {
-            Plane prevPlane = target.GetPrevPlane(prevTarget);
-            double distance = prevPlane.Origin.DistanceTo(target.Plane.Origin);
-            time = Max(time, GetProfileTime(distance, speed.TranslationSpeed, speed.TranslationAccel));
-        }
+        AddMotionWarning(
+            _rotationCount,
+            _firstRotation,
+            first => $"Rotation speed limit reached in target {first.Index}.",
+            (count, first) => $"Rotation speed limit reached in {count} target(s); first is target {first.Index} in robot {first.Group}.");
 
-        var joints = _robotSystem.GetJoints(target.Group);
-        int jointCount = Min(target.Kinematics.Joints.Length, joints.Count);
+        AddMotionWarning(
+            _axisCount,
+            _firstAxis,
+            first => $"Axis {first.Joint + 1} speed limit reached in target {first.Index}.",
+            (count, first) => $"Axis speed limit reached in {count} target(s); first is axis {first.Joint + 1} in target {first.Index} of robot {first.Group}.");
 
-        for (int i = 0; i < jointCount; i++)
-        {
-            double distance = Abs(target.Kinematics.Joints[i] - prevTarget.Kinematics.Joints[i]);
-            double acceleration = joints[i] is PrismaticJoint
-                ? speed.TranslationAccel
-                : speed.AxisAccel;
-            time = Max(time, GetProfileTime(distance, joints[i].MaxSpeed, acceleration));
-        }
-
-        return time;
+        AddMotionWarning(
+            _externalCount,
+            _firstExternal,
+            first => $"External axis {first.Joint + 1} speed limit reached in target {first.Index}.",
+            (count, first) => $"External axis speed limit reached in {count} target(s); first is axis {first.Joint + 1} in target {first.Index} of robot {first.Group}.");
     }
 
-    static double GetProfileTime(double distance, double speed, double acceleration)
-    {
-        if (distance <= UnitTol)
-            return 0;
-
-        double accelerationDistance = speed * speed / acceleration;
-
-        return distance <= accelerationDistance
-            ? 2.0 * Sqrt(distance / acceleration)
-            : (distance / speed) + (speed / acceleration);
-    }
+    void AddMotionWarning(int count, MotionWarn first, Func<MotionWarn, string> singular, Func<int, MotionWarn, string> plural)
+        => _program.AddWarning(
+            IssueKind.MotionWarning,
+            count,
+            first.Index,
+            first.Group,
+            nameof(ProgramMotionPlanner),
+            () => singular(first),
+            total => plural(total, first));
 
     static void CopyEndpoint(ProgramTarget target, ProgramTarget source)
     {
@@ -869,16 +891,13 @@ class ProgramMotionPlanner
     {
         if (deltaTime < TimeTol)
         {
-            _program.AddWarning(IssueKind.MotionWarning, $"Position and orientation do not change for target {target.Index}.", target.Index, target.Group, nameof(ProgramMotionPlanner));
+            TrackMotion(ref _stationaryCount, ref _lastStationary, ref _firstStationary, target);
             return SpeedType.Tcp;
         }
 
         if (deltaIndex == 1)
         {
-            if (target.Index != _lastIndex)
-                _program.AddWarning(IssueKind.MotionWarning, $"Rotation speed limit reached in target {target.Index}.", target.Index, target.Group, nameof(ProgramMotionPlanner));
-
-            _lastIndex = target.Index;
+            TrackMotion(ref _rotationCount, ref _lastRotation, ref _firstRotation, target);
             return SpeedType.Rotation;
         }
 
@@ -887,10 +906,7 @@ class ProgramMotionPlanner
             if (leadingJoint < 0)
                 throw new InvalidOperationException("Axis speed limit was reached, but no leading joint was found.");
 
-            if (target.Index != _lastIndex)
-                _program.AddWarning(IssueKind.MotionWarning, $"Axis {leadingJoint + 1} speed limit reached in target {target.Index}.", target.Index, target.Group, nameof(ProgramMotionPlanner));
-
-            _lastIndex = target.Index;
+            TrackMotion(ref _axisCount, ref _lastAxis, ref _firstAxis, target, leadingJoint);
             return SpeedType.Axis;
         }
 
@@ -899,14 +915,24 @@ class ProgramMotionPlanner
             if (externalLeadingJoint < 0)
                 throw new InvalidOperationException("External axis speed limit was reached, but no leading external joint was found.");
 
-            if (target.Index != _lastIndex)
-                _program.AddWarning(IssueKind.MotionWarning, $"External axis {externalLeadingJoint + 1} speed limit reached in target {target.Index}.", target.Index, target.Group, nameof(ProgramMotionPlanner));
-
             leadingJoint = externalLeadingJoint;
-            _lastIndex = target.Index;
+            TrackMotion(ref _externalCount, ref _lastExternal, ref _firstExternal, target, externalLeadingJoint);
             return SpeedType.External;
         }
 
         return SpeedType.Tcp;
+    }
+
+    static void TrackMotion(ref int count, ref int last, ref MotionWarn first, ProgramTarget target, int joint = -1)
+    {
+        if (target.Index == last)
+            return;
+
+        last = target.Index;
+
+        if (count == 0)
+            first = new(target.Index, target.Group, joint);
+
+        count++;
     }
 }
