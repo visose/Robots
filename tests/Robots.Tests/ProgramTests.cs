@@ -7,26 +7,16 @@ namespace Robots.Tests;
 public class ProgramTests
 {
     [TestCaseSource(nameof(SamplePrograms))]
-    public void ProgramHasExpectedDurationAndJoints(SampleProgram sample)
-    {
-        var program = sample.CreateProgram();
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(program.Errors, Is.Empty);
-            Assert.That(program.Duration, Is.EqualTo(sample.Duration).Within(1e-14));
-            Assert.That(program.Targets[1].Joints, Is.EqualTo(sample.Joints).Within(1e-14));
-        });
-    }
-
-    [TestCaseSource(nameof(SamplePrograms))]
-    public void ProgramEndsAtRequestedPlane(SampleProgram sample)
+    public void ProgramHasExpectedMotion(SampleProgram sample)
     {
         var program = sample.CreateProgram();
         var plane = program.Targets[1].Planes[^1];
 
         Assert.Multiple(() =>
         {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(program.Duration, Is.EqualTo(sample.Duration).Within(1e-14));
+            Assert.That(program.Targets[1].Joints, Is.EqualTo(sample.Joints).Within(1e-14));
             Assert.That(plane.Origin.DistanceTo(sample.EndPlane.Origin), Is.LessThan(1e-9));
             Assert.That(Vector3d.VectorAngle(plane.XAxis, sample.EndPlane.XAxis), Is.LessThan(1e-12));
             Assert.That(Vector3d.VectorAngle(plane.YAxis, sample.EndPlane.YAxis), Is.LessThan(1e-12));
@@ -112,7 +102,9 @@ public class ProgramTests
         {
             Assert.That(program.Errors, Is.Empty);
             Assert.That(warnings, Has.Length.EqualTo(1));
-            Assert.That(warnings[0], Does.Contain("2 target(s)"));
+            Assert.That(warnings[0], Does.Contain("2 targets"));
+            Assert.That(warnings[0], Does.Contain("First affected is Target 1."));
+            Assert.That(warnings[0], Does.Not.StartWith("Target "));
         });
     }
 
@@ -135,43 +127,16 @@ public class ProgramTests
         });
     }
 
-    [Test]
-    public void CommandTargetWithFlyByZoneKeepsFlyByZone()
+    [TestCaseSource(nameof(FlyByCommands))]
+    public void CommandWithFlyByZoneKeepsFlyByZone(Command command)
     {
-        var program = CreateLinearCornerProgram(new Message("Reached"));
+        var program = CreateLinearCornerProgram(command);
 
         Assert.Multiple(() =>
         {
             Assert.That(program.Errors, Is.Empty);
             Assert.That(program.Targets[1].ProgramTargets[0].Target.Zone.IsFlyBy, Is.True);
-            Assert.That(program.Warnings, Has.Some.Contains("command timing may not be synchronized"));
-        });
-    }
-
-    [Test]
-    public void CustomCommandWithFlyByZoneKeepsFlyByZone()
-    {
-        var program = CreateLinearCornerProgram(new Commands.Custom(command: "noop();"));
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(program.Errors, Is.Empty);
-            Assert.That(program.Targets[1].ProgramTargets[0].Target.Zone.IsFlyBy, Is.True);
-            Assert.That(program.Warnings, Has.Some.Contains("fly-by-compatible commands"));
-        });
-    }
-
-    [Test]
-    public void IncompatibleCommandWithFlyByZoneBecomesStopPoint()
-    {
-        var program = CreateLinearCornerProgram(new Wait(1.0));
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(program.Errors, Is.Empty);
-            Assert.That(program.Targets[1].ProgramTargets[0].Target.Zone, Is.EqualTo(Zone.Default));
-            Assert.That(program.Warnings, Has.Some.Contains("Wait and a fly-by zone"));
-            Assert.That(program.Warnings, Has.Some.Contains("changed to a stop point"));
+            Assert.That(program.Warnings, Has.Some.Contains("Commands on a fly-by target"));
         });
     }
 
@@ -191,7 +156,7 @@ public class ProgramTests
         CartesianTarget end = new(endPlane, motion: Motions.Linear, speed: speed);
 
         Program program = new("P", robot, [TestRobots.Toolpath(start, first, second, end)], stepSize: 50);
-        var warnings = program.Warnings.Where(warning => warning.Contains("commands and fly-by")).ToArray();
+        var warnings = program.Warnings.Where(warning => warning.Contains("commands on fly-by targets")).ToArray();
 
         Assert.Multiple(() =>
         {
@@ -200,11 +165,13 @@ public class ProgramTests
             Assert.That(program.Targets[2].ProgramTargets[0].Target.Zone.IsFlyBy, Is.True);
             Assert.That(warnings, Has.Length.EqualTo(1));
             Assert.That(warnings[0], Does.Contain("2 targets"));
+            Assert.That(warnings[0], Does.Contain("First affected is Target 1."));
+            Assert.That(warnings[0], Does.Not.StartWith("Target "));
         });
     }
 
     [Test]
-    public void FlyByMotionSamplesAvoidCornerTarget()
+    public void FlyBySimulationAvoidsCornerTarget()
     {
         var program = CreateLinearCornerProgram();
         Assert.That(program.Errors, Is.Empty);
@@ -214,7 +181,7 @@ public class ProgramTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(flybySamples, Has.Length.GreaterThan(1));
+            Assert.That(flybySamples, Has.Length.EqualTo(1));
             Assert.That(flybySamples.Min(target => target.ProgramTargets[0].WorldPlane.Origin.DistanceTo(corner)), Is.GreaterThan(1.0));
         });
 
@@ -222,6 +189,35 @@ public class ProgramTests
         var simulated = program.CurrentSimulationPose.GetLastPlane(0);
 
         Assert.That(simulated.Origin.DistanceTo(corner), Is.GreaterThan(1.0));
+    }
+
+    [Test]
+    public void FlyByMotionSamplesStaySparseForShortSegments()
+    {
+        var robot = TestRobots.UR10();
+        Speed speed = new(300);
+        Zone zone = new(100);
+        List<Target> targets = [];
+
+        for (int i = 0; i < 24; i++)
+        {
+            Plane plane = Plane.WorldZX.WithOrigin(250 + i * 8, 100 + i % 2 * 8, 600);
+
+            targets.Add(i switch
+            {
+                0 => new CartesianTarget(plane, RobotConfigurations.Wrist, Motions.Joint, speed: speed),
+                23 => new CartesianTarget(plane, motion: Motions.Linear, speed: speed),
+                _ => new CartesianTarget(plane, motion: Motions.Linear, speed: speed, zone: zone)
+            });
+        }
+
+        Program program = new("P", robot, [new SimpleToolpath(targets)], stepSize: 50);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(program.MotionSamples.Count, Is.LessThanOrEqualTo(program.Targets.Count + 2));
+        });
     }
 
     [Test]
@@ -234,7 +230,9 @@ public class ProgramTests
         {
             Assert.That(program.Errors, Is.Empty);
             Assert.That(warnings, Has.Length.EqualTo(1));
-            Assert.That(warnings[0], Does.Contain("2 fly-by zone segment(s)"));
+            Assert.That(warnings[0], Does.Contain("2 fly-by zone segments"));
+            Assert.That(warnings[0], Does.Contain("First affected is Target 1."));
+            Assert.That(warnings[0], Does.Not.StartWith("Target "));
         });
     }
 
@@ -254,7 +252,7 @@ public class ProgramTests
         JointTarget target = new([0, 0, 0, 0, 0, 0], externalCustom: ExternalAxes.Custom("E1"));
         Program program = new("P", TestRobots.AbbIrb120(), [TestRobots.Toolpath(target)]);
 
-        Assert.That(program.Errors, Has.One.EqualTo("Target 0 of robot 0 has custom external axis values, but the robot does not have external axes."));
+        Assert.That(program.Errors, Has.One.EqualTo("Target 0: Custom external axis values supplied, but the robot does not have external axes."));
     }
 
     [Test]
@@ -263,7 +261,7 @@ public class ProgramTests
         JointTarget target = new([0, 0, 0, 0, 0, 0], external: [0], externalCustom: ExternalAxes.Custom("E1", "E2"));
         Program program = new("P", TestRobots.AbbIrb120WithCustomExternal(), [TestRobots.Toolpath(target)]);
 
-        Assert.That(program.Errors, Has.One.EqualTo("Target 0 of robot 0 has 2 custom external axis value(s), but at most 1 are supported."));
+        Assert.That(program.Errors, Has.One.EqualTo("Target 0: 2 custom external axis value(s) supplied, but at most 1 are supported."));
     }
 
     static IEnumerable<TestCaseData> SamplePrograms()
@@ -308,6 +306,14 @@ public class ProgramTests
                 -3.141592653589793
             ],
             endPlane);
+    }
+
+    static IEnumerable<TestCaseData> FlyByCommands()
+    {
+        yield return new TestCaseData(new Message("Reached")).SetName("Built-in motion-adjacent command");
+        yield return new TestCaseData(new Wait(1.0)).SetName("Built-in wait command");
+        yield return new TestCaseData(new Stop()).SetName("Built-in stop command");
+        yield return new TestCaseData(new Commands.Custom(command: "noop();")).SetName("Custom command");
     }
 
     static Program CreateLinearCornerProgram(Command? command = null, Zone? cornerZone = null)

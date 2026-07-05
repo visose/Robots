@@ -13,7 +13,6 @@ public abstract class Command(string? name = null, bool runBefore = false) : Tar
 
     protected virtual void Populate() { }
     public bool RunBefore { get; init; } = runBefore;
-    public virtual bool IsFlyByCompatible => true;
 
     internal virtual IEnumerable<Command> Flatten()
     {

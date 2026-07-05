@@ -13,13 +13,21 @@ static class GeometryUtil
         ArgumentOutOfRangeException.ThrowIfNotEqual(a.Length, b.Length, nameof(b));
         ArgumentOutOfRangeException.ThrowIfNotEqual(a.Length, c.Length, nameof(c));
 
-        double u = 1.0 - t;
         var values = new double[a.Length];
-
-        for (int i = 0; i < values.Length; i++)
-            values[i] = (u * u * a[i]) + (2.0 * u * t * b[i]) + (t * t * c[i]);
-
+        Quadratic(a, b, c, values, t);
         return values;
+    }
+
+    internal static void Quadratic(ReadOnlySpan<double> a, ReadOnlySpan<double> b, ReadOnlySpan<double> c, Span<double> result, double t)
+    {
+        ArgumentOutOfRangeException.ThrowIfNotEqual(a.Length, b.Length, nameof(b));
+        ArgumentOutOfRangeException.ThrowIfNotEqual(a.Length, c.Length, nameof(c));
+        ArgumentOutOfRangeException.ThrowIfNotEqual(a.Length, result.Length, nameof(result));
+
+        double u = 1.0 - t;
+
+        for (int i = 0; i < result.Length; i++)
+            result[i] = (u * u * a[i]) + (2.0 * u * t * b[i]) + (t * t * c[i]);
     }
 
     public static Point3d Quadratic(Point3d a, Point3d b, Point3d c, double t)

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Product>Robots</Product>
-    <Version>2.2.2</Version>
+    <Version>2.2.3</Version>
     <Authors>Robots Authors</Authors>
     <Description>Create and simulate ABB, KUKA, UR, Staubli, Franka Emika, Doosan, Fanuc, Igus, and Jaka robot programs in Rhino 8, Grasshopper, and .NET.</Description>
     <PackageTags>Robots;Robotics;ABB;KUKA;UR;Staubli;FrankaEmika;Doosan;Fanuc;Igus;Jaka</PackageTags>

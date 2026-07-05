@@ -182,7 +182,7 @@ public class PostProcessorTests
         {
             Assert.That(program.Errors, Is.Empty);
             Assert.That(program.Targets[0].ProgramTargets[0].Target.Zone.IsFlyBy, Is.True);
-            Assert.That(program.Warnings, Has.Some.Contains("command timing may not be synchronized"));
+            Assert.That(program.Warnings, Has.Some.Contains("Commands on a fly-by target may run before or after the exact target position"));
             Assert.That(code, Does.Contain("SetDO DO1,1;"));
             Assert.That(code, Does.Not.Contain(@"SetDO \Sync"));
         });
@@ -380,7 +380,7 @@ public class PostProcessorTests
         var program = CreateProcessProgram(TestRobots.UR10(), speed);
 
         Assert.That(program.Code, Is.Null);
-        Assert.That(program.Errors, Has.One.EqualTo("Process motion does not support time-based speed on UR robots; target 1 in robot 0 uses Speed.Time."));
+        Assert.That(program.Errors, Has.One.EqualTo("Target 1: Process motion does not support time-based speed on UR robots."));
     }
 
     [Test]
@@ -389,7 +389,7 @@ public class PostProcessorTests
         var program = CreateProcessProgram(TestRobots.AbbIrb120());
 
         Assert.That(program.Code, Is.Null);
-        Assert.That(program.Errors, Has.One.EqualTo("Process motion is only supported on UR robots; target 1 in robot 0 is unsupported."));
+        Assert.That(program.Errors, Has.One.EqualTo("Target 1: Process motion is only supported on UR robots."));
     }
 
     static Program CreateProcessProgram(RobotSystem robot, Speed? speed = null)

@@ -7,6 +7,7 @@ namespace Robots.Tests;
 class Performance
 {
     const int Iterations = 20;
+    const int DenseAbbTargetCount = 20000;
     const double DurationTolerance = 1e-8;
 
     [Test]
@@ -18,6 +19,24 @@ class Performance
     [Explicit("Reports synthetic UR parse and program creation timings.")]
     public void UR10ProgramCreation() =>
         Report("UR10", TestRobots.UR10, URProgram, 1.7425724724517486);
+
+    [Test]
+    [Explicit("Reports ABB program creation timing for a dense fly-by linear toolpath.")]
+    public void AbbDenseFlyByProgramCreation()
+    {
+        var robot = TestRobots.AbbIrb120();
+        var targets = DenseAbbTargets();
+
+        var watch = Stopwatch.StartNew();
+        Program program = new("DenseAbb", robot, [new SimpleToolpath(targets)], stepSize: 50);
+        watch.Stop();
+
+        TestContext.Out.WriteLine($"ABB dense fly-by target count: {targets.Length}");
+        TestContext.Out.WriteLine($"ABB dense fly-by program creation: {watch.Elapsed.TotalMilliseconds:0.###} ms");
+        TestContext.Out.WriteLine($"motion samples / segments: {program.MotionSamples.Count} / {program.MotionSegments.Count}");
+
+        Assert.That(program.Errors, Is.Empty);
+    }
 
     static Program AbbProgram(RobotSystem robot)
     {
@@ -46,6 +65,33 @@ class Performance
         SimpleToolpath toolpath = new(targetA, targetB);
 
         return new("URTest", robot, [toolpath], stepSize: 0.01);
+    }
+
+    static Target[] DenseAbbTargets()
+    {
+        Speed speed = new(300);
+        Zone zone = new(0.4);
+        var targets = new Target[DenseAbbTargetCount];
+
+        for (int i = 0; i < targets.Length; i++)
+        {
+            int row = i / 100;
+            int column = i % 100;
+
+            if (row % 2 == 1)
+                column = 99 - column;
+
+            Plane plane = Plane.WorldYZ.WithOrigin(250 + column, 100 + row, 610);
+
+            targets[i] = i switch
+            {
+                0 => new CartesianTarget(plane, RobotConfigurations.Wrist, Motions.Joint, speed: speed),
+                var last when last == targets.Length - 1 => new CartesianTarget(plane, motion: Motions.Linear, speed: speed),
+                _ => new CartesianTarget(plane, motion: Motions.Linear, speed: speed, zone: zone)
+            };
+        }
+
+        return targets;
     }
 
     static void Report(string label, Func<RobotSystem> robotFactory, Func<RobotSystem, Program> programFactory, double expectedDuration)

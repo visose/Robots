@@ -6,12 +6,12 @@ class PositionerKinematics : MechanismKinematics
     internal PositionerKinematics(Positioner positioner)
         : base(positioner) { }
 
-    protected override void SetJoints(KinematicSolution solution, Target target, double[]? prevJoints)
+    protected override void SetJoints(KinematicSolution solution, Target target, PreviousJoints prevJoints)
     {
         SetExternalJoints(solution, target);
 
-        if (prevJoints is not null)
-            solution.Joints = JointTarget.GetAbsoluteJoints(solution.Joints, prevJoints);
+        if (prevJoints.HasValue)
+            solution.Joints = JointTarget.GetAbsoluteJoints(solution.Joints, prevJoints.Values);
     }
 
     protected override void SetPlanes(KinematicSolution solution, Target target)

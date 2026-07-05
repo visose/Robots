@@ -2,31 +2,29 @@
 
 namespace Robots;
 
-class IndustrialSystemKinematics
+static class IndustrialSystemKinematics
 {
-    readonly KinematicSolution[] _solutions;
-
-    internal List<KinematicSolution> ToList() => [.. _solutions];
-
-    internal IndustrialSystemKinematics(IndustrialSystem system, IReadOnlyList<Target> targets, IReadOnlyList<double[]?>? prevJoints)
+    internal static List<KinematicSolution> Solve(IndustrialSystem system, IReadOnlyList<Target> targets, IReadOnlyList<double[]?>? prevJoints)
     {
-        var groupsCount = system.MechanicalGroups.Count;
-        _solutions = new KinematicSolution[groupsCount];
-        var solving = new bool[groupsCount];
-        var solved = new bool[groupsCount];
+        int groupCount = system.MechanicalGroups.Count;
+        var solutions = new KinematicSolution[groupCount];
+        var solving = new bool[groupCount];
+        var solved = new bool[groupCount];
 
-        Exception.ThrowIfNotEqual(targets.Count, groupsCount, $"Robot system requires {groupsCount} target(s), but {targets.Count} were supplied.");
+        Exception.ThrowIfNotEqual(targets.Count, groupCount, $"Robot system requires {groupCount} target(s), but {targets.Count} were supplied.");
 
         if (prevJoints is not null)
-            Exception.ThrowIfNotEqual(prevJoints.Count, groupsCount, $"Robot system requires {groupsCount} previous joint set(s), but {prevJoints.Count} were supplied.");
+            Exception.ThrowIfNotEqual(prevJoints.Count, groupCount, $"Robot system requires {groupCount} previous joint set(s), but {prevJoints.Count} were supplied.");
 
-        for (int i = 0; i < groupsCount; i++)
+        for (int i = 0; i < groupCount; i++)
             _ = Solve(i);
+
+        return [.. solutions];
 
         KinematicSolution Solve(int groupIndex)
         {
             if (solved[groupIndex])
-                return _solutions[groupIndex];
+                return solutions[groupIndex];
 
             if (solving[groupIndex])
                 throw new ArgumentException("Circular frame coupling is not supported.");
@@ -37,7 +35,7 @@ class IndustrialSystemKinematics
             var target = targets[groupIndex];
             Plane? coupledPlane = GetCoupledPlane(groupIndex, target);
             var kinematics = group.Kinematics(target, prevJoints?[groupIndex], coupledPlane, system.BasePlane);
-            _solutions[groupIndex] = kinematics;
+            solutions[groupIndex] = kinematics;
 
             solving[groupIndex] = false;
             solved[groupIndex] = true;
@@ -54,7 +52,7 @@ class IndustrialSystemKinematics
             if (coupledGroup == groupIndex && target.Frame.CoupledMechanism == -1)
                 throw new ArgumentException("Cannot couple a robot with itself.");
 
-            if (coupledGroup < 0 || coupledGroup >= _solutions.Length)
+            if (coupledGroup < 0 || coupledGroup >= groupCount)
                 throw new ArgumentException("Coupled mechanical group is outside the robot system.");
 
             if (coupledGroup == groupIndex)
@@ -63,10 +61,9 @@ class IndustrialSystemKinematics
             var coupledSolution = Solve(coupledGroup);
             var coupledMechanicalGroup = system.MechanicalGroups[coupledGroup];
 
-            if (target.Frame.CoupledMechanism == -1)
-                return coupledSolution.Planes[coupledMechanicalGroup.RobotFlangePlaneIndex];
-
-            return coupledSolution.Planes[coupledMechanicalGroup.ExternalFlangePlaneIndex(target.Frame.CoupledMechanism)];
+            return target.Frame.CoupledMechanism == -1
+                ? coupledSolution.Planes[coupledMechanicalGroup.RobotFlangePlaneIndex]
+                : coupledSolution.Planes[coupledMechanicalGroup.ExternalFlangePlaneIndex(target.Frame.CoupledMechanism)];
         }
     }
 }

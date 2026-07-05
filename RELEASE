@@ -1,8 +1,13 @@
+- version: 2.2.3
+  changes:
+  - Improved Create Program performance for large fly-by toolpaths.
+  - Kept fly-by zones on targets with commands and warn when command timing may not match exact target positions.
+  - Removed unnecessary `robot 0` text from warnings and errors in single-robot programs.
+
 - version: 2.2.2
   changes:
   - Fixed slow Create Program solves caused by repeated motion warnings in large toolpaths.
   - Improved Create Program performance when many targets use unnamed custom speeds, zones, frames, tools, or commands.
-  - Added command-level fly-by compatibility so compatible commands keep fly-by zones while incompatible commands become stop points.
 
 - version: 2.2.1
   changes:

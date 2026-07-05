@@ -6,8 +6,10 @@ public enum SpeedType { Tcp, Rotation, Axis, External };
 
 public class ProgramTarget
 {
+    static readonly IReadOnlyList<Command> _noCommands = [];
+
     KinematicSolution? _kinematics;
-    List<Command> _commands;
+    List<Command>? _commands;
 
     public Target Target { get; internal set; }
     public int Group { get; internal set; }
@@ -77,21 +79,44 @@ public class ProgramTarget
     {
         Target = target;
         Group = group;
-        _commands = [.. target.Command.Flatten()];
-        Commands = _commands.AsReadOnly();
+        _commands = CreateCommands(target.Command, out var commands);
+        Commands = commands;
     }
 
     internal ProgramTarget ShallowClone(SystemTarget systemTarget)
     {
         var target = (ProgramTarget)MemberwiseClone();
         target.SystemTarget = systemTarget;
-        target._commands = [];
-        target.Commands = target._commands.AsReadOnly();
+        target._commands = null;
+        target.Commands = _noCommands;
         return target;
+    }
+
+    static List<Command>? CreateCommands(Command command, out IReadOnlyList<Command> commands)
+    {
+        if (command == Command.Default)
+        {
+            commands = _noCommands;
+            return null;
+        }
+
+        List<Command> list = [.. command.Flatten()];
+
+        if (list.Count == 0)
+        {
+            commands = _noCommands;
+            return null;
+        }
+
+        commands = list.AsReadOnly();
+        return list;
     }
 
     internal void ReplaceCommands(IReadOnlyDictionary<TargetProperty, TargetProperty> replacements)
     {
+        if (_commands is null)
+            return;
+
         for (int i = 0; i < _commands.Count; i++)
         {
             if (replacements.TryGetValue(_commands[i], out var replacement))
@@ -140,7 +165,10 @@ public class ProgramTarget
 
         if (IsJointMotion)
         {
-            var joints = allJoints[..robotJointCount];
+            var joints = allJoints.Length == robotJointCount
+                ? allJoints
+                : allJoints[..robotJointCount];
+
             return new JointTarget(joints, Target, external);
         }
         else
@@ -160,8 +188,6 @@ public class ProgramTarget
 
         if (kinematicErrors.Count > 0)
         {
-            program.AddError(IssueKind.KinematicError, $"Errors in target {Index} of robot {Group}:", Index, Group, nameof(ProgramTarget));
-
             foreach (var error in kinematicErrors)
                 program.AddError(IssueKind.KinematicError, error, Index, Group, nameof(ProgramTarget));
         }
@@ -169,7 +195,7 @@ public class ProgramTarget
         if (prevTarget is not null && prevTarget.Kinematics.Configuration != kinematics.Configuration)
         {
             ChangesConfiguration = true;
-            program.AddWarning(IssueKind.ConfigurationChanged, $"Configuration changed to \"{kinematics.Configuration}\" on target {Index} of robot {Group}.", Index, Group, nameof(ProgramTarget));
+            program.AddWarning(IssueKind.ConfigurationChanged, $"Configuration changed to \"{kinematics.Configuration}\".", Index, Group, nameof(ProgramTarget));
         }
         else
         {

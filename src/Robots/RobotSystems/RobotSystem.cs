@@ -66,6 +66,7 @@ public abstract class RobotSystem
     internal abstract double Payload(int group);
     internal abstract IReadOnlyList<Joint> GetJoints(int group);
     internal abstract RobotArm GetRobot(int group);
+    internal virtual int RobotCount => 1;
     internal int GetRobotJointCount(int group) => GetRobot(group).Joints.Length;
     internal int GetExternalJointCount(int group) => GetJoints(group).Count - GetRobotJointCount(group);
     internal bool RequiresContinuation(int group) => GetRobot(group).Solver.RequiresContinuation;
@@ -77,22 +78,22 @@ public abstract class RobotSystem
         int externalCount = GetExternalJointCount(group);
 
         if (target is JointTarget jointTarget && jointTarget.Joints.Length != robotJointCount)
-            return $"has {jointTarget.Joints.Length} joint value(s), but {robotJointCount} are required";
+            return $"{jointTarget.Joints.Length} joint value(s) supplied, but {robotJointCount} are required";
 
         if (target.ExternalCustom is { Length: > 0 } externalCustom)
         {
             if (externalCount == 0)
-                return "has custom external axis values, but the robot does not have external axes";
+                return "Custom external axis values supplied, but the robot does not have external axes";
 
             if (externalCustom.Length > externalCount)
-                return $"has {externalCustom.Length} custom external axis value(s), but at most {externalCount} are supported";
+                return $"{externalCustom.Length} custom external axis value(s) supplied, but at most {externalCount} are supported";
         }
 
         return (externalCount, RedundantJointIndex(group), target.External.Length) switch
         {
-            ( > 0, _, var count) when count != externalCount => $"has {count} external axis value(s), but {externalCount} are required",
-            (0, not null, > 1) => $"has {target.External.Length} external axis value(s), but at most one redundant joint value is accepted",
-            (0, null, > 0) => "has external axis values, but the robot does not have external axes",
+            ( > 0, _, var count) when count != externalCount => $"{count} external axis value(s) supplied, but {externalCount} are required",
+            (0, not null, > 1) => $"{target.External.Length} external axis value(s) supplied, but at most one redundant joint value is accepted",
+            (0, null, > 0) => "External axis values supplied, but the robot does not have external axes",
             _ => null
         };
     }

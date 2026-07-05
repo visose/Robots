@@ -13,6 +13,17 @@ public class SystemTarget
     public Plane[] Planes => ProgramTargets.FlattenToArray(x => x.Kinematics.Planes);
     public double[] Joints => ProgramTargets.FlattenToArray(x => x.Kinematics.Joints);
 
+    internal double[][] JointSets(double[][]? result = null)
+    {
+        result ??= new double[ProgramTargets.Count][];
+        ArgumentOutOfRangeException.ThrowIfNotEqual(result.Length, ProgramTargets.Count, nameof(result));
+
+        for (int i = 0; i < result.Length; i++)
+            result[i] = ProgramTargets[i].Kinematics.Joints;
+
+        return result;
+    }
+
     internal SystemTarget(List<ProgramTarget> groupTargets, int index)
     {
         foreach (var target in groupTargets)
@@ -36,6 +47,12 @@ public class SystemTarget
     internal Target[] Lerp(SystemTarget prevTarget, RobotSystem robot, double t, double start, double end)
     {
         var targets = new Target[ProgramTargets.Count];
+        return Lerp(prevTarget, robot, t, start, end, targets);
+    }
+
+    internal Target[] Lerp(SystemTarget prevTarget, RobotSystem robot, double t, double start, double end, Target[] targets)
+    {
+        ArgumentOutOfRangeException.ThrowIfNotEqual(targets.Length, ProgramTargets.Count, nameof(targets));
 
         for (int i = 0; i < targets.Length; i++)
             targets[i] = ProgramTargets[i].Lerp(prevTarget.ProgramTargets[i], robot, t, start, end);
@@ -48,6 +65,13 @@ public class SystemTarget
         ArgumentOutOfRangeException.ThrowIfNotEqual(fractions.Count, ProgramTargets.Count, nameof(fractions));
 
         var targets = new Target[ProgramTargets.Count];
+        return LerpFractions(prevTarget, robot, fractions, targets);
+    }
+
+    internal Target[] LerpFractions(SystemTarget prevTarget, RobotSystem robot, IReadOnlyList<double> fractions, Target[] targets)
+    {
+        ArgumentOutOfRangeException.ThrowIfNotEqual(fractions.Count, ProgramTargets.Count, nameof(fractions));
+        ArgumentOutOfRangeException.ThrowIfNotEqual(targets.Length, ProgramTargets.Count, nameof(targets));
 
         for (int i = 0; i < targets.Length; i++)
             targets[i] = ProgramTargets[i].Lerp(prevTarget.ProgramTargets[i], robot, fractions[i], 0.0, 1.0);

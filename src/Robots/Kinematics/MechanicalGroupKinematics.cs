@@ -11,25 +11,25 @@ class MechanicalGroupKinematics
         _group = group;
     }
 
-    internal KinematicSolution Solve(Target target, double[]? prevJoints, Plane? coupledPlane, Plane? basePlane)
+    internal KinematicSolution Solve(Target target, PreviousJoints prevJoints, Plane? coupledPlane, Plane? basePlane)
     {
-        KinematicSolution solution = new();
         var group = _group;
-        var jointCount = group.Joints.Length;
+        int jointCount = group.Joints.Length;
 
-        if (prevJoints is not null)
+        if (prevJoints.HasValue)
             Exception.ThrowIfNotEqual(prevJoints.Length, jointCount, $"Previous joints must contain {jointCount} value(s), but {prevJoints.Length} were supplied.");
 
-        solution.Joints = new double[jointCount];
+        KinematicSolution solution = new() { Joints = new double[jointCount] };
         var planes = new Plane[jointCount + group.Externals.Length + 2];
         int planeIndex = 0;
+        Span<double> prevScratch = stackalloc double[jointCount];
 
         Plane? robotBase = basePlane;
         Mechanism? coupledMechanism = GetCoupledMechanism(target, group);
 
         foreach (var external in group.Externals)
         {
-            var externalPrevJoints = GetPreviousJoints(prevJoints, external);
+            var externalPrevJoints = GetMechanismPreviousJoints(prevJoints, external, prevScratch);
             var externalKinematics = external.Kinematics(target, externalPrevJoints, basePlane);
 
             CopyJoints(solution.Joints, external, externalKinematics);
@@ -48,7 +48,7 @@ class MechanicalGroupKinematics
             target = WithCoupledFrame(target, coupledPlane.Value);
 
         var robot = group.Robot;
-        var robotPrevJoints = GetPreviousJoints(prevJoints, robot);
+        var robotPrevJoints = GetMechanismPreviousJoints(prevJoints, robot, prevScratch);
         var robotKinematics = robot.Kinematics(target, robotPrevJoints, robotBase);
 
         CopyJoints(solution.Joints, robot, robotKinematics);
@@ -73,17 +73,33 @@ class MechanicalGroupKinematics
             ? null
             : group.Externals[target.Frame.CoupledMechanism];
 
-    static double[]? GetPreviousJoints(double[]? prevJoints, Mechanism mechanism)
+    static PreviousJoints GetMechanismPreviousJoints(PreviousJoints prevJoints, Mechanism mechanism, Span<double> scratch)
     {
-        if (prevJoints is null)
-            return null;
+        if (!prevJoints.HasValue)
+            return default;
 
-        var result = new double[mechanism.Joints.Length];
+        var values = prevJoints.Values;
+
+        if (values.Length != mechanism.Joints.Length)
+            return ProjectPreviousJoints(prevJoints, mechanism, scratch);
+
+        for (int i = 0; i < values.Length; i++)
+        {
+            if (mechanism.Joints[i].Number != i)
+                return ProjectPreviousJoints(prevJoints, mechanism, scratch);
+        }
+
+        return prevJoints;
+    }
+
+    static PreviousJoints ProjectPreviousJoints(PreviousJoints prevJoints, Mechanism mechanism, Span<double> scratch)
+    {
+        var result = scratch[..mechanism.Joints.Length];
 
         for (int i = 0; i < result.Length; i++)
             result[i] = prevJoints[mechanism.Joints[i].Number];
 
-        return result;
+        return new(result);
     }
 
     static void CopyJoints(double[] joints, Mechanism mechanism, KinematicSolution kinematics)

@@ -12,7 +12,7 @@ class SphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
     /// <summary>
     /// Code adapted from https://github.com/Jmeyer1292/opw_kinematics
     /// </summary>
-    protected override double[] InverseKinematics(Transform t, RobotConfigurations configuration, double[] external, double[]? prevJoints, out List<string> errors)
+    protected override double[] InverseKinematics(Transform t, RobotConfigurations configuration, double[] external, PreviousJoints prevJoints, out List<string> errors)
     {
         bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
         bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);

@@ -28,13 +28,13 @@ abstract class MechanismKinematics
         _sα = joints.Map(joint => Sin(joint.Alpha));
     }
 
-    internal KinematicSolution Solve(Target target, double[]? prevJoints, Plane? basePlane)
+    internal KinematicSolution Solve(Target target, PreviousJoints prevJoints, Plane? basePlane)
     {
         var solution = new KinematicSolution();
 
         int jointCount = _mechanism.Joints.Length;
 
-        if (prevJoints is not null)
+        if (prevJoints.HasValue)
             Exception.ThrowIfNotEqual(prevJoints.Length, jointCount, $"Previous joints must contain {jointCount} value(s), but {prevJoints.Length} were supplied.");
 
         // Init properties
@@ -67,7 +67,7 @@ abstract class MechanismKinematics
     internal virtual bool RequiresContinuation => false;
     internal virtual int? RedundantJointIndex => null;
 
-    protected virtual void SetJoints(KinematicSolution solution, Target target, double[]? prevJoints) =>
+    protected virtual void SetJoints(KinematicSolution solution, Target target, PreviousJoints prevJoints) =>
         SetExternalJoints(solution, target);
 
     protected abstract void SetPlanes(KinematicSolution solution, Target target);

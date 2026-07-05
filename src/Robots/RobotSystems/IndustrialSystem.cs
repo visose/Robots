@@ -59,6 +59,8 @@ public abstract class IndustrialSystem : RobotSystem
         return MechanicalGroups[group].Robot;
     }
 
+    internal override int RobotCount => MechanicalGroups.Count;
+
     internal int GetPlaneIndex(Frame frame)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(frame.CoupledMechanicalGroup);
@@ -76,7 +78,7 @@ public abstract class IndustrialSystem : RobotSystem
     }
 
     public override List<KinematicSolution> Kinematics(IReadOnlyList<Target> target, IReadOnlyList<double[]?>? prevJoints = null) =>
-        new IndustrialSystemKinematics(this, target, prevJoints).ToList();
+        IndustrialSystemKinematics.Solve(this, target, prevJoints);
 
     public override double DegreeToRadian(double degree, int i, int group = 0) => MechanicalGroups[group].DegreeToRadian(CheckFinite(degree, nameof(degree)), i);
 }

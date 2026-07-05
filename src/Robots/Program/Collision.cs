@@ -1,6 +1,5 @@
 ﻿using Rhino.Geometry;
 #if RHINOCOMMON
-using static System.Math;
 using static Robots.Util;
 #endif
 
@@ -47,19 +46,13 @@ public class Collision
         ArgumentOutOfRangeException.ThrowIfLessThan(environmentPlane, -1);
         _environmentPlane = environmentPlane;
 
-        var motionSamples = GetMotionSamples();
         int meshCount = RhinoMeshPoser.CreateCollision(_program.RobotSystem).Meshes.Length + (_environment is null ? 0 : 1);
         _first = ValidateSet(first, nameof(first), meshCount);
         _second = ValidateSet(second, nameof(second), meshCount);
-        ValidateEnvironmentPlane(motionSamples, environmentPlane);
+        ValidateEnvironmentPlane(environmentPlane);
 
-        Collide(motionSamples);
+        Collide();
     }
-
-    IReadOnlyList<SystemTarget> GetMotionSamples() =>
-        _program.MotionSamples.Count > 0
-            ? _program.MotionSamples
-            : _program.Targets;
 
     static int[] ValidateSet(IReadOnlyList<int> indices, string name, int meshCount)
     {
@@ -74,15 +67,15 @@ public class Collision
         return [.. indices];
     }
 
-    void ValidateEnvironmentPlane(IReadOnlyList<SystemTarget> motionSamples, int environmentPlane)
+    void ValidateEnvironmentPlane(int environmentPlane)
     {
         if (_environment is null || _environmentPlane == -1)
             return;
 
-        if (motionSamples.Count == 0)
-            throw new InvalidOperationException("Collision checking requires at least one motion sample.");
+        if (_program.Targets.Count == 0)
+            throw new InvalidOperationException("Collision checking requires at least one target.");
 
-        int planeCount = motionSamples[0].Planes.Length;
+        int planeCount = _program.Targets[0].Planes.Length;
 
         if (_environmentPlane >= planeCount)
             throw new ArgumentOutOfRangeException(nameof(environmentPlane), environmentPlane, $"Environment plane index is outside the posed robot plane range 0..{planeCount - 1}.");
@@ -95,12 +88,13 @@ public class Collision
         return value;
     }
 
-    void Collide(IReadOnlyList<SystemTarget> motionSamples)
+    void Collide()
     {
+        var segments = _program.MotionSegments;
         object gate = new();
         int collisionPosition = int.MaxValue;
 
-        _ = Parallel.For(1, motionSamples.Count, (position, state) =>
+        _ = Parallel.For(0, segments.Count, (position, state) =>
         {
             lock (gate)
             {
@@ -108,25 +102,23 @@ public class Collision
                     return;
             }
 
-            var systemTarget = motionSamples[position];
-            var previous = motionSamples[position - 1];
-
-            int divisions = GetDivisions(systemTarget, previous);
-
+            var segment = segments[position];
+            int divisions = segment.GetDivisions(_linearStep, _angularStep);
             var meshPoser = RhinoMeshPoser.CreateCollision(_program.RobotSystem);
-
-            int j = position == 1 ? 0 : 1;
-            var prevJoints = previous.ProgramTargets.Map(x => x.Kinematics.Joints);
+            int j = position == 0 ? 0 : 1;
+            var prevJoints = segment.Start.JointSets();
+            var targets = new Target[segment.Start.ProgramTargets.Count];
 
             for (int i = j; i <= divisions; i++)
             {
                 double t = i / (double)divisions;
-                var targets = systemTarget.Lerp(previous, _system, t, 0.0, 1.0);
+                double time = segment.Start.TotalTime + ((segment.End.TotalTime - segment.Start.TotalTime) * t);
+                _ = segment.Lerp(_system, time, targets);
                 var kinematics = _program.RobotSystem.Kinematics(targets, prevJoints);
                 ThrowIfKinematicErrors(kinematics);
-                prevJoints = kinematics.Map(k => k.Joints);
+                prevJoints = kinematics.JointSets(prevJoints);
 
-                var meshes = PoseMeshes(meshPoser, kinematics, systemTarget);
+                var meshes = PoseMeshes(meshPoser, kinematics, _program.Targets[segment.TargetIndex]);
 
                 var setA = SelectMeshes(meshes, _first);
                 var setB = SelectMeshes(meshes, _second);
@@ -140,7 +132,7 @@ public class Collision
                         if (position < collisionPosition)
                         {
                             Meshes = [meshClash[0].MeshA, meshClash[0].MeshB];
-                            CollisionTarget = systemTarget;
+                            CollisionTarget = _program.Targets[segment.TargetIndex];
                             collisionPosition = position;
                         }
                     }
@@ -149,38 +141,6 @@ public class Collision
                 }
             }
         });
-    }
-
-    int GetDivisions(SystemTarget systemTarget, SystemTarget previous)
-    {
-        int divisions = 1;
-
-        for (int group = 0; group < systemTarget.ProgramTargets.Count; group++)
-        {
-            var target = systemTarget.ProgramTargets[group];
-            var prevTarget = previous.ProgramTargets[group];
-
-            double distance = prevTarget.WorldPlane.Origin.DistanceTo(target.WorldPlane.Origin);
-            double linearDivisions = Ceiling(distance / _linearStep);
-            double maxAngle = MaxJointDelta(target.Kinematics.Joints, prevTarget.Kinematics.Joints);
-            double angularDivisions = Ceiling(maxAngle / _angularStep);
-            int currentDivisions = (int)Max(linearDivisions, angularDivisions);
-            divisions = Max(divisions, currentDivisions);
-        }
-
-        return divisions;
-    }
-
-    static double MaxJointDelta(double[] current, double[] previous)
-    {
-        ArgumentOutOfRangeException.ThrowIfNotEqual(current.Length, previous.Length, nameof(current));
-
-        double max = 0;
-
-        for (int i = 0; i < current.Length; i++)
-            max = Max(max, Abs(current[i] - previous[i]));
-
-        return max;
     }
 
     Mesh[] PoseMeshes(RhinoMeshPoser meshPoser, IReadOnlyList<KinematicSolution> kinematics, SystemTarget systemTarget)
@@ -218,9 +178,15 @@ public class Collision
 
     static void ThrowIfKinematicErrors(IReadOnlyList<KinematicSolution> kinematics)
     {
-        var errors = kinematics.SelectMany(solution => solution.Errors).ToArray();
+        List<string>? errors = null;
 
-        if (errors.Length > 0)
+        foreach (var solution in kinematics)
+        {
+            foreach (var error in solution.Errors)
+                (errors ??= []).Add(error);
+        }
+
+        if (errors is not null)
             throw new InvalidOperationException($"Collision interpolation produced kinematic errors: {string.Join(" ", errors)}");
     }
 

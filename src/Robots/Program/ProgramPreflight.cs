@@ -35,7 +35,7 @@ class ProgramPreflight(Program program)
             {
                 _program.AddError(
                     IssueKind.TargetAxesInvalid,
-                    $"Target {target.Index} of robot {target.Group} {error}.",
+                    $"{error}.",
                     target.Index,
                     target.Group,
                     nameof(ProgramPreflight));
@@ -52,12 +52,12 @@ class ProgramPreflight(Program program)
 
             if (_robotSystem is not SystemUR)
             {
-                AddMotionError(target, $"Process motion is only supported on UR robots; target {target.Index} in robot {target.Group} is unsupported.");
+                AddMotionError(target, "Process motion is only supported on UR robots.");
                 continue;
             }
 
             if (cartesian.Speed.Time > 0)
-                AddMotionError(target, $"Process motion does not support time-based speed on UR robots; target {target.Index} in robot {target.Group} uses Speed.Time.");
+                AddMotionError(target, "Process motion does not support time-based speed on UR robots.");
         }
     }
 
@@ -66,56 +66,18 @@ class ProgramPreflight(Program program)
 
     void WarnCommandFlybys(IReadOnlyList<ProgramTarget> targets)
     {
-        int compatibleCount = 0;
-        int incompatibleCount = 0;
-        ProgramTarget? firstCompatible = null;
-        ProgramTarget? firstIncompatible = null;
-        Command? firstIncompatibleCommand = null;
+        int count = 0;
+        ProgramTarget? first = null;
 
         foreach (var target in targets)
         {
             if (!target.HasCommands || !target.Target.Zone.IsFlyBy)
                 continue;
 
-            var incompatibleCommand = target.Commands.FirstOrDefault(command => !command.IsFlyByCompatible);
-
-            if (incompatibleCommand is null)
-            {
-                firstCompatible ??= target;
-                compatibleCount++;
-                continue;
-            }
-
-            firstIncompatible ??= target;
-            firstIncompatibleCommand ??= incompatibleCommand;
-            incompatibleCount++;
-            target.Target = target.Target.WithZone(Zone.Default);
+            first ??= target;
+            count++;
         }
 
-        AddCompatibleFlyByWarning(compatibleCount, firstCompatible);
-        AddIncompatibleFlyByWarning(incompatibleCount, firstIncompatible, firstIncompatibleCommand);
-    }
-
-    void AddCompatibleFlyByWarning(int count, ProgramTarget? first) =>
-        AddCommandFlyByWarning(
-            count,
-            first,
-            target => $"Target {target.Index} in robot {target.Group} has fly-by-compatible commands and a fly-by zone; command timing may not be synchronized with the target position.",
-            (total, target) => $"{total} targets have fly-by-compatible commands and fly-by zones; command timing may not be synchronized with target positions. First affected target is {target.Index} in robot {target.Group}.");
-
-    void AddIncompatibleFlyByWarning(int count, ProgramTarget? first, Command? command)
-    {
-        var commandName = command?.GetType().Name ?? "command";
-
-        AddCommandFlyByWarning(
-            count,
-            first,
-            target => $"Target {target.Index} in robot {target.Group} has {commandName} and a fly-by zone; the target was changed to a stop point.",
-            (total, target) => $"{total} targets have commands that require stop points and fly-by zones; they were changed to stop points. First affected target is {target.Index} in robot {target.Group} with {commandName}.");
-    }
-
-    void AddCommandFlyByWarning(int count, ProgramTarget? first, Func<ProgramTarget, string> singular, Func<int, ProgramTarget, string> plural)
-    {
         if (first is null)
             return;
 
@@ -125,21 +87,32 @@ class ProgramPreflight(Program program)
             first.Index,
             first.Group,
             nameof(ProgramPreflight),
-            () => singular(first),
-            total => plural(total, first));
+            () => "Commands on a fly-by target may run before or after the exact target position.",
+            total => $"{total} targets have commands on fly-by targets; commands may run before or after the exact target positions.");
     }
 
     void WarnDefaults(IReadOnlyList<ProgramTarget> targets)
     {
-        WarnMatching(targets, t => t.Tool.Equals(Tool.Default), "have their tool set to default");
-        WarnMatching(targets, t => t.Speed.Equals(Speed.Default), "have their speed set to default");
+        WarnMatching(
+            targets,
+            t => t.Tool.Equals(Tool.Default),
+            "Tool is set to default.",
+            count => $"{count} targets have their tool set to default.");
+
+        WarnMatching(
+            targets,
+            t => t.Speed.Equals(Speed.Default),
+            "Speed is set to default.",
+            count => $"{count} targets have their speed set to default.");
+
         WarnMatching(
             targets,
             t => t is CartesianTarget { Motion: not Motions.Joint, Configuration: not null },
-            "are set to non-joint motion with a forced configuration (configuration is ignored for non-joint motions)");
+            "Forced configuration is ignored for non-joint motions.",
+            count => $"{count} targets are set to non-joint motion with a forced configuration; configuration is ignored for non-joint motions.");
     }
 
-    void WarnMatching(IReadOnlyList<ProgramTarget> targets, Func<Target, bool> condition, string message)
+    void WarnMatching(IReadOnlyList<ProgramTarget> targets, Func<Target, bool> condition, string singular, Func<int, string> plural)
     {
         int count = 0;
         ProgramTarget? first = null;
@@ -157,10 +130,12 @@ class ProgramPreflight(Program program)
         {
             _program.AddWarning(
                 IssueKind.AttributeDefaulted,
-                $"{count} target(s) {message}; the first is target {first.Index} in robot {first.Group}.",
+                count,
                 first.Index,
                 first.Group,
-                nameof(ProgramPreflight));
+                nameof(ProgramPreflight),
+                () => singular,
+                plural);
         }
     }
 
@@ -176,7 +151,7 @@ class ProgramPreflight(Program program)
             {
                 _program.AddWarning(
                     IssueKind.PayloadExceeded,
-                    $"Weight of tool {tool.Name} exceeds the rated payload of robot {group}: {payload} kg.",
+                    $"Tool {tool.Name} exceeds rated payload: {payload} kg.",
                     robotGroup: group,
                     source: nameof(ProgramPreflight));
             }
@@ -253,7 +228,7 @@ class ProgramPreflight(Program program)
     {
         var frame = programTarget.Target.Frame;
 
-        string context = $"Frame {frame.Name} in target {programTarget.Index} of robot {programTarget.Group}";
+        string context = $"Frame {frame.Name}";
 
         if (!frame.IsCoupled)
         {

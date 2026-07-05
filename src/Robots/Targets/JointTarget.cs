@@ -30,8 +30,13 @@ public class JointTarget : Target
     protected override Target WithProperties(Tool tool, Speed speed, Zone zone, Command command, Frame frame, double[] external, string[]? externalCustom) =>
         new JointTarget(Joints, tool, speed, zone, command, frame, external, externalCustom);
 
-    public static double[] Lerp(double[] a, double[] b, double t, double min, double max)
+    public static double[] Lerp(double[] a, double[] b, double t, double min, double max) =>
+        Lerp(a.AsSpan(0, a.Length), b.AsSpan(0, b.Length), t, min, max);
+
+    internal static double[] Lerp(ReadOnlySpan<double> a, ReadOnlySpan<double> b, double t, double min, double max)
     {
+        ArgumentOutOfRangeException.ThrowIfNotEqual(a.Length, b.Length, nameof(b));
+
         t = (t - min) / (max - min);
         if (double.IsNaN(t)) t = 0;
         var result = new double[a.Length];
@@ -53,7 +58,10 @@ public class JointTarget : Target
         return result;
     }
 
-    public static double[] GetAbsoluteJoints(double[] joints, double[] prevJoints)
+    public static double[] GetAbsoluteJoints(double[] joints, double[] prevJoints) =>
+        GetAbsoluteJoints(joints.AsSpan(0, joints.Length), prevJoints.AsSpan(0, prevJoints.Length));
+
+    internal static double[] GetAbsoluteJoints(ReadOnlySpan<double> joints, ReadOnlySpan<double> prevJoints)
     {
         double[] closestJoints = new double[joints.Length];
 

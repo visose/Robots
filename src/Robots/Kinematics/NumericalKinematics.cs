@@ -23,17 +23,17 @@ class NumericalKinematics(RobotArm robot, bool useModifiedDH = false, int? redun
         return DH(joints);
     }
 
-    protected override double[] InverseKinematics(Transform t, RobotConfigurations configuration, double[] external, double[]? prevJoints, out List<string> errors)
+    protected override double[] InverseKinematics(Transform t, RobotConfigurations configuration, double[] external, PreviousJoints prevJoints, out List<string> errors)
     {
         const double min = 1e-5;
         const double max = 0.3;
 
         errors = [];
-        prevJoints ??= _midJoints;
-        double[] joints = [.. prevJoints];
+        var previous = prevJoints.HasValue ? prevJoints.Values : _midJoints.AsSpan();
+        var joints = previous.ToArray();
 
         if (_redundant is int redundant)
-            joints[redundant] = external.Length > 0 ? external[0] : prevJoints[redundant];
+            joints[redundant] = external.Length > 0 ? external[0] : previous[redundant];
 
         for (int i = 0; i < 400; i++)
         {

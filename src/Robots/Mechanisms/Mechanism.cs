@@ -83,6 +83,9 @@ public abstract class Mechanism
     }
 
     public KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? basePlane = null) =>
+        Solver.Solve(target, new(prevJoints), basePlane);
+
+    internal KinematicSolution Kinematics(Target target, PreviousJoints prevJoints, Plane? basePlane) =>
         Solver.Solve(target, prevJoints, basePlane);
 
     private protected abstract MechanismKinematics CreateSolver();

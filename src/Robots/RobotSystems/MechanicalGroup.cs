@@ -38,6 +38,9 @@ public class MechanicalGroup
     }
 
     internal KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? coupledPlane = null, Plane? basePlane = null) =>
+        _kinematics.Solve(target, new(prevJoints), coupledPlane, basePlane);
+
+    internal KinematicSolution Kinematics(Target target, PreviousJoints prevJoints, Plane? coupledPlane, Plane? basePlane) =>
         _kinematics.Solve(target, prevJoints, coupledPlane, basePlane);
 
     internal int ExternalFlangePlaneIndex(int mechanismIndex)

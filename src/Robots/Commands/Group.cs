@@ -18,7 +18,6 @@ public class Group : Command, IReadOnlyList<Command>
 
     public Command this[int index] => _items[index];
     public int Count => _items.Length;
-    public override bool IsFlyByCompatible => _items.All(command => command.IsFlyByCompatible);
     public IEnumerator<Command> GetEnumerator() => ((IEnumerable<Command>)_items).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
 

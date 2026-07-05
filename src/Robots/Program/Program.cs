@@ -62,6 +62,7 @@ public class Program : IProgram
     readonly List<TargetProperty> _attributes = [];
     readonly List<Command> _initCommands;
     readonly List<SystemTarget> _motionSamples = [];
+    readonly List<MotionSegment> _motionSegments = [];
     readonly SystemTarget[] _targets;
 
     public string Name { get; }
@@ -76,6 +77,7 @@ public class Program : IProgram
     public double Duration { get; internal set; }
     internal IReadOnlyList<ProgramIssue> Issues => _issues;
     internal IReadOnlyList<SystemTarget> MotionSamples => _motionSamples;
+    internal IReadOnlyList<MotionSegment> MotionSegments => _motionSegments;
 
     public IMeshPoser? MeshPoser { get; set; }
     public SimulationPose CurrentSimulationPose => _simulation?.CurrentSimulationPose
@@ -107,7 +109,8 @@ public class Program : IProgram
             if (motionPlanner.Keyframes.Count > 0)
             {
                 _motionSamples.AddRange(motionPlanner.Keyframes);
-                _simulation = new(this, motionPlanner.Keyframes);
+                _motionSegments.AddRange(motionPlanner.Segments);
+                _simulation = new(this, _motionSamples[0], _motionSegments);
             }
 
             targets = motionPlanner.FixedTargets;
@@ -144,7 +147,13 @@ public class Program : IProgram
         if (count == 0)
             return;
 
-        AddWarning(kind, count == 1 ? singular() : plural(count), targetIndex, robotGroup, source);
+        if (count == 1)
+        {
+            AddWarning(kind, singular(), targetIndex, robotGroup, source);
+            return;
+        }
+
+        AddIssue(IssueLevel.Warning, kind, _warnings, _uniqueWarnings, AddFirstAffected(plural(count), targetIndex, robotGroup), targetIndex, robotGroup, source, formatLocation: false);
     }
 
     internal void AddAttributes(IEnumerable<TargetProperty> attributes) =>
@@ -159,14 +168,44 @@ public class Program : IProgram
         }
     }
 
-    void AddIssue(IssueLevel level, IssueKind kind, List<string> messages, HashSet<string> unique, string message, int? targetIndex, int? robotGroup, string? source)
+    void AddIssue(IssueLevel level, IssueKind kind, List<string> messages, HashSet<string> unique, string message, int? targetIndex, int? robotGroup, string? source, bool formatLocation = true)
     {
+        if (formatLocation)
+            message = FormatIssueMessage(message, targetIndex, robotGroup);
+
         if (!unique.Add(message))
             return;
 
         messages.Add(message);
         _issues.Add(new(level, kind, message, targetIndex, robotGroup, source));
     }
+
+    string FormatIssueMessage(string message, int? targetIndex, int? robotGroup)
+    {
+        if (targetIndex is int index)
+            return $"{TargetName(index, robotGroup)}: {message}";
+
+        if (ShowRobotGroup(robotGroup))
+            return $"Robot {robotGroup}: {message}";
+
+        return message;
+    }
+
+    internal string TargetReference(int index, int? robotGroup) =>
+        TargetName(index, robotGroup);
+
+    string AddFirstAffected(string message, int? targetIndex, int? robotGroup) =>
+        targetIndex is int index
+            ? $"{message} First affected is {TargetReference(index, robotGroup)}."
+            : message;
+
+    string TargetName(int index, int? robotGroup) =>
+        ShowRobotGroup(robotGroup)
+            ? $"Target {index} (robot {robotGroup})"
+            : $"Target {index}";
+
+    bool ShowRobotGroup(int? robotGroup) =>
+        robotGroup is not null && RobotSystem.RobotCount > 1;
 
     void CheckName(string name, RobotSystem robotSystem)
     {
@@ -242,7 +281,7 @@ public class Program : IProgram
 
                 if (target is null)
                 {
-                    AddError(IssueKind.ToolpathInvalid, $"Target index {index} in robot {group} is null or invalid.", index, group, nameof(BuildSystemTargets));
+                    AddError(IssueKind.ToolpathInvalid, "Input target is null or invalid.", index, group, nameof(BuildSystemTargets));
                     return systemTargets;
                 }
 
