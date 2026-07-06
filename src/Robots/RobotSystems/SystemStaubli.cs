@@ -1,5 +1,4 @@
-﻿using System.Text;
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 
 namespace Robots;
 
@@ -35,17 +34,15 @@ public class SystemStaubli : IndustrialSystem
 
     internal override void SaveCode(IProgram program, string folder)
     {
-        if (program.Code is null)
-            throw new InvalidOperationException("Program code was not generated.");
+        var programCode = RequireCode(program);
 
-        var programDir = Path.Combine(folder, program.Name);
-        _ = Directory.CreateDirectory(programDir);
+        var programDir = CreateProgramDirectory(folder, program.Name);
 
-        for (int i = 0; i < program.Code.Count; i++)
+        for (int i = 0; i < programCode.Count; i++)
         {
             string programName = $"{program.Name}";
 
-            for (int j = 0; j < program.Code[i].Count; j++)
+            for (int j = 0; j < programCode[i].Count; j++)
             {
                 string name = j switch
                 {
@@ -57,10 +54,7 @@ public class SystemStaubli : IndustrialSystem
                 };
 
                 string file = Path.Combine(programDir, name);
-                var joinedCode = string.Join("\r\n", program.Code[i][j]);
-                var utf8WithBom = new UTF8Encoding(true);
-                using var writer = new StreamWriter(file, false, utf8WithBom);
-                writer.WriteLine(joinedCode);
+                WriteCodeFile(file, programCode[i][j], encoding: Utf8WithBom, trailingNewline: true);
             }
         }
     }

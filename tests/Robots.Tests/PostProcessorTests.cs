@@ -55,6 +55,33 @@ public class PostProcessorTests
     }
 
     [Test]
+    public void AbbPgfUsesCrLfLineEndings()
+    {
+        string actual = SystemAbb.CreatePgf("TestProgram_T_ROB1.mod");
+        string expected = """
+        <?xml version="1.0" encoding="ISO-8859-1" ?>
+        <Program>
+            <Module>TestProgram_T_ROB1.mod</Module>
+        </Program>
+        """.UseCRLF();
+
+        Assert.That(actual, Is.EqualTo(expected));
+    }
+
+    [TestCase(Manufacturers.KUKA, 6)]
+    [TestCase(Manufacturers.Staubli, 6)]
+    [TestCase(Manufacturers.FrankaEmika, 7)]
+    public void ProgramCodeContainsOnlySingleLines(Manufacturers manufacturer, int jointCount)
+    {
+        var program = CreateProgram(manufacturer, jointCount);
+        var code = program.Code ?? throw new InvalidOperationException("Program code was not generated.");
+        var lines = code.SelectMany(group => group).SelectMany(file => file);
+
+        Assert.That(program.Errors, Is.Empty);
+        Assert.That(lines, Has.None.Matches<string>(line => line.Contains('\r') || line.Contains('\n')));
+    }
+
+    [Test]
     public void DuplicateInvalidCommandsStayProgramErrors()
     {
         var robot = TestRobots.PostProcessorRobot(Manufacturers.ABB, 6);
@@ -107,7 +134,10 @@ public class PostProcessorTests
         var code = TestRobots.FlattenCode(program);
 
         Assert.That(program.Errors, Is.Empty);
-        Assert.That(code, Does.Contain("data = MotionData(dynamic_rel)\n  motion = WaypointMotion(["));
+        Assert.That(code, Does.Contain("""
+            data = MotionData(dynamic_rel)
+              motion = WaypointMotion([
+            """.UseLF()));
         Assert.That(code, Does.Contain("robot.move(DefaultTool, motion, data)"));
     }
 
@@ -216,7 +246,7 @@ public class PostProcessorTests
 
         var program = new Program("P", robot, [toolpath], multiFileIndices: [0, 1]);
         var code = program.Code ?? throw new InvalidOperationException("Program code was not generated.");
-        var mainCode = string.Join("\n", code[0][0]);
+        var mainCode = string.Join("\n", code[0][0]).UseLF();
 
         Assert.That(program.Errors, Is.Empty);
         Assert.That(mainCode, Does.Contain("File=\"P_001.xml\""));

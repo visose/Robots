@@ -83,7 +83,7 @@ public abstract class Component(
 
     static string CleanArgumentMessage(string message)
     {
-        var lines = message.Replace("\r\n", "\n").Split('\n');
+        var lines = message.UseLF().Split('\n');
         var filtered = lines
             .Where(line =>
                 !line.StartsWith("Parameter ", StringComparison.Ordinal)

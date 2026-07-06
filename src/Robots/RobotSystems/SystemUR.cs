@@ -11,6 +11,7 @@ public class SystemUR : CobotSystem
     }
 
     public override Manufacturers Manufacturer => Manufacturers.UR;
+    internal override string CodeLineEnding => "\n";
     protected override IPostProcessor GetDefaultPostprocessor() => new URScriptPostProcessor();
 
     public override double[] PlaneToNumbers(Plane plane)
@@ -30,13 +31,12 @@ public class SystemUR : CobotSystem
     {
         string filePath = Path.Combine(folder, $"{program.Name}.urp");
         var urp = CreateUrp(program);
-        File.WriteAllText(filePath, urp);
+        WriteTextFile(filePath, urp);
     }
 
     internal static string CreateUrp(IProgram program)
     {
-        if (program.Code is null)
-            throw new InvalidOperationException("Program code was not generated.");
+        var programCode = RequireCode(program);
 
         // e-Series or CB-Series
         var ur = (SystemUR)program.RobotSystem;
@@ -44,7 +44,7 @@ public class SystemUR : CobotSystem
 
         // Version number does not appear to matter
         string version = isESeries ? "5.11.11" : "3.15.6";
-        var code = string.Join("\r\n", program.Code[0].SelectMany(c => c));
+        var code = ur.JoinCodeLines(programCode[0].SelectMany(c => c));
 
         string urp = Util.GetStringResource("URPTemplate.txt")
             .Replace("{Name}", program.Name)
@@ -52,6 +52,6 @@ public class SystemUR : CobotSystem
             .Replace("{File}", $"{program.Name}.script")
             .Replace("{Code}", code);
 
-        return urp;
+        return urp.UseCRLF();
     }
 }

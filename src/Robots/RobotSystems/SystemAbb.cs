@@ -19,50 +19,53 @@ public class SystemAbb : IndustrialSystem
 
     internal override void SaveCode(IProgram program, string folder)
     {
-        if (program.Code is null)
-            throw new InvalidOperationException("Program code was not generated.");
+        var programCode = RequireCode(program);
 
         bool isOmniCore = Controller.EqualsIgnoreCase("omnicore");
         var extension = isOmniCore ? "modx" : "mod";
         var encoding = isOmniCore ? new UTF8Encoding(false) : Encoding.GetEncoding("ISO-8859-1");
+        var pgfEncoding = Encoding.GetEncoding("ISO-8859-1");
+        var programDir = CreateProgramDirectory(folder, program.Name);
 
-        _ = Directory.CreateDirectory(Path.Combine(folder, program.Name));
         bool multiProgram = program.MultiFileIndices.Count > 1;
 
-        for (int i = 0; i < program.Code.Count; i++)
+        for (int i = 0; i < programCode.Count; i++)
         {
             string group = MechanicalGroups[i].Name;
             {
                 // program
-                string file = Path.Combine(folder, program.Name, $"{program.Name}_{group}.pgf");
-                string mainModule = $@"{program.Name}_{group}.{extension}";
-                string code = $"""
-                    <?xml version="1.0" encoding="ISO-8859-1" ?>
-                    <Program>
-                        <Module>{mainModule}</Module>
-                    </Program>
-                    """;
+                string file = Path.Combine(programDir, $"{program.Name}_{group}.pgf");
+                string mainModule = $"{program.Name}_{group}.{extension}";
+                string code = CreatePgf(mainModule);
 
-                File.WriteAllText(file, code, Encoding.GetEncoding("ISO-8859-1"));
+                WriteTextFile(file, code, pgfEncoding);
             }
 
             {
-                string file = Path.Combine(folder, program.Name, $"{program.Name}_{group}.{extension}");
-                var code = multiProgram ? program.Code[i][0] : program.Code[i][0].Concat(program.Code[i][1]);
-                var joinedCode = string.Join("\r\n", code);
-                File.WriteAllText(file, joinedCode, encoding);
+                string file = Path.Combine(programDir, $"{program.Name}_{group}.{extension}");
+                var code = multiProgram ? programCode[i][0] : programCode[i][0].Concat(programCode[i][1]);
+                WriteCodeFile(file, code, encoding: encoding);
             }
 
             if (multiProgram)
             {
-                for (int j = 1; j < program.Code[i].Count; j++)
+                for (int j = 1; j < programCode[i].Count; j++)
                 {
                     int index = j - 1;
-                    string file = Path.Combine(folder, program.Name, $"{program.Name}_{group}_{index:000}.{extension}");
-                    var joinedCode = string.Join("\r\n", program.Code[i][j]);
-                    File.WriteAllText(file, joinedCode, encoding);
+                    string file = Path.Combine(programDir, $"{program.Name}_{group}_{index:000}.{extension}");
+                    WriteCodeFile(file, programCode[i][j], encoding: encoding);
                 }
             }
         }
+    }
+
+    internal static string CreatePgf(string mainModule)
+    {
+        return $"""
+            <?xml version="1.0" encoding="ISO-8859-1" ?>
+            <Program>
+                <Module>{mainModule}</Module>
+            </Program>
+            """.UseCRLF();
     }
 }

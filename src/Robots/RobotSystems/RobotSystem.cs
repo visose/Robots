@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Text;
 using Rhino.Geometry;
 
 namespace Robots;
@@ -18,11 +19,14 @@ record SystemAttributes(string Name, string? Controller, IO IO, Plane BasePlane,
 
 public abstract class RobotSystem
 {
+    static readonly string[] _newLineSeparators = ["\r\n", "\n", "\r"];
+
     Plane _basePlane;
     protected IPostProcessor _postProcessor;
     public string Name { get; }
     public string? Controller { get; }
     public abstract Manufacturers Manufacturer { get; }
+    internal virtual string CodeLineEnding => "\r\n";
     public IO IO { get; }
     public ref Plane BasePlane => ref _basePlane;
     public Mesh DisplayMesh { get; } = new();
@@ -58,7 +62,66 @@ public abstract class RobotSystem
 
     internal List<List<List<string>>> Code(Program program)
     {
-        return _postProcessor.GetCode(this, program);
+        return SplitCodeLines(_postProcessor.GetCode(this, program));
+    }
+
+    protected static Encoding Utf8WithBom { get; } = new UTF8Encoding(true);
+
+    protected static List<List<List<string>>> RequireCode(IProgram program) =>
+        program.Code ?? throw new InvalidOperationException("Program code was not generated.");
+
+    protected static string CreateProgramDirectory(string folder, string programName)
+    {
+        string programDir = Path.Combine(folder, programName);
+        _ = Directory.CreateDirectory(programDir);
+        return programDir;
+    }
+
+    protected string JoinCodeLines(IEnumerable<string> code) =>
+        string.Join(CodeLineEnding, code);
+
+    internal static List<List<List<string>>> SplitCodeLines(List<List<List<string>>> code)
+    {
+        for (int i = 0; i < code.Count; i++)
+        {
+            var group = code[i];
+
+            for (int j = 0; j < group.Count; j++)
+            {
+                var file = group[j];
+
+                for (int k = 0; k < file.Count; k++)
+                {
+                    if (!file[k].Contains('\n') && !file[k].Contains('\r'))
+                        continue;
+
+                    var lines = file[k].Split(_newLineSeparators, StringSplitOptions.None);
+                    file.RemoveAt(k);
+                    file.InsertRange(k, lines);
+                    k += lines.Length - 1;
+                }
+            }
+        }
+
+        return code;
+    }
+
+    protected static void WriteTextFile(string file, string text, Encoding? encoding = null)
+    {
+        if (encoding is null)
+            File.WriteAllText(file, text);
+        else
+            File.WriteAllText(file, text, encoding);
+    }
+
+    protected void WriteCodeFile(string file, IEnumerable<string> code, Encoding? encoding = null, bool trailingNewline = false)
+    {
+        string text = JoinCodeLines(code);
+
+        if (trailingNewline)
+            text += CodeLineEnding;
+
+        WriteTextFile(file, text, encoding);
     }
 
     protected abstract IPostProcessor GetDefaultPostprocessor();

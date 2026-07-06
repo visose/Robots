@@ -79,19 +79,19 @@ public class AbbRemoteTests
         Assert.Multiple(() =>
         {
             FakeProcess timeoutProcess = new(waitForExit: false);
-            var timeout = Assert.Throws<TimeoutException>(() => RunWithTempHelper(timeoutProcess));
+            var timeout = Assert.Throws<TimeoutException>(() => RunWithExistingHelper(timeoutProcess));
             Assert.That(timeout!.Message, Does.Contain("timed out"));
             Assert.That(timeoutProcess.Killed, Is.True);
 
-            var nonzero = Assert.Throws<InvalidOperationException>(() => RunWithTempHelper(new FakeProcess(exitCode: 7, stderr: "boom")));
+            var nonzero = Assert.Throws<InvalidOperationException>(() => RunWithExistingHelper(new FakeProcess(exitCode: 7, stderr: "boom")));
             Assert.That(nonzero!.Message, Does.Contain("code 7"));
             Assert.That(nonzero.Message, Does.Contain("boom"));
 
-            var stderr = Assert.Throws<InvalidOperationException>(() => RunWithTempHelper(new FakeProcess(stdout: SuccessJson("request-id"), stderr: "warning")));
+            var stderr = Assert.Throws<InvalidOperationException>(() => RunWithExistingHelper(new FakeProcess(stdout: SuccessJson("request-id"), stderr: "warning")));
             Assert.That(stderr!.Message, Does.Contain("wrote to stderr"));
             Assert.That(stderr.Message, Does.Contain("warning"));
 
-            _ = Assert.Throws<JsonException>(() => RunWithTempHelper(new FakeProcess(stdout: "not json")));
+            _ = Assert.Throws<JsonException>(() => RunWithExistingHelper(new FakeProcess(stdout: "not json")));
         });
     }
 
@@ -102,7 +102,7 @@ public class AbbRemoteTests
         FakeProcess process = new(stdout: AbbRemoteProtocol.SerializeResponse(response));
         AbbRemoteProcessRunner runner = new(new FakeProcessFactory(process));
 
-        var actual = RunWithTempHelper(runner);
+        var actual = RunWithExistingHelper(runner);
 
         Assert.That(actual.Ok, Is.False);
         Assert.That(actual.ErrorCode, Is.EqualTo(AbbRemoteErrorCodes.ControllerUnavailable));
@@ -132,25 +132,17 @@ public class AbbRemoteTests
         });
     }
 
-    static AbbRemoteResponse RunWithTempHelper(FakeProcess process)
+    static AbbRemoteResponse RunWithExistingHelper(FakeProcess process)
     {
         AbbRemoteProcessRunner runner = new(new FakeProcessFactory(process));
-        return RunWithTempHelper(runner);
+        return RunWithExistingHelper(runner);
     }
 
-    static AbbRemoteResponse RunWithTempHelper(AbbRemoteProcessRunner runner)
+    static AbbRemoteResponse RunWithExistingHelper(AbbRemoteProcessRunner runner)
     {
-        string helperPath = Path.GetTempFileName();
-
-        try
-        {
-            AbbRemoteRequest request = new("request-id", AbbRemoteActions.Play, null, null, null);
-            return runner.Run(helperPath, request, TimeSpan.FromMilliseconds(10));
-        }
-        finally
-        {
-            File.Delete(helperPath);
-        }
+        string helperPath = typeof(AbbRemoteTests).Assembly.Location;
+        AbbRemoteRequest request = new("request-id", AbbRemoteActions.Play, null, null, null);
+        return runner.Run(helperPath, request, TimeSpan.FromMilliseconds(10));
     }
 
     static string SuccessJson(string id) =>

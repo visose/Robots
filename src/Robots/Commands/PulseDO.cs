@@ -35,13 +35,13 @@ public class PulseDO(int @do, double length = 0.2, bool runBefore = false) : Com
     {
         var number = GetNumber(robotSystem);
 
-        string time = $"global {Name} = {_length:0.###}";
-        string thread = $@"  thread run{Name}():
-    sleep({Name})
-    set_digital_out({number}, False)
-  end";
-
-        return $"{time}\r\n{thread}";
+        return $"""
+        global {Name} = {_length:0.###}
+          thread run{Name}():
+            sleep({Name})
+            set_digital_out({number}, False)
+          end
+        """;
     }
 
     string CodeAbb(RobotSystem robotSystem, Target target)
@@ -55,14 +55,20 @@ public class PulseDO(int @do, double length = 0.2, bool runBefore = false) : Com
         var number = GetNumber(robotSystem);
 
         return target.Zone.IsFlyBy
-            ? $"CONTINUE\r\nPULSE($OUT[{number}],TRUE,{_length:0.###})"
+            ? $"""
+            CONTINUE
+            PULSE($OUT[{number}],TRUE,{_length:0.###})
+            """
             : $"PULSE($OUT[{number}],TRUE,{_length:0.###})";
     }
 
     string CodeUR(RobotSystem robotSystem, Target target)
     {
         var number = GetNumber(robotSystem);
-        return $"set_digital_out({number},True)\r\n  run run{Name}()";
+        return $"""
+        set_digital_out({number},True)
+          run run{Name}()
+        """;
     }
 
     string CodeDoosan(RobotSystem robotSystem, Target target)

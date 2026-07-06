@@ -44,11 +44,13 @@ class KRLPostProcessor : IPostProcessor
         {
             string groupName = _system.MechanicalGroups[group].Name;
             var code = new List<string>
-                {
-                    $@"&ACCESS RVP
-&REL 1
-DEFDAT {_program.Name}_{groupName} PUBLIC"
-                };
+            {
+                $"""
+                &ACCESS RVP
+                &REL 1
+                DEFDAT {_program.Name}_{groupName} PUBLIC
+                """
+            };
 
             // Attribute declarations
             var attributes = _program.Attributes;
@@ -90,14 +92,16 @@ DEFDAT {_program.Name}_{groupName} PUBLIC"
             string groupName = _system.MechanicalGroups[group].Name;
 
             var code = new List<string>
-                {
-                    $@"&ACCESS RVP
-&REL 1
-DEF {_program.Name}_{groupName}()
-BAS (#INITMOV,0)
-$ADVANCE = 5
-$APO.CPTP = 100"
-                };
+            {
+                $"""
+                &ACCESS RVP
+                &REL 1
+                DEF {_program.Name}_{groupName}()
+                BAS (#INITMOV,0)
+                $ADVANCE = 5
+                $APO.CPTP = 100
+                """
+            };
 
             // Init commands
             PostProcessorUtil.AddInitCommands(code, _program);
@@ -117,11 +121,13 @@ $APO.CPTP = 100"
             var (start, end) = _program.GetTargetRange(file);
 
             var code = new List<string>
-                {
-                    $@"&ACCESS RVP
-&REL 1
-DEF {_program.Name}_{groupName}_{file:000}()"
-                };
+            {
+                $"""
+                &ACCESS RVP
+                &REL 1
+                DEF {_program.Name}_{groupName}_{file:000}()
+                """
+            };
 
             Tool? currentTool = null;
             Frame? currentFrame = null;
@@ -177,7 +183,11 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                                 double rotation = target.Speed.RotationSpeed.ToDegrees();
                                 if (rotation != currentOriSpeed)
                                 {
-                                    vel += $"\r\n$VEL.ORI1 = {rotation:0.###}\r\n$VEL.ORI2 = {rotation:0.####}";
+                                    vel = $"""
+                                    $VEL.CP = {target.Speed.Name}
+                                    $VEL.ORI1 = {rotation:0.###}
+                                    $VEL.ORI2 = {rotation:0.####}
+                                    """;
                                     currentOriSpeed = rotation;
                                 }
 
@@ -306,7 +316,7 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                     }
                     else
                     {
-                        var text = $"{name} = {{{pos}{bits}}}\r\n";
+                        var text = new List<string> { $"{name} = {{{pos}{bits}}}" };
 
                         for (int i = 0; i < externalCustom.Length; i++)
                         {
@@ -314,11 +324,11 @@ DEF {_program.Name}_{groupName}_{file:000}()"
                             if (string.IsNullOrWhiteSpace(value))
                                 value = "0";
 
-                            text += $"{name}.E{i + 1} = {value}\r\n";
+                            text.Add($"{name}.E{i + 1} = {value}");
                         }
 
-                        text += $"{motion} {name}";
-                        return text;
+                        text.Add($"{motion} {name}");
+                        return string.Join("\n", text);
                     }
                 }
             }
@@ -350,14 +360,20 @@ DEF {_program.Name}_{groupName}_{file:000}()"
             {
                 string toolTxt = $"$TOOL = {tool.Name}";
                 string loadTxt = $"$LOAD = {tool.Name}_L";
-                return $"{toolTxt}\r\n{loadTxt}";
+                return $"""
+                {toolTxt}
+                {loadTxt}
+                """;
             }
             else
             {
                 int number = tool.Number.Value;
                 string toolTxt = $"$TOOL = TOOL_DATA[{number}]";
                 string loadTxt = $"$LOAD = LOAD_DATA[{number}]";
-                return $"{toolTxt}\r\n{loadTxt}";
+                return $"""
+                {toolTxt}
+                {loadTxt}
+                """;
             }
         }
 
@@ -366,7 +382,10 @@ DEF {_program.Name}_{groupName}_{file:000}()"
             var toolTxt = $"DECL GLOBAL FRAME {tool.Name} = {{{GetXyzAbc(tool.Tcp)}}}";
             Point3d centroid = tool.Centroid;
             var loadTxt = $"DECL GLOBAL LOAD {tool.Name}_L = {{M {tool.Weight:0.####},CM {{{GetXyzAbc(centroid.X, centroid.Y, centroid.Z, 0, 0, 0)}}},J {{X 0,Y 0,Z 0}}}}";
-            return $"{toolTxt}\r\n{loadTxt}";
+            return $"""
+            {toolTxt}
+            {loadTxt}
+            """;
         }
 
         static string SetFrame(Frame frame)
@@ -376,9 +395,10 @@ DEF {_program.Name}_{groupName}_{file:000}()"
             if (frame.IsCoupled)
             {
                 int mech = frame.CoupledMechanism + 2;
-                var frameTxt = $"$BASE = EK(MACHINE_DEF[{mech}].ROOT, MACHINE_DEF[{mech}].MECH_TYPE, {name})\r\n";
-                frameTxt += $"$ACT_EX_AX = 2";
-                return frameTxt;
+                return $"""
+                $BASE = EK(MACHINE_DEF[{mech}].ROOT, MACHINE_DEF[{mech}].MECH_TYPE, {name})
+                $ACT_EX_AX = 2
+                """;
             }
             else
             {

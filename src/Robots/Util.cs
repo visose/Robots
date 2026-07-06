@@ -78,6 +78,18 @@ static class Util
         {
             return string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
         }
+
+        public string UseCRLF()
+        {
+            ArgumentNullException.ThrowIfNull(a);
+            return a.ReplaceLineEndings("\r\n");
+        }
+
+        public string UseLF()
+        {
+            ArgumentNullException.ThrowIfNull(a);
+            return a.ReplaceLineEndings("\n");
+        }
     }
 
     extension(int value)

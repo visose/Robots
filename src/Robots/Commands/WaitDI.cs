@@ -46,16 +46,22 @@ public class WaitDI(int di, bool value = true, bool runBefore = false) : Command
     string CodeUR(RobotSystem robotSystem, Target target)
     {
         var number = GetNumber(robotSystem);
-        const string indent = "  ";
         string textValue = Value ? "not " : "";
-        return $"while {textValue}get_digital_in({number}):\r\n{indent}{indent}sleep(0.008)\r\n{indent}end";
+        return $"""
+        while {textValue}get_digital_in({number}):
+            sleep(0.008)
+          end
+        """;
     }
 
     string CodeStaubli(RobotSystem robotSystem, Target target)
     {
         var number = GetNumber(robotSystem);
         string textValue = Value ? "true" : "false";
-        return $"waitEndMove()\r\nwait(dis[{number}] == {textValue})";
+        return $"""
+        waitEndMove()
+        wait(dis[{number}] == {textValue})
+        """;
     }
 
     string CodeJaka(RobotSystem robotSystem, Target target)

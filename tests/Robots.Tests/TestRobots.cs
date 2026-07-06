@@ -151,7 +151,7 @@ static class TestRobots
     public static string FlattenCode(Program program)
     {
         var code = program.Code ?? throw new InvalidOperationException("Program code was not generated.");
-        return string.Join("\n", code.SelectMany(group => group).SelectMany(file => file)).ReplaceLineEndings("\n");
+        return string.Join("\n", code.SelectMany(group => group).SelectMany(file => file)).UseLF();
     }
 
     static RobotSystem Parse(string xml) => FileIO.ParseRobotSystem(xml, Plane.WorldXY);

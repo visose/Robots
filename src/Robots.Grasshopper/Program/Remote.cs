@@ -11,8 +11,14 @@ public class Remote() : Component(
 {
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
+        var ipDescription = """
+            IP address of the robot controller.
+            - ABB: If omitted, Robots uses the first controller discovered by the ABB helper.
+            - UR: If an IP address is supplied, Robots uses the secondary client interface to stream the program and run play and pause commands. To use the FTP back end instead, specify the IP as 'sftp://ip'. This uploads the program as a .urp file to the controller using the FTP server, then loads it through the dashboard interface. You can override the default username, password, or programs folder with 'sftp://user:pass@ip/path/to/programs'.
+            """.UseCRLF();
+
         _ = pManager.AddParameter(new ProgramParameter(), "Program", "P", "Robot program to upload or run.", GH_ParamAccess.item);
-        _ = pManager.AddTextParameter("IP", "IP", "IP address of the robot controller.\r\n- ABB: If omitted, Robots uses the first controller discovered by the ABB helper.\r\n- UR: If an IP address is supplied, Robots uses the secondary client interface to stream the program and run play and pause commands. To use the FTP back end instead, specify the IP as 'sftp://ip'. This uploads the program as a .urp file to the controller using the FTP server, then loads it through the dashboard interface. You can override the default username, password, or programs folder with 'sftp://user:pass@ip/path/to/programs'.", GH_ParamAccess.item);
+        _ = pManager.AddTextParameter("IP", "IP", ipDescription, GH_ParamAccess.item);
         _ = pManager.AddBooleanParameter("Upload", "U", "Upload the program.", GH_ParamAccess.item, false);
         _ = pManager.AddBooleanParameter("Play", "P", "Start or resume the program.", GH_ParamAccess.item, false);
         _ = pManager.AddBooleanParameter("Pause", "S", "Pause the program.", GH_ParamAccess.item, false);

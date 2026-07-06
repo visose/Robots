@@ -32,21 +32,23 @@ class FrankxPostProcessor : IPostProcessor
         List<string> Program()
         {
             var code = new List<string>
-        {
-            $@"from argparse import ArgumentParser
-from time import sleep
-from frankx import Affine, Robot, JointMotion, PathMotion, WaypointMotion, Waypoint, MotionData, Reaction, Measure, StopMotion, LinearRelativeMotion
+            {
+                """
+                from argparse import ArgumentParser
+                from time import sleep
+                from frankx import Affine, Robot, JointMotion, PathMotion, WaypointMotion, Waypoint, MotionData, Reaction, Measure, StopMotion, LinearRelativeMotion
 
-def program():
-  parser = ArgumentParser()
-  parser.add_argument('--host', default='172.16.0.2', help='FCI IP of the robot')
-  args = parser.parse_args()
-  robot = Robot(args.host)
-  robot.set_default_behavior()
-  robot.recover_from_errors()
-  robot.velocity_rel = 1.0
-"
-        };
+                def program():
+                  parser = ArgumentParser()
+                  parser.add_argument('--host', default='172.16.0.2', help='FCI IP of the robot')
+                  args = parser.parse_args()
+                  robot = Robot(args.host)
+                  robot.set_default_behavior()
+                  robot.recover_from_errors()
+                  robot.velocity_rel = 1.0
+
+                """
+            };
 
             // Attribute declarations
             var attributes = _program.Attributes;
@@ -99,7 +101,11 @@ def program():
                     if (currentMotion is not null)
                         MotionMove();
 
-                    code.Add($"  dynamic_rel = {accel:0.#####}\r\n  robot.acceleration_rel = dynamic_rel\r\n  robot.jerk_rel = dynamic_rel");
+                    code.Add($"""
+                      dynamic_rel = {accel:0.#####}
+                      robot.acceleration_rel = dynamic_rel
+                      robot.jerk_rel = dynamic_rel
+                    """);
                     currentAccel = accel;
                 }
 
@@ -171,9 +177,11 @@ def program():
             if (currentMotion != null)
                 MotionMove();
 
-            code.Add(@"
-program()
-");
+            code.Add("""
+
+            program()
+
+            """);
 
             return code;
 

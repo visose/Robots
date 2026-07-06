@@ -293,7 +293,10 @@ class VAL3PostProcessor : IPostProcessor
             var jointsData = VAL3Syntax.Data("joints", "jointRx", joints);
             var pointsData = VAL3Syntax.Data("points", "pointRx", points);
 
-            return $"{jointsData}\r\n{pointsData}";
+            return $"""
+            {jointsData}
+            {pointsData}
+            """;
         }
 
         string Tool(Tool tool)
@@ -310,7 +313,11 @@ class VAL3PostProcessor : IPostProcessor
             string centroidText = VAL3Syntax.Data($"{toolName}_C", "trsf", $"x=\"{centroid.X:0.###}\" y=\"{centroid.Y:0.###}\" z=\"{centroid.Z:0.###}\"");
             string weightText = VAL3Syntax.NumData($"{toolName}_W", weight);
 
-            return $"{toolText}\r\n{centroidText}\r\n{weightText}";
+            return $"""
+            {toolText}
+            {centroidText}
+            {weightText}
+            """;
         }
 
         string Frame(Frame frame)

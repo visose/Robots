@@ -56,9 +56,10 @@ public class SetAO(int ao, double value, bool runBefore = false) : Command(runBe
         var number = GetNumber(robotSystem);
         var value = Value * 10.0;
 
-        var mode = $"set_mode_analog_output(ch={number}, mod=DR_ANALOG_VOLTAGE)";
-        var variable = $"{Name} = {value:0.###}";
-        return $"{mode}\n{variable}";
+        return $"""
+        set_mode_analog_output(ch={number}, mod=DR_ANALOG_VOLTAGE)
+        {Name} = {value:0.###}
+        """;
     }
 
     string DeclarationStaubli(RobotSystem robotSystem)

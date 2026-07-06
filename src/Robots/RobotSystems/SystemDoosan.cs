@@ -9,6 +9,7 @@ public class SystemDoosan : CobotSystem
     { }
 
     public override Manufacturers Manufacturer => Manufacturers.Doosan;
+    internal override string CodeLineEnding => "\n";
     protected override IPostProcessor GetDefaultPostprocessor() => new DrlPostProcessor();
 
     public override double[] PlaneToNumbers(Plane plane) => GeometryUtil.PlaneToEulerZYZDegrees(plane);
@@ -16,28 +17,26 @@ public class SystemDoosan : CobotSystem
 
     internal override void SaveCode(IProgram program, string folder)
     {
-        if (program.Code is null)
-            throw new InvalidOperationException("Program code was not generated.");
+        var programCode = RequireCode(program);
 
         bool isMultiProgram = program.MultiFileIndices.Count > 1;
-        var codes = program.Code[0];
+        var codes = programCode[0];
 
         if (!isMultiProgram)
         {
-            WriteFile(codes[0], folder, program.Name);
+            WriteDrlFile(codes[0], folder, program.Name);
         }
         else
         {
-            var subFolder = Path.Combine(folder, program.Name);
-            _ = Directory.CreateDirectory(subFolder);
+            var subFolder = CreateProgramDirectory(folder, program.Name);
 
-            WriteFile(codes[0], subFolder, program.Name);
+            WriteDrlFile(codes[0], subFolder, program.Name);
 
             for (int i = 1; i < codes.Count; i++)
             {
                 var code = codes[i];
                 var name = SubProgramName(program.Name, i);
-                WriteFile(code, subFolder, name);
+                WriteDrlFile(code, subFolder, name);
             }
         }
     }
@@ -47,10 +46,9 @@ public class SystemDoosan : CobotSystem
         return $"{programName}_{i:000}";
     }
 
-    static void WriteFile(List<string> code, string folder, string name)
+    void WriteDrlFile(List<string> code, string folder, string name)
     {
         string filePath = Path.Combine(folder, $"{name}.drl");
-        var joinedCode = string.Join("\n", code);
-        File.WriteAllText(filePath, joinedCode);
+        WriteCodeFile(filePath, code);
     }
 }

@@ -168,9 +168,10 @@ class URScriptPostProcessor : IPostProcessor
 
         static string Tool(Tool tool)
         {
-            string pos = $"  set_tcp({tool.Name}Tcp)";
-            string mass = $"  set_payload({tool.Name}Weight, {tool.Name}Cog)";
-            return $"{pos}\n{mass}";
+            return $"""
+              set_tcp({tool.Name}Tcp)
+              set_payload({tool.Name}Weight, {tool.Name}Cog)
+            """;
         }
     }
 }

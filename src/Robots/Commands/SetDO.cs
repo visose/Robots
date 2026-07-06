@@ -46,7 +46,10 @@ public class SetDO(int @do, bool value, bool runBefore = false) : Command(runBef
         string textValue = Value ? "TRUE" : "FALSE";
 
         return target.Zone.IsFlyBy
-            ? $"CONTINUE\r\n$OUT[{number}] = {textValue}"
+            ? $"""
+            CONTINUE
+            $OUT[{number}] = {textValue}
+            """
             : $"$OUT[{number}] = {textValue}";
     }
 
@@ -61,7 +64,10 @@ public class SetDO(int @do, bool value, bool runBefore = false) : Command(runBef
     string CodeStaubli(RobotSystem robotSystem, Target target)
     {
         string textValue = Value ? "true" : "false";
-        return $"waitEndMove()\r\ndos[{DO}] = {textValue}";
+        return $"""
+        waitEndMove()
+        dos[{DO}] = {textValue}
+        """;
     }
 
     string CodeJaka(RobotSystem robotSystem, Target target)

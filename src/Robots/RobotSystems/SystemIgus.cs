@@ -16,30 +16,26 @@ public class SystemIgus : IndustrialSystem
 
     internal override void SaveCode(IProgram program, string folder)
     {
-        if (program.Code is null)
-            throw new InvalidOperationException("Program code was not generated.");
+        var programCode = RequireCode(program);
 
         bool multiProgram = program.MultiFileIndices.Count > 1;
 
-        for (int i = 0; i < program.Code.Count; i++)
+        for (int i = 0; i < programCode.Count; i++)
         {
             if (!multiProgram)
             {
                 string filePath = Path.Combine(folder, $"{program.Name}.xml");
-                var code = program.Code[i][0];
-                var joinedCode = string.Join("\r\n", code);
-                File.WriteAllText(filePath, joinedCode);
+                WriteCodeFile(filePath, programCode[i][0]);
             }
             else
             {
-                for (int j = 0; j < program.Code[i].Count; j++)
+                for (int j = 0; j < programCode[i].Count; j++)
                 {
                     string filePath = j == 0
                         ? Path.Combine(folder, $"{program.Name}.xml")
                         : Path.Combine(folder, $"{program.Name}_{j:000}.xml");
 
-                    var joinedCode = string.Join("\r\n", program.Code[i][j]);
-                    File.WriteAllText(filePath, joinedCode);
+                    WriteCodeFile(filePath, programCode[i][j]);
                 }
             }
         }

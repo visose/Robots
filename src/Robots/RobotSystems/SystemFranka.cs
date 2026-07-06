@@ -11,6 +11,7 @@ public class SystemFranka : CobotSystem
     }
 
     public override Manufacturers Manufacturer => Manufacturers.FrankaEmika;
+    internal override string CodeLineEnding => "\n";
     protected override IPostProcessor GetDefaultPostprocessor() => new FrankxPostProcessor();
 
     public override double[] PlaneToNumbers(Plane plane)
@@ -29,12 +30,9 @@ public class SystemFranka : CobotSystem
 
     internal override void SaveCode(IProgram program, string folder)
     {
-        if (program.Code is null)
-            throw new InvalidOperationException("Program code was not generated.");
+        var programCode = RequireCode(program);
 
         string filePath = Path.Combine(folder, $"{program.Name}.py");
-        var code = program.Code[0][0];
-        var joinedCode = string.Join("\r\n", code);
-        File.WriteAllText(filePath, joinedCode);
+        WriteCodeFile(filePath, programCode[0][0]);
     }
 }

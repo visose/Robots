@@ -32,5 +32,5 @@ public class Message(string message, bool runBefore = false) : Command(runBefore
 
     static string Quote(string value) => System.Text.Json.JsonSerializer.Serialize(value);
 
-    static string Normalize(string value) => value.Replace("\r\n", "\n").Replace('\r', '\n');
+    static string Normalize(string value) => value.UseLF();
 }

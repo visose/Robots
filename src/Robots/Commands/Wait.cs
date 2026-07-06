@@ -54,7 +54,10 @@ public class Wait(double seconds, bool runBefore = false) : Command(runBefore: r
     string CodeKuka(RobotSystem robotSystem, Target target)
     {
         return target.Zone.IsFlyBy
-            ? $"CONTINUE\r\nWAIT SEC {Name}"
+            ? $"""
+            CONTINUE
+            WAIT SEC {Name}
+            """
             : $"WAIT SEC {Name}";
     }
 
@@ -65,7 +68,10 @@ public class Wait(double seconds, bool runBefore = false) : Command(runBefore: r
 
     string CodeStaubli(RobotSystem robotSystem, Target target)
     {
-        return $"waitEndMove()\r\ndelay({Name})";
+        return $"""
+        waitEndMove()
+        delay({Name})
+        """;
     }
 
     string CodeJaka(RobotSystem robotSystem, Target target)

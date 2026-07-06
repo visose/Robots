@@ -37,7 +37,12 @@ class JKSPostProcessor : IPostProcessor
             bool multiProgram = _program.MultiFileIndices.Count > 1;
 
             code.Add("#Begin");
-            code.Add("endPosJ =[0,0,0,0,0,0]\r\nendPosL =[0,0,0,0,0,0]\r\npos_mvl =[0,0,0,0,0,0]\r\npos_waypoint =[0,0,0,0,0,0]");
+            code.Add("""
+            endPosJ =[0,0,0,0,0,0]
+            endPosL =[0,0,0,0,0,0]
+            pos_mvl =[0,0,0,0,0,0]
+            pos_waypoint =[0,0,0,0,0,0]
+            """);
             code.Add("set_tool_id(0)");
             code.Add("set_user_frame_id(0)");
 
@@ -112,8 +117,10 @@ class JKSPostProcessor : IPostProcessor
                         double[] joints = jointTarget.Joints;
                         joints = joints.Map((x, i) => _system.MechanicalGroups[group].RadianToDegree(x, i));
 
-                        moveText = $"endPosJ = [{joints[0]:0.000}, {-joints[1]:0.000}, {-joints[2]:0.000}, {joints[3]:0.000}, {-joints[4]:0.000}, {joints[5]:0.000}]\r\n" +
-                        $"movj(endPosJ,0,{target.Speed.RotationSpeed * 180.0 / PI},5000,2.0)";
+                        moveText = $"""
+                        endPosJ = [{joints[0]:0.000}, {-joints[1]:0.000}, {-joints[2]:0.000}, {joints[3]:0.000}, {-joints[4]:0.000}, {joints[5]:0.000}]
+                        movj(endPosJ,0,{target.Speed.RotationSpeed * 180.0 / PI},5000,2.0)
+                        """;
                     }
                     else
                     {
@@ -125,15 +132,19 @@ class JKSPostProcessor : IPostProcessor
                         {
                             case Motions.Joint:
                                 {
-                                    moveText = $"endPosL = [{planeValues[0]:0.000}, {planeValues[1]:0.000}, {planeValues[2]:0.000}, {planeValues[3]:0.000}, {planeValues[4]:0.000}, {planeValues[5]:0.000}]\r\n" +
-                        $"movl(endPosL,0,{target.Speed.TranslationSpeed},5000,0.0)";
+                                    moveText = $"""
+                                    endPosL = [{planeValues[0]:0.000}, {planeValues[1]:0.000}, {planeValues[2]:0.000}, {planeValues[3]:0.000}, {planeValues[4]:0.000}, {planeValues[5]:0.000}]
+                                    movl(endPosL,0,{target.Speed.TranslationSpeed},5000,0.0)
+                                    """;
                                     break;
                                 }
 
                             case Motions.Linear:
                                 {
-                                    moveText = $"endPosL = [{planeValues[0]:0.000}, {planeValues[1]:0.000}, {planeValues[2]:0.000}, {planeValues[3]:0.000}, {planeValues[4]:0.000}, {planeValues[5]:0.000}]\r\n" +
-                         $"movl(endPosL,0,{target.Speed.TranslationSpeed},5000,0.0)";
+                                    moveText = $"""
+                                    endPosL = [{planeValues[0]:0.000}, {planeValues[1]:0.000}, {planeValues[2]:0.000}, {planeValues[3]:0.000}, {planeValues[4]:0.000}, {planeValues[5]:0.000}]
+                                    movl(endPosL,0,{target.Speed.TranslationSpeed},5000,0.0)
+                                    """;
                                     break;
                                 }
 
