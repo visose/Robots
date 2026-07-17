@@ -20,6 +20,7 @@ internal static class IconSet
         "CustomCommand",
         "DeconstructProgramTargets",
         "DeconstructTarget",
+        "DeconstructTool",
         "DeconstructToolpath",
         "DegreesToRadians",
         "DrawSimpleTrail",
@@ -187,6 +188,10 @@ internal static class IconSet
                 break;
             case "DeconstructTarget":
                 DrawCrosshair(g, 18, 22, 11);
+                DrawDeconstructPorts(g);
+                break;
+            case "DeconstructTool":
+                DrawGripper(g, 18, 20, 0.9);
                 DrawDeconstructPorts(g);
                 break;
             case "DeconstructToolpath":
