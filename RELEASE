@@ -1,3 +1,7 @@
+- version: 2.2.5
+  changes:
+  - Fixed ABB remote commands looking for the helper executable in Rhino's runtime folder.
+
 - version: 2.2.4
   changes:
   - Fixed ABB saved programs failing to load when generated `.pgf` files used LF-only line endings.

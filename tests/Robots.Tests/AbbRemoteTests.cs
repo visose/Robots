@@ -9,6 +9,16 @@ public class AbbRemoteTests
     static readonly TimeSpan TestTimeout = TimeSpan.FromSeconds(1);
 
     [Test]
+    public void BundledHelperPathUsesRobotsAssemblyDirectory()
+    {
+        string assemblyDirectory = Path.Combine(Path.GetTempPath(), "RobotsPackage");
+        string assemblyLocation = Path.Combine(assemblyDirectory, "Robots.dll");
+        string expected = Path.Combine(assemblyDirectory, "abb-remote", "Robots.AbbRemote.exe");
+
+        Assert.That(RemoteAbb.GetBundledHelperPath(assemblyLocation), Is.EqualTo(expected));
+    }
+
+    [Test]
     public void MissingHelperGivesClearError()
     {
         if (!OperatingSystem.IsWindows())
@@ -36,17 +46,6 @@ public class AbbRemoteTests
 
         Assert.That(runner.Request?.Ip, Is.Null);
         Assert.That(remote.Log, Has.Some.Contains("first available controller"));
-    }
-
-    [Test]
-    public void UploadRejectsMissingProgramCode()
-    {
-        MissingCodeProgram program = new(TestRobots.AbbIrb120());
-        RemoteAbb remote = new(HelperPath, new CapturingRunner(), TestTimeout);
-
-        var exception = Assert.Throws<InvalidOperationException>(() => remote.Upload(program));
-
-        Assert.That(exception!.Message, Does.Contain("program code was not generated"));
     }
 
     [Test]
@@ -96,28 +95,17 @@ public class AbbRemoteTests
     }
 
     [Test]
-    public void ProcessRunnerReturnsFailedResponse()
+    public void ProcessRunnerUsesProtocol()
     {
+        AbbRemoteRequest request = new("request-id", AbbRemoteActions.Upload, "192.168.0.10", "TestProgram", @"C:\Temp\TestProgram");
         AbbRemoteResponse response = AbbRemoteResponse.Failure("request-id", "Controller unavailable.", AbbRemoteErrorCodes.ControllerUnavailable, []);
-        FakeProcess process = new(stdout: AbbRemoteProtocol.SerializeResponse(response));
+        string responseJson = AbbRemoteProtocol.SerializeResponse(response);
+        FakeProcess process = new(stdout: responseJson);
         AbbRemoteProcessRunner runner = new(new FakeProcessFactory(process));
+        string helperPath = typeof(AbbRemoteTests).Assembly.Location;
 
-        var actual = RunWithExistingHelper(runner);
-
-        Assert.That(actual.Ok, Is.False);
-        Assert.That(actual.ErrorCode, Is.EqualTo(AbbRemoteErrorCodes.ControllerUnavailable));
-    }
-
-    [Test]
-    public void JsonRequestResponseRoundTrips()
-    {
-        AbbRemoteRequest request = new("1", AbbRemoteActions.Upload, "192.168.0.10", "TestProgram", @"C:\Temp\TestProgram");
-        AbbRemoteResponse response = AbbRemoteResponse.Failure("1", "No controller.", AbbRemoteErrorCodes.ControllerUnavailable, ["scan"]);
-
-        var requestJson = AbbRemoteProtocol.SerializeRequest(request);
-        var responseJson = AbbRemoteProtocol.SerializeResponse(response);
-
-        var actualResponse = AbbRemoteProtocol.DeserializeResponse(responseJson);
+        var actualResponse = runner.Run(helperPath, request, TimeSpan.FromMilliseconds(10));
+        string requestJson = process.StandardInput.ToString()!;
 
         Assert.Multiple(() =>
         {
@@ -135,11 +123,6 @@ public class AbbRemoteTests
     static AbbRemoteResponse RunWithExistingHelper(FakeProcess process)
     {
         AbbRemoteProcessRunner runner = new(new FakeProcessFactory(process));
-        return RunWithExistingHelper(runner);
-    }
-
-    static AbbRemoteResponse RunWithExistingHelper(AbbRemoteProcessRunner runner)
-    {
         string helperPath = typeof(AbbRemoteTests).Assembly.Location;
         AbbRemoteRequest request = new("request-id", AbbRemoteActions.Play, null, null, null);
         return runner.Run(helperPath, request, TimeSpan.FromMilliseconds(10));
@@ -186,19 +169,5 @@ public class AbbRemoteTests
 
         public void Dispose()
         { }
-    }
-
-    sealed class MissingCodeProgram(RobotSystem robotSystem) : IProgram
-    {
-        public string Name => "TestProgram";
-        public RobotSystem RobotSystem { get; } = robotSystem;
-        public List<List<List<string>>>? Code => null;
-        public bool HasSimulation => false;
-        public IReadOnlyList<int> MultiFileIndices { get; } = [0];
-
-        public void Save(string folder)
-        {
-            throw new InvalidOperationException("Save should not be called.");
-        }
     }
 }

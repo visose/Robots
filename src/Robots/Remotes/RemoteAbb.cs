@@ -152,18 +152,28 @@ public class RemoteAbb : IRemote
         if (!string.IsNullOrWhiteSpace(configured))
             return configured;
 
-        return Path.Combine(AppContext.BaseDirectory, "abb-remote", "Robots.AbbRemote.exe");
+        return GetBundledHelperPath(typeof(RemoteAbb).Assembly.Location);
+    }
+
+    internal static string GetBundledHelperPath(string assemblyLocation)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(assemblyLocation);
+
+        string assemblyDirectory = Path.GetDirectoryName(assemblyLocation)
+            ?? throw new InvalidOperationException("Robots assembly directory was not found.");
+
+        return Path.Combine(assemblyDirectory, "abb-remote", "Robots.AbbRemote.exe");
     }
 }
 
-internal readonly record struct AbbRemoteUpload(string ProgramName, string LocalFolder);
+readonly record struct AbbRemoteUpload(string ProgramName, string LocalFolder);
 
-internal interface IAbbRemoteProcessRunner
+interface IAbbRemoteProcessRunner
 {
     AbbRemoteResponse Run(string helperPath, AbbRemoteRequest request, TimeSpan timeout);
 }
 
-internal sealed class AbbRemoteProcessRunner : IAbbRemoteProcessRunner
+sealed class AbbRemoteProcessRunner : IAbbRemoteProcessRunner
 {
     readonly IAbbRemoteProcessFactory _factory;
 
@@ -228,12 +238,12 @@ internal sealed class AbbRemoteProcessRunner : IAbbRemoteProcessRunner
     }
 }
 
-internal interface IAbbRemoteProcessFactory
+interface IAbbRemoteProcessFactory
 {
     IAbbRemoteProcess Start(string helperPath);
 }
 
-internal interface IAbbRemoteProcess : IDisposable
+interface IAbbRemoteProcess : IDisposable
 {
     TextWriter StandardInput { get; }
     TextReader StandardOutput { get; }
@@ -243,7 +253,7 @@ internal interface IAbbRemoteProcess : IDisposable
     void Kill();
 }
 
-internal sealed class AbbRemoteProcessFactory : IAbbRemoteProcessFactory
+sealed class AbbRemoteProcessFactory : IAbbRemoteProcessFactory
 {
     public IAbbRemoteProcess Start(string helperPath)
     {
@@ -267,7 +277,7 @@ internal sealed class AbbRemoteProcessFactory : IAbbRemoteProcessFactory
     }
 }
 
-internal sealed class AbbRemoteProcess(Process process) : IAbbRemoteProcess
+sealed class AbbRemoteProcess(Process process) : IAbbRemoteProcess
 {
     public TextWriter StandardInput => process.StandardInput;
     public TextReader StandardOutput => process.StandardOutput;
@@ -289,7 +299,7 @@ internal sealed class AbbRemoteProcess(Process process) : IAbbRemoteProcess
     public void Dispose() => process.Dispose();
 }
 
-internal sealed class AbbRemoteException(string message, string errorCode, Exception? innerException = null)
+sealed class AbbRemoteException(string message, string errorCode, Exception? innerException = null)
     : InvalidOperationException(message, innerException)
 {
     public string ErrorCode { get; } = errorCode;
