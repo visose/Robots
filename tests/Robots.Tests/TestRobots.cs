@@ -9,14 +9,14 @@ static class TestRobots
     static readonly string AbbIrb120ArmXml = AbbArmXml("IRB120", 3);
     static readonly string AbbCustomSlideXml = CustomExternalXml(Manufacturers.ABB, "Slide", x: 100, y: 20, movesRobot: true);
 
-    static string AbbArmXml(string model, int payload, int wristOffset = 0) => $"""
+    static string AbbArmXml(string model, int payload, int wristOffset = 0, int axis4Offset = 0) => $"""
         <RobotArm model="{model}" manufacturer="ABB" payload="{payload}">
           <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
           <Joints>
             <Revolute number="1" a="0" d="290" minrange="-165" maxrange="165" maxspeed="250"/>
             <Revolute number="2" a="270" d="0" minrange="-110" maxrange="110" maxspeed="250"/>
             <Revolute number="3" a="70" d="0" minrange="-110" maxrange="70" maxspeed="250"/>
-            <Revolute number="4" a="0" d="302" minrange="-160" maxrange="160" maxspeed="320"/>
+            <Revolute number="4" a="{axis4Offset}" d="302" minrange="-160" maxrange="160" maxspeed="320"/>
             <Revolute number="5" a="{wristOffset}" d="0" minrange="-120" maxrange="120" maxspeed="320"/>
             <Revolute number="6" a="0" d="72" minrange="-400" maxrange="400" maxspeed="420"/>
           </Joints>
@@ -97,7 +97,61 @@ static class TestRobots
     static readonly string AbbNumericalXml = $"""
         <RobotSystem name="OffsetWristTest" manufacturer="ABB">
           <Mechanisms>
-            {AbbArmXml("OffsetWristTest", 5, wristOffset: 80)}
+            {AbbArmXml("OffsetWristTest", 5, wristOffset: 80, axis4Offset: 10)}
+          </Mechanisms>
+        </RobotSystem>
+        """;
+
+    const string AbbPowa1920Xml = """
+        <RobotSystem name="PoWa1920Test" manufacturer="ABB">
+          <Mechanisms>
+            <RobotArm model="PoWa1920Test" manufacturer="ABB" payload="16">
+              <Base x="0" y="0" z="0" q1="1" q2="0" q3="0" q4="0"/>
+              <Joints>
+                <Revolute number="1" a="180" d="382.5" minrange="-360" maxrange="360" maxspeed="180"/>
+                <Revolute number="2" a="920" d="0" minrange="-180" maxrange="180" maxspeed="180"/>
+                <Revolute number="3" a="0" d="-60.1" minrange="-248" maxrange="80" maxspeed="180"/>
+                <Revolute number="4" a="0" d="856" minrange="-360" maxrange="360" maxspeed="180"/>
+                <Revolute number="5" a="80" d="138" minrange="-270" maxrange="270" maxspeed="180"/>
+                <Revolute number="6" a="0" d="120" minrange="-400" maxrange="400" maxspeed="180"/>
+              </Joints>
+            </RobotArm>
+          </Mechanisms>
+        </RobotSystem>
+        """;
+
+    const string AbbGofa10Xml = """
+        <RobotSystem name="GoFa10Test" manufacturer="ABB">
+          <Mechanisms>
+            <RobotArm model="GoFa10Test" manufacturer="ABB" payload="10">
+              <Base x="0" y="0" z="0" q1="1" q2="0" q3="0" q4="0"/>
+              <Joints>
+                <Revolute number="1" a="150" d="399" minrange="-180" maxrange="180" maxspeed="180"/>
+                <Revolute number="2" a="707" d="0" minrange="-180" maxrange="180" maxspeed="180"/>
+                <Revolute number="3" a="110" d="0" minrange="-225" maxrange="85" maxspeed="180"/>
+                <Revolute number="4" a="0" d="636" minrange="-180" maxrange="180" maxspeed="180"/>
+                <Revolute number="5" a="80" d="0" minrange="-180" maxrange="180" maxspeed="180"/>
+                <Revolute number="6" a="0" d="100.5" minrange="-180" maxrange="180" maxspeed="180"/>
+              </Joints>
+            </RobotArm>
+          </Mechanisms>
+        </RobotSystem>
+        """;
+
+    const string AbbGofa12Xml = """
+        <RobotSystem name="GoFa12Test" manufacturer="ABB">
+          <Mechanisms>
+            <RobotArm model="GoFa12Test" manufacturer="ABB" payload="12">
+              <Base x="0" y="0" z="0" q1="1" q2="0" q3="0" q4="0"/>
+              <Joints>
+                <Revolute number="1" a="0" d="338" minrange="-270" maxrange="270" maxspeed="180"/>
+                <Revolute number="2" a="707" d="0" minrange="-180" maxrange="180" maxspeed="180"/>
+                <Revolute number="3" a="110" d="0" minrange="-225" maxrange="85" maxspeed="180"/>
+                <Revolute number="4" a="0" d="534" minrange="-180" maxrange="180" maxspeed="180"/>
+                <Revolute number="5" a="80" d="0" minrange="-180" maxrange="180" maxspeed="180"/>
+                <Revolute number="6" a="0" d="101" minrange="-270" maxrange="270" maxspeed="180"/>
+              </Joints>
+            </RobotArm>
           </Mechanisms>
         </RobotSystem>
         """;
@@ -129,6 +183,12 @@ static class TestRobots
     public static RobotSystem AbbThreeGroup() => Parse(AbbThreeGroupXml);
 
     public static RobotSystem AbbNumerical() => Parse(AbbNumericalXml);
+
+    public static RobotSystem AbbPowa1920() => Parse(AbbPowa1920Xml);
+
+    public static RobotSystem AbbGofa10() => Parse(AbbGofa10Xml);
+
+    public static RobotSystem AbbGofa12() => Parse(AbbGofa12Xml);
 
     public static RobotSystem KukaWithCustomExternal() =>
         Parse(PostProcessorXml(Manufacturers.KUKA, 6, model: "KR", external: CustomExternalXml(Manufacturers.KUKA), io: ""));

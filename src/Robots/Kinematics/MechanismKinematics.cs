@@ -133,22 +133,27 @@ abstract class MechanismKinematics
     protected Transform[] DH(double[] joints)
     {
         var t = new Transform[joints.Length];
+        DH(joints, t);
+        return t;
+    }
+
+    protected void DH(double[] joints, Span<Transform> transforms)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(transforms.Length, joints.Length, nameof(transforms));
 
         for (int i = 0; i < joints.Length; i++)
         {
             var c = Cos(joints[i]);
             var s = Sin(joints[i]);
+            Transform current = default;
 
-            t[i].Set(
+            current.Set(
                 c, -s * _cα[i], s * _sα[i], _a[i] * c,
                 s, c * _cα[i], -c * _sα[i], _a[i] * s,
                    0, _sα[i], _cα[i], _d[i]
                 );
+
+            transforms[i] = i == 0 ? current : transforms[i - 1] * current;
         }
-
-        for (int i = 1; i < joints.Length; i++)
-            t[i] = t[i - 1] * t[i];
-
-        return t;
     }
 }

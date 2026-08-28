@@ -1,4 +1,11 @@
-﻿- version: 2.3.0
+﻿- version: 2.4.0
+  changes:
+  - Added analytical inverse kinematics for robots with non-spherical wrists, including ABB PoWa and GoFa.
+  - Added support for runtime frames in URScript programs.
+  - Fixed valid non-spherical-wrist linear paths sometimes reporting unavailable target configurations.
+  - Fixed scrolling in the robot library list.
+
+- version: 2.3.0
   changes:
   - Added a speed-proportional analogue-output motion command with ABB RAPID support.
   - Fixed ABB OmniCore multi-file programs referencing `.MOD` files instead of the saved `.modx` files.

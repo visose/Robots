@@ -8,10 +8,16 @@ public class RobotAbb : RobotArm
     internal RobotAbb(string model, double payload, MechanismBase mechanismBase, Joint[] joints)
         : base(model, Manufacturers.ABB, payload, mechanismBase, joints) { }
 
-    private protected override MechanismKinematics CreateSolver() =>
-        SphericalWristKinematics.Supports(this)
-            ? new SphericalWristKinematics(this)
-            : new NumericalKinematics(this);
+    private protected override MechanismKinematics CreateSolver()
+    {
+        if (SphericalWristKinematics.Supports(this))
+            return new SphericalWristKinematics(this);
+
+        if (NonSphericalWristKinematics.Supports(this))
+            return new NonSphericalWristKinematics(this);
+
+        return new NumericalKinematics(this);
+    }
 
     static double ABBDegreeToRadian(double degree, int i)
     {
