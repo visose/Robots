@@ -460,6 +460,27 @@ public class PostProcessorTests
         Assert.That(code, Does.Not.Contain("  movel(p["));
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public void UrCustomFrameIsResolvedAtRuntime(bool useController)
+    {
+        var robot = TestRobots.UR10();
+        JointTarget start = new([2.2208, -2.4093, 2.5006, 3.0503, 0.9208, -3.1416]);
+        var frameName = useController ? "ControllerFrame" : "RuntimeFrame";
+        Frame frame = new(Plane.WorldXY.WithOrigin(100, 0, 0), name: frameName, useController: useController);
+        Plane localPlane = Plane.WorldZX.WithOrigin(600, 250, 600);
+        CartesianTarget target = new(localPlane, motion: Motions.Linear, frame: frame);
+        Program program = new("P", robot, [TestRobots.Toolpath(start, target)]);
+        var code = TestRobots.FlattenCode(program);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(code, Does.Contain($"movel(pose_trans({frameName}, p[0.6, 0.25, 0.6"));
+            Assert.That(code.Contains($"{frameName} = p[0.1, 0, 0, 0, 0, 0]", StringComparison.Ordinal), Is.EqualTo(!useController));
+        });
+    }
+
     [Test]
     public void UrProcessMotionWithTimeFails()
     {

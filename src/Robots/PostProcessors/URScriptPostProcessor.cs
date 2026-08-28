@@ -54,6 +54,13 @@ class URScriptPostProcessor : IPostProcessor
                 code.Add(indent + $"{tool.Name}Cog = [{cog.X:0.#####}, {cog.Y:0.#####}, {cog.Z:0.#####}]");
             }
 
+            foreach (var frame in attributes.OfType<Frame>().Where(f => !ReferenceEquals(f, Frame.Default) && !f.UseController))
+            {
+                Plane plane = frame.Plane;
+                plane.InverseOrient(ref _system.BasePlane);
+                code.Add(indent + $"{frame.Name} = {Pose(plane)}");
+            }
+
             foreach (var speed in attributes.OfType<Speed>())
             {
                 double linearSpeed = speed.TranslationSpeed.ToMeters();
@@ -99,12 +106,18 @@ class URScriptPostProcessor : IPostProcessor
                 else
                 {
                     var cartesian = (CartesianTarget)target;
-                    var plane = cartesian.Plane;
-                    var framePlane = target.Frame.Plane;
-                    plane.Orient(ref framePlane);
-                    plane.InverseOrient(ref _system.BasePlane);
-                    var axisAngle = _system.PlaneToNumbers(plane);
-                    string pose = $"p[{axisAngle[0]:0.#####}, {axisAngle[1]:0.#####}, {axisAngle[2]:0.#####}, {axisAngle[3]:0.#####}, {axisAngle[4]:0.#####}, {axisAngle[5]:0.#####}]";
+                    Plane plane = cartesian.Plane;
+                    string pose;
+
+                    if (ReferenceEquals(target.Frame, Frame.Default))
+                    {
+                        plane.InverseOrient(ref _system.BasePlane);
+                        pose = Pose(plane);
+                    }
+                    else
+                    {
+                        pose = $"pose_trans({target.Frame.Name}, {Pose(plane)})";
+                    }
 
                     moveText = cartesian.Motion switch
                     {
@@ -155,6 +168,12 @@ class URScriptPostProcessor : IPostProcessor
 
             code.Add("end");
             return code;
+        }
+
+        string Pose(Plane plane)
+        {
+            var axisAngle = _system.PlaneToNumbers(plane);
+            return $"p[{axisAngle[0]:0.#####}, {axisAngle[1]:0.#####}, {axisAngle[2]:0.#####}, {axisAngle[3]:0.#####}, {axisAngle[4]:0.#####}, {axisAngle[5]:0.#####}]";
         }
 
         static string GetTcpSpeed(Speed speed)
