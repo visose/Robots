@@ -17,7 +17,6 @@ class LibraryCell : StackLayout
 
         Items.Add(new StackLayoutItem(NewLabel(i => i.Name), true));
         Items.Add(NewLabel(i => Icons(i), TextAlignment.Right));
-        Width = 280;
     }
 }
 
@@ -166,7 +165,7 @@ class LibraryForm : ComponentForm
     static GridView Grid() => new()
     {
         Size = new(300, 300),
-        Border = BorderType.None,
+        Border = BorderType.Line,
         GridLines = GridLines.Horizontal,
         ShowHeader = false,
         AllowMultipleSelection = false,
@@ -174,8 +173,8 @@ class LibraryForm : ComponentForm
         {
             new GridColumn
             {
-                DataCell = CustomCell.Create<LibraryCell>()
-                // Expand = true; // Not available in early 7.0 releases.
+                DataCell = CustomCell.Create<LibraryCell>(),
+                Expand = true
             }
         },
         RowHeight = 31
@@ -187,13 +186,7 @@ class LibraryForm : ComponentForm
         HorizontalContentAlignment = HorizontalAlignment.Stretch,
         Items =
         {
-            new StackLayoutItem(new Scrollable
-            {
-                Border = BorderType.Line,
-                ExpandContentWidth = true,
-                ExpandContentHeight = false,
-                Content = grid
-            }, true),
+            new StackLayoutItem(grid, true),
             new StackLayout
             {
                 Orientation = Orientation.Horizontal,
