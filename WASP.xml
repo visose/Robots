@@ -1,0 +1,40 @@
+<RobotSystems>
+  <RobotSystem name="WASP ABB PoWa 10" manufacturer="ABB" controller="omnicore">
+    <Mechanisms>
+      <RobotArm model="CRB1910-10/1.52" manufacturer="ABB" payload="10">
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
+        <Joints>
+          <Revolute number="1" a="150" d="365" minrange="-360" maxrange="360" maxspeed="230" />
+          <Revolute number="2" a="710" d="0" minrange="-180" maxrange="180" maxspeed="230" />
+          <Revolute number="3" a="0" d="-35.1" minrange="-248" maxrange="77" maxspeed="230" />
+          <Revolute number="4" a="0" d="655" minrange="-360" maxrange="360" maxspeed="300" />
+          <Revolute number="5" a="80" d="153" minrange="-270" maxrange="270" maxspeed="300" />
+          <Revolute number="6" a="0" d="120" minrange="-400" maxrange="400" maxspeed="300" />
+        </Joints>
+      </RobotArm>
+    </Mechanisms>
+    <IO>
+      <DO names="IIO_do1,IIO_do2,IIO_do3,IIO_do4,IIO_do5,IIO_do6,IIO_do7,IIO_do8" />
+      <DI names="IIO_di1,IIO_di2,IIO_di3,IIO_di4,IIO_di5,IIO_di6,IIO_di7,IIO_di8,IIO_di9,IIO_di10,IIO_di11,IIO_di12,IIO_di13,IIO_di14,IIO_di15,IIO_di16" />
+    </IO>
+  </RobotSystem>
+  <RobotSystem name="WASP ABB PoWa 16" manufacturer="ABB" controller="omnicore">
+    <Mechanisms>
+      <RobotArm model="CRB1920-16/1.96" manufacturer="ABB" payload="16">
+        <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000" />
+        <Joints>
+          <Revolute number="1" a="180" d="382.5" minrange="-360" maxrange="360" maxspeed="149" />
+          <Revolute number="2" a="920" d="0" minrange="-180" maxrange="180" maxspeed="149" />
+          <Revolute number="3" a="0" d="-60.1" minrange="-248" maxrange="80" maxspeed="230" />
+          <Revolute number="4" a="0" d="856" minrange="-360" maxrange="360" maxspeed="283" />
+          <Revolute number="5" a="80" d="138" minrange="-270" maxrange="270" maxspeed="300" />
+          <Revolute number="6" a="0" d="120" minrange="-400" maxrange="400" maxspeed="300" />
+        </Joints>
+      </RobotArm>
+    </Mechanisms>
+    <IO>
+      <DO names="IIO_do1,IIO_do2,IIO_do3,IIO_do4,IIO_do5,IIO_do6,IIO_do7,IIO_do8" />
+      <DI names="IIO_di1,IIO_di2,IIO_di3,IIO_di4,IIO_di5,IIO_di6,IIO_di7,IIO_di8,IIO_di9,IIO_di10,IIO_di11,IIO_di12,IIO_di13,IIO_di14,IIO_di15,IIO_di16" />
+    </IO>
+  </RobotSystem>
+</RobotSystems>
