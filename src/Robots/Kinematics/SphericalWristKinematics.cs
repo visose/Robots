@@ -9,6 +9,19 @@ class SphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
     readonly double[] _start = [0, HalfPI, HalfPI, 0, 0, PI];
     readonly double[] _signs = [1, -1, -1, 1, -1, 1];
 
+    internal static bool Supports(RobotArm robot)
+    {
+        var joints = robot.Joints;
+
+        // These DH offsets are not represented by the analytical solution below.
+        return joints.Length == 6
+            && Abs(joints[2].D) < DistanceTol
+            && Abs(joints[3].A) < DistanceTol
+            && Abs(joints[4].A) < DistanceTol
+            && Abs(joints[4].D) < DistanceTol
+            && Abs(joints[5].A) < DistanceTol;
+    }
+
     /// <summary>
     /// Code adapted from https://github.com/Jmeyer1292/opw_kinematics
     /// </summary>

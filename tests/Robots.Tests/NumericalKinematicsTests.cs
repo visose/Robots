@@ -1,8 +1,22 @@
 ﻿using NUnit.Framework;
+
 namespace Robots.Tests;
 
 public class NumericalKinematicsTests
 {
+    [Test]
+    public void AbbSolverMatchesWristGeometry()
+    {
+        var spherical = (IndustrialSystem)TestRobots.AbbIrb120();
+        var offset = (IndustrialSystem)TestRobots.AbbNumerical();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(spherical.MechanicalGroups[0].Robot.Solver, Is.TypeOf<SphericalWristKinematics>());
+            Assert.That(offset.MechanicalGroups[0].Robot.Solver, Is.TypeOf<NumericalKinematics>());
+        });
+    }
+
     [Test]
     public void NumericalIkSupportsCartesianJointMotion()
     {

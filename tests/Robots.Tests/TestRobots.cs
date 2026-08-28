@@ -9,7 +9,7 @@ static class TestRobots
     static readonly string AbbIrb120ArmXml = AbbArmXml("IRB120", 3);
     static readonly string AbbCustomSlideXml = CustomExternalXml(Manufacturers.ABB, "Slide", x: 100, y: 20, movesRobot: true);
 
-    static string AbbArmXml(string model, int payload) => $"""
+    static string AbbArmXml(string model, int payload, int wristOffset = 0) => $"""
         <RobotArm model="{model}" manufacturer="ABB" payload="{payload}">
           <Base x="0.000" y="0.000" z="0.000" q1="1.000" q2="0.000" q3="0.000" q4="0.000"/>
           <Joints>
@@ -17,7 +17,7 @@ static class TestRobots
             <Revolute number="2" a="270" d="0" minrange="-110" maxrange="110" maxspeed="250"/>
             <Revolute number="3" a="70" d="0" minrange="-110" maxrange="70" maxspeed="250"/>
             <Revolute number="4" a="0" d="302" minrange="-160" maxrange="160" maxspeed="320"/>
-            <Revolute number="5" a="0" d="0" minrange="-120" maxrange="120" maxspeed="320"/>
+            <Revolute number="5" a="{wristOffset}" d="0" minrange="-120" maxrange="120" maxspeed="320"/>
             <Revolute number="6" a="0" d="72" minrange="-400" maxrange="400" maxspeed="420"/>
           </Joints>
         </RobotArm>
@@ -95,9 +95,9 @@ static class TestRobots
         """;
 
     static readonly string AbbNumericalXml = $"""
-        <RobotSystem name="CRB15000" manufacturer="ABB">
+        <RobotSystem name="OffsetWristTest" manufacturer="ABB">
           <Mechanisms>
-            {AbbArmXml("CRB15000Test", 5)}
+            {AbbArmXml("OffsetWristTest", 5, wristOffset: 80)}
           </Mechanisms>
         </RobotSystem>
         """;
