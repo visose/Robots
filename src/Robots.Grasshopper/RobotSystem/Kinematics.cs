@@ -8,13 +8,20 @@ public class Kinematics() : Component(
     "{EFDA05EB-B281-4703-9C9E-B5F98A9B2E1D}",
     GH_Exposure.quinary)
 {
-    readonly Dictionary<(RobotSystem RobotSystem, int Iteration), List<KinematicSolution>> _prevKinematics = [];
+    Dictionary<(RobotSystem RobotSystem, int Iteration), List<KinematicSolution>> _prevKinematics = [];
+    Dictionary<(RobotSystem RobotSystem, int Iteration), List<KinematicSolution>> _kinematics = [];
+
+    protected override void BeforeSolveInstance()
+    {
+        (_prevKinematics, _kinematics) = (_kinematics, _prevKinematics);
+        _kinematics.Clear();
+    }
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         _ = pManager.AddParameter(new RobotSystemParameter(), "Robot System", "R", "Robot system used for the kinematics solution.", GH_ParamAccess.item);
         _ = pManager.AddParameter(new TargetParameter(), "Target", "T", "One target per robot.", GH_ParamAccess.list);
-        _ = pManager.AddParameter(new JointsParameter(), "Previous Joints", "J", "Optional previous joint values. If the pose is ambiguous, these values are used to select the closest solution.", GH_ParamAccess.list);
+        _ = pManager.AddParameter(new JointsParameter(), "Previous Joints", "J", "Optional previous joints, as one set per robot or one combined set. Selects the closest solution when the pose is ambiguous.", GH_ParamAccess.list);
         _ = pManager.AddBooleanParameter("Display Geometry", "M", "Output posed robot meshes.", GH_ParamAccess.item, false);
         pManager[2].Optional = true;
     }
@@ -40,7 +47,7 @@ public class Kinematics() : Component(
 
         if (previousJoints.Length > 0)
         {
-            prevJoints = previousJoints;
+            prevJoints = JointSets(robotSystem, previousJoints);
         }
         else if (prevKinematics is not null)
         {
@@ -56,11 +63,14 @@ public class Kinematics() : Component(
         if (errors.Contains("Target out of reach."))
         {
             if (prevKinematics is not null)
+            {
                 kinematics = prevKinematics;
+                _kinematics[key] = kinematics;
+            }
         }
         else
         {
-            _prevKinematics[key] = kinematics;
+            _kinematics[key] = kinematics;
         }
 
         if (drawMeshes)
@@ -69,5 +79,34 @@ public class Kinematics() : Component(
         _ = DA.SetData(1, kinematics.AllJoints());
         _ = DA.SetDataList(2, kinematics.AllPlanes());
         _ = DA.SetDataList(3, errors);
+    }
+
+    static double[][] JointSets(RobotSystem robotSystem, double[][] joints)
+    {
+        int groupCount = robotSystem.RobotCount;
+
+        if (groupCount == 1 || joints.Length != 1)
+            return joints;
+
+        var combined = joints[0];
+        int jointCount = 0;
+
+        for (int i = 0; i < groupCount; i++)
+            jointCount += robotSystem.GetJoints(i).Count;
+
+        if (combined.Length != jointCount)
+            throw new ArgumentException($"Combined previous joints must contain {jointCount} values, but {combined.Length} were supplied.", nameof(joints));
+
+        var result = new double[groupCount][];
+        int start = 0;
+
+        for (int i = 0; i < groupCount; i++)
+        {
+            int end = start + robotSystem.GetJoints(i).Count;
+            result[i] = combined[start..end];
+            start = end;
+        }
+
+        return result;
     }
 }

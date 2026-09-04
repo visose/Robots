@@ -17,6 +17,7 @@ dotnet_diagnostic.IDE0005.severity = suggestion
 csharp_prefer_braces = when_multiline:warning
 csharp_style_implicit_object_creation_when_type_is_apparent = true:warning
 csharp_style_namespace_declarations = file_scoped:warning
+dotnet_separate_import_directive_groups = false:warning
 dotnet_style_allow_multiple_blank_lines_experimental = false:warning
 
 dotnet_diagnostic.SYSLIB1045.severity = silent

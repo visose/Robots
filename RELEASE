@@ -1,9 +1,16 @@
 ﻿- version: 2.4.0
   changes:
-  - Added analytical inverse kinematics for robots with non-spherical wrists, including ABB PoWa and GoFa.
-  - Added support for runtime frames in URScript programs.
-  - Fixed valid non-spherical-wrist linear paths sometimes reporting unavailable target configurations.
-  - Fixed scrolling in the robot library list.
+  - Added analytical IK for non-spherical wrists (including ABB PoWa/GoFa).
+  - Added optional library `postProcessor`/`solver` selection and custom postprocessor control over commands, validation and saved files; fixed declaration-only custom commands.
+  - Added UR runtime frames; fixed small rotations and URP XML escaping.
+  - Fixed ABB negative configuration quadrants, KUKA axis speeds/external declarations, Doosan multi-file declaration ordering, and Staubli XYZ conversion/input waits.
+  - Fixed Igus joint conversion, digital-output mapping and numbering; Jaka Cartesian joint motions/analogue output; and both robots' Cartesian frame transforms.
+  - Corrected numerical IK orientation checks, non-spherical-wrist linear-path configurations, joint ordering and degenerate TCP calibration.
+  - Corrected rotation timing/path checks, simulated waits, stationary-program collision checks and external-axis sampling units.
+  - Preserved Grasshopper data/wires on upgrade; fixed multi-robot previous joints, culture-dependent joint text, wire previews and metal-forming sample indexing; bounded pose caching.
+  - Fixed quiet-command cancellation on Franka and remote log updates repeating actions.
+  - Preserved offline access and installed libraries after failed downloads; fixed saved selections, scrolling and settings-error handling.
+  - Improved speed/zone lookup, prevented attribute-name collisions, and added early validation of manufacturer mismatches and unsupported ABB controller-numbered I/O.
 
 - version: 2.3.0
   changes:

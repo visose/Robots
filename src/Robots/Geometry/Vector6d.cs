@@ -1,10 +1,7 @@
-﻿
-namespace Robots;
+﻿namespace Robots;
 
 public struct Vector6d
 {
-    // static
-
     public static Vector6d Map<T>(T[] array, Func<T, double> projection)
     {
         ArgumentOutOfRangeException.ThrowIfNotEqual(array.Length, 6, nameof(array));
@@ -16,8 +13,6 @@ public struct Vector6d
 
         return result;
     }
-
-    // instance
 
     public double A1;
     public double A2;

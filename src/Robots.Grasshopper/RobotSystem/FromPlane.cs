@@ -11,7 +11,7 @@ public class FromPlane() : Component(
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         _ = pManager.AddPlaneParameter("Plane", "P", "Plane to convert.", GH_ParamAccess.item);
-        _ = pManager.AddParameter(new RobotSystemParameter(), "Robot System", "R", "The robot system selects the orientation type (ABB = quaternions, KUKA = Euler angles in degrees, UR = axis angles in radians). If this input is left unconnected, the 3D rotation is expressed as a quaternion.", GH_ParamAccess.item);
+        _ = pManager.AddParameter(new RobotSystemParameter(), "Robot System", "R", "The robot system selects its position and orientation convention. If this input is left unconnected, quaternion values are used.", GH_ParamAccess.item);
         pManager[1].Optional = true;
     }
 

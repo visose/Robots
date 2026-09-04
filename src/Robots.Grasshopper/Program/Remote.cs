@@ -1,6 +1,4 @@
-﻿using Grasshopper;
-
-namespace Robots.Grasshopper;
+﻿namespace Robots.Grasshopper;
 
 public class Remote() : Component(
     "Remote Connection",
@@ -9,6 +7,10 @@ public class Remote() : Component(
     "{19A5E3A3-E2BC-4798-8C54-13873FD2973A}",
     GH_Exposure.senary)
 {
+    IRemoteNotifier? _notifier;
+    bool _refreshScheduled;
+    bool _refresh;
+
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         var ipDescription = """
@@ -34,9 +36,13 @@ public class Remote() : Component(
     {
         var program = DA.Get<IProgram>(0);
         var remote = program.RobotSystem.Remote ?? throw new NotSupportedException("No remote functionality for this robot.");
-        if (remote is RemoteFranka remoteFranka)
+
+        if (!ReferenceEquals(_notifier, remote))
         {
-            remoteFranka.Update = () => Instances.ActiveCanvas.Invoke(() => ExpireSolution(true));
+            Detach();
+            _notifier = remote as IRemoteNotifier;
+
+            _notifier?.Update = Refresh;
         }
 
         remote.IP = DA.Maybe<string>(1);
@@ -45,10 +51,61 @@ public class Remote() : Component(
         bool play = DA.Get(3, false);
         bool pause = DA.Get(4, false);
 
-        if (upload) remote.Upload(program);
-        if (play) remote.Play();
-        if (pause) remote.Pause();
+        if (!_refresh)
+        {
+            if (upload) remote.Upload(program);
+            if (play) remote.Play();
+            if (pause) remote.Pause();
+        }
 
-        _ = DA.SetDataList(0, remote.Log);
+        lock (remote.Log)
+            _ = DA.SetDataList(0, remote.Log);
+    }
+
+    protected override void AfterSolveInstance() => _refresh = false;
+
+    public override void ExpireSolution(bool recompute)
+    {
+        _refresh = false;
+        base.ExpireSolution(recompute);
+    }
+
+    void Refresh()
+    {
+        var notifier = _notifier;
+        Rhino.RhinoApp.InvokeOnUiThread(() =>
+        {
+            if (!ReferenceEquals(notifier, _notifier) || _refreshScheduled || OnPingDocument() is not { } document)
+                return;
+
+            _refreshScheduled = true;
+            document.ScheduleSolution(1, scheduledDocument =>
+            {
+                _refreshScheduled = false;
+
+                if (!ReferenceEquals(notifier, _notifier) || !ReferenceEquals(scheduledDocument, OnPingDocument()))
+                    return;
+
+                // An input change takes precedence over a pending log refresh.
+                _refresh = Phase != GH_SolutionPhase.Blank;
+                base.ExpireSolution(false);
+            });
+        });
+    }
+
+    void Detach()
+    {
+        if (_notifier?.Update == Refresh)
+            _notifier.Update = null;
+
+        _notifier = null;
+        _refreshScheduled = false;
+    }
+
+    public override void RemovedFromDocument(GH_Document document)
+    {
+        Detach();
+        _refresh = false;
+        base.RemovedFromDocument(document);
     }
 }

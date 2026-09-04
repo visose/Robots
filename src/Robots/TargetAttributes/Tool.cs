@@ -18,7 +18,7 @@ public class Tool : TargetProperty
     public bool UseController { get; }
 
     /// <summary>
-    /// Used only in KUKA to load from the TOOL_DATA array.
+    /// Controller-defined tool number, when supported by the postprocessor.
     /// </summary>
     public int? Number { get; }
 
@@ -30,7 +30,7 @@ public class Tool : TargetProperty
 
         Weight = CheckNonNegative(weight, nameof(weight));
         Centroid = (centroid is null) ? tcp.Origin : (Point3d)centroid;
-        Mesh = mesh ?? FileIO.EmptyMesh;
+        Mesh = mesh ?? GeometryUtil.EmptyMesh;
         CollisionMesh = collisionMesh ?? Mesh;
         UseController = number is not null || useController;
         Number = number;
@@ -53,6 +53,10 @@ public class Tool : TargetProperty
             }
 
             var origin = FourPointCalibration(calibrationPlanes);
+
+            if (!origin.IsValid)
+                throw new ArgumentException("Calibration produced an invalid TCP.", nameof(calibrationPlanes));
+
             Tcp = new(origin, tcp.XAxis, tcp.YAxis);
         }
     }
@@ -60,12 +64,12 @@ public class Tool : TargetProperty
     static Point3d FourPointCalibration(IReadOnlyList<Plane> calibrationPlanes)
     {
         var p = calibrationPlanes;
-        var calibrate = new Geometry.CircumcentreSolver(p[0].Origin, p[1].Origin, p[2].Origin, p[3].Origin);
+        var center = GeometryMath.Circumcentre(p[0].Origin, p[1].Origin, p[2].Origin, p[3].Origin);
         Point3d tcpOrigin = Point3d.Origin;
 
         foreach (Plane plane in calibrationPlanes)
         {
-            _ = plane.RemapToPlaneSpace(calibrate.Center, out Point3d remappedPoint);
+            _ = plane.RemapToPlaneSpace(center, out Point3d remappedPoint);
             tcpOrigin += remappedPoint;
         }
 

@@ -31,7 +31,7 @@ public sealed class DeconstructTarget() : Component(
         Spec<ZoneParameter>("Zone", "Z", "Approximation zone in mm.", true, target => target.Zone, skipNull: true),
         Spec<CommandParameter>("Command", "C", "Robot command.", true, target => target.Command),
         Spec<FrameParameter>("Frame", "F", "Base frame.", true, target => target.Frame),
-        Spec<JointsParameter>("External", "E", "External axes.", true, target => target.External)
+        Spec<JointsParameter>("External", "E", "External axes, or a redundant-joint constraint when supported.", true, target => target.External)
     ];
 
     static readonly ParamSpec[] ParamSpecs = [.. Specs.Select(spec => spec.Param)];
@@ -61,8 +61,11 @@ public sealed class DeconstructTarget() : Component(
         if (outputParam is null or JointsParameter)
             return;
 
+        var updated = Specs[index].Param.Create();
+        ParameterMigration.Output(outputParam, updated);
+        int outputIndex = Params.Output.IndexOf(outputParam);
         _ = Params.UnregisterOutputParameter(outputParam, true);
-        _ = AddOutput(index);
+        _ = Params.RegisterOutputParam(updated, outputIndex);
         Params.OnParametersChanged();
     }
 

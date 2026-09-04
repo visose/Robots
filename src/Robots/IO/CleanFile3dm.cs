@@ -14,7 +14,7 @@ public static class File3dmCleaner
     public static string CleanAllLocal()
     {
         StringBuilder log = new();
-        var path = FileIO.LocalLibraryPath;
+        var path = RobotLibrary.LocalPath;
         var files = Directory.EnumerateFiles(path, "*.3dm")
         .Where(f => Path.GetExtension(f).EqualsIgnoreCase(".3dm"));
 
@@ -35,7 +35,7 @@ public static class File3dmCleaner
                 var parent = doc.AllLayers.FindId(layer.ParentLayerId);
 
                 bool isTool = parent is null && layer.Name.StartsWith("Tool.", StringComparison.OrdinalIgnoreCase);
-                bool isJoint = parent is not null && int.TryParse(layer.Name, out _);
+                bool isJoint = parent is not null && int.TryParse(layer.Name, CultureInfo.InvariantCulture, out _);
                 var objName = parent is null ? layer.Name : $"{parent.Name}/{layer.Name}";
 
                 if (obj.Geometry is not Mesh)

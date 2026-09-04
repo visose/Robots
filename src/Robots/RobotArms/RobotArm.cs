@@ -7,6 +7,8 @@ public abstract class RobotArm : Mechanism
     internal RobotArm(string model, Manufacturers manufacturer, double payload, MechanismBase mechanismBase, Joint[] joints)
         : base(model, manufacturer, payload, mechanismBase, joints, false) { }
 
+    internal virtual NumericalKinematicsSettings NumericalSettings => default;
+
     protected override void SetStartPlanes()
     {
         var thetas = Joints.Map(j => j.Theta);

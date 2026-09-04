@@ -53,7 +53,7 @@ public class CartesianTarget(Plane plane, RobotConfigurations? configuration = n
         if (configuration is null)
             return null;
 
-        const RobotConfigurations all = RobotConfigurations.Shoulder | RobotConfigurations.Elbow | RobotConfigurations.Wrist | RobotConfigurations.Undefined;
+        const RobotConfigurations all = RobotConfigurations.Shoulder | RobotConfigurations.Elbow | RobotConfigurations.Wrist;
 
         return (configuration.Value & ~all) == 0
             ? configuration

@@ -2,22 +2,11 @@
 
 namespace Robots;
 
-class MechanicalGroupKinematics
+class MechanicalGroupKinematics(MechanicalGroup group)
 {
-    readonly MechanicalGroup _group;
-
-    internal MechanicalGroupKinematics(MechanicalGroup group)
+    public KinematicSolution Solve(Target target, PreviousJoints prevJoints, Plane? coupledPlane, Plane? basePlane)
     {
-        _group = group;
-    }
-
-    internal KinematicSolution Solve(Target target, PreviousJoints prevJoints, Plane? coupledPlane, Plane? basePlane)
-    {
-        var group = _group;
         int jointCount = group.Joints.Length;
-
-        if (prevJoints.HasValue)
-            Exception.ThrowIfNotEqual(prevJoints.Length, jointCount, $"Previous joints must contain {jointCount} value(s), but {prevJoints.Length} were supplied.");
 
         KinematicSolution solution = new() { Joints = new double[jointCount] };
         var planes = new Plane[jointCount + group.Externals.Length + 2];

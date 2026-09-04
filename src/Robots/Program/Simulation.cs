@@ -1,5 +1,4 @@
 ﻿using Rhino.Geometry;
-using static Robots.GeometryUtil;
 using static Robots.Util;
 
 namespace Robots;
@@ -43,7 +42,7 @@ class Simulation
     public void Step(double time, bool isNormalized)
     {
         if (isNormalized) time *= _program.Duration;
-        time = Clamp(time, 0, _duration);
+        time = Math.Clamp(time, 0, _duration);
 
         if (_segments.Count == 0)
         {

@@ -21,21 +21,45 @@ class KinematicsComparisonTests
     ];
 
     [Test]
-    public void SolverCapabilitiesAreDisjoint()
+    public void SphericalCapabilityRequiresDerivedGeometry()
     {
-        var spherical = GetRobot(TestRobots.AbbIrb120());
+        Assert.Multiple(() =>
+        {
+            Assert.That(SphericalSupportsAfter(joints => joints[0].Alpha += 1e-4), Is.False, "axis twist");
+            Assert.That(SphericalSupportsAfter(joints => joints[2].D = 1), Is.False, "axis 3 offset");
+            Assert.That(SphericalSupportsAfter(joints => joints[1].A = 0), Is.False, "upper arm");
+            Assert.That(SphericalSupportsAfter(joints =>
+            {
+                joints[2].A = 0;
+                joints[3].D = 0;
+            }), Is.False, "forearm");
+            Assert.That(SphericalSupportsAfter(joints => joints[0] = new PrismaticJoint()), Is.False, "joint type");
+            Assert.That(SphericalSupportsAfter(joints => joints[0].D = double.NaN), Is.False, "finite DH");
+        });
+    }
+
+    [TestCase(Motions.Linear)]
+    [TestCase(Motions.Process)]
+    public void NonJointMotionsIgnoreConfigurations(Motions motion)
+    {
+        var robot = GetRobot(TestRobots.AbbIrb120());
+        double[] joints = [0.3, 1.1, 0.4, -0.5, 0.7, 0.6];
+        var forward = robot.Kinematics(new JointTarget(joints));
+        var automatic = robot.Kinematics(
+            new CartesianTarget(forward.Planes[^1], motion: motion),
+            joints);
+        var ignored = automatic.Configuration ^ RobotConfigurations.Shoulder;
+        var configured = robot.Kinematics(
+            new CartesianTarget(forward.Planes[^1], ignored, motion),
+            joints);
 
         Assert.Multiple(() =>
         {
-            Assert.That(SphericalWristKinematics.Supports(spherical), Is.True);
-            Assert.That(NonSphericalWristKinematics.Supports(spherical), Is.False);
-
-            foreach (var (name, factory, _) in Cases)
-            {
-                var nonSpherical = GetRobot(factory());
-                Assert.That(SphericalWristKinematics.Supports(nonSpherical), Is.False, name);
-                Assert.That(NonSphericalWristKinematics.Supports(nonSpherical), Is.True, name);
-            }
+            Assert.That(forward.Errors, Is.Empty);
+            Assert.That(automatic.Errors, Is.Empty);
+            Assert.That(configured.Errors, Is.Empty);
+            Assert.That(configured.Configuration, Is.EqualTo(automatic.Configuration));
+            Assert.That(configured.Joints, Is.EqualTo(automatic.Joints).Within(1e-10));
         });
     }
 
@@ -108,6 +132,8 @@ class KinematicsComparisonTests
         var sphericalSamples = CreateSamples(spherical, seed: 120, BenchmarkCount);
         var sphericalMeasurement = Measure(spherical.Solver, sphericalSamples, usePrevious: true);
         Report("IRB 120", "spherical warm", sphericalMeasurement);
+        Report("IRB 120", "spherical forced", Measure(spherical.Solver, sphericalSamples, usePrevious: true, useConfiguredTarget: true));
+        Report("IRB 120", "spherical cold", Measure(spherical.Solver, sphericalSamples, usePrevious: false));
         Assert.That(sphericalMeasurement.Successes, Is.EqualTo(sphericalMeasurement.Attempts));
     }
 
@@ -291,6 +317,13 @@ class KinematicsComparisonTests
 
     static RobotArm GetRobot(RobotSystem system) =>
         ((IndustrialSystem)system).MechanicalGroups[0].Robot;
+
+    static bool SphericalSupportsAfter(Action<Joint[]> change)
+    {
+        var robot = GetRobot(TestRobots.AbbIrb120());
+        change(robot.Joints);
+        return SphericalWristKinematics.Supports(robot);
+    }
 
     readonly record struct Sample(
         CartesianTarget Target,

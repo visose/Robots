@@ -2,19 +2,11 @@
 
 namespace Robots.Commands;
 
-public class Group : Command, IReadOnlyList<Command>
+public class Group(IReadOnlyList<Command> commands) : Command("GroupCommand"), IReadOnlyList<Command>
 {
-    readonly Command[] _items;
+    readonly Command[] _items = [.. commands];
 
-    public Group(bool runBefore = false) : base(runBefore: runBefore)
-    {
-        _items = [];
-    }
-
-    public Group(IReadOnlyList<Command> commands, bool runBefore = false) : base("GroupCommand", runBefore)
-    {
-        _items = [.. commands];
-    }
+    public Group() : this([]) { }
 
     public Command this[int index] => _items[index];
     public int Count => _items.Length;
@@ -23,7 +15,14 @@ public class Group : Command, IReadOnlyList<Command>
 
     internal override IEnumerable<Command> Flatten()
     {
-        return _items.SelectMany(c => c.Flatten());
+        if (RunBefore)
+            throw new InvalidOperationException("RunBefore must be set on commands inside the group.");
+
+        foreach (var command in _items)
+        {
+            foreach (var item in command.Flatten())
+                yield return item;
+        }
     }
 
     public override string ToString() => $"Command (Group with {Count} commands)";

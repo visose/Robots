@@ -56,15 +56,20 @@ public class Collision
 
     static int[] ValidateSet(IReadOnlyList<int> indices, string name, int meshCount)
     {
+        var result = new int[indices.Count];
+
         for (int i = 0; i < indices.Count; i++)
         {
             int index = indices[i];
+            int resolved = index < 0 ? meshCount + index : index;
 
-            if (index < 0 || index >= meshCount)
-                throw new ArgumentOutOfRangeException(name, index, $"Collision mesh index {index} is outside the available mesh range 0..{meshCount - 1}.");
+            if (resolved < 0 || resolved >= meshCount)
+                throw new ArgumentOutOfRangeException(name, index, $"Collision mesh index {index} is outside the available mesh range {-meshCount}..{meshCount - 1}.");
+
+            result[i] = resolved;
         }
 
-        return [.. indices];
+        return result;
     }
 
     void ValidateEnvironmentPlane(int environmentPlane)
@@ -90,7 +95,30 @@ public class Collision
 
     void Collide()
     {
+        if (!_program.HasSimulation)
+            throw new InvalidOperationException("Collision checking requires a valid simulation pose.");
+
         var segments = _program.MotionSegments;
+
+        if (segments.Count == 0)
+        {
+            var meshPoser = RhinoMeshPoser.CreateCollision(_system);
+
+            foreach (var target in _program.Targets)
+            {
+                var kinematics = target.ProgramTargets.MapToList(t => t.Kinematics);
+                Meshes = FindCollision(meshPoser, kinematics, target);
+
+                if (Meshes is null)
+                    continue;
+
+                CollisionTarget = target;
+                break;
+            }
+
+            return;
+        }
+
         object gate = new();
         int collisionPosition = int.MaxValue;
 
@@ -103,7 +131,7 @@ public class Collision
             }
 
             var segment = segments[position];
-            int divisions = segment.GetDivisions(_linearStep, _angularStep);
+            int divisions = segment.GetDivisions(_system, _linearStep, _angularStep);
             var meshPoser = RhinoMeshPoser.CreateCollision(_program.RobotSystem);
             int j = position == 0 ? 0 : 1;
             var prevJoints = segment.Start.JointSets();
@@ -115,32 +143,36 @@ public class Collision
                 double time = segment.Start.TotalTime + ((segment.End.TotalTime - segment.Start.TotalTime) * t);
                 _ = segment.Lerp(_system, time, targets);
                 var kinematics = _program.RobotSystem.Kinematics(targets, prevJoints);
-                ThrowIfKinematicErrors(kinematics);
                 prevJoints = kinematics.JointSets(prevJoints);
+                var meshes = FindCollision(meshPoser, kinematics, _program.Targets[segment.TargetIndex]);
 
-                var meshes = PoseMeshes(meshPoser, kinematics, _program.Targets[segment.TargetIndex]);
-
-                var setA = SelectMeshes(meshes, _first);
-                var setB = SelectMeshes(meshes, _second);
-
-                var meshClash = Rhino.Geometry.Intersect.MeshClash.Search(setA, setB, 1, 1);
-
-                if (meshClash.Length > 0)
+                if (meshes is not null)
                 {
                     lock (gate)
                     {
                         if (position < collisionPosition)
                         {
-                            Meshes = [meshClash[0].MeshA, meshClash[0].MeshB];
+                            Meshes = meshes;
                             CollisionTarget = _program.Targets[segment.TargetIndex];
                             collisionPosition = position;
                         }
                     }
 
                     state.Break();
+                    break;
                 }
             }
         });
+    }
+
+    Mesh[]? FindCollision(RhinoMeshPoser meshPoser, IReadOnlyList<KinematicSolution> kinematics, SystemTarget target)
+    {
+        ThrowIfKinematicErrors(kinematics);
+        var meshes = PoseMeshes(meshPoser, kinematics, target);
+        var setA = SelectMeshes(meshes, _first);
+        var setB = SelectMeshes(meshes, _second);
+        var clashes = Rhino.Geometry.Intersect.MeshClash.Search(setA, setB, 1, 1);
+        return clashes.Length == 0 ? null : [clashes[0].MeshA, clashes[0].MeshB];
     }
 
     Mesh[] PoseMeshes(RhinoMeshPoser meshPoser, IReadOnlyList<KinematicSolution> kinematics, SystemTarget systemTarget)

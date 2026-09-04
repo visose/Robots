@@ -1,5 +1,6 @@
-﻿using static System.Math;
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
+using static System.Math;
+using static Robots.GeometryMath;
 
 namespace Robots;
 
@@ -15,7 +16,7 @@ abstract class MechanismKinematics
     readonly double[] _cα;
     readonly double[] _sα;
 
-    internal MechanismKinematics(Mechanism mechanism)
+    protected MechanismKinematics(Mechanism mechanism)
     {
         _mechanism = mechanism;
 
@@ -28,14 +29,11 @@ abstract class MechanismKinematics
         _sα = joints.Map(joint => Sin(joint.Alpha));
     }
 
-    internal KinematicSolution Solve(Target target, PreviousJoints prevJoints, Plane? basePlane)
+    public KinematicSolution Solve(Target target, PreviousJoints prevJoints, Plane? basePlane)
     {
         var solution = new KinematicSolution();
 
         int jointCount = _mechanism.Joints.Length;
-
-        if (prevJoints.HasValue)
-            Exception.ThrowIfNotEqual(prevJoints.Length, jointCount, $"Previous joints must contain {jointCount} value(s), but {prevJoints.Length} were supplied.");
 
         // Init properties
         solution.Joints = new double[jointCount];
@@ -64,8 +62,8 @@ abstract class MechanismKinematics
         return solution;
     }
 
-    internal virtual bool RequiresContinuation => false;
-    internal virtual int? RedundantJointIndex => null;
+    public virtual bool RequiresContinuation => false;
+    public virtual int? RedundantJointIndex => null;
 
     protected virtual void SetJoints(KinematicSolution solution, Target target, PreviousJoints prevJoints) =>
         SetExternalJoints(solution, target);
@@ -135,6 +133,16 @@ abstract class MechanismKinematics
         var t = new Transform[joints.Length];
         DH(joints, t);
         return t;
+    }
+
+    protected static double GetChainLength(IReadOnlyList<Joint> joints)
+    {
+        double length = 0;
+
+        for (int i = 0; i < joints.Count; i++)
+            length += Hypot(joints[i].A, joints[i].D);
+
+        return length;
     }
 
     protected void DH(double[] joints, Span<Transform> transforms)

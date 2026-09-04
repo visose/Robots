@@ -1,11 +1,8 @@
 ﻿
 namespace Robots;
 
-class TrackKinematics : MechanismKinematics
+class TrackKinematics(Track track) : MechanismKinematics(track)
 {
-    internal TrackKinematics(Track track)
-        : base(track) { }
-
     protected override void SetPlanes(KinematicSolution solution, Target target)
     {
         var (joints, planes, _, _) = solution;

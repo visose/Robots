@@ -16,7 +16,7 @@ public abstract class Mechanism
     public Mesh DisplayMesh { get; }
     public string Model { get; }
 
-    internal MechanismKinematics Solver { get => field ??= CreateSolver(); private set; }
+    internal MechanismKinematics Solver { get => field ??= CreateSolver(); set; }
 
     internal Mechanism(string model, Manufacturers manufacturer, double payload, MechanismBase mechanismBase, Joint[] joints, bool movesRobot)
     {
@@ -82,8 +82,37 @@ public abstract class Mechanism
         return mesh;
     }
 
-    public KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? basePlane = null) =>
-        Solver.Solve(target, new(prevJoints), basePlane);
+    public KinematicSolution Kinematics(Target target, double[]? prevJoints = null, Plane? basePlane = null)
+    {
+        int jointCount = Joints.Length;
+
+        if (this is RobotArm robot)
+        {
+            if (target is JointTarget jointTarget && jointTarget.Joints.Length != jointCount)
+            {
+                throw new ArgumentException(
+                    $"Joint target must contain {jointCount} value(s), but {jointTarget.Joints.Length} were supplied.",
+                    nameof(target));
+            }
+
+            if (target.ExternalCustom is { Length: > 0 })
+                throw new ArgumentException("Custom external axis values supplied, but a standalone robot arm does not have external axes.", nameof(target));
+
+            int externalCount = target.External.Length;
+            int? redundantJoint = robot.Solver.RedundantJointIndex;
+
+            if (redundantJoint is null && externalCount > 0)
+                throw new ArgumentException("External axis values supplied, but a standalone robot arm does not have external axes.", nameof(target));
+
+            if (redundantJoint is not null && externalCount > 1)
+                throw new ArgumentException($"{externalCount} external axis value(s) supplied, but at most one redundant joint value is accepted.", nameof(target));
+        }
+
+        if (prevJoints is not null && prevJoints.Length != jointCount)
+            throw new ArgumentException($"Previous joints must contain {jointCount} value(s), but {prevJoints.Length} were supplied.", nameof(prevJoints));
+
+        return Solver.Solve(target, new(prevJoints), basePlane);
+    }
 
     internal KinematicSolution Kinematics(Target target, PreviousJoints prevJoints, Plane? basePlane) =>
         Solver.Solve(target, prevJoints, basePlane);

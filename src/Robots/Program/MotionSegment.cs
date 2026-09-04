@@ -1,5 +1,5 @@
-﻿using static System.Math;
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
+using static System.Math;
 using static Robots.Util;
 
 namespace Robots;
@@ -35,17 +35,18 @@ readonly record struct MotionSegment(SystemTarget Start, SystemTarget End, Syste
         return targets;
     }
 
-    public int GetDivisions(double linearStep, double angularStep)
+    public int GetDivisions(RobotSystem robot, double linearStep, double angularStep)
     {
         int divisions = Corner is null ? 1 : 2;
 
         for (int group = 0; group < Start.ProgramTargets.Count; group++)
         {
             var corner = Corner?.ProgramTargets[group];
+            var joints = robot.GetJoints(group);
             int current = corner is null || !corner.Target.Zone.IsFlyBy
-                ? GetLineDivisions(Start.ProgramTargets[group], End.ProgramTargets[group], linearStep, angularStep)
-                : GetLineDivisions(Start.ProgramTargets[group], corner, linearStep, angularStep)
-                    + GetLineDivisions(corner, End.ProgramTargets[group], linearStep, angularStep);
+                ? GetLineDivisions(Start.ProgramTargets[group], End.ProgramTargets[group], joints, linearStep, angularStep)
+                : GetLineDivisions(Start.ProgramTargets[group], corner, joints, linearStep, angularStep)
+                    + GetLineDivisions(corner, End.ProgramTargets[group], joints, linearStep, angularStep);
             divisions = Max(divisions, current);
         }
 
@@ -58,27 +59,22 @@ readonly record struct MotionSegment(SystemTarget Start, SystemTarget End, Syste
 
         return duration <= TimeTol
             ? 0.0
-            : GeometryUtil.Clamp((time - Start.TotalTime) / duration, 0.0, 1.0);
+            : Clamp((time - Start.TotalTime) / duration, 0.0, 1.0);
     }
 
-    static int GetLineDivisions(ProgramTarget start, ProgramTarget end, double linearStep, double angularStep)
+    static int GetLineDivisions(ProgramTarget start, ProgramTarget end, IReadOnlyList<Joint> joints, double linearStep, double angularStep)
     {
         double distance = start.WorldPlane.Origin.DistanceTo(end.WorldPlane.Origin);
-        double linearDivisions = Ceiling(distance / linearStep);
-        double angularDivisions = Ceiling(MaxJointDelta(start.Kinematics.Joints, end.Kinematics.Joints) / angularStep);
-        return Max(1, (int)Max(linearDivisions, angularDivisions));
-    }
+        double divisions = distance / linearStep;
 
-    static double MaxJointDelta(double[] current, double[] previous)
-    {
-        ArgumentOutOfRangeException.ThrowIfNotEqual(current.Length, previous.Length, nameof(current));
+        for (int i = 0; i < joints.Count; i++)
+        {
+            double delta = Abs(end.Kinematics.Joints[i] - start.Kinematics.Joints[i]);
+            double step = joints[i] is PrismaticJoint ? linearStep : angularStep;
+            divisions = Max(divisions, delta / step);
+        }
 
-        double max = 0;
-
-        for (int i = 0; i < current.Length; i++)
-            max = Max(max, Abs(current[i] - previous[i]));
-
-        return max;
+        return Max(1, (int)Ceiling(divisions));
     }
 
     static Target CreateFlybyTarget(RobotSystem robot, ProgramTarget corner, ProgramTarget next, ProgramTarget entry, ProgramTarget exit, double t)
@@ -106,7 +102,7 @@ readonly record struct MotionSegment(SystemTarget Start, SystemTarget End, Syste
             .WithOrigin(GeometryUtil.Quadratic(entryPlane.Origin, cornerPlane.Origin, exitPlane.Origin, t));
         plane = corner.ToTargetPlane(plane);
 
-        return new CartesianTarget(plane, corner.Target, corner.Kinematics.Configuration, Motions.Linear, external);
+        return new CartesianTarget(plane, corner.Target, motion: Motions.Linear, external: external);
     }
 
     static double[] CreateExternal(double[] entryJoints, double[] cornerJoints, double[] exitJoints, int robotJointCount, int externalCount, double t)

@@ -1,11 +1,34 @@
-﻿using NUnit.Framework;
+﻿using System.Xml.Linq;
+using NUnit.Framework;
 using Rhino.Geometry;
 using Robots.Commands;
+using CultureInfo = System.Globalization.CultureInfo;
 
 namespace Robots.Tests;
 
 public class PostProcessorTests
 {
+    [TestCase("URScript")]
+    [TestCase("DRL")]
+    [TestCase("Frankx")]
+    public void SingleGroupPostProcessorsRejectExternalAxes(string dialect)
+    {
+        var (robot, jointCount) = dialect switch
+        {
+            "URScript" => (TestRobots.UR10WithCustomExternal(), 6),
+            "DRL" => (TestRobots.DoosanWithCustomExternal(), 6),
+            "Frankx" => (TestRobots.FrankaPandaWithCustomExternal("FrankxPostProcessor"), 7),
+            _ => throw new ArgumentOutOfRangeException(nameof(dialect))
+        };
+        var target = new JointTarget(new double[jointCount], external: [0]);
+
+        Program program = new("P", robot, [TestRobots.Toolpath(target)]);
+
+        Assert.That(program.Issues, Has.Some.Matches<ProgramIssue>(issue =>
+            issue.Kind == IssueKind.UnsupportedPostProcessorFeature
+            && issue.Message.Contains("External axes are not supported", StringComparison.Ordinal)));
+    }
+
     const string MessageText = "Hello \"Robots\"\nNext";
 
     [TestCase(Manufacturers.ABB, 6, """TPWrite "Hello ""Robots""\0ANext";""")]
@@ -33,7 +56,7 @@ public class PostProcessorTests
     [TestCase(Manufacturers.FrankaEmika, 7, "  motion = JointMotion([0, 0, 0, 0, 0, 0, 0])")]
     [TestCase(Manufacturers.Doosan, 6, "movej([180, -90, -90, 0, 0, -180], a=720, v=18, r=DefaultZone)")]
     [TestCase(Manufacturers.Fanuc, 6, ":J P[1] 10% FINE ;")]
-    [TestCase(Manufacturers.Igus, 6, """<Joint AbortCondition="False" Nr="1" Source="Numerical" velPercent="100" acc="90" smooth="0" a1="0.000" a2="90.000" a3="90.000" a4="-0.000" a5="-0.000" a6="0.000" e1="0" e2="0" e3="0" Descr="" />""")]
+    [TestCase(Manufacturers.Igus, 6, """<Joint AbortCondition="False" Nr="1" Source="Numerical" velPercent="100" acc="90" smooth="0" a1="-0.000" a2="90.000" a3="90.000" a4="-0.000" a5="-0.000" a6="-0.000" e1="0" e2="0" e3="0" Descr="" />""")]
     [TestCase(Manufacturers.Jaka, 6, "movj(endPosJ,0,180,5000,2.0)")]
     public void PostProcessorsGenerateRepresentativeJointMove(Manufacturers manufacturer, int jointCount, string expected)
     {
@@ -54,10 +77,42 @@ public class PostProcessorTests
         Assert.That(code, Is.EqualTo(sample.Code));
     }
 
+    [TestCase(Manufacturers.ABB, 6)]
+    [TestCase(Manufacturers.KUKA, 6)]
+    [TestCase(Manufacturers.UR, 6)]
+    [TestCase(Manufacturers.Staubli, 6)]
+    [TestCase(Manufacturers.FrankaEmika, 7)]
+    [TestCase(Manufacturers.Doosan, 6)]
+    [TestCase(Manufacturers.Fanuc, 6)]
+    [TestCase(Manufacturers.Igus, 6)]
+    [TestCase(Manufacturers.Jaka, 6)]
+    public void PostProcessorNumbersUseInvariantCulture(Manufacturers manufacturer, int jointCount)
+    {
+        CultureInfo culture = CultureInfo.CurrentCulture;
+
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            string expected = TestRobots.FlattenCode(CreateProgram(manufacturer, jointCount));
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("fr-FR");
+            string actual = TestRobots.FlattenCode(CreateProgram(manufacturer, jointCount));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(actual, Is.EqualTo(expected));
+                Assert.That(CultureInfo.CurrentCulture, Is.EqualTo(CultureInfo.GetCultureInfo("fr-FR")));
+            });
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = culture;
+        }
+    }
+
     [Test]
     public void AbbPgfUsesCrLfLineEndings()
     {
-        string actual = SystemAbb.CreatePgf("TestProgram_T_ROB1.mod");
+        string actual = RapidProgramFile.CreatePgf("TestProgram_T_ROB1.mod");
         string expected = """
         <?xml version="1.0" encoding="ISO-8859-1" ?>
         <Program>
@@ -99,6 +154,51 @@ public class PostProcessorTests
             if (Directory.Exists(output))
                 Directory.Delete(output, recursive: true);
         }
+    }
+
+    [Test]
+    public void ProgramSaveUsesSelectedPostProcessor()
+    {
+        SavingPostProcessor postProcessor = new();
+        var robot = TestRobots.PostProcessorRobot(
+            Manufacturers.ABB,
+            6,
+            postProcessorOverride: postProcessor);
+        Program program = new(
+            "P",
+            robot,
+            [TestRobots.Toolpath(new JointTarget(new double[6]))]);
+
+        program.Save("output");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(postProcessor.Program, Is.SameAs(program));
+            Assert.That(postProcessor.Folder, Is.EqualTo("output"));
+        });
+    }
+
+    [Test]
+    public void KrcNameWarningBelongsToKrlPostProcessor()
+    {
+        const string name = "ABCDEFGHIJKLMNOPQ";
+        Program krl = new(
+            name,
+            TestRobots.PostProcessorRobot(Manufacturers.KUKA, 6),
+            [TestRobots.Toolpath(new JointTarget(new double[6]))]);
+        Program alternate = new(
+            name,
+            TestRobots.PostProcessorRobot(
+                Manufacturers.KUKA,
+                6,
+                postProcessorOverride: new SavingPostProcessor()),
+            [TestRobots.Toolpath(new JointTarget(new double[6]))]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(krl.Warnings, Has.One.Contains("older KRC2 or KRC3 controller"));
+            Assert.That(alternate.Warnings, Has.None.Contains("older KRC2 or KRC3 controller"));
+        });
     }
 
     [TestCase(Manufacturers.KUKA, 6)]
@@ -203,17 +303,6 @@ public class PostProcessorTests
     }
 
     [Test]
-    public void FanucCustomTargetCommandsGetOnePrefix()
-    {
-        var program = CreateProgram(Manufacturers.Fanuc, 6, new Commands.Custom(command: "CALL CLEANUP ;"));
-        var code = TestRobots.FlattenCode(program);
-
-        Assert.That(program.Errors, Is.Empty);
-        Assert.That(code, Does.Contain(":CALL CLEANUP ;"));
-        Assert.That(code, Does.Not.Contain("::CALL CLEANUP ;"));
-    }
-
-    [Test]
     public void FanucTargetCommandsStayAroundMotionInOrder()
     {
         var before = new Commands.Custom(command: "CALL BEFORE ;") { RunBefore = true };
@@ -230,6 +319,163 @@ public class PostProcessorTests
         Assert.That(motionIndex, Is.GreaterThan(beforeIndex));
         Assert.That(afterIndex, Is.GreaterThan(motionIndex));
         Assert.That(code, Does.Not.Contain("::CALL"));
+    }
+
+    [Test]
+    public void IgusCommandsUseMappedOutputsAndSequentialNumbers()
+    {
+        const string io = """<IO><DO names="21"/><DI names="21"/><AO names="1"/><AI names="1"/></IO>""";
+        var robot = TestRobots.PostProcessorRobot(Manufacturers.Igus, 6, io: io);
+        var before = new SetDO(0, true, runBefore: true);
+        var after = new PulseDO(0);
+        var target = new JointTarget(new double[6], command: new Group([before, after]));
+        var program = new Program("P", robot, [TestRobots.Toolpath(target)]);
+        var code = program.Code ?? throw new InvalidOperationException("Program code was not generated.");
+        var numbered = code[0][0]
+            .Where(line => line.Contains(" Nr=\"", StringComparison.Ordinal))
+            .ToArray();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(numbered, Has.Length.EqualTo(5));
+            Assert.That(numbered[0], Is.EqualTo("<Output Nr=\"1\" Channel=\"DOut21\" State=\"True\" />"));
+            Assert.That(numbered[1], Does.StartWith("<Joint ").And.Contain("Nr=\"2\""));
+            Assert.That(numbered[2], Is.EqualTo("<Output Nr=\"3\" Channel=\"DOut21\" State=\"True\" />"));
+            Assert.That(numbered[3], Is.EqualTo("<Wait Nr=\"4\" Type=\"Time\" Seconds=\"0.2\" />"));
+            Assert.That(numbered[4], Is.EqualTo("<Output Nr=\"5\" Channel=\"DOut21\" State=\"False\" />"));
+        });
+    }
+
+    [Test]
+    public void IgusJointOutputUsesControllerAngles()
+    {
+        var robot = TestRobots.PostProcessorRobot(Manufacturers.Igus, 6);
+        JointTarget target = new([Math.PI / 6, Math.PI / 3, Math.PI / 4, -Math.PI / 6, -Math.PI / 4, Math.PI / 2]);
+        Program program = new("P", robot, [TestRobots.Toolpath(target)]);
+        Assert.That(program.Errors, Is.Empty);
+
+        var move = XDocument.Parse(TestRobots.FlattenCode(program)).Descendants("Joint").Single();
+        var angles = Enumerable.Range(1, 6).Select(i => (double)move.Attribute($"a{i}")!).ToArray();
+        double[] expected = [-30, 30, 45, 30, 45, -90];
+        Assert.That(angles, Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void FormatterCanHandleCommandWithoutOutput()
+    {
+        var formatter = new SuppressingFormatter();
+        var system = TestRobots.AbbIrb120();
+
+        bool handled = formatter.TryGetCommand(new Stop(), system, Target.Default, out string code);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(handled, Is.True);
+            Assert.That(code, Is.Empty);
+        });
+    }
+
+    [TestCase(Manufacturers.All, true)]
+    [TestCase(Manufacturers.ABB, true)]
+    [TestCase(Manufacturers.KUKA, false)]
+    public void DeclarationOnlyCommandsRequireMatchingManufacturer(Manufacturers manufacturer, bool supported)
+    {
+        const string declaration = "VAR num userValue := 1;";
+        var command = new Commands.Custom(manufacturer: manufacturer, declaration: declaration);
+        var program = CreateProgram(Manufacturers.ABB, 6, command);
+
+        if (supported)
+        {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(TestRobots.FlattenCode(program), Does.Contain(declaration));
+        }
+        else
+        {
+            Assert.That(program.Code, Is.Null);
+            Assert.That(program.Errors, Has.One.Contains("Command CustomCommand is not implemented"));
+        }
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void DoosanDeclaresInitialCommandValuesBeforeUse(bool multiFile)
+    {
+        var robot = TestRobots.PostProcessorRobot(Manufacturers.Doosan, 6);
+        var targets = TestRobots.Toolpath(new JointTarget(new double[6]), new JointTarget(new double[6]));
+        Group init = new([new Wait(1), new SetAO(0, 0.5)]);
+        Program program = new("P", robot, [targets], init, multiFile ? [0, 1] : null);
+        var code = TestRobots.FlattenCode(program);
+
+        Assert.That(program.Errors, Is.Empty);
+
+        foreach (var (declaration, command) in new[] { ("Wait000 = 1", "wait(Wait000)"), ("SetAO000 = 5", "val=SetAO000") })
+        {
+            int declared = code.IndexOf(declaration, StringComparison.Ordinal);
+            int used = code.IndexOf(command, StringComparison.Ordinal);
+            Assert.That(declared, Is.GreaterThanOrEqualTo(0));
+            Assert.That(used, Is.GreaterThan(declared));
+        }
+    }
+
+    [TestCase(Manufacturers.Jaka, Motions.Joint)]
+    [TestCase(Manufacturers.Jaka, Motions.Linear)]
+    [TestCase(Manufacturers.Igus, Motions.Joint)]
+    [TestCase(Manufacturers.Igus, Motions.Linear)]
+    public void CartesianCodeIsIndependentOfWorldPlacement(Manufacturers manufacturer, Motions motion)
+    {
+        var robot = TestRobots.SphericalRobot(manufacturer);
+        JointTarget start = new([0.3, 1.2, 1.0, 0.2, 0.5, 0.4]);
+        JointTarget end = new([0.4, 1.25, 1.0, 0.25, 0.55, 0.4]);
+        var plane = robot.Kinematics([end])[0].Planes[^1];
+        Program reference = new("P", robot, [TestRobots.Toolpath(start, new CartesianTarget(plane, motion: motion))]);
+        var expected = TestRobots.FlattenCode(reference);
+
+        Plane basePlane = new(new(300, -200, 100), Vector3d.YAxis, -Vector3d.XAxis);
+        Plane framePlane = new(new(-80, 250, 75), Vector3d.ZAxis, Vector3d.XAxis);
+        robot.BasePlane = basePlane;
+        plane.Orient(ref basePlane);
+        plane.InverseOrient(ref framePlane);
+        CartesianTarget target = new(plane, motion: motion, frame: new(framePlane));
+        Program placed = new("P", robot, [TestRobots.Toolpath(start, target)]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(reference.Errors, Is.Empty);
+            Assert.That(placed.Errors, Is.Empty);
+            Assert.That(TestRobots.FlattenCode(placed), Is.EqualTo(expected));
+        });
+    }
+
+    [Test]
+    public void JakaCartesianJointMoveMatchesJointTarget()
+    {
+        var robot = TestRobots.SphericalRobot(Manufacturers.Jaka);
+        JointTarget start = new([0.3, 1.2, 1.0, 0.2, 0.5, 0.4]);
+        JointTarget end = new([0.4, 1.25, 1.0, 0.25, 0.55, 0.4]);
+        var plane = robot.Kinematics([end])[0].Planes[^1];
+        Program joint = new("P", robot, [TestRobots.Toolpath(start, end)]);
+        Program cartesian = new("P", robot, [TestRobots.Toolpath(start, new CartesianTarget(plane, motion: Motions.Joint))]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(joint.Errors, Is.Empty);
+            Assert.That(cartesian.Errors, Is.Empty);
+            Assert.That(TestRobots.FlattenCode(cartesian), Is.EqualTo(TestRobots.FlattenCode(joint)));
+        });
+    }
+
+    [TestCase(Manufacturers.Jaka)]
+    [TestCase(Manufacturers.Igus)]
+    public void BaseOnlyPostProcessorsRejectControllerFrames(Manufacturers manufacturer)
+    {
+        var robot = TestRobots.PostProcessorRobot(manufacturer, 6);
+        Frame frame = new(Plane.WorldXY, name: "ControllerFrame", useController: true);
+        JointTarget target = new(new double[6], frame: frame);
+        Program program = new("P", robot, [TestRobots.Toolpath(target)]);
+
+        Assert.That(program.Code, Is.Null);
+        Assert.That(program.Errors, Has.One.Contains("Controller frames are not supported"));
     }
 
     [Test]
@@ -312,6 +558,100 @@ public class PostProcessorTests
         Assert.That(program.Errors, Is.Empty);
         Assert.That(code, Does.Contain("$VEL_EXTAX[1] = "));
         Assert.That(code, Does.Not.Contain("$VEL_AXIS[0]"));
+    }
+
+    [Test]
+    public void KukaJointSpeedTracksItsLeadingAxis()
+    {
+        var robot = TestRobots.PostProcessorRobot(Manufacturers.KUKA, 6);
+        Speed speed = new(time: 1);
+        JointTarget end = new([Math.PI / 2, Math.PI / 2, 0, 0, 0, 0], speed: speed);
+        var targets = TestRobots.Toolpath(
+            new JointTarget(new double[6]),
+            new JointTarget([Math.PI / 2, 0, 0, 0, 0, 0], speed: speed),
+            end, end,
+            new JointTarget([Math.PI / 2, Math.PI, 0, 0, 0, 0], speed: speed));
+        Program program = new("P", robot, [targets]);
+        Assert.That(program.Errors, Is.Empty);
+
+        var velocities = TestRobots.FlattenCode(program).Split('\n').Where(line => line.StartsWith("$VEL_AXIS[", StringComparison.Ordinal)).ToArray();
+        string[] expected = ["$VEL_AXIS[1] = 50", "$VEL_AXIS[2] = 50"];
+        Assert.That(velocities, Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void KukaJointSpeedIsRestoredAfterExternalMotion()
+    {
+        var robot = TestRobots.KukaWithCustomExternal();
+        Speed speed = new(time: 1);
+        var targets = TestRobots.Toolpath(
+            new JointTarget(new double[6], external: [0]),
+            new JointTarget([Math.PI / 2, 0, 0, 0, 0, 0], speed: speed, external: [0]),
+            new JointTarget([Math.PI / 2, 0, 0, 0, 0, 0], external: [100]),
+            new JointTarget([Math.PI, 0, 0, 0, 0, 0], speed: speed, external: [100]));
+        Program program = new("P", robot, [targets]);
+        Assert.That(program.Errors, Is.Empty);
+
+        var code = TestRobots.FlattenCode(program).Split('\n');
+        Assert.That(code.Count(line => line == "$VEL_AXIS[1] = 50"), Is.EqualTo(2));
+        Assert.That(code.Count(line => line == "BAS(#VEL_PTP, 100)"), Is.EqualTo(2));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void KukaDeclaresCustomExternalsForTheirGroup(bool firstTarget)
+    {
+        var robot = TestRobots.KukaTwoGroupWithCustomExternal();
+        double[] joints = [0, 1, 1, 0, 0.5, 0];
+        JointTarget target = new(joints);
+        var external = TestRobots.Toolpath(
+            new JointTarget(joints, external: [0], externalCustom: firstTarget ? ["0"] : null),
+            new JointTarget(joints, external: [1], externalCustom: ["1"]));
+        Program program = new("P", robot, [TestRobots.Toolpath(target, target), external]);
+        Assert.That(program.Errors, Is.Empty);
+
+        var code = program.Code!;
+        Assert.That(string.Join('\n', code[0][1]), Does.Not.Contain("DECL GLOBAL E6"));
+        Assert.That(string.Join('\n', code[1][1]), Does.Contain("DECL GLOBAL E6AXIS A").And.Contain("DECL GLOBAL E6POS P"));
+        Assert.That(string.Join('\n', code[1][2]), Does.Contain("A.E1 = 1\nPTP A"));
+    }
+
+    [TestCase(-135, -2)]
+    [TestCase(-90.000001, -2)]
+    [TestCase(-89.999999, -1)]
+    [TestCase(-45, -1)]
+    [TestCase(45, 0)]
+    [TestCase(89.999999, 0)]
+    [TestCase(90.000001, 1)]
+    [TestCase(135, 1)]
+    public void AbbConfigurationUsesSignedQuarterTurns(double degrees, int quadrant)
+    {
+        var robot = TestRobots.AbbIrb120();
+        double angle = degrees.ToRadians();
+        JointTarget start = new([angle, 0.5, 0.2, angle, 0.6, angle]);
+        var plane = robot.Kinematics([start])[0].Planes[^1];
+        Program program = new("P", robot, [TestRobots.Toolpath(start, new CartesianTarget(plane, motion: Motions.Joint))]);
+        Assert.That(program.Errors, Is.Empty);
+
+        var motion = TestRobots.FlattenCode(program).Split('\n').Single(line => line.StartsWith("MoveJ ", StringComparison.Ordinal));
+        Assert.That(motion, Does.Contain($"],[{quadrant},{quadrant},{quadrant},"));
+    }
+
+    [TestCase(false, "false")]
+    [TestCase(true, "true")]
+    public void StaubliWaitUsesInputArrayIndex(bool value, string expected)
+    {
+        var program = CreateProgram(Manufacturers.Staubli, 6, new WaitDI(0, value));
+        Assert.That(program.Errors, Is.Empty);
+        Assert.That(TestRobots.FlattenCode(program), Does.Contain($"wait(dis[0] == {expected})"));
+    }
+
+    [Test]
+    public void JakaAnalogOutputDoesNotRequireDeclarations()
+    {
+        var program = CreateProgram(Manufacturers.Jaka, 6, new SetAO(0, 0.5));
+        Assert.That(program.Errors, Is.Empty);
+        Assert.That(TestRobots.FlattenCode(program), Does.Contain("set_analog_output(1,0,0.5,0)"));
     }
 
     [Test]
@@ -482,6 +822,16 @@ public class PostProcessorTests
     }
 
     [Test]
+    public void UrpPreservesScriptWithXmlCharacters()
+    {
+        const string script = "def Program():\n  if 1 < 2:\n    textmsg(\"A & B > C ' ]]>\")\n  end\nend";
+        CustomProgram program = new("P", TestRobots.UR10(), [0], [[[script]]]);
+        var document = XDocument.Parse(UrProgramFile.CreateUrp(program));
+
+        Assert.That(document.Descendants("cachedContents").Single().Value, Is.EqualTo(script + "\nProgram()\n"));
+    }
+
+    [Test]
     public void UrProcessMotionWithTimeFails()
     {
         var speed = new Speed(time: 2);
@@ -492,12 +842,12 @@ public class PostProcessorTests
     }
 
     [Test]
-    public void ProcessMotionFailsOnNonUrRobots()
+    public void UnsupportedPostProcessorRejectsProcessMotion()
     {
         var program = CreateProcessProgram(TestRobots.AbbIrb120());
 
         Assert.That(program.Code, Is.Null);
-        Assert.That(program.Errors, Has.One.EqualTo("Target 1: Process motion is only supported on UR robots."));
+        Assert.That(program.Errors, Has.One.EqualTo("Target 1: Process motion is not supported by RapidPostProcessor."));
     }
 
     static Program CreateProcessProgram(RobotSystem robot, Speed? speed = null)
@@ -509,18 +859,31 @@ public class PostProcessorTests
         return new("P", robot, [TestRobots.Toolpath(start, processTarget)]);
     }
 
-    static Program CreateProgram(Manufacturers manufacturer, int jointCount, Command command)
+    static Program CreateProgram(Manufacturers manufacturer, int jointCount, Command? command = null)
     {
         var robot = TestRobots.PostProcessorRobot(manufacturer, jointCount);
         var target = new JointTarget(new double[jointCount], command: command);
         return new("P", robot, [TestRobots.Toolpath(target)]);
     }
 
-    static Program CreateProgram(Manufacturers manufacturer, int jointCount)
+    class SavingPostProcessor : IPostProcessor
     {
-        var robot = TestRobots.PostProcessorRobot(manufacturer, jointCount);
-        var target = new JointTarget(new double[jointCount]);
-        return new("P", robot, [TestRobots.Toolpath(target)]);
+        public IProgram? Program { get; private set; }
+        public string? Folder { get; private set; }
+
+        public List<List<List<string>>> GetCode(RobotSystem system, Program program) => [[[]]];
+
+        public void Save(IProgram program, string folder)
+        {
+            Program = program;
+            Folder = folder;
+        }
+    }
+
+    sealed class SuppressingFormatter : CommandFormatter
+    {
+        protected override string? FormatCommand(Command command, RobotSystem system, Target target) =>
+            command is Stop ? "" : null;
     }
 
     static IEnumerable<TestCaseData> SamplePrograms()

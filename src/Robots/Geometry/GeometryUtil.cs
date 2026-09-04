@@ -1,12 +1,12 @@
-﻿using static System.Math;
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
+using static System.Math;
 using static Robots.Util;
 
 namespace Robots;
 
 static class GeometryUtil
 {
-    public static double Clamp(double value, double min, double max) => Min(Max(value, min), max);
+    public static readonly Mesh EmptyMesh = new();
 
     public static double[] Quadratic(double[] a, double[] b, double[] c, double t)
     {
@@ -18,7 +18,7 @@ static class GeometryUtil
         return values;
     }
 
-    internal static void Quadratic(ReadOnlySpan<double> a, ReadOnlySpan<double> b, ReadOnlySpan<double> c, Span<double> result, double t)
+    public static void Quadratic(ReadOnlySpan<double> a, ReadOnlySpan<double> b, ReadOnlySpan<double> c, Span<double> result, double t)
     {
         ArgumentOutOfRangeException.ThrowIfNotEqual(a.Length, b.Length, nameof(b));
         ArgumentOutOfRangeException.ThrowIfNotEqual(a.Length, c.Length, nameof(c));
@@ -176,28 +176,12 @@ static class GeometryUtil
         return t.ToPlane();
     }
 
-    /// <summary>
-    /// Code lifted from http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToAngle/
-    /// </summary>
     public static double[] PlaneToAxisAngle(Plane plane)
     {
         plane = CheckPlane(plane, nameof(plane));
         var t = plane.ToTransform();
-
-        const double epsilon = 0.01;
-        const double epsilon2 = 0.1;
-
-        if (IsAxisAngleSingularity(ref t, epsilon))
-        {
-            if (IsIdentityRotation(ref t, epsilon2))
-                return AxisAngleNumbers(plane, default);
-
-            var vector = AxisForPiRotation(ref t, epsilon);
-            vector *= PI;
-            return AxisAngleNumbers(plane, vector);
-        }
-
-        return AxisAngleNumbers(plane, AxisAngleVector(ref t));
+        var vector = t.RotationVector();
+        return [plane.OriginX, plane.OriginY, plane.OriginZ, vector.X, vector.Y, vector.Z];
     }
 
     public static Plane AxisAngleToPlane(double x, double y, double z, double vx, double vy, double vz)
@@ -211,96 +195,8 @@ static class GeometryUtil
 
         var matrix = AxisAngleRotation(vx, vy, vz);
         var plane = matrix.ToPlane();
-        plane.Origin = new Point3d(x, y, z);
+        plane.Origin = new(x, y, z);
         return plane;
-    }
-
-    static bool IsAxisAngleSingularity(ref Transform t, double epsilon)
-    {
-        return Abs(t.M01 - t.M10) < epsilon
-            && Abs(t.M02 - t.M20) < epsilon
-            && Abs(t.M12 - t.M21) < epsilon;
-    }
-
-    static bool IsIdentityRotation(ref Transform t, double epsilon)
-    {
-        return Abs(t.M01 + t.M10) < epsilon
-            && Abs(t.M02 + t.M20) < epsilon
-            && Abs(t.M12 + t.M21) < epsilon
-            && Abs(t.M00 + t.M11 + t.M22 - 3) < epsilon;
-    }
-
-    static Vector3d AxisForPiRotation(ref Transform t, double epsilon)
-    {
-        double xx = (t.M00 + 1) / 2;
-        double yy = (t.M11 + 1) / 2;
-        double zz = (t.M22 + 1) / 2;
-        double xy = (t.M01 + t.M10) / 4;
-        double xz = (t.M02 + t.M20) / 4;
-        double yz = (t.M12 + t.M21) / 4;
-
-        Vector3d vector;
-
-        if (xx > yy && xx > zz)
-        {
-            if (xx < epsilon)
-            {
-                vector = new(0, 0.7071, 0.7071);
-            }
-            else
-            {
-                double x = Sqrt(xx);
-                vector = new(x, xy / x, xz / x);
-            }
-        }
-        else if (yy > zz)
-        {
-            if (yy < epsilon)
-            {
-                vector = new(0.7071, 0, 0.7071);
-            }
-            else
-            {
-                double y = Sqrt(yy);
-                vector = new(xy / y, y, yz / y);
-            }
-        }
-        else
-        {
-            if (zz < epsilon)
-            {
-                vector = new(0.7071, 0.7071, 0);
-            }
-            else
-            {
-                double z = Sqrt(zz);
-                vector = new(xz / z, yz / z, z);
-            }
-        }
-
-        _ = vector.Unitize();
-        return vector;
-    }
-
-    static Vector3d AxisAngleVector(ref Transform t)
-    {
-        double s = Sqrt((t.M21 - t.M12) * (t.M21 - t.M12)
-          + (t.M02 - t.M20) * (t.M02 - t.M20)
-          + (t.M10 - t.M01) * (t.M10 - t.M01));
-
-        if (Abs(s) < 0.001)
-            s = 1;
-
-        double angle = Acos((t.M00 + t.M11 + t.M22 - 1) / 2);
-        var vector = new Vector3d((t.M21 - t.M12) / s, (t.M02 - t.M20) / s, (t.M10 - t.M01) / s);
-        _ = vector.Unitize();
-        vector *= angle;
-        return vector;
-    }
-
-    static double[] AxisAngleNumbers(Plane plane, Vector3d vector)
-    {
-        return [plane.OriginX, plane.OriginY, plane.OriginZ, vector.X, vector.Y, vector.Z];
     }
 
     static Transform AxisAngleRotation(double vx, double vy, double vz)
@@ -506,13 +402,10 @@ static class GeometryUtil
             double sc = Sin(c);
 
             Transform t = default;
-            t.SetRotation(
-                cb * cc, ca * sc + sa * sb * cc, sa * sc - ca * sb * cc,
-                -cb * sc, ca * cc - sa * sb * sc, sa * cc + ca * sb * sc,
-                sb, -sa * cb, ca * cb);
-            t.M03 = euler.A1;
-            t.M13 = euler.A2;
-            t.M23 = euler.A3;
+            t.Set(
+                cb * cc, -cb * sc, sb, euler.A1,
+                ca * sc + sa * sb * cc, ca * cc - sa * sb * sc, -sa * cb, euler.A2,
+                sa * sc - ca * sb * cc, sa * cc + ca * sb * sc, ca * cb, euler.A3);
             return t;
         }
 
@@ -551,7 +444,7 @@ static class GeometryUtil
     {
         public Plane WithOrigin(double x, double y, double z)
         {
-            return plane.WithOrigin(new Point3d(CheckFinite(x, nameof(x)), CheckFinite(y, nameof(y)), CheckFinite(z, nameof(z))));
+            return plane.WithOrigin(new(CheckFinite(x, nameof(x)), CheckFinite(y, nameof(y)), CheckFinite(z, nameof(z))));
         }
 
         public Plane WithOrigin(Point3d origin)
@@ -623,10 +516,34 @@ static class GeometryUtil
             return t;
         }
 
-        // adapted from System.Numerics.Vectors
         public Quaternion ToQuaternion()
         {
             var matrix = a.ToTransform();
+            return matrix.ToQuaternion();
+        }
+    }
+
+    extension(ref Transform matrix)
+    {
+        public Vector3d RotationVector()
+        {
+            var q = matrix.ToQuaternion();
+            double sine = Sqrt(q.B * q.B + q.C * q.C + q.D * q.D);
+
+            if (sine == 0)
+                return default;
+
+            double scale = 2 * Atan2(sine, Abs(q.A)) / sine;
+
+            if (q.A < 0)
+                scale = -scale;
+
+            return new(q.B * scale, q.C * scale, q.D * scale);
+        }
+
+        // adapted from System.Numerics.Vectors
+        public Quaternion ToQuaternion()
+        {
             double trace = matrix.M00 + matrix.M11 + matrix.M22;
 
             Quaternion q = default;

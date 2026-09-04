@@ -1,10 +1,19 @@
-﻿using static System.Math;
+﻿using System.Reflection;
+using System.Runtime.ExceptionServices;
 using Rhino.Geometry;
+using static System.Math;
 using static Robots.Util;
 
 namespace Robots;
 
-readonly record struct InverseSolution(double[] Joints, RobotConfigurations Configuration);
+readonly record struct InverseSolution(
+    double[] Joints,
+    RobotConfigurations Configuration,
+    IReadOnlyList<string> Errors)
+{
+    public InverseSolution(double[] joints, RobotConfigurations configuration)
+        : this(joints, configuration, []) { }
+}
 
 readonly record struct InverseSolutions(
     IReadOnlyList<InverseSolution> Solutions,
@@ -13,7 +22,34 @@ readonly record struct InverseSolutions(
 
 abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
 {
-    protected virtual int SolutionCount => 8;
+    public static RobotKinematics Create(Type solverType, RobotArm robot)
+    {
+        var constructor = solverType.GetConstructor(
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            binder: null,
+            [typeof(RobotArm)],
+            modifiers: null)
+            ?? throw new ArgumentException($"Kinematics solver '{solverType.Name}' must have a constructor accepting {nameof(RobotArm)}.", nameof(solverType));
+
+        RobotKinematics solver;
+
+        try
+        {
+            solver = (RobotKinematics)constructor.Invoke([robot]);
+        }
+        catch (TargetInvocationException exception) when (exception.InnerException is not null)
+        {
+            ExceptionDispatchInfo.Capture(exception.InnerException).Throw();
+            throw;
+        }
+
+        if (!solver.CanSolve(robot))
+            throw new ArgumentException($"Kinematics solver '{solverType.Name}' does not support robot geometry '{robot.Model}'.", nameof(solverType));
+
+        return solver;
+    }
+
+    public abstract bool CanSolve(RobotArm robot);
 
     protected override void SetJoints(KinematicSolution solution, Target target, PreviousJoints prevJoints)
     {
@@ -35,65 +71,52 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
 
         var tcpTransform = tcp.PlaneToPlane(ref targetPlane);
         var transform = solution.Planes[0].ToInverseTransform() * tcpTransform;
-
-        List<string> errors;
-        double[] robotJoints;
-        bool preserveWindings = false;
-        bool forceConfiguration = cartesianTarget.Configuration is not null;
-        RobotConfigurations? requested = forceConfiguration
-            ? cartesianTarget.Configuration.GetValueOrDefault()
+        RobotConfigurations? requested = cartesianTarget is
+        {
+            Motion: Motions.Joint,
+            Configuration: RobotConfigurations configuration
+        }
+            ? configuration
             : null;
-        var inverseSolutions = GetInverseSolutions(
+        var inverse = GetInverseSolutions(
             transform,
             cartesianTarget.External,
             prevJoints,
             requested);
+        int selected = SelectSolution(
+            inverse.Solutions,
+            requested,
+            prevJoints,
+            inverse.PreserveWindings,
+            out bool unavailable);
+        double[] robotJoints;
 
-        if (inverseSolutions is InverseSolutions found)
+        if (selected >= 0)
         {
-            preserveWindings = found.PreserveWindings;
-            var selected = SelectSolution(
-                found.Solutions,
-                requested,
-                prevJoints,
-                preserveWindings,
-                out bool unavailable);
+            var match = inverse.Solutions[selected];
+            solution.Configuration = match.Configuration;
+            robotJoints = match.Joints;
+            solution.AddErrors(inverse.Errors);
+            solution.AddErrors(match.Errors);
 
-            if (selected is InverseSolution match)
-            {
-                solution.Configuration = match.Configuration;
-                robotJoints = match.Joints;
-                errors = [.. found.Errors, .. GetInverseSolutionErrors(match)];
-
-                if (unavailable)
-                    errors.Add("Target configuration is not available.");
-            }
-            else
-            {
-                if (found.Errors.Count == 0)
-                    throw new InvalidOperationException($"{GetType().Name} returned no inverse solutions or errors.");
-
-                solution.Configuration = requested ?? RobotConfigurations.None;
-                robotJoints = prevJoints.HasValue ? prevJoints.Values.ToArray() : new double[_mechanism.Joints.Length];
-                errors = [.. found.Errors];
-            }
-        }
-        else if (forceConfiguration || !prevJoints.HasValue)
-        {
-            solution.Configuration = forceConfiguration ? cartesianTarget.Configuration.GetValueOrDefault() : RobotConfigurations.None;
-            robotJoints = InverseKinematics(transform, solution.Configuration, cartesianTarget.External, prevJoints, out errors);
+            if (unavailable)
+                solution.AddError("Target configuration is not available.");
         }
         else
         {
-            robotJoints = GetClosestSolution(transform, cartesianTarget.External, prevJoints, out var configuration, out errors, out _);
-            solution.Configuration = configuration;
+            if (inverse.Errors.Count == 0)
+                throw new InvalidOperationException($"{GetType().Name} returned no inverse solutions or errors.");
+
+            solution.Configuration = requested ?? RobotConfigurations.None;
+            robotJoints = prevJoints.HasValue
+                ? prevJoints.Values.ToArray()
+                : new double[_mechanism.Joints.Length];
+            solution.AddErrors(inverse.Errors);
         }
 
-        solution.Joints = prevJoints.HasValue && !preserveWindings
+        solution.Joints = prevJoints.HasValue && !inverse.PreserveWindings
             ? JointTarget.GetAbsoluteJoints(robotJoints, prevJoints.Values)
             : robotJoints;
-
-        solution.AddErrors(errors);
     }
 
     protected override void SetPlanes(KinematicSolution solution, Target target)
@@ -103,18 +126,29 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
 
         if (target is JointTarget)
         {
-            if (this is NumericalKinematics)
-            {
-                solution.Configuration = RobotConfigurations.None;
-            }
-            else if (TryGetConfiguration(joints, out var configuration))
+            if (TryGetConfiguration(joints, out var configuration))
             {
                 solution.Configuration = configuration;
             }
             else
             {
-                _ = GetClosestSolution(jointTransforms[^1], target.External, new(joints), out var resolvedConfiguration, out _, out var difference);
-                solution.Configuration = difference < AngleTol ? resolvedConfiguration : RobotConfigurations.Undefined;
+                var previous = new PreviousJoints(joints);
+                var inverse = GetInverseSolutions(
+                    jointTransforms[^1],
+                    target.External,
+                    previous,
+                    requested: null);
+                int selected = SelectSolution(
+                    inverse.Solutions,
+                    requested: null,
+                    previous,
+                    inverse.PreserveWindings,
+                    out _);
+
+                solution.Configuration = selected >= 0
+                    && SquaredDifference(previous, inverse.Solutions[selected].Joints, inverse.PreserveWindings) < AngleTol
+                        ? inverse.Solutions[selected].Configuration
+                        : RobotConfigurations.Undefined;
             }
         }
 
@@ -128,21 +162,11 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
         }
     }
 
-    protected virtual double[] InverseKinematics(
-        Transform transform,
-        RobotConfigurations configuration,
-        double[] external,
-        PreviousJoints prevJoints,
-        out List<string> errors) =>
-        throw new NotSupportedException($"{GetType().Name} does not implement single-configuration inverse kinematics.");
-
-    protected virtual InverseSolutions? GetInverseSolutions(
+    protected abstract InverseSolutions GetInverseSolutions(
         Transform transform,
         double[] external,
         PreviousJoints prevJoints,
-        RobotConfigurations? requested) => null;
-
-    protected virtual IReadOnlyList<string> GetInverseSolutionErrors(InverseSolution solution) => [];
+        RobotConfigurations? requested);
 
     protected virtual bool TryGetConfiguration(double[] joints, out RobotConfigurations configuration)
     {
@@ -152,82 +176,38 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
 
     protected virtual Transform[] ForwardKinematics(double[] joints) => DH(joints);
 
+    protected static bool HasRevoluteDh(
+        Joint[] joints,
+        ReadOnlySpan<double> alpha,
+        double angleTolerance)
+    {
+        if (joints.Length != alpha.Length)
+            return false;
+
+        for (int i = 0; i < joints.Length; i++)
+        {
+            var joint = joints[i];
+
+            if (joint is not RevoluteJoint
+                || !double.IsFinite(joint.A)
+                || !double.IsFinite(joint.D)
+                || !double.IsFinite(joint.Alpha)
+                || Abs(IEEERemainder(joint.Alpha - alpha[i], PI2)) > angleTolerance)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     static double SquaredDifference(double a, double b)
     {
-        double difference = Abs(a - b);
-
-        if (difference > PI)
-            difference = PI * 2 - difference;
-
+        double difference = IEEERemainder(a - b, PI2);
         return difference * difference;
     }
 
-    double[] GetClosestSolution(Transform transform, double[] external, PreviousJoints prevJoints, out RobotConfigurations configuration, out List<string> errors, out double difference)
-    {
-        var inverseSolutions = GetInverseSolutions(transform, external, prevJoints, requested: null);
-
-        if (inverseSolutions is InverseSolutions found)
-        {
-            var selected = SelectSolution(
-                found.Solutions,
-                null,
-                prevJoints,
-                found.PreserveWindings,
-                out _);
-
-            if (selected is InverseSolution match)
-            {
-                configuration = match.Configuration;
-                errors = [.. found.Errors, .. GetInverseSolutionErrors(match)];
-                difference = SquaredDifference(
-                    prevJoints,
-                    match.Joints,
-                    found.PreserveWindings);
-                return match.Joints;
-            }
-
-            configuration = RobotConfigurations.None;
-
-            if (found.Errors.Count == 0)
-                throw new InvalidOperationException($"{GetType().Name} returned no inverse solutions or errors.");
-
-            errors = [.. found.Errors];
-            difference = double.MaxValue;
-            return prevJoints.Values.ToArray();
-        }
-
-        int closestSolutionIndex = 0;
-        double[]? closestSolution = null;
-        List<string>? closestErrors = null;
-        double closestDifference = double.MaxValue;
-        int jointCount = _mechanism.Joints.Length;
-
-        for (int i = 0; i < SolutionCount; i++)
-        {
-            var currentSolution = InverseKinematics(transform, (RobotConfigurations)i, external, prevJoints, out var currentErrors);
-            currentSolution = JointTarget.GetAbsoluteJoints(currentSolution, prevJoints.Values);
-
-            double currentDifference = 0;
-
-            for (int j = 0; j < jointCount; j++)
-                currentDifference += SquaredDifference(prevJoints[j], currentSolution[j]);
-
-            if (currentDifference < closestDifference)
-            {
-                closestSolutionIndex = i;
-                closestSolution = currentSolution;
-                closestErrors = currentErrors;
-                closestDifference = currentDifference;
-            }
-        }
-
-        difference = closestDifference;
-        configuration = (RobotConfigurations)closestSolutionIndex;
-        errors = closestErrors.NotNull();
-        return closestSolution.NotNull();
-    }
-
-    static InverseSolution? SelectSolution(
+    protected static int SelectSolution(
         IReadOnlyList<InverseSolution> solutions,
         RobotConfigurations? requested,
         PreviousJoints prevJoints,
@@ -237,7 +217,7 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
         unavailable = false;
 
         if (solutions.Count == 0)
-            return null;
+            return -1;
 
         bool filter = false;
 
@@ -257,7 +237,7 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
 
         if (prevJoints.HasValue)
         {
-            InverseSolution? closest = null;
+            int closest = -1;
             double closestDifference = double.MaxValue;
 
             for (int i = 0; i < solutions.Count; i++)
@@ -271,7 +251,7 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
 
                 if (currentDifference < closestDifference)
                 {
-                    closest = candidate;
+                    closest = i;
                     closestDifference = currentDifference;
                 }
             }
@@ -279,7 +259,7 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
             return closest;
         }
 
-        InverseSolution? first = null;
+        int first = -1;
 
         for (int i = 0; i < solutions.Count; i++)
         {
@@ -288,12 +268,13 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
             if (filter && candidate.Configuration != requested)
                 continue;
 
-            first ??= candidate;
+            if (first < 0)
+                first = i;
 
             if (requested is null
                 && candidate.Configuration == RobotConfigurations.None)
             {
-                return candidate;
+                return i;
             }
         }
 

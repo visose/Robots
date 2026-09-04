@@ -1,5 +1,6 @@
-﻿using static System.Math;
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
+using static System.Math;
+
 namespace Robots.Grasshopper;
 
 public class CheckCollisions() : Component(
@@ -11,14 +12,18 @@ public class CheckCollisions() : Component(
 {
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
+        const string setDescription = "Collision group. Indices correspond to the mesh order from the kinematics component; negative indices count back from the end. If supplied, the environment mesh is last.";
+
         _ = pManager.AddParameter(new ProgramParameter(), "Program", "P", "Robot program to check.", GH_ParamAccess.item);
-        _ = pManager.AddIntegerParameter("First Set", "A", "First collision group. Indices correspond to the mesh order from the kinematics component. If supplied, the environment mesh is the last mesh.", GH_ParamAccess.list, [7]);
-        _ = pManager.AddIntegerParameter("Second Set", "B", "Second collision group. Indices correspond to the mesh order from the kinematics component. If supplied, the environment mesh is the last mesh.", GH_ParamAccess.list, [4]);
+        _ = pManager.AddIntegerParameter("First Set", "A", setDescription, GH_ParamAccess.list);
+        _ = pManager.AddIntegerParameter("Second Set", "B", setDescription, GH_ParamAccess.list);
         _ = pManager.AddMeshParameter("Environment", "E", "Optional environment mesh.", GH_ParamAccess.item);
         _ = pManager.AddIntegerParameter("Environment Plane", "P", "Plane index where the environment is attached, or -1 if it is fixed in world space.", GH_ParamAccess.item, -1);
         _ = pManager.AddNumberParameter("Linear Step Size", "Ls", "Linear step size in mm used to check for collisions.", GH_ParamAccess.item, 100);
         _ = pManager.AddNumberParameter("Angular Step Size", "As", "Angular step size in rad used to check for collisions.", GH_ParamAccess.item, PI / 4);
 
+        pManager[1].Optional = true;
+        pManager[2].Optional = true;
         pManager[3].Optional = true;
     }
 
@@ -34,9 +39,15 @@ public class CheckCollisions() : Component(
         if (DA.Get<IProgram>(0) is not Program p)
             throw new ArgumentException("Input program cannot have custom code.");
 
-        var first = DA.List<int>(1);
-        var second = DA.List<int>(2);
-        var collision = p.CheckCollisions(first, second, DA.Maybe<Mesh>(3), DA.Get<int>(4), DA.Get<double>(5), DA.Get<double>(6));
+        var first = DA.MaybeList<int>(1);
+        var second = DA.MaybeList<int>(2);
+        var collision = p.CheckCollisions(
+            first.Length == 0 ? null : first,
+            second.Length == 0 ? null : second,
+            DA.Maybe<Mesh>(3),
+            DA.Get<int>(4),
+            DA.Get<double>(5),
+            DA.Get<double>(6));
         _ = DA.SetData(0, collision.HasCollision);
 
         if (collision.CollisionTarget is not null)

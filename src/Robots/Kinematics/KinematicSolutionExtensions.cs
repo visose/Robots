@@ -2,11 +2,11 @@
 
 namespace Robots;
 
-internal static class KinematicSolutionExtensions
+static class KinematicSolutionExtensions
 {
     extension(IReadOnlyList<KinematicSolution> solutions)
     {
-        internal double[][] JointSets(double[][]? result = null)
+        public double[][] JointSets(double[][]? result = null)
         {
             result ??= new double[solutions.Count][];
             ArgumentOutOfRangeException.ThrowIfNotEqual(result.Length, solutions.Count, nameof(result));
@@ -17,10 +17,10 @@ internal static class KinematicSolutionExtensions
             return result;
         }
 
-        internal double[] AllJoints() => solutions.FlattenToArray(solution => solution.Joints);
+        public double[] AllJoints() => solutions.FlattenToArray(solution => solution.Joints);
 
-        internal Plane[] AllPlanes() => solutions.FlattenToArray(solution => solution.Planes);
+        public Plane[] AllPlanes() => solutions.FlattenToArray(solution => solution.Planes);
 
-        internal string[] AllErrors() => solutions.FlattenToArray(solution => solution.Errors);
+        public string[] AllErrors() => solutions.FlattenToArray(solution => solution.Errors);
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-
 using Rhino.Geometry;
 
 namespace Robots;

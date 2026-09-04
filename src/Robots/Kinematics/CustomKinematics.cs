@@ -1,10 +1,7 @@
 ﻿namespace Robots;
 
-class CustomKinematics : MechanismKinematics
+class CustomKinematics(Custom custom) : MechanismKinematics(custom)
 {
-    internal CustomKinematics(Custom custom)
-        : base(custom) { }
-
     protected override void SetPlanes(KinematicSolution solution, Target target) =>
         SetStartPlanes(solution);
 }

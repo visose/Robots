@@ -26,7 +26,7 @@ public record Settings(string LocalLibraryPath)
             if (version <= 0)
                 version = 8;
 
-            return Path.Combine(appData, "McNeel", "Rhinoceros", "packages", $"{version:0.0}", "Robots");
+            return Path.Combine(appData, "McNeel", "Rhinoceros", "packages", $"{version.Text()}.0", "Robots");
 #else
             return Path.Combine(appData, "Robots");
 #endif

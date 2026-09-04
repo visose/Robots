@@ -5,25 +5,36 @@ namespace Robots.Tests;
 
 class NonSphericalWristKinematicsTests
 {
+    static readonly (Func<RobotSystem> Factory, int Seed, double SingularJoint5)[] Cases =
+    [
+        (TestRobots.AbbPowa1920, 1920, 0.0062625742039908085),
+        (TestRobots.AbbGofa10, 15010, 0.07556903629345449),
+        (TestRobots.AbbGofa12, 15012, 0.09146244096169531)
+    ];
+
     [Test]
     public void AbbSolverSelectionUsesGeometry()
     {
         var spherical = GetRobot(TestRobots.AbbIrb120());
-        var powa = GetRobot(TestRobots.AbbPowa1920());
-        var gofa10 = GetRobot(TestRobots.AbbGofa10());
-        var gofa12 = GetRobot(TestRobots.AbbGofa12());
         var unsupported = GetRobot(TestRobots.AbbNumerical());
-        var perturbedTwist = GetRobot(TestRobots.AbbGofa12());
-        perturbedTwist.Joints[0].Alpha += 5e-4;
 
         Assert.Multiple(() =>
         {
             Assert.That(spherical.Solver, Is.TypeOf<SphericalWristKinematics>());
-            Assert.That(powa.Solver, Is.TypeOf<NonSphericalWristKinematics>());
-            Assert.That(gofa10.Solver, Is.TypeOf<NonSphericalWristKinematics>());
-            Assert.That(gofa12.Solver, Is.TypeOf<NonSphericalWristKinematics>());
+            Assert.That(SphericalWristKinematics.Supports(spherical), Is.True);
+            Assert.That(NonSphericalWristKinematics.Supports(spherical), Is.False);
+
+            foreach (var (factory, _, _) in Cases)
+            {
+                var robot = GetRobot(factory());
+                Assert.That(robot.Solver, Is.TypeOf<NonSphericalWristKinematics>(), robot.Model);
+                Assert.That(NonSphericalWristKinematics.Supports(robot), Is.True, robot.Model);
+                Assert.That(SphericalWristKinematics.Supports(robot), Is.False, robot.Model);
+                Assert.That(robot.Solver.RequiresContinuation, Is.False, robot.Model);
+            }
+
             Assert.That(unsupported.Solver, Is.TypeOf<NumericalKinematics>());
-            Assert.That(NonSphericalWristKinematics.Supports(perturbedTwist), Is.False);
+            Assert.That(SupportsAfter(joints => joints[0].Alpha += 5e-4), Is.False, "axis twist");
             Assert.That(SupportsAfter(joints => joints[1].D = 1), Is.False, "d2");
             Assert.That(SupportsAfter(joints => joints[3].A = 1), Is.False, "a4");
             Assert.That(SupportsAfter(joints => joints[5].A = 1), Is.False, "a6");
@@ -41,14 +52,21 @@ class NonSphericalWristKinematicsTests
             }), Is.False, "final offset");
 
             Assert.That(SupportsAfter(joints => joints[0].D = double.NaN), Is.False, "finite DH");
-            Assert.That(powa.Solver.RequiresContinuation, Is.False);
         });
     }
 
     [Test]
-    public void PoWaValidatesEveryBranch()
+    public void RandomPosesValidateEveryBranch()
     {
-        AssertRoundTrips(TestRobots.AbbPowa1920(), seed: 1920);
+        foreach (var (factory, seed, _) in Cases)
+        {
+            var robot = GetRobot(factory());
+            var solver = (NonSphericalWristKinematics)robot.Solver;
+            var random = new Random(seed);
+
+            for (int sample = 0; sample < 24; sample++)
+                _ = AssertRoundTrip(robot, solver, RandomJoints(robot, random), previous: null, $"{robot.Model}, sample {sample}");
+        }
     }
 
     [Test]
@@ -150,15 +168,87 @@ class NonSphericalWristKinematicsTests
     }
 
     [Test]
-    public void OffsetGoFaValidatesEveryBranch()
+    [Explicit("Runs high-count full-range, boundary, singular, and selection validation for every supported ABB geometry.")]
+    public void ExhaustiveStress()
     {
-        AssertRoundTrips(TestRobots.AbbGofa10(), seed: 15010);
-    }
+        ReadOnlySpan<double> singularOffsets =
+        [
+            0,
+            -1e-12, 1e-12,
+            -1e-10, 1e-10,
+            -1e-9, 1e-9,
+            -1e-8, 1e-8,
+            -1e-6, 1e-6,
+            -1e-5, 1e-5,
+            -1e-4, 1e-4
+        ];
+        int sources = 0;
+        int branches = 0;
 
-    [Test]
-    public void GriffithGoFaValidatesEveryBranch()
-    {
-        AssertRoundTrips(TestRobots.AbbGofa12(), seed: 15012);
+        foreach (var (factory, baseSeed, singularJoint5) in Cases)
+        {
+            int seed = baseSeed * 1000 + 1;
+            var system = factory();
+            var robot = GetRobot(system);
+            var solver = (NonSphericalWristKinematics)robot.Solver;
+            var random = new Random(seed);
+
+            for (int sample = 0; sample < 4096; sample++)
+            {
+                var joints = FullRangeJoints(robot, random);
+                branches += AssertRoundTrip(
+                    robot,
+                    solver,
+                    joints,
+                    previous: null,
+                    $"{robot.Model}, full-range sample {sample}",
+                    sourceTolerance: 2e-5).Count;
+                sources++;
+            }
+
+            var nominal = RandomJoints(robot, random);
+
+            for (int jointIndex = 0; jointIndex < robot.Joints.Length; jointIndex++)
+            {
+                var range = robot.Joints[jointIndex].Range;
+
+                foreach (double inset in new[] { 0.0, 1e-9 })
+                {
+                    foreach (bool upper in new[] { false, true })
+                    {
+                        double[] joints = [.. nominal];
+                        joints[jointIndex] = upper ? range.T1 - inset : range.T0 + inset;
+                        branches += AssertRoundTrip(
+                            robot,
+                            solver,
+                            joints,
+                            previous: null,
+                            $"{robot.Model}, joint {jointIndex + 1} {(upper ? "upper" : "lower")} boundary, inset {inset:G3}",
+                            sourceTolerance: 2e-5).Count;
+                        sources++;
+                    }
+                }
+            }
+
+            foreach (double offset in singularOffsets)
+            {
+                double[] joints = [0.2, 0.4, 0.5, -0.6, singularJoint5 + offset, 0.7];
+                branches += AssertRoundTrip(
+                    robot,
+                    solver,
+                    joints,
+                    joints,
+                    $"{robot.Model}, singular offset {offset:G3}",
+                    sourceTolerance: 2e-5).Count;
+                sources++;
+            }
+
+            branches += AssertCompactSelection(system, seed + 1, 64);
+            sources += 64;
+        }
+
+        TestContext.Out.WriteLine($"ABB non-spherical stress: {sources:N0} sources, {branches:N0} returned branches.");
+        Assert.That(sources, Is.EqualTo(12_597));
     }
 
     [Test]
@@ -167,24 +257,9 @@ class NonSphericalWristKinematicsTests
         var robot = GetRobot(TestRobots.AbbPowa1920());
         var solver = (NonSphericalWristKinematics)robot.Solver;
         double[] joints = [0.3, 0.4, 0.5, -0.6, 0, Math.PI];
-        var target = Forward(robot, joints);
-        var solutions = solver.GetSolutions(target, joints, out var errors);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(errors, Is.Empty);
-            Assert.That(solutions, Is.Not.Empty);
-            Assert.That(
-                solutions.Any(solution => SamePoseJoints(solution.Joints, joints)),
-                Is.True);
-
-            Assert.That(
-                solutions.Where(solution => SamePoseJoints(solution.Joints, joints))
-                    .All(solution => !solution.IsNearSingular),
-                Is.True);
-        });
-
-        AssertAllSolutions(robot, target, solutions);
+        var solutions = AssertRoundTrip(robot, solver, joints, joints);
+        Assert.That(solutions.Where(solution => SamePoseJoints(solution.Joints, joints))
+            .All(solution => !solution.IsNearSingular), Is.True);
     }
 
     [Test]
@@ -194,17 +269,7 @@ class NonSphericalWristKinematicsTests
         var solver = (NonSphericalWristKinematics)robot.Solver;
         double bendBoundary = Math.Atan2(robot.Joints[3].D, robot.Joints[2].A);
         double[] joints = [0.2, 0.3, bendBoundary + 1e-6, -0.4, 1e-6, 0.7];
-        var target = Forward(robot, joints);
-        var solutions = solver.GetSolutions(target, joints, out var errors);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(errors, Is.Empty);
-            Assert.That(solutions, Is.Not.Empty);
-            Assert.That(solutions.Any(solution => SamePoseJoints(solution.Joints, joints, 2e-5)), Is.True);
-        });
-
-        AssertAllSolutions(robot, target, solutions);
+        _ = AssertRoundTrip(robot, solver, joints, joints, sourceTolerance: 2e-5);
     }
 
     [Test]
@@ -247,34 +312,17 @@ class NonSphericalWristKinematicsTests
         var solver = (NonSphericalWristKinematics)robot.Solver;
         double joint2 = Math.Acos(robot.Joints[2].A / robot.Joints[1].A);
         double[] joints = [0.4, joint2, Math.PI - joint2, -0.2, 0.5, 0.6];
-        var target = Forward(robot, joints);
-        var solutions = solver.GetSolutions(target, joints, out var errors);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(errors, Is.Empty);
-            Assert.That(solutions.Any(solution => SamePoseJoints(solution.Joints, joints, 2e-5)), Is.True);
-            Assert.That(
-                solutions.Where(solution => SamePoseJoints(solution.Joints, joints, 2e-5))
-                    .All(solution => solution.IsNearSingular),
-                Is.True);
-        });
-
-        AssertAllSolutions(robot, target, solutions);
+        var solutions = AssertRoundTrip(robot, solver, joints, joints, sourceTolerance: 2e-5);
+        Assert.That(solutions.Where(solution => SamePoseJoints(solution.Joints, joints, 2e-5))
+            .All(solution => solution.IsNearSingular), Is.True);
     }
 
     [Test]
     public void SingularitiesAreReported()
     {
-        (RobotSystem System, double Joint5)[] cases =
-        [
-            (TestRobots.AbbPowa1920(), 0.0062625742039908085),
-            (TestRobots.AbbGofa10(), 0.07556903629345449),
-            (TestRobots.AbbGofa12(), 0.09146244096169531)
-        ];
-
-        foreach (var (system, joint5) in cases)
+        foreach (var (factory, _, joint5) in Cases)
         {
+            var system = factory();
             var robot = GetRobot(system);
             var solver = (NonSphericalWristKinematics)robot.Solver;
             double[] singular = [0.2, 0.4, 0.5, -0.6, joint5, 0.7];
@@ -291,8 +339,8 @@ class NonSphericalWristKinematicsTests
 
             void AssertSingularity(double[] joints, bool expected, string state)
             {
-                var target = Forward(robot, joints);
-                var solutions = solver.GetSolutions(target, joints, out var errors);
+                string message = $"{robot.Model}, {state}";
+                var solutions = AssertRoundTrip(robot, solver, joints, joints, message, sourceTolerance: 2e-5);
                 var matching = solutions
                     .Where(solution => SamePoseJoints(solution.Joints, joints, 2e-5))
                     .ToArray();
@@ -303,24 +351,11 @@ class NonSphericalWristKinematicsTests
 
                 Assert.Multiple(() =>
                 {
-                    Assert.That(errors, Is.Empty, $"{robot.Model}, {state}");
-                    Assert.That(matching, Is.Not.Empty, $"{robot.Model}, {state}");
                     Assert.That(matching.All(solution => solution.IsNearSingular),
-                        Is.EqualTo(expected), $"{robot.Model}, {state}");
-
-                    if (expected)
-                    {
-                        Assert.That(publicSolution.Errors, Does.Contain("Target near singularity."),
-                            $"{robot.Model}, {state}");
-                    }
-                    else
-                    {
-                        Assert.That(publicSolution.Errors, Does.Not.Contain("Target near singularity."),
-                            $"{robot.Model}, {state}");
-                    }
+                        Is.EqualTo(expected), message);
+                    Assert.That(publicSolution.Errors.Contains("Target near singularity."),
+                        Is.EqualTo(expected), message);
                 });
-
-                AssertAllSolutions(robot, target, solutions);
             }
         }
     }
@@ -336,20 +371,9 @@ class NonSphericalWristKinematicsTests
             / robot.Joints[3].D);
 
         double[] joints = [0.4, joint2, combined - joint2, -0.2, 0.5, 0.6];
-        var target = Forward(robot, joints);
-        var solutions = solver.GetSolutions(target, joints, out var errors);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(errors, Is.Empty);
-            Assert.That(solutions.Any(solution => SamePoseJoints(solution.Joints, joints, 2e-5)), Is.True);
-            Assert.That(
-                solutions.Where(solution => SamePoseJoints(solution.Joints, joints, 2e-5))
-                    .All(solution => !solution.IsNearSingular),
-                Is.True);
-        });
-
-        AssertAllSolutions(robot, target, solutions);
+        var solutions = AssertRoundTrip(robot, solver, joints, joints, sourceTolerance: 2e-5);
+        Assert.That(solutions.Where(solution => SamePoseJoints(solution.Joints, joints, 2e-5))
+            .All(solution => !solution.IsNearSingular), Is.True);
     }
 
     [TestCase(1e-2)]
@@ -362,16 +386,7 @@ class NonSphericalWristKinematicsTests
         var robot = GetRobot(TestRobots.AbbGofa12());
         var solver = (NonSphericalWristKinematics)robot.Solver;
         double[] joints = [0.2, 0.4, -0.5, Math.PI - offset, 0.7, -0.4];
-        var target = Forward(robot, joints);
-        var solutions = solver.GetSolutions(target, joints, out var errors);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(errors, Is.Empty);
-            Assert.That(solutions.Any(solution => SamePoseJoints(solution.Joints, joints, 2e-5)), Is.True);
-        });
-
-        AssertAllSolutions(robot, target, solutions);
+        _ = AssertRoundTrip(robot, solver, joints, joints, sourceTolerance: 2e-5);
     }
 
     [Test]
@@ -385,19 +400,7 @@ class NonSphericalWristKinematicsTests
             foreach (double joint4 in new[] { -1e-8, 1e-8 })
             {
                 double[] joints = [-0.91, 0.83, -0.37, joint4, -1.03, 0.88];
-                var target = Forward(robot, joints);
-                var solutions = solver.GetSolutions(target, joints, out var errors);
-
-                Assert.Multiple(() =>
-                {
-                    Assert.That(errors, Is.Empty, $"{system.Name}, q4={joint4}");
-                    Assert.That(
-                        solutions.Any(solution => SamePoseJoints(solution.Joints, joints, 2e-5)),
-                        Is.True,
-                        $"{system.Name}, q4={joint4}");
-                });
-
-                AssertAllSolutions(robot, target, solutions);
+                _ = AssertRoundTrip(robot, solver, joints, joints, $"{system.Name}, q4={joint4}", sourceTolerance: 2e-5);
             }
         }
     }
@@ -408,21 +411,8 @@ class NonSphericalWristKinematicsTests
         var robot = GetRobot(TestRobots.AbbGofa12());
         var solver = (NonSphericalWristKinematics)robot.Solver;
         double[] joints = [0.43, -0.39, 0.58, Math.PI - 1e-7, 0.86, -0.97];
-        var target = Forward(robot, joints);
-        var solutions = solver.GetSolutions(target, joints, out var errors);
-        var independent = solver.GetSolutions(target, previous: null, out var independentErrors);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(errors, Is.Empty);
-            Assert.That(solutions.Any(solution => SamePoseJoints(solution.Joints, joints, 2e-5)), Is.True);
-            Assert.That(independentErrors, Is.Empty);
-            Assert.That(independent, Is.Not.Empty);
-            Assert.That(independent.Any(solution => SamePoseJoints(solution.Joints, joints, 2e-5)), Is.True);
-        });
-
-        AssertAllSolutions(robot, target, solutions);
-        AssertAllSolutions(robot, target, independent);
+        _ = AssertRoundTrip(robot, solver, joints, joints, "seeded", sourceTolerance: 2e-5);
+        _ = AssertRoundTrip(robot, solver, joints, previous: null, "unseeded", sourceTolerance: 2e-5);
     }
 
     [Test]
@@ -440,18 +430,7 @@ class NonSphericalWristKinematicsTests
             3.141592653562408
         ];
 
-        var target = Forward(robot, joints);
-        var solutions = solver.GetSolutions(target, previous: null, out var errors);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(errors, Is.Empty);
-            Assert.That(
-                solutions.Any(solution => SamePoseJoints(solution.Joints, joints, 2e-5)),
-                Is.True);
-        });
-
-        AssertAllSolutions(robot, target, solutions);
+        _ = AssertRoundTrip(robot, solver, joints, previous: null, sourceTolerance: 2e-5);
     }
 
     [Test]
@@ -473,71 +452,8 @@ class NonSphericalWristKinematicsTests
     [Test]
     public void CompactSolveMatchesExhaustiveSelection()
     {
-        (Func<RobotSystem> Factory, int Seed)[] cases =
-        [
-            (TestRobots.AbbPowa1920, 1920),
-            (TestRobots.AbbGofa10, 15010),
-            (TestRobots.AbbGofa12, 15012)
-        ];
-
-        foreach (var (factory, seed) in cases)
-        {
-            var system = factory();
-            var robot = GetRobot(system);
-            var solver = (NonSphericalWristKinematics)robot.Solver;
-            var random = new Random(seed);
-
-            for (int sample = 0; sample < 4; sample++)
-            {
-                var joints = RandomJoints(robot, random);
-                var previous = new double[joints.Length];
-
-                for (int i = 0; i < previous.Length; i++)
-                {
-                    var range = robot.Joints[i].Range;
-                    double offset = (i & 1) == 0 ? 0.12 : -0.12;
-                    previous[i] = Math.Clamp(joints[i] + offset, range.T0, range.T1);
-                }
-
-                var rawTarget = Forward(robot, joints);
-                var candidates = solver.GetSolutions(rawTarget, previous, out var errors);
-                var flange = system.Kinematics([new JointTarget(joints)])[0].Planes[^1];
-
-                Assert.That(errors, Is.Empty, $"Seed {seed}, sample {sample}");
-                Assert.That(candidates, Is.Not.Empty, $"Seed {seed}, sample {sample}");
-                AssertSelection(configuration: null);
-
-                foreach (var configuration in candidates
-                    .Select(candidate => candidate.Configuration)
-                    .Distinct())
-                {
-                    AssertSelection(configuration);
-                }
-
-                void AssertSelection(RobotConfigurations? configuration)
-                {
-                    var eligible = configuration is RobotConfigurations requested
-                        ? candidates.Where(candidate => candidate.Configuration == requested)
-                        : candidates;
-                    var expected = eligible
-                        .OrderBy(candidate => SquaredDifference(candidate.Joints, previous))
-                        .First();
-                    var target = new CartesianTarget(flange, configuration, Motions.Joint);
-                    var actual = system.Kinematics([target], [previous])[0];
-                    string message = $"Seed {seed}, sample {sample}, configuration {configuration?.ToString() ?? "automatic"}";
-
-                    Assert.Multiple(() =>
-                    {
-                        Assert.That(actual.Configuration, Is.EqualTo(expected.Configuration), message);
-                        Assert.That(actual.Joints, Is.EqualTo(expected.Joints).Within(1e-6), message);
-                        Assert.That(
-                            actual.Errors.Contains("Target near singularity."),
-                            Is.EqualTo(expected.IsNearSingular),
-                            message);
-                    });
-                }
-            }
-        }
+        foreach (var (factory, seed, _) in Cases)
+            _ = AssertCompactSelection(factory(), seed, 4);
     }
 
     [Test]
@@ -607,16 +523,7 @@ class NonSphericalWristKinematicsTests
         var range = robot.Joints[2].Range;
         double joint3 = max ? range.T1 - inset : range.T0 + inset;
         double[] joints = [-0.4, 0.5, joint3, 0.7, -0.8, 0.9];
-        var target = Forward(robot, joints);
-        var solutions = solver.GetSolutions(target, previous: null, out var errors);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(errors, Is.Empty);
-            Assert.That(solutions.Any(solution => SamePoseJoints(solution.Joints, joints, 2e-5)), Is.True);
-        });
-
-        AssertAllSolutions(robot, target, solutions);
+        _ = AssertRoundTrip(robot, solver, joints, previous: null, sourceTolerance: 2e-5);
     }
 
     [Test]
@@ -708,9 +615,13 @@ class NonSphericalWristKinematicsTests
         var flange = system.Kinematics([new JointTarget(expected.Joints)])[0].Planes[^1];
         var target = new CartesianTarget(flange, expected.Configuration, Motions.Joint);
         var selected = system.Kinematics([target], [expected.Joints])[0];
+        var available = candidates.Select(candidate => candidate.Configuration).ToHashSet();
+        var unavailableConfiguration = Enumerable.Range(0, 8)
+            .Select(value => (RobotConfigurations)value)
+            .First(configuration => !available.Contains(configuration));
         var unavailableTarget = new CartesianTarget(
             flange,
-            RobotConfigurations.Undefined,
+            unavailableConfiguration,
             Motions.Joint);
 
         var unavailable = system.Kinematics([unavailableTarget], [expected.Joints])[0];
@@ -731,44 +642,112 @@ class NonSphericalWristKinematicsTests
     [Test]
     public void UnreachableReturnsNoBranch()
     {
-        var robot = GetRobot(TestRobots.AbbGofa12());
-        var solver = (NonSphericalWristKinematics)robot.Solver;
-        var target = Transform.Identity;
-        target.M03 = 10_000;
-        var solutions = solver.GetSolutions(target, previous: null, out var errors);
-
-        Assert.Multiple(() =>
+        foreach (var (factory, _, _) in Cases)
         {
-            Assert.That(solutions, Is.Empty);
-            Assert.That(errors, Does.Contain("Target out of reach."));
-        });
-    }
-
-    static void AssertRoundTrips(RobotSystem system, int seed)
-    {
-        var robot = GetRobot(system);
-        var solver = (NonSphericalWristKinematics)robot.Solver;
-        var random = new Random(seed);
-
-        for (int sample = 0; sample < 24; sample++)
-        {
-            var joints = RandomJoints(robot, random);
-            var target = Forward(robot, joints);
+            var robot = GetRobot(factory());
+            var solver = (NonSphericalWristKinematics)robot.Solver;
+            var target = Transform.Identity;
+            target.M03 = 10_000;
             var solutions = solver.GetSolutions(target, previous: null, out var errors);
 
             Assert.Multiple(() =>
             {
-                Assert.That(errors, Is.Empty, $"Sample {sample}");
-                Assert.That(solutions, Is.Not.Empty, $"Sample {sample}");
-                Assert.That(
-                    solutions.Any(solution => SamePoseJoints(solution.Joints, joints)),
-                    Is.True,
-                    $"Original branch was not recovered for sample {sample}.");
+                Assert.That(solutions, Is.Empty, robot.Model);
+                Assert.That(errors, Does.Contain("Target out of reach."), robot.Model);
             });
-
-            AssertAllSolutions(robot, target, solutions);
-            AssertConfigurations(robot, target, solutions);
         }
+    }
+
+    static int AssertCompactSelection(RobotSystem system, int seed, int count)
+    {
+        var robot = GetRobot(system);
+        var solver = (NonSphericalWristKinematics)robot.Solver;
+        var random = new Random(seed);
+        int branches = 0;
+
+        for (int sample = 0; sample < count; sample++)
+        {
+            var joints = RandomJoints(robot, random);
+            var previous = new double[joints.Length];
+
+            for (int i = 0; i < previous.Length; i++)
+            {
+                var range = robot.Joints[i].Range;
+                double offset = (i & 1) == 0 ? 0.12 : -0.12;
+                previous[i] = Math.Clamp(joints[i] + offset, range.T0, range.T1);
+            }
+
+            var rawTarget = Forward(robot, joints);
+            var candidates = solver.GetSolutions(rawTarget, previous, out var errors);
+            var flange = system.Kinematics([new JointTarget(joints)])[0].Planes[^1];
+            string context = $"Seed {seed}, sample {sample}";
+
+            Assert.That(errors, Is.Empty, context);
+            Assert.That(candidates, Is.Not.Empty, context);
+            AssertAllSolutions(robot, rawTarget, candidates);
+            AssertConfigurations(robot, rawTarget, candidates);
+            AssertSelection(configuration: null);
+
+            foreach (var configuration in candidates
+                .Select(candidate => candidate.Configuration)
+                .Distinct())
+            {
+                AssertSelection(configuration);
+            }
+
+            branches += candidates.Count;
+
+            void AssertSelection(RobotConfigurations? configuration)
+            {
+                var eligible = configuration is RobotConfigurations requested
+                    ? candidates.Where(candidate => candidate.Configuration == requested)
+                    : candidates;
+                var expected = eligible
+                    .OrderBy(candidate => SquaredDifference(candidate.Joints, previous))
+                    .First();
+                var target = new CartesianTarget(flange, configuration, Motions.Joint);
+                var actual = system.Kinematics([target], [previous])[0];
+                string message = $"{context}, configuration {configuration?.ToString() ?? "automatic"}";
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(actual.Configuration, Is.EqualTo(expected.Configuration), message);
+                    Assert.That(actual.Joints, Is.EqualTo(expected.Joints).Within(1e-6), message);
+                    Assert.That(
+                        actual.Errors.Contains("Target near singularity."),
+                        Is.EqualTo(expected.IsNearSingular),
+                        message);
+                });
+            }
+        }
+
+        return branches;
+    }
+
+    static List<WristSolution> AssertRoundTrip(
+        RobotArm robot,
+        NonSphericalWristKinematics solver,
+        double[] joints,
+        double[]? previous,
+        string message = "",
+        double sourceTolerance = 2e-6)
+    {
+        var target = Forward(robot, joints);
+        var solutions = solver.GetSolutions(target, previous, out var errors);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(errors, Is.Empty, message);
+            Assert.That(solutions, Is.Not.Empty, message);
+            Assert.That(
+                solutions.Any(solution => SamePoseJoints(solution.Joints, joints, sourceTolerance)),
+                Is.True,
+                $"{message}: original branch was not recovered.");
+        });
+
+        AssertAllSolutions(robot, target, solutions);
+        AssertConfigurations(robot, target, solutions);
+        return solutions;
     }
 
     static double[] RandomJoints(RobotArm robot, Random random)
@@ -789,6 +768,19 @@ class NonSphericalWristKinematicsTests
 
         if (Math.Abs(Math.Sin(joints[2] - bendBoundary)) < 0.2)
             joints[2] += 0.35;
+
+        return joints;
+    }
+
+    static double[] FullRangeJoints(RobotArm robot, Random random)
+    {
+        var joints = new double[6];
+
+        for (int i = 0; i < joints.Length; i++)
+        {
+            var range = robot.Joints[i].Range;
+            joints[i] = range.T0 + random.NextDouble() * (range.T1 - range.T0);
+        }
 
         return joints;
     }
@@ -945,7 +937,7 @@ class NonSphericalWristKinematicsTests
     }
 
     static Plane PathPlane(double x, double y, double z) =>
-        new(new Point3d(x, y, z), -Vector3d.XAxis, Vector3d.YAxis);
+        new(new(x, y, z), -Vector3d.XAxis, Vector3d.YAxis);
 
     static List<double[]> EnumerateLegalWindings(RobotArm robot, double[] principal)
     {

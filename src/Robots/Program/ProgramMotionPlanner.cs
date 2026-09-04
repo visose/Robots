@@ -1,5 +1,6 @@
-﻿using static System.Math;
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
+using static System.Math;
+using static Robots.GeometryMath;
 using static Robots.Util;
 
 namespace Robots;
@@ -7,6 +8,7 @@ namespace Robots;
 class ProgramMotionPlanner
 {
     const double ContinuationStep = 50.0;
+    const double AngularStep = PI / 18;
 
     readonly record struct TargetSpeed(double DeltaTime, double MinTime, int LeadingJoint, SpeedType Type);
     readonly record struct SegmentSpeed(double DeltaTime, double MinTime);
@@ -119,7 +121,7 @@ class ProgramMotionPlanner
         {
             var systemTarget = systemTargets[i];
             prevJoints = i == 0
-                ? SetFirstKinematics(systemTarget, systemTargets)
+                ? SetFirstKinematics(systemTarget, systemTargets, ref time)
                 : CheckMotionSegment(systemTargets, i, prevJoints, modes, targets, stepSize, ref time);
 
             if (_program.Errors.Count > 0)
@@ -133,13 +135,16 @@ class ProgramMotionPlanner
         return -1;
     }
 
-    double[][] SetFirstKinematics(SystemTarget systemTarget, List<SystemTarget> systemTargets)
+    double[][] SetFirstKinematics(SystemTarget systemTarget, List<SystemTarget> systemTargets, ref double time)
     {
         var targets = systemTarget.ProgramTargets.Map(x => x.Target);
         var kinematics = _robotSystem.Kinematics(targets);
         systemTarget.SetTargetKinematics(kinematics, _program);
         CheckUndefined(systemTarget, systemTargets);
         Keyframes.Add(systemTarget.ShallowClone());
+        AddWaitTime(systemTarget, systemTarget, true, ref time);
+        AddWaitTime(systemTarget, systemTarget, false, ref time);
+        systemTarget.TotalTime = time;
 
         return kinematics.JointSets();
     }
@@ -156,12 +161,13 @@ class ProgramMotionPlanner
         if (_program.Errors.Count > 0)
             return prevJoints;
 
+        AddWaitTime(systemTarget, previous, true, ref time);
         var prevStep = InterpolateSegment(systemTarget, previous, modes, targets, ref prevJoints, stepSize, ref time, out var segmentTime);
 
         if (_program.Errors.Count > 0)
             return prevJoints;
 
-        AddWaitTime(systemTarget, prevStep, ref time);
+        AddWaitTime(systemTarget, prevStep, false, ref time);
         SetInterpolatedEndpoint(systemTarget, prevStep, modes);
         CheckUndefined(systemTarget, systemTargets);
         FinalizeTarget(systemTarget, prevStep, time, segmentTime);
@@ -188,6 +194,9 @@ class ProgramMotionPlanner
 
             prevJoints = kinematics.JointSets(prevJoints);
             interTarget.SetTargetKinematics(kinematics, _program, prevStep);
+
+            if (_program.Errors.Count == 0)
+                CheckConfigurationChange(prevStep, interTarget);
 
             var speed = GetSegmentSpeed(interTarget, prevStep, 1.0 / divisions);
 
@@ -229,11 +238,48 @@ class ProgramMotionPlanner
 
             var prevTarget = previous.ProgramTargets[target.Group];
             var prevPlane = target.GetPrevPlane(prevTarget);
-            double distance = prevPlane.Origin.DistanceTo(target.Plane.Origin);
-            divisions = Max(divisions, (int)Ceiling(distance / stepSize));
+            divisions = Max(divisions, GetDivisions(prevPlane, target.Plane, stepSize));
         }
 
         return divisions;
+    }
+
+    static int GetDivisions(Plane from, Plane to, double stepSize) =>
+        Max(1, (int)Ceiling(Max(from.Origin.DistanceTo(to.Origin) / stepSize, RotationAngle(from, to) / AngularStep)));
+
+    void CheckConfigurationChange(SystemTarget from, SystemTarget to)
+    {
+        for (int group = 0; group < to.ProgramTargets.Count; group++)
+        {
+            var target = to.ProgramTargets[group];
+
+            if (target.IsJointMotion || target.Kinematics.Configuration == from.ProgramTargets[target.Group].Kinematics.Configuration)
+                continue;
+
+            var start = from;
+            var end = to;
+
+            // Refine only a branch-changing interval; do not reject a configuration label alone.
+            for (int depth = 0; depth < 20; depth++)
+            {
+                var middle = end.ShallowClone();
+                var kinematics = _robotSystem.Kinematics(end.Lerp(start, _robotSystem, 0.5, 0, 1), start.JointSets());
+
+                if (kinematics.Any(solution => solution.Errors.Count > 0))
+                {
+                    middle.SetTargetKinematics(kinematics, _program, start);
+                    return;
+                }
+
+                foreach (var part in middle.ProgramTargets)
+                    part.Kinematics = kinematics[part.Group];
+
+                if (kinematics[target.Group].Configuration == start.ProgramTargets[target.Group].Kinematics.Configuration)
+                    start = middle;
+                else
+                    end = middle;
+            }
+        }
     }
 
     void BuildMotionSegments(List<SystemTarget> systemTargets)
@@ -254,6 +300,7 @@ class ProgramMotionPlanner
 
         var first = ResetTiming(systemTargets[0].ShallowClone());
         Keyframes.Add(first);
+        AddHoldSegment(systemTargets[0].TotalTime);
 
         var prevJoints = first.JointSets();
         var targets = new Target[first.ProgramTargets.Count];
@@ -264,8 +311,11 @@ class ProgramMotionPlanner
         {
             var previous = systemTargets[i - 1];
             var current = systemTargets[i];
+            double motionStart = previous.TotalTime + LongestWaitTime(current, true);
+            double arrival = current.TotalTime - LongestWaitTime(current, false);
+            AddHoldSegment(motionStart);
             double entryFraction = SetEntryFractions(systemTargets, i, entryFractions);
-            double entryTime = SegmentTime(previous.TotalTime, current.TotalTime, entryFraction);
+            double entryTime = SegmentTime(motionStart, arrival, entryFraction);
             var lastKeyframe = Keyframes[^1];
             SystemTarget entry;
 
@@ -284,11 +334,14 @@ class ProgramMotionPlanner
                 return;
 
             if (!HasFlyby(systemTargets, i))
+            {
+                AddHoldSegment(current.TotalTime);
                 continue;
+            }
 
             var next = systemTargets[i + 1];
             double exitFraction = SetExitFractions(systemTargets, i, exitFractions);
-            double exitTime = SegmentTime(current.TotalTime, next.TotalTime, exitFraction);
+            double exitTime = SegmentTime(current.TotalTime, next.TotalTime - LongestWaitTime(next, false), exitFraction);
             var exit = CreateFractionKeyframe(current, next, exitFractions, exitTime, ref prevJoints, entry, targets);
 
             if (_program.Errors.Count > 0)
@@ -297,6 +350,19 @@ class ProgramMotionPlanner
             Segments.Add(new MotionSegment(entry, exit, current, next));
             Keyframes.Add(exit);
         }
+    }
+
+    void AddHoldSegment(double time)
+    {
+        var start = Keyframes[^1];
+
+        if (time <= start.TotalTime + TimeTol)
+            return;
+
+        var end = start.ShallowClone();
+        SetKeyframeTiming(end, time, start);
+        AddLineSegment(start, end);
+        Keyframes.Add(end);
     }
 
     void AddLineSegments(List<SystemTarget> keyframes)
@@ -324,16 +390,11 @@ class ProgramMotionPlanner
         return false;
     }
 
-    static bool HasFlyby(List<SystemTarget> systemTargets, int index) =>
-        index > 0
-        && index < systemTargets.Count - 1
-        && HasFlyby(systemTargets[index]);
-
-    static bool HasFlyby(SystemTarget systemTarget)
+    static bool HasFlyby(List<SystemTarget> systemTargets, int index)
     {
-        foreach (var target in systemTarget.ProgramTargets)
+        foreach (var target in systemTargets[index].ProgramTargets)
         {
-            if (IsFlyby(target))
+            if (HasFlyby(systemTargets, index, target.Group))
                 return true;
         }
 
@@ -343,10 +404,9 @@ class ProgramMotionPlanner
     static bool HasFlyby(List<SystemTarget> systemTargets, int index, int group) =>
         index > 0
         && index < systemTargets.Count - 1
-        && IsFlyby(systemTargets[index].ProgramTargets[group]);
-
-    static bool IsFlyby(ProgramTarget target) =>
-        target.Target.Zone.IsFlyBy;
+        && systemTargets[index].ProgramTargets[group].Target.Zone.IsFlyBy
+        && LongestWaitTime(systemTargets[index], false) <= TimeTol
+        && LongestWaitTime(systemTargets[index + 1], true) <= TimeTol;
 
     double SetEntryFractions(List<SystemTarget> systemTargets, int index, double[] fractions)
     {
@@ -460,30 +520,31 @@ class ProgramMotionPlanner
     static bool ShouldStartNewKeyframe(IReadOnlyList<EndpointMode> modes, double deltaTime, double lastDeltaTime) =>
         modes.Contains(EndpointMode.Interpolated) || Abs(deltaTime - lastDeltaTime) > 1e-09;
 
-    void AddWaitTime(SystemTarget systemTarget, SystemTarget prevStep, ref double time)
+    void AddWaitTime(SystemTarget systemTarget, SystemTarget pose, bool runBefore, ref double time)
     {
-        double wait = LongestWaitTime(systemTarget);
+        double wait = LongestWaitTime(systemTarget, runBefore);
 
         if (wait <= TimeTol)
             return;
 
         time += wait;
-        prevStep.TotalTime = time;
-        prevStep.DeltaTime += wait;
-        Keyframes.Add(prevStep.ShallowClone());
+        var end = pose.ShallowClone();
+        SetKeyframeTiming(end, time, Keyframes[^1]);
+        Keyframes.Add(end);
     }
 
-    static double LongestWaitTime(SystemTarget systemTarget)
+    static double LongestWaitTime(SystemTarget systemTarget, bool runBefore)
     {
         double longest = 0;
 
-        foreach (var target in systemTarget.ProgramTargets)
+        for (int group = 0; group < systemTarget.ProgramTargets.Count; group++)
         {
+            var commands = systemTarget.ProgramTargets[group].Commands;
             double wait = 0;
 
-            foreach (var command in target.Commands)
+            for (int i = 0; i < commands.Count; i++)
             {
-                if (command is Commands.Wait waitCommand)
+                if (commands[i] is Commands.Wait waitCommand && waitCommand.RunBefore == runBefore)
                     wait += waitCommand.Seconds;
             }
 
@@ -621,9 +682,7 @@ class ProgramMotionPlanner
                 continue;
             }
 
-            targets[programTarget.Group] = programTarget.Target is CartesianTarget { Motion: Motions.Linear } cartesian
-                ? new CartesianTarget(cartesian.Plane, cartesian, prevTarget.Kinematics.Configuration, Motions.Linear, cartesian.External)
-                : programTarget.Target;
+            targets[programTarget.Group] = programTarget.Target;
         }
 
         var kinematics = _robotSystem.Kinematics(targets, prevJoints);
@@ -656,8 +715,7 @@ class ProgramMotionPlanner
         var divisions = continuations.Map(target =>
         {
             var prevTarget = previous.ProgramTargets[target.Group];
-            double distance = target.GetPrevPlane(prevTarget).Origin.DistanceTo(target.Plane.Origin);
-            return Max(1, (int)Ceiling(distance / ContinuationStep));
+            return GetDivisions(target.GetPrevPlane(prevTarget), target.Plane, ContinuationStep);
         });
 
         int maxSteps = divisions.Max();
@@ -859,9 +917,7 @@ class ProgramMotionPlanner
 
         double distance = prevPlane.Origin.DistanceTo(target.Plane.Origin);
         double linearTime = distance / speed.TranslationSpeed;
-        double angleSwivel = Vector3d.VectorAngle(prevPlane.Normal, target.Plane.Normal);
-        double angleRotation = Vector3d.VectorAngle(prevPlane.XAxis, target.Plane.XAxis);
-        double rotationTime = Max(angleSwivel, angleRotation) / speed.RotationSpeed;
+        double rotationTime = RotationAngle(prevPlane, target.Plane) / speed.RotationSpeed;
 
         return new(linearTime, rotationTime, axisTime, externalTime, 0, 0);
     }

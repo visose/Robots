@@ -24,7 +24,7 @@ public class Zone(double distance, double? rotation = null, double? rotationExte
 
     public bool IsFlyBy => Distance > DistanceTol;
 
-    public override int GetHashCode() => Distance.GetHashCode();
+    public override int GetHashCode() => HashCode.Combine(Distance, Rotation, RotationExternal, _name);
     public override bool Equals(object? obj) => obj is Zone other && Equals(other);
 
     public bool Equals(Zone? other)

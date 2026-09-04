@@ -1,6 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using Rhino.Geometry;
 using static System.Math;
-using Rhino.Geometry;
 using static Robots.Util;
 
 namespace Robots;
@@ -17,7 +16,6 @@ public interface IProgram
 
 public class Program : IProgram
 {
-    // static 
     public static bool IsValidIdentifier(string name, out string error)
     {
         if (name.Length == 0)
@@ -34,14 +32,19 @@ public class Program : IProgram
             return false;
         }
 
-        if (!char.IsLetter(name[0]))
+        if (!char.IsAsciiLetter(name[0]))
         {
             error = "name must start with a letter.";
             return false;
         }
 
-        if (!Regex.IsMatch(name, @"^[A-Z0-9_]+$", RegexOptions.IgnoreCase))
+        for (int i = 1; i < name.Length; i++)
         {
+            char character = name[i];
+
+            if (char.IsAsciiLetterOrDigit(character) || character == '_')
+                continue;
+
             error = "name can only contain letters, digits, and underscores (_).";
             return false;
         }
@@ -49,8 +52,6 @@ public class Program : IProgram
         error = "";
         return true;
     }
-
-    // instance
 
     readonly Simulation? _simulation;
     readonly List<ProgramIssue> _issues = [];
@@ -88,12 +89,14 @@ public class Program : IProgram
     public Program(string name, RobotSystem robotSystem, IReadOnlyList<IToolpath> toolpaths, Commands.Group? initCommands = null, IReadOnlyList<int>? multiFileIndices = null, double stepSize = 1.0)
     {
         RobotSystem = robotSystem;
+        Name = name;
         _initCommands = initCommands?.Flatten().ToList() ?? [];
         MultiFileIndices = _multiFileIndices.AsReadOnly();
         Attributes = _attributes.AsReadOnly();
         InitCommands = _initCommands.AsReadOnly();
         Warnings = _warnings.AsReadOnly();
         Errors = _errors.AsReadOnly();
+        CheckName(name, robotSystem);
 
         var targets = CreateSystemTargets(toolpaths);
 
@@ -123,8 +126,6 @@ public class Program : IProgram
         _targets = [.. targets];
         Targets = Array.AsReadOnly(_targets);
 
-        Name = name;
-        CheckName(name, robotSystem);
         _multiFileIndices.AddRange(FixMultiFileIndices(multiFileIndices, _targets.Length));
 
         if (Errors.Count == 0)
@@ -209,7 +210,7 @@ public class Program : IProgram
 
     void CheckName(string name, RobotSystem robotSystem)
     {
-        if (robotSystem is IndustrialSystem system)
+        if (robotSystem is IndustrialSystem system and not SingleGroupSystem)
         {
             var group = system.MechanicalGroups.MaxBy(g => g.Name.Length).Name;
             name = $"{name}_{group}_000";
@@ -217,14 +218,6 @@ public class Program : IProgram
 
         if (!IsValidIdentifier(name, out var error))
             AddError(IssueKind.ProgramNameInvalid, "Program " + error, source: nameof(CheckName));
-
-        if (robotSystem is SystemKuka)
-        {
-            var excess = name.Length - 24;
-
-            if (excess > 0)
-                AddWarning(IssueKind.ProgramNameInvalid, $"If using an older KRC2 or KRC3 controller, make the program name {excess} character(s) shorter.", source: nameof(CheckName));
-        }
     }
 
     List<SystemTarget> CreateSystemTargets(IReadOnlyList<IToolpath> toolpaths)
@@ -239,9 +232,7 @@ public class Program : IProgram
     bool ValidateToolpaths(IReadOnlyList<Target>[] targets, out int targetCount)
     {
         targetCount = 0;
-        int groupCount = RobotSystem is IndustrialSystem industrialSystem
-            ? industrialSystem.MechanicalGroups.Count
-            : 1;
+        int groupCount = RobotSystem.RobotCount;
 
         if (targets.Length != groupCount)
         {
@@ -354,13 +345,18 @@ public class Program : IProgram
 
     public Collision CheckCollisions(IReadOnlyList<int>? first = null, IReadOnlyList<int>? second = null, Mesh? environment = null, int environmentPlane = 0, double linearStep = 100, double angularStep = PI / 4.0)
     {
-        return new(this, first ?? [7], second ?? [4], environment, environmentPlane, linearStep, angularStep);
+        int groupMeshCount = RobotSystem.DefaultPose.CollisionMeshes[0].Length;
+        int robotBaseIndex = groupMeshCount - RobotSystem.GetRobotJointCount(0) - 1;
+        first ??= [groupMeshCount];
+        second ??= [robotBaseIndex + 4];
+
+        return new(this, first, second, environment, environmentPlane, linearStep, angularStep);
     }
 
     public void Save(string folder)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(folder);
-        RobotSystem.SaveCode(this, folder);
+        RobotSystem.PostProcessor.Save(this, folder);
     }
 
     public override string ToString()

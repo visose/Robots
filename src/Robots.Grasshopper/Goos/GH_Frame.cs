@@ -1,6 +1,6 @@
 ﻿using GH_IO.Serialization;
-using Rhino.Geometry;
 using Grasshopper.Kernel.Types;
+using Rhino.Geometry;
 
 namespace Robots.Grasshopper;
 

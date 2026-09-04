@@ -4,17 +4,12 @@ namespace Robots;
 
 static class IndustrialSystemKinematics
 {
-    internal static List<KinematicSolution> Solve(IndustrialSystem system, IReadOnlyList<Target> targets, IReadOnlyList<double[]?>? prevJoints)
+    public static List<KinematicSolution> Solve(IndustrialSystem system, IReadOnlyList<Target> targets, IReadOnlyList<double[]?>? prevJoints)
     {
         int groupCount = system.MechanicalGroups.Count;
         var solutions = new KinematicSolution[groupCount];
         var solving = new bool[groupCount];
         var solved = new bool[groupCount];
-
-        Exception.ThrowIfNotEqual(targets.Count, groupCount, $"Robot system requires {groupCount} target(s), but {targets.Count} were supplied.");
-
-        if (prevJoints is not null)
-            Exception.ThrowIfNotEqual(prevJoints.Count, groupCount, $"Robot system requires {groupCount} previous joint set(s), but {prevJoints.Count} were supplied.");
 
         for (int i = 0; i < groupCount; i++)
             _ = Solve(i);

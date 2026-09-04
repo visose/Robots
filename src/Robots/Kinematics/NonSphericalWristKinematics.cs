@@ -1,5 +1,6 @@
-﻿using static System.Math;
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
+using static System.Math;
+using static Robots.GeometryMath;
 using static Robots.Util;
 
 namespace Robots;
@@ -26,34 +27,21 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
     const double StationaryTolerance = 1e-7;
 
     static readonly string[] NearSingularityErrors = ["Target near singularity."];
-    static readonly string[] NoErrors = [];
 
     readonly Joint[] _joints = robot.Joints;
-    readonly double _maxReach = GetMaxReach(robot.Joints);
+    readonly double _maxReach = GetChainLength(robot.Joints);
     readonly double _geometryScale = GetGeometryScale(robot.Joints);
     readonly double _jacobianScale = GetJacobianScale(robot.Joints);
+
+    public override bool CanSolve(RobotArm robot) => Supports(robot);
 
     public static bool Supports(RobotArm robot)
     {
         var joints = robot.Joints;
         ReadOnlySpan<double> alpha = [HalfPI, 0, HalfPI, -HalfPI, HalfPI, 0];
 
-        if (joints.Length != 6)
+        if (!HasRevoluteDh(joints, alpha, SupportAngleTolerance))
             return false;
-
-        for (int i = 0; i < joints.Length; i++)
-        {
-            var joint = joints[i];
-
-            if (joint is not RevoluteJoint
-                || !double.IsFinite(joint.A)
-                || !double.IsFinite(joint.D)
-                || !double.IsFinite(joint.Alpha)
-                || Abs(IEEERemainder(joint.Alpha - alpha[i], PI2)) > SupportAngleTolerance)
-            {
-                return false;
-            }
-        }
 
         return Abs(joints[1].D) < SupportDistanceTolerance
             && Abs(joints[3].A) < SupportDistanceTolerance
@@ -63,7 +51,7 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
             && Hypot(joints[4].A, joints[4].D) > SupportDistanceTolerance;
     }
 
-    protected override InverseSolutions? GetInverseSolutions(
+    protected override InverseSolutions GetInverseSolutions(
         Transform transform,
         double[] external,
         PreviousJoints prevJoints,
@@ -83,11 +71,18 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         if (principal.Count > 0 && solutions.Count == 0)
             errors.Add("Target requires joints outside the permitted ranges.");
 
+        int selected = SelectSolution(
+            solutions,
+            requested,
+            prevJoints,
+            preserveWindings: true,
+            out _);
+
+        if (selected >= 0 && IsNearSingular(solutions[selected].Joints))
+            solutions[selected] = solutions[selected] with { Errors = NearSingularityErrors };
+
         return new(solutions, errors, PreserveWindings: true);
     }
-
-    protected override IReadOnlyList<string> GetInverseSolutionErrors(InverseSolution solution) =>
-        IsNearSingular(solution.Joints) ? NearSingularityErrors : NoErrors;
 
     protected override bool TryGetConfiguration(
         double[] joints,
@@ -1625,87 +1620,8 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
             jacobian[30 + column] = axisZ;
         }
 
-        return MinSingularRatio(jacobian) <= SingularRatioTolerance;
-    }
-
-    static double MinSingularRatio(Span<double> matrix)
-    {
-        const int size = 6;
-        const int maxSweeps = 20;
-        const double orthogonalTolerance = 1e-12;
-
-        // One-sided Jacobi rotations orthogonalize the columns. Their final
-        // norms are the singular values, so no matrix allocation is required.
-        for (int sweep = 0; sweep < maxSweeps; sweep++)
-        {
-            bool changed = false;
-
-            for (int firstCol = 0; firstCol < size - 1; firstCol++)
-            {
-                for (int secondCol = firstCol + 1; secondCol < size; secondCol++)
-                {
-                    double firstNormSquared = 0;
-                    double secondNormSquared = 0;
-                    double dot = 0;
-
-                    for (int row = 0; row < size; row++)
-                    {
-                        double first = matrix[row * size + firstCol];
-                        double second = matrix[row * size + secondCol];
-                        firstNormSquared += first * first;
-                        secondNormSquared += second * second;
-                        dot += first * second;
-                    }
-
-                    if (firstNormSquared == 0 || secondNormSquared == 0)
-                        return 0;
-
-                    if (Abs(dot) <= orthogonalTolerance
-                        * Sqrt(firstNormSquared * secondNormSquared))
-                    {
-                        continue;
-                    }
-
-                    changed = true;
-                    double tau = (secondNormSquared - firstNormSquared) / (2 * dot);
-                    double tangent = CopySign(1 / (Abs(tau) + Hypot(1, tau)), tau);
-                    double cosine = 1 / Sqrt(1 + tangent * tangent);
-                    double sine = cosine * tangent;
-
-                    for (int row = 0; row < size; row++)
-                    {
-                        int firstIndex = row * size + firstCol;
-                        int secondIndex = row * size + secondCol;
-                        double first = matrix[firstIndex];
-                        double second = matrix[secondIndex];
-                        matrix[firstIndex] = cosine * first - sine * second;
-                        matrix[secondIndex] = sine * first + cosine * second;
-                    }
-                }
-            }
-
-            if (!changed)
-                break;
-        }
-
-        double min = double.MaxValue;
-        double max = 0;
-
-        for (int column = 0; column < size; column++)
-        {
-            double normSquared = 0;
-
-            for (int row = 0; row < size; row++)
-            {
-                double value = matrix[row * size + column];
-                normSquared += value * value;
-            }
-
-            min = Min(min, normSquared);
-            max = Max(max, normSquared);
-        }
-
-        return Sqrt(min / max);
+        return JacobianCondition.MinimumSingularRatio(jacobian)
+            <= SingularRatioTolerance;
     }
 
     void AddLiftedSolutions(
@@ -1749,16 +1665,6 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         return Max(
             _geometryScale,
             Max(Abs(transform.M03), Max(Abs(transform.M13), Abs(transform.M23))));
-    }
-
-    static double GetMaxReach(Joint[] joints)
-    {
-        double reach = 0;
-
-        foreach (var joint in joints)
-            reach += Hypot(joint.A, joint.D);
-
-        return reach;
     }
 
     static double GetGeometryScale(Joint[] joints)
@@ -1956,30 +1862,6 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
 
     static double CircularDistance(double first, double second) =>
         Abs(IEEERemainder(first - second, PI2));
-
-    static double Hypot(double first, double second)
-    {
-        first = Abs(first);
-        second = Abs(second);
-        double max = Max(first, second);
-
-        if (max == 0)
-            return 0;
-
-        first /= max;
-        second /= max;
-        return max * Sqrt(first * first + second * second);
-    }
-
-    static double NormalizeAngle(double angle)
-    {
-        angle = IEEERemainder(angle, PI2);
-
-        if (angle <= -PI)
-            angle += PI2;
-
-        return angle;
-    }
 
     readonly record struct PrincipalSolution(
         double[] Joints,

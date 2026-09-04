@@ -8,3 +8,8 @@ public interface IRemote
     void Pause();
     void Play();
 }
+
+public interface IRemoteNotifier
+{
+    Action? Update { get; set; }
+}

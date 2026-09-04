@@ -105,7 +105,6 @@ class LibraryForm : ComponentForm
                 : "";
 
             _ = MessageBox.Show(this, $"Error refreshing the library list.{rateLimit}\n\n{e.Message}", MessageBoxType.Error);
-            return;
         }
 
         var values = _library.Libraries.Values;
@@ -276,6 +275,10 @@ class LibraryForm : ComponentForm
             try
             {
                 await actionAsync();
+            }
+            catch (Exception e)
+            {
+                _ = MessageBox.Show($"Library action failed.\n\n{e.Message}", MessageBoxType.Error);
             }
             finally
             {

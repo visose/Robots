@@ -20,7 +20,7 @@ public class MechanicalGroup
     {
         Index = index;
         Name = $"T_ROB{index + 1}";
-        Joints = [.. mechanisms.SelectMany(x => x.Joints.OrderBy(y => y.Number))];
+        Joints = [.. mechanisms.SelectMany(x => x.Joints).OrderBy(x => x.Number)];
         RobotArm? robot = null;
 
         foreach (var mechanism in mechanisms.OfType<RobotArm>())

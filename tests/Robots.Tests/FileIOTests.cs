@@ -8,9 +8,15 @@ namespace Robots.Tests;
 public class FileIOTests
 {
     [Test]
+    public void ListRejectsUnknownElementType()
+    {
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => FileIO.List((ElementType)(-1)));
+    }
+
+    [Test]
     public void RobotSystemCollisionMeshesFallbackToDisplayMeshes()
     {
-        var doc = CreateRobotMeshDoc(addCollision: false);
+        using var doc = CreateRobotMeshDoc(addCollision: false);
         var robot = FileIO.ParseRobotSystem(TestRobots.AbbIrb120Xml, Plane.WorldXY, doc);
         var displayMeshes = robot.DefaultPose.Meshes[0];
         var collisionMeshes = robot.DefaultPose.CollisionMeshes[0];
@@ -26,7 +32,7 @@ public class FileIOTests
     [Test]
     public void RobotSystemLoadsCollisionMeshesFromSiblingLayers()
     {
-        var doc = CreateRobotMeshDoc(addCollision: true);
+        using var doc = CreateRobotMeshDoc(addCollision: true);
         var robot = FileIO.ParseRobotSystem(TestRobots.AbbIrb120Xml, Plane.WorldXY, doc);
         var displayMeshes = robot.DefaultPose.Meshes[0];
         var collisionMeshes = robot.DefaultPose.CollisionMeshes[0];
@@ -41,26 +47,18 @@ public class FileIOTests
         });
     }
 
-    [Test]
-    public void ToolCollisionMeshFallbackToDisplayMesh()
+    [TestCase(false)]
+    [TestCase(true)]
+    public void ToolUsesCollisionMeshWhenPresent(bool addCollision)
     {
-        var doc = CreateToolMeshDoc(addCollision: false);
-        var tool = FileIO.ParseTool(TestRobots.GripperToolXml, doc);
-
-        Assert.That(tool.CollisionMesh, Is.SameAs(tool.Mesh));
-    }
-
-    [Test]
-    public void ToolLoadsCollisionMeshFromSiblingLayer()
-    {
-        var doc = CreateToolMeshDoc(addCollision: true);
+        using var doc = CreateToolMeshDoc(addCollision);
         var tool = FileIO.ParseTool(TestRobots.GripperToolXml, doc);
 
         Assert.Multiple(() =>
         {
             Assert.That(tool.Mesh.Vertices.Count, Is.EqualTo(3));
-            Assert.That(tool.CollisionMesh.Vertices.Count, Is.EqualTo(6));
-            Assert.That(tool.CollisionMesh, Is.Not.SameAs(tool.Mesh));
+            Assert.That(tool.CollisionMesh.Vertices.Count, Is.EqualTo(addCollision ? 6 : 3));
+            Assert.That(ReferenceEquals(tool.CollisionMesh, tool.Mesh), Is.EqualTo(!addCollision));
         });
     }
 
@@ -110,18 +108,7 @@ public class FileIOTests
         return doc.AllLayers.Last().Id;
     }
 
-    static int AddLayer(File3dm doc, string name)
-    {
-        Layer layer = new()
-        {
-            Name = name
-        };
-
-        doc.AllLayers.Add(layer);
-        return doc.AllLayers.Count - 1;
-    }
-
-    static int AddLayer(File3dm doc, string name, Guid parentId)
+    static int AddLayer(File3dm doc, string name, Guid parentId = default)
     {
         Layer layer = new()
         {

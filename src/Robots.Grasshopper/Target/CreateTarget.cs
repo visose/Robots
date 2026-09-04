@@ -1,8 +1,8 @@
 ﻿using System.Windows.Forms;
-using Rhino.Geometry;
 using GH_IO.Serialization;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Special;
+using Rhino.Geometry;
 
 namespace Robots.Grasshopper;
 
@@ -43,7 +43,7 @@ public sealed class CreateTarget() : Component(
         ParamSpec.New<ZoneParameter>("Zone", "Z", "Approximation zone in mm.", true),
         ParamSpec.New<CommandParameter>("Command", "C", "Robot command.", true),
         ParamSpec.New<FrameParameter>("Frame", "F", "Base frame.", true),
-        ParamSpec.New<JointsParameter>("External", "E", "External axes.", true)
+        ParamSpec.New<JointsParameter>("External", "E", "External axes, or a redundant-joint constraint when supported.", true)
     ];
 
     bool _isCartesian = true;
@@ -210,12 +210,12 @@ public sealed class CreateTarget() : Component(
         if (param is null or JointsParameter)
             return;
 
-        var sources = param.Sources.ToArray();
-        Remove(input);
-        var updated = Add(input);
-
-        foreach (var source in sources)
-            updated.AddSource(source);
+        var updated = New(input);
+        ParameterMigration.Input(param, updated);
+        int index = Params.Input.IndexOf(param);
+        _ = Params.UnregisterInputParameter(param, true);
+        _ = Params.RegisterInputParam(updated, index);
+        Params.OnParametersChanged();
     }
 
     EventHandler Toggle(Input input, Action<IGH_Param>? onAdded = null) =>

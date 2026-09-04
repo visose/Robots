@@ -18,9 +18,9 @@
 - Prefer the simplest coherent design. Keep one implementation per behavior and remove unnecessary layers, fallbacks, indirection, defensive branches, and speculative flexibility.
 - Fail fast on missing or invalid data and broken invariants. Do not substitute guessed defaults; catch only for expected recovery, cleanup followed by rethrow, or deliberate boundary handling.
 - Use `null` only for meaningful absence and validate deserialized configuration immediately. With nullable references enabled, avoid redundant null-only guards; validation that also checks null, such as `ThrowIfNullOrWhiteSpace`, is fine.
-- Use current C# when it improves clarity. Omit access modifiers when the default is intended; a member cannot be more visible than its containing type. Use an `Async` suffix only when a synchronous counterpart exists or a framework requires it, and `sealed` only with intent.
+- Use current C# when it improves clarity. Prefer target-typed `new` when the type is already clear without adding another statement or local solely to enable it. Omit access modifiers when the default is intended; a member cannot be more visible than its containing type. Use an `Async` suffix only when a synchronous counterpart exists or a framework requires it, and `sealed` only with intent.
 - Prefer records and primary constructors for immutable data carriers; use classes for services, mutable state, exceptions, and framework lifecycle types.
-- Order C# `using` directives by source: `System`, third-party, `Rhino`, `Grasshopper`, then `Robots`; keep normal imports before aliases/static imports within each group.
+- Keep C# `using` directives in one contiguous block with no blank lines. Order normal imports by source: `System`, third-party, `Rhino`, `Grasshopper`, then `Robots`; place aliases and static imports after normal imports.
 - Leave a blank line before an unbraced single-statement `if`, unless it starts the block, and after a multiline statement.
 - Prefer arrays for fixed or known-size geometry data. Materialize sequences before counting, indexing, retaining, mutating, or repeated enumeration.
 - Treat RhinoCommon geometry, arrays, and domain objects as immutable by convention. Copy only at mutation or ownership boundaries; short-lived owned mutation is fine in hot paths.

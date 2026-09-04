@@ -2,6 +2,7 @@
 using System.Xml;
 using Eto.Forms;
 using GH_IO.Serialization;
+using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Types;
 
@@ -22,7 +23,7 @@ public class LibraryParam : GH_ValueList
     {
         var inputParam = component.Params.First();
 
-        if (inputParam.SourceCount > 0)
+        if (inputParam.SourceCount > 0 || inputParam is Param_String { PersistentDataCount: > 0 })
             return false;
 
         var libraryParam = new LibraryParam

@@ -175,7 +175,7 @@ public class ProgramTarget
         {
             Plane prevPlane = GetPrevPlane(prevTarget);
             Plane plane = robot.CartesianLerp(prevPlane, Plane, t, start, end);
-            var target = new CartesianTarget(plane, Target, prevTarget.Kinematics.Configuration, Motions.Linear, external);
+            var target = new CartesianTarget(plane, Target, motion: Motions.Linear, external: external);
 
             return target;
         }

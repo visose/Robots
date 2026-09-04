@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using GH_IO.Serialization;
-using GhPlane = GH_IO.Types.GH_Plane;
 using Rhino.Geometry;
+using GhPlane = GH_IO.Types.GH_Plane;
 
 namespace Robots.Grasshopper;
 

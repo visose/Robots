@@ -15,9 +15,6 @@ public class JointTarget : Target
 
     static double[] ValidateJoints(double[] joints)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(joints.Length, 6, nameof(joints));
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(joints.Length, 7, nameof(joints));
-
         for (int i = 0; i < joints.Length; i++)
             _ = CheckFinite(joints[i], nameof(joints), $"Joint value {i} must be finite.");
 

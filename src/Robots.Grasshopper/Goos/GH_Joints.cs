@@ -1,11 +1,12 @@
-﻿using GH_IO.Serialization;
+﻿using System.Globalization;
+using GH_IO.Serialization;
 using Grasshopper.Kernel.Types;
 
 namespace Robots.Grasshopper;
 
 public class GH_Joints() : Goo<double[], GH_Joints>("Joints", [])
 {
-    public override string ToString() => Value is null ? NullText : string.Join(",", Value.Select(x => $"{x:0.#####}"));
+    public override string ToString() => Value is null ? NullText : string.Join(",", Value.Select(x => x.ToString("0.#####", CultureInfo.InvariantCulture)));
 
     protected override double[] Validate(double[] value) => Check(value);
 
@@ -35,8 +36,11 @@ public class GH_Joints() : Goo<double[], GH_Joints>("Joints", [])
 
                     for (int i = 0; i < texts.Length; i++)
                     {
-                        if (!GH_Convert.ToDouble_Secondary(texts[i], ref values[i]))
+                        if (!double.TryParse(texts[i], NumberStyles.Float, CultureInfo.InvariantCulture, out values[i])
+                            && !GH_Convert.ToDouble_Secondary(texts[i], ref values[i]))
+                        {
                             return false;
+                        }
                     }
 
                     Value = Check(values);

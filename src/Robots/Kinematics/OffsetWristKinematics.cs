@@ -1,13 +1,40 @@
-﻿using static System.Math;
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
+using static System.Math;
 using static Robots.GeometryUtil;
 using static Robots.Util;
 
 namespace Robots;
 
-class OffsetWristKinematics(RobotArm robot) : RobotKinematics(robot)
+class OffsetWristKinematics(RobotArm robot) : ConfigurationKinematics(robot)
 {
+    const double SupportAngleTolerance = 1e-10;
+    const double SupportDistanceRelativeTolerance = 1e-12;
+
     readonly Transform _flangeRot = RotationZ(-HalfPI);
+
+    public override bool CanSolve(RobotArm robot) => Supports(robot);
+
+    public static bool Supports(RobotArm robot)
+    {
+        var joints = robot.Joints;
+        ReadOnlySpan<double> alpha = [HalfPI, 0, 0, HalfPI, -HalfPI, 0];
+
+        if (!HasRevoluteDh(joints, alpha, SupportAngleTolerance))
+            return false;
+
+        double scale = Max(1, GetChainLength(joints));
+        double distanceTolerance = scale * SupportDistanceRelativeTolerance;
+
+        return Abs(joints[0].A) <= distanceTolerance
+            && Abs(joints[3].A) <= distanceTolerance
+            && Abs(joints[4].A) <= distanceTolerance
+            && Abs(joints[5].A) <= distanceTolerance
+            && Abs(joints[1].D) <= distanceTolerance
+            && Abs(joints[2].D) <= distanceTolerance
+            && Abs(joints[1].A) > distanceTolerance
+            && Abs(joints[2].A) > distanceTolerance
+            && Abs(joints[5].D) > distanceTolerance;
+    }
 
     /// <summary>
     /// Inverse kinematics for a offset wrist 6 axis robot.
@@ -15,9 +42,9 @@ class OffsetWristKinematics(RobotArm robot) : RobotKinematics(robot)
     /// </summary>
     /// <param name="target">Cartesian target</param>
     /// <returns>Returns the 6 rotation values in radians.</returns>
-    protected override double[] InverseKinematics(Transform t, RobotConfigurations configuration, double[] external, PreviousJoints prevJoints, out List<string> errors)
+    protected override double[] SolveConfiguration(Transform t, RobotConfigurations configuration, double[] external, PreviousJoints prevJoints, out IReadOnlyList<string> errors)
     {
-        errors = [];
+        List<string>? errorList = null;
 
         bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
         bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
@@ -45,7 +72,7 @@ class OffsetWristKinematics(RobotArm robot) : RobotKinematics(robot)
             double arccos = Acos(_d[3] / Sqrt(R));
             if (double.IsNaN(arccos))
             {
-                errors.Add("Overhead singularity.");
+                (errorList ??= []).Add("Overhead singularity.");
                 arccos = 0;
             }
 
@@ -62,7 +89,7 @@ class OffsetWristKinematics(RobotArm robot) : RobotKinematics(robot)
             double arccos = Acos(div);
             if (double.IsNaN(arccos))
             {
-                errors.Add("Overhead singularity 2.");
+                (errorList ??= []).Add("Overhead singularity 2.");
                 arccos = PI;
                 isUnreachable = true;
             }
@@ -111,7 +138,7 @@ class OffsetWristKinematics(RobotArm robot) : RobotKinematics(robot)
         }
 
         if (isUnreachable)
-            errors.Add("Target out of reach.");
+            (errorList ??= []).Add("Target out of reach.");
 
         for (int i = 0; i < 6; i++)
         {
@@ -122,6 +149,7 @@ class OffsetWristKinematics(RobotArm robot) : RobotKinematics(robot)
                 joints[i] += PI2;
         }
 
+        errors = errorList ?? [];
         return joints;
     }
 

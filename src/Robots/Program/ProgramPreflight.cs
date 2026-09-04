@@ -1,22 +1,23 @@
-﻿namespace Robots;
+﻿using System.Globalization;
+
+namespace Robots;
 
 class ProgramPreflight(Program program)
 {
     readonly Program _program = program;
     readonly RobotSystem _robotSystem = program.RobotSystem;
 
-    internal void Run(List<SystemTarget> systemTargets)
+    public void Run(List<SystemTarget> systemTargets)
     {
         var targets = GetProgramTargets(systemTargets);
         ValidateTargetAxes(targets);
-        ValidateMotions(targets);
+        _robotSystem.PostProcessor.Validate(_program, targets);
         WarnCommandFlybys(targets);
         WarnDefaults(targets);
         WarnPayloads(targets);
 
         var attributes = CollectAttributes(targets);
-        NameUnnamed(attributes, targets);
-        RenameDuplicates(attributes, targets);
+        NameAttributes(attributes, targets);
 
         foreach (var target in targets)
             ValidateFrame(target);
@@ -42,27 +43,6 @@ class ProgramPreflight(Program program)
             }
         }
     }
-
-    void ValidateMotions(IReadOnlyList<ProgramTarget> targets)
-    {
-        foreach (var target in targets)
-        {
-            if (target.Target is not CartesianTarget { Motion: Motions.Process } cartesian)
-                continue;
-
-            if (_robotSystem is not SystemUR)
-            {
-                AddMotionError(target, "Process motion is only supported on UR robots.");
-                continue;
-            }
-
-            if (cartesian.Speed.Time > 0)
-                AddMotionError(target, "Process motion does not support time-based speed on UR robots.");
-        }
-    }
-
-    void AddMotionError(ProgramTarget target, string message) =>
-        _program.AddError(IssueKind.UnsupportedPostProcessorFeature, message, target.Index, target.Group, nameof(ProgramPreflight));
 
     void WarnCommandFlybys(IReadOnlyList<ProgramTarget> targets)
     {
@@ -186,42 +166,36 @@ class ProgramPreflight(Program program)
         return attributes;
     }
 
-    void NameUnnamed(HashSet<TargetProperty> attributes, IReadOnlyList<ProgramTarget> targets)
+    void NameAttributes(HashSet<TargetProperty> attributes, IReadOnlyList<ProgramTarget> targets)
     {
-        Dictionary<Type, int> types = [];
+        HashSet<string> names = new(attributes.Where(a => a.HasName).Select(a => a.Name), StringComparer.Ordinal);
         Dictionary<TargetProperty, string> renames = [];
 
-        foreach (var attribute in attributes)
+        foreach (var group in attributes.GroupBy(a => (a.HasName, Name: a.HasName ? a.Name : a.GetType().Name)))
         {
-            if (attribute.HasName)
+            var (hasName, stem) = group.Key;
+
+            if (hasName && !group.Skip(1).Any())
                 continue;
 
-            var type = attribute.GetType();
+            if (hasName)
+                _program.AddWarning(IssueKind.AttributeDuplicateName, $"Multiple target attributes named \"{stem}\" were found.", source: nameof(ProgramPreflight));
 
-            if (!types.TryGetValue(type, out int i))
-                i = 0;
-
-            types[type] = ++i;
-            renames.Add(attribute, $"{type.Name}{i - 1:000}");
-        }
-
-        ApplyNames(attributes, targets, renames);
-    }
-
-    void RenameDuplicates(HashSet<TargetProperty> attributes, IReadOnlyList<ProgramTarget> targets)
-    {
-        Dictionary<TargetProperty, string> renames = [];
-
-        foreach (var group in attributes.GroupBy(a => a.Name))
-        {
-            if (!group.Skip(1).Any())
-                continue;
-
-            _program.AddWarning(IssueKind.AttributeDuplicateName, $"Multiple target attributes named \"{group.Key}\" were found.", source: nameof(ProgramPreflight));
             int i = 0;
 
             foreach (var attribute in group)
-                renames.Add(attribute, $"{attribute.Name}{i++:000}");
+            {
+                string name;
+
+                do
+                {
+                    string suffix = i++.ToString("000", CultureInfo.InvariantCulture);
+                    name = stem[..Math.Min(stem.Length, 32 - suffix.Length)] + suffix;
+                }
+                while (!names.Add(name));
+
+                renames.Add(attribute, name);
+            }
         }
 
         ApplyNames(attributes, targets, renames);

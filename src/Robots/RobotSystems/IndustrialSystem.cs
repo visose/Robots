@@ -77,8 +77,8 @@ public abstract class IndustrialSystem : RobotSystem
             : group.ExternalFlangePlaneIndex(frame.CoupledMechanism));
     }
 
-    public override List<KinematicSolution> Kinematics(IReadOnlyList<Target> target, IReadOnlyList<double[]?>? prevJoints = null) =>
-        IndustrialSystemKinematics.Solve(this, target, prevJoints);
+    private protected override List<KinematicSolution> SolveKinematics(IReadOnlyList<Target> targets, IReadOnlyList<double[]?>? prevJoints) =>
+        IndustrialSystemKinematics.Solve(this, targets, prevJoints);
 
     public override double DegreeToRadian(double degree, int i, int group = 0) => MechanicalGroups[group].DegreeToRadian(CheckFinite(degree, nameof(degree)), i);
 }

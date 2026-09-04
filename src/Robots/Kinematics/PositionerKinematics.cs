@@ -1,11 +1,8 @@
 ﻿
 namespace Robots;
 
-class PositionerKinematics : MechanismKinematics
+class PositionerKinematics(Positioner positioner) : MechanismKinematics(positioner)
 {
-    internal PositionerKinematics(Positioner positioner)
-        : base(positioner) { }
-
     protected override void SetJoints(KinematicSolution solution, Target target, PreviousJoints prevJoints)
     {
         SetExternalJoints(solution, target);

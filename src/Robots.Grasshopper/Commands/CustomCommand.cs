@@ -5,10 +5,13 @@ public class CustomCommand() : CommandComponent(
     "Creates a custom command written in a manufacturer-specific language.",
     ComponentIds.CustomCommand)
 {
+    static readonly string ManufacturerDescription =
+        $"Manufacturer for this code. Use All for every manufacturer. Values: {string.Join(", ", Enum.GetNames<Manufacturers>())}.";
+
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         _ = pManager.AddTextParameter("Name", "N", "Command name.", GH_ParamAccess.item, "CustomCommand");
-        _ = pManager.AddTextParameter("Manufacturer", "M", "Manufacturer for this code: ABB, KUKA, UR, Staubli, FrankaEmika, Doosan, Fanuc, Igus, Jaka, or All.", GH_ParamAccess.item, "All");
+        _ = pManager.AddTextParameter("Manufacturer", "M", ManufacturerDescription, GH_ParamAccess.item, "All");
         _ = pManager.AddTextParameter("Code", "C", "Command code inserted at the target.", GH_ParamAccess.item);
         _ = pManager.AddTextParameter("Declaration", "D", "Variable declaration or setup code inserted once per program.", GH_ParamAccess.item);
         pManager[2].Optional = true;

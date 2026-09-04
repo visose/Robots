@@ -56,7 +56,7 @@ public abstract class PreviewParam<T, TGoo>(
     public bool Hidden { get; set; }
     public bool IsPreviewCapable => true;
     public BoundingBox ClippingBox => Preview_ComputeClippingBox();
-    public void DrawViewportWires(IGH_PreviewArgs args) => DrawViewportMeshes(args);
+    public void DrawViewportWires(IGH_PreviewArgs args) => Preview_DrawWires(args);
     public void DrawViewportMeshes(IGH_PreviewArgs args) => Preview_DrawMeshes(args);
 }
 

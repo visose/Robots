@@ -36,21 +36,21 @@ public class Speed(
     public double RotationExternal { get; init => field = CheckPositive(value, nameof(RotationExternal)); } = CheckPositive(rotationExternal, nameof(rotationExternal));
 
     /// <summary>
-    /// Translation acceleration in mm/s² (used in UR, Doosan)
+    /// TCP translation acceleration in mm/s²
     /// </summary>
     public double TranslationAccel { get; init => field = CheckPositive(value, nameof(TranslationAccel)); } = CheckPositive(translationAccel, nameof(translationAccel));
 
     /// <summary>
-    /// Axis/joint acceleration in rads/s² (used in UR, Doosan, and Franka Emika)
+    /// Axis/joint acceleration in rad/s²
     /// </summary>
     public double AxisAccel { get; init => field = CheckPositive(value, nameof(AxisAccel)); } = CheckPositive(axisAccel, nameof(axisAccel));
 
     /// <summary>
-    /// Time in seconds it takes to reach the target. Optional parameter (used in UR and Doosan)
+    /// Optional target duration in seconds
     /// </summary>
     public double Time { get; init => field = CheckNonNegative(value, nameof(Time)); } = CheckNonNegative(time, nameof(time));
 
-    public override int GetHashCode() => TranslationSpeed.GetHashCode();
+    public override int GetHashCode() => HashCode.Combine(TranslationSpeed, RotationSpeed, TranslationExternal, RotationExternal, TranslationAccel, AxisAccel, Time, _name);
     public override bool Equals(object? obj) => obj is Speed other && Equals(other);
 
     public bool Equals(Speed? other)

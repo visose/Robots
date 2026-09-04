@@ -174,6 +174,35 @@ static class TestRobots
         </RobotSystem>
         """;
 
+    static readonly string Ur10WithCustomExternalXml = UR10Xml.Replace(
+        "</RobotArm>",
+        $"</RobotArm>{CustomExternalXml(Manufacturers.UR)}",
+        StringComparison.Ordinal);
+
+    const string FrankaPandaXml = """
+        <RobotSystem name="PandaTest" manufacturer="FrankaEmika">
+          <Mechanisms>
+            <RobotArm model="PandaTest" manufacturer="FrankaEmika" payload="3">
+              <Base x="0" y="0" z="0" q1="1" q2="0" q3="0" q4="0"/>
+              <Joints>
+                <Revolute number="1" a="0" d="333" minrange="-166" maxrange="166" maxspeed="150"/>
+                <Revolute number="2" a="0" d="0" minrange="-101" maxrange="101" maxspeed="150"/>
+                <Revolute number="3" a="0" d="316" minrange="-166" maxrange="166" maxspeed="150"/>
+                <Revolute number="4" a="82.5" d="0" minrange="-176" maxrange="-4" maxspeed="150"/>
+                <Revolute number="5" a="-82.5" d="384" minrange="-166" maxrange="166" maxspeed="180"/>
+                <Revolute number="6" a="0" d="0" minrange="-1" maxrange="215" maxspeed="180"/>
+                <Revolute number="7" a="88" d="107" minrange="-166" maxrange="166" maxspeed="180"/>
+              </Joints>
+            </RobotArm>
+          </Mechanisms>
+        </RobotSystem>
+        """;
+
+    static readonly string FrankaPandaWithCustomExternalXml = FrankaPandaXml.Replace(
+        "</RobotArm>",
+        $"</RobotArm>{CustomExternalXml(Manufacturers.FrankaEmika, jointNumber: 8)}",
+        StringComparison.Ordinal);
+
     public static RobotSystem AbbIrb120(bool omniCore = false) => Parse(AbbIrb120SystemXml(omniCore));
 
     public static RobotSystem AbbIrb120WithCustomExternal() => Parse(AbbIrb120WithCustomExternalXml);
@@ -193,17 +222,64 @@ static class TestRobots
     public static RobotSystem KukaWithCustomExternal() =>
         Parse(PostProcessorXml(Manufacturers.KUKA, 6, model: "KR", external: CustomExternalXml(Manufacturers.KUKA), io: ""));
 
+    public static RobotSystem KukaTwoGroupWithCustomExternal() =>
+        Parse(AbbTwoGroupWithCustomExternalXml.Replace("manufacturer=\"ABB\"", "manufacturer=\"KUKA\"", StringComparison.Ordinal));
+
     public static RobotSystem UR10() => Parse(UR10Xml);
+
+    public static RobotSystem UR10WithCustomExternal() => Parse(Ur10WithCustomExternalXml);
+
+    public static RobotSystem DoosanWithCustomExternal() =>
+        Parse(PostProcessorXml(Manufacturers.Doosan, 6, external: CustomExternalXml(Manufacturers.Doosan)));
 
     public static RobotSystem FanucLrMate() => Parse(FanucLrMateXml);
 
-    public static RobotSystem PostProcessorRobot(Manufacturers manufacturer, int jointCount) =>
-        (manufacturer, jointCount) switch
+    public static RobotSystem SphericalRobot(Manufacturers manufacturer) =>
+        Parse(AbbIrb120Xml.Replace("manufacturer=\"ABB\"", $"manufacturer=\"{manufacturer}\"", StringComparison.Ordinal));
+
+    public static RobotSystem FrankaPanda(string? postProcessor = null) =>
+        ParseFranka(FrankaPandaXml, postProcessor);
+
+    public static RobotSystem FrankaPandaWithCustomExternal(string? postProcessor = null) =>
+        ParseFranka(FrankaPandaWithCustomExternalXml, postProcessor);
+
+    static RobotSystem ParseFranka(string xml, string? postProcessor)
+    {
+        if (postProcessor is not null)
+        {
+            xml = xml.Replace(
+                "<RobotSystem ",
+                $"<RobotSystem postProcessor=\"{postProcessor}\" ",
+                StringComparison.Ordinal);
+        }
+
+        return Parse(xml);
+    }
+
+    public static RobotSystem PostProcessorRobot(
+        Manufacturers manufacturer,
+        int jointCount,
+        string? postProcessor = null,
+        IPostProcessor? postProcessorOverride = null,
+        string? io = null)
+    {
+        if (postProcessor is not null || postProcessorOverride is not null || io is not null)
+        {
+            var xml = PostProcessorXml(
+                manufacturer,
+                jointCount,
+                io: io ?? PostProcessorIOXml,
+                postProcessor: postProcessor);
+            return FileIO.ParseRobotSystem(xml, Plane.WorldXY, postProcessorOverride);
+        }
+
+        return (manufacturer, jointCount) switch
         {
             (Manufacturers.ABB, 6) => AbbIrb120(),
             (Manufacturers.UR, 6) => UR10(),
             _ => Parse(PostProcessorXml(manufacturer, jointCount))
         };
+    }
 
     public static Program AbbSampleProgram()
     {
@@ -247,7 +323,7 @@ static class TestRobots
         return new(name, robot, [Toolpath(targetA, targetB)]);
     }
 
-    static string PostProcessorXml(Manufacturers manufacturer, int jointCount, string? model = null, string? external = null, string io = PostProcessorIOXml)
+    static string PostProcessorXml(Manufacturers manufacturer, int jointCount, string? model = null, string? external = null, string io = PostProcessorIOXml, string? postProcessor = null)
     {
         var joints = (manufacturer, jointCount) switch
         {
@@ -265,7 +341,7 @@ static class TestRobots
         };
 
         return $"""
-            <RobotSystem name="{manufacturer}" manufacturer="{manufacturer}">
+            <RobotSystem name="{manufacturer}" manufacturer="{manufacturer}"{(postProcessor is null ? "" : $" postProcessor=\"{postProcessor}\"")}>
               <Mechanisms>
                 <RobotArm model="{model ?? manufacturer.ToString()}" manufacturer="{manufacturer}" payload="10">
                   <Base x="0" y="0" z="0" q1="1" q2="0" q3="0" q4="0"/>
@@ -278,10 +354,10 @@ static class TestRobots
             """;
     }
 
-    static string CustomExternalXml(Manufacturers manufacturer, string model = "External", int x = 0, int y = 0, bool movesRobot = false) => $"""
+    static string CustomExternalXml(Manufacturers manufacturer, string model = "External", int x = 0, int y = 0, bool movesRobot = false, int jointNumber = 7) => $"""
             <Custom model="{model}" manufacturer="{manufacturer}" payload="0"{(movesRobot ? " movesRobot=\"true\"" : "")}>
               <Base x="{x}" y="{y}" z="0" q1="1" q2="0" q3="0" q4="0"/>
-              <Joints><Prismatic number="7" a="0" d="0" minrange="-1000" maxrange="1000" maxspeed="1000"/></Joints>
+              <Joints><Prismatic number="{jointNumber}" a="0" d="0" minrange="-1000" maxrange="1000" maxspeed="1000"/></Joints>
             </Custom>
             """;
 }

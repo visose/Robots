@@ -14,6 +14,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\Robots\Remotes\AbbRemoteProtocol.cs" Link="AbbRemoteProtocol.cs" />
+    <Compile Include="..\Robots\Manufacturers\ABB\AbbRemoteProtocol.cs" Link="AbbRemoteProtocol.cs" />
   </ItemGroup>
 </Project>

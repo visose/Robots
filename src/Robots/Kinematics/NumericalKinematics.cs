@@ -1,19 +1,55 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using static System.Math;
 using Rhino.Geometry;
+using static System.Math;
+using static Robots.GeometryMath;
 
 namespace Robots;
 
-class NumericalKinematics(RobotArm robot, bool useModifiedDH = false, int? redundant = null) : RobotKinematics(robot)
+readonly record struct NumericalKinematicsSettings(bool UseModifiedDH, int? Redundant);
+
+class NumericalKinematics(RobotArm robot, bool useModifiedDH, int? redundant) : RobotKinematics(robot)
 {
     readonly int _jointCount = robot.Joints.Length;
     readonly bool _useModifiedDH = useModifiedDH;
     readonly int? _redundant = redundant;
     readonly double[] _midJoints = robot.Joints.Map(j => j.Range.Mid);
 
-    protected override int SolutionCount => 1;
-    internal override bool RequiresContinuation => true;
-    internal override int? RedundantJointIndex => _redundant;
+    public NumericalKinematics(RobotArm robot)
+        : this(robot, robot.NumericalSettings.UseModifiedDH, robot.NumericalSettings.Redundant) { }
+
+    public override bool CanSolve(RobotArm robot)
+    {
+        for (int i = 0; i < robot.Joints.Length; i++)
+        {
+            if (robot.Joints[i] is not RevoluteJoint)
+                return false;
+        }
+
+        return true;
+    }
+
+    public override bool RequiresContinuation => true;
+    public override int? RedundantJointIndex => _redundant;
+
+    protected override InverseSolutions GetInverseSolutions(
+        Transform transform,
+        double[] external,
+        PreviousJoints prevJoints,
+        RobotConfigurations? requested)
+    {
+        var joints = SolveInverse(transform, external, prevJoints, out var errors);
+        return new(
+            [new(joints, RobotConfigurations.None, errors)],
+            []);
+    }
+
+    protected override bool TryGetConfiguration(
+        double[] joints,
+        out RobotConfigurations configuration)
+    {
+        configuration = RobotConfigurations.None;
+        return true;
+    }
 
     protected override Transform[] ForwardKinematics(double[] joints)
     {
@@ -23,14 +59,14 @@ class NumericalKinematics(RobotArm robot, bool useModifiedDH = false, int? redun
         return DH(joints);
     }
 
-    protected override double[] InverseKinematics(Transform t, RobotConfigurations configuration, double[] external, PreviousJoints prevJoints, out List<string> errors)
+    double[] SolveInverse(Transform t, double[] external, PreviousJoints prevJoints, out List<string> errors)
     {
-        const double min = 1e-5;
         const double max = 0.3;
 
         errors = [];
         var previous = prevJoints.HasValue ? prevJoints.Values : _midJoints.AsSpan();
         var joints = previous.ToArray();
+        var error = new double[6];
 
         if (_redundant is int redundant)
             joints[redundant] = external.Length > 0 ? external[0] : previous[redundant];
@@ -43,6 +79,11 @@ class NumericalKinematics(RobotArm robot, bool useModifiedDH = false, int? redun
             for (int ii = 0; ii < 20; ii++)
             {
                 forward = Forward(joints);
+                Subtract(ref forward, ref t, error);
+
+                if (Converged(error))
+                    return joints;
+
                 var jacobian = Jacobian(joints, ref forward);
 
                 if (TryPseudoInverse(jacobian, out var candidate))
@@ -52,7 +93,10 @@ class NumericalKinematics(RobotArm robot, bool useModifiedDH = false, int? redun
                 }
 
                 for (int j = 0; j < joints.Length; j++)
-                    joints[j] += 1e-3;
+                {
+                    if (j != _redundant)
+                        joints[j] += 1e-3;
+                }
             }
 
             if (inverse is null)
@@ -62,8 +106,7 @@ class NumericalKinematics(RobotArm robot, bool useModifiedDH = false, int? redun
             }
 
             var transpose = inverse.Transpose();
-            var jd = Subtract(ref forward, ref t);
-            var deltas = jd.Mult(transpose);
+            var deltas = error.Mult(transpose);
             var maxValue = deltas.Max(Abs);
 
             if (maxValue > max)
@@ -76,9 +119,6 @@ class NumericalKinematics(RobotArm robot, bool useModifiedDH = false, int? redun
 
             for (int j = 0; j < deltas.Length; j++)
                 joints[j] += j == _redundant ? 0 : deltas[j];
-
-            if (maxValue <= min)
-                return joints;
         }
 
         errors.Add("Target out of reach.");
@@ -118,38 +158,23 @@ class NumericalKinematics(RobotArm robot, bool useModifiedDH = false, int? redun
         return m;
     }
 
-    static double[] Subtract(ref Transform f, ref Transform t)
+    static bool Converged(double[] error)
     {
-        const double tol = 5e-07;
+        Vector3d position = new(error[0], error[1], error[2]);
+        Vector3d rotation = new(error[3], error[4], error[5]);
+        return position.SquareLength <= 1e-10 && rotation.SquareLength <= 1e-16;
+    }
 
-        Vector6d v = default;
-        v[0] = +t[2, 0] * f[1, 0] + t[2, 1] * f[1, 1] + f[1, 2] * t[2, 2];
-        v[1] = +t[0, 1] * f[2, 1] + t[0, 2] * f[2, 2] + f[2, 0] * t[0, 0];
-        v[2] = +t[1, 0] * f[0, 0] + t[1, 2] * f[0, 2] + f[0, 1] * t[1, 1];
-        v[3] = -t[1, 0] * f[2, 0] - t[1, 2] * f[2, 2] - f[2, 1] * t[1, 1];
-        v[4] = -t[2, 0] * f[0, 0] - t[2, 1] * f[0, 1] - f[0, 2] * t[2, 2];
-        v[5] = -t[0, 1] * f[1, 1] - t[0, 2] * f[1, 2] - f[1, 0] * t[0, 0];
-
-        var wrap = true;
-
-        for (int i = 0; i < 3; i++)
-        {
-            if (Abs(Abs(v[i]) - Abs(v[i + 3])) > tol)
-                wrap = false;
-        }
-
-        var delta = new double[6];
-
-        for (int i = 0; i < 3; i++)
-        {
-            if (wrap && ((v[i] > 0 && v[i + 3] < 0) || (v[i] < 0 && v[i + 3] > 0)))
-                v[i + 3] *= -1;
-
-            delta[i] = t[i, 3] - f[i, 3];
-            delta[i + 3] = (v[i] + v[i + 3]) * 0.5;
-        }
-
-        return delta;
+    static void Subtract(ref Transform f, ref Transform t, double[] error)
+    {
+        var relative = t * RigidInverse(f);
+        var rotation = relative.RotationVector();
+        error[0] = t.M03 - f.M03;
+        error[1] = t.M13 - f.M13;
+        error[2] = t.M23 - f.M23;
+        error[3] = rotation.X;
+        error[4] = rotation.Y;
+        error[5] = rotation.Z;
     }
 
     static bool TryPseudoInverse(double[,] jacobian, [MaybeNullWhen(false)] out double[,] result)

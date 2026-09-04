@@ -1,37 +1,53 @@
-﻿using static System.Math;
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
+using static System.Math;
 using static Robots.Util;
 
 namespace Robots;
 
-class SphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
+class SphericalWristKinematics(RobotArm robot) : ConfigurationKinematics(robot)
 {
+    const double SupportAngleTolerance = 1e-10;
+    const double SupportDistanceRelativeTolerance = 1e-12;
+
+    static readonly string[] NearSingularityErrors = ["Target near singularity."];
+    static readonly string[] UnreachableErrors = ["Target out of reach."];
+    static readonly string[] UnreachableNearSingularityErrors = ["Target out of reach.", "Target near singularity."];
+
     readonly double[] _start = [0, HalfPI, HalfPI, 0, 0, PI];
     readonly double[] _signs = [1, -1, -1, 1, -1, 1];
 
-    internal static bool Supports(RobotArm robot)
+    public override bool CanSolve(RobotArm robot) => Supports(robot);
+
+    public static bool Supports(RobotArm robot)
     {
         var joints = robot.Joints;
+        ReadOnlySpan<double> alpha = [HalfPI, 0, HalfPI, -HalfPI, HalfPI, 0];
+
+        if (!HasRevoluteDh(joints, alpha, SupportAngleTolerance))
+            return false;
+
+        double scale = Max(1, GetChainLength(joints));
+        double distanceTolerance = scale * SupportDistanceRelativeTolerance;
 
         // These DH offsets are not represented by the analytical solution below.
-        return joints.Length == 6
-            && Abs(joints[2].D) < DistanceTol
-            && Abs(joints[3].A) < DistanceTol
-            && Abs(joints[4].A) < DistanceTol
-            && Abs(joints[4].D) < DistanceTol
-            && Abs(joints[5].A) < DistanceTol;
+        return Abs(joints[2].D) <= distanceTolerance
+            && Abs(joints[3].A) <= distanceTolerance
+            && Abs(joints[4].A) <= distanceTolerance
+            && Abs(joints[4].D) <= distanceTolerance
+            && Abs(joints[5].A) <= distanceTolerance
+            && Abs(joints[1].A) > distanceTolerance
+            && Sqrt(joints[2].A * joints[2].A + joints[3].D * joints[3].D) > distanceTolerance;
     }
 
     /// <summary>
     /// Code adapted from https://github.com/Jmeyer1292/opw_kinematics
     /// </summary>
-    protected override double[] InverseKinematics(Transform t, RobotConfigurations configuration, double[] external, PreviousJoints prevJoints, out List<string> errors)
+    protected override double[] SolveConfiguration(Transform t, RobotConfigurations configuration, double[] external, PreviousJoints prevJoints, out IReadOnlyList<string> errors)
     {
         bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
         bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
         bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
 
-        errors = [];
         bool isUnreachable = false;
         bool isSingularity = false;
 
@@ -184,11 +200,13 @@ class SphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
                 joints[i] = 0;
         }
 
-        if (isUnreachable)
-            errors.Add($"Target out of reach.");
-
-        if (isSingularity)
-            errors.Add($"Target near singularity.");
+        errors = (isUnreachable, isSingularity) switch
+        {
+            (true, true) => UnreachableNearSingularityErrors,
+            (true, false) => UnreachableErrors,
+            (false, true) => NearSingularityErrors,
+            _ => []
+        };
 
         return joints;
     }

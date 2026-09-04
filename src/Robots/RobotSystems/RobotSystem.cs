@@ -1,15 +1,7 @@
 ﻿using System.Globalization;
-using System.Text;
 using Rhino.Geometry;
 
 namespace Robots;
-
-public interface IPostProcessor
-{
-    List<List<List<string>>> GetCode(RobotSystem system, Program program);
-}
-
-public enum Manufacturers { ABB, KUKA, UR, Staubli, FrankaEmika, Doosan, Fanuc, Igus, Jaka, All };
 
 public record DefaultPose(Plane[][] Planes, Mesh[][] Meshes)
 {
@@ -19,31 +11,22 @@ record SystemAttributes(string Name, string? Controller, IO IO, Plane BasePlane,
 
 public abstract class RobotSystem
 {
-    static readonly string[] _newLineSeparators = ["\r\n", "\n", "\r"];
-
     Plane _basePlane;
-    protected IPostProcessor _postProcessor;
     public string Name { get; }
     public string? Controller { get; }
     public abstract Manufacturers Manufacturer { get; }
-    internal virtual string CodeLineEnding => "\r\n";
     public IO IO { get; }
     public ref Plane BasePlane => ref _basePlane;
     public Mesh DisplayMesh { get; } = new();
     public DefaultPose DefaultPose { get; }
     public IRemote? Remote { get; protected set; }
     public int RobotJointCount => GetRobotJointCount(0);
-
-    static RobotSystem()
-    {
-        CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-        Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-    }
+    internal IPostProcessor PostProcessor { get; }
 
     private protected RobotSystem(SystemAttributes attributes, DefaultPose defaultPose)
     {
         (Name, Controller, IO, BasePlane, _) = attributes;
-        _postProcessor = attributes.PostProcessor ?? GetDefaultPostprocessor();
+        PostProcessor = attributes.PostProcessor ?? GetDefaultPostprocessor();
         DefaultPose = defaultPose;
     }
 
@@ -62,70 +45,20 @@ public abstract class RobotSystem
 
     internal List<List<List<string>>> Code(Program program)
     {
-        return SplitCodeLines(_postProcessor.GetCode(this, program));
-    }
+        CultureInfo culture = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
-    protected static Encoding Utf8WithBom { get; } = new UTF8Encoding(true);
-
-    protected static List<List<List<string>>> RequireCode(IProgram program) =>
-        program.Code ?? throw new InvalidOperationException("Program code was not generated.");
-
-    protected static string CreateProgramDirectory(string folder, string programName)
-    {
-        string programDir = Path.Combine(folder, programName);
-        _ = Directory.CreateDirectory(programDir);
-        return programDir;
-    }
-
-    protected string JoinCodeLines(IEnumerable<string> code) =>
-        string.Join(CodeLineEnding, code);
-
-    internal static List<List<List<string>>> SplitCodeLines(List<List<List<string>>> code)
-    {
-        for (int i = 0; i < code.Count; i++)
+        try
         {
-            var group = code[i];
-
-            for (int j = 0; j < group.Count; j++)
-            {
-                var file = group[j];
-
-                for (int k = 0; k < file.Count; k++)
-                {
-                    if (!file[k].Contains('\n') && !file[k].Contains('\r'))
-                        continue;
-
-                    var lines = file[k].Split(_newLineSeparators, StringSplitOptions.None);
-                    file.RemoveAt(k);
-                    file.InsertRange(k, lines);
-                    k += lines.Length - 1;
-                }
-            }
+            return PostProcessorUtil.SplitCodeLines(PostProcessor.GetCode(this, program));
         }
-
-        return code;
-    }
-
-    protected static void WriteTextFile(string file, string text, Encoding? encoding = null)
-    {
-        if (encoding is null)
-            File.WriteAllText(file, text);
-        else
-            File.WriteAllText(file, text, encoding);
-    }
-
-    protected void WriteCodeFile(string file, IEnumerable<string> code, Encoding? encoding = null, bool trailingNewline = false)
-    {
-        string text = JoinCodeLines(code);
-
-        if (trailingNewline)
-            text += CodeLineEnding;
-
-        WriteTextFile(file, text, encoding);
+        finally
+        {
+            CultureInfo.CurrentCulture = culture;
+        }
     }
 
     protected abstract IPostProcessor GetDefaultPostprocessor();
-    internal abstract void SaveCode(IProgram program, string folder);
     internal abstract double Payload(int group);
     internal abstract IReadOnlyList<Joint> GetJoints(int group);
     internal abstract RobotArm GetRobot(int group);
@@ -139,6 +72,10 @@ public abstract class RobotSystem
     {
         int robotJointCount = GetRobotJointCount(group);
         int externalCount = GetExternalJointCount(group);
+        int? redundantJoint = RedundantJointIndex(group);
+
+        if (externalCount > 0 && redundantJoint is not null)
+            return "Redundant robots with external mechanisms are not supported";
 
         if (target is JointTarget jointTarget && jointTarget.Joints.Length != robotJointCount)
             return $"{jointTarget.Joints.Length} joint value(s) supplied, but {robotJointCount} are required";
@@ -152,7 +89,7 @@ public abstract class RobotSystem
                 return $"{externalCustom.Length} custom external axis value(s) supplied, but at most {externalCount} are supported";
         }
 
-        return (externalCount, RedundantJointIndex(group), target.External.Length) switch
+        return (externalCount, redundantJoint, target.External.Length) switch
         {
             ( > 0, _, var count) when count != externalCount => $"{count} external axis value(s) supplied, but {externalCount} are required",
             (0, not null, > 1) => $"{target.External.Length} external axis value(s) supplied, but at most one redundant joint value is accepted",
@@ -205,7 +142,34 @@ public abstract class RobotSystem
         return [];
     }
 
-    public abstract List<KinematicSolution> Kinematics(IReadOnlyList<Target> target, IReadOnlyList<double[]?>? prevJoints = null);
+    public List<KinematicSolution> Kinematics(IReadOnlyList<Target> targets, IReadOnlyList<double[]?>? prevJoints = null)
+    {
+        int groupCount = RobotCount;
+
+        if (targets.Count != groupCount)
+            throw new ArgumentException($"Robot system requires {groupCount} target(s), but {targets.Count} were supplied.", nameof(targets));
+
+        if (prevJoints is not null && prevJoints.Count != groupCount)
+            throw new ArgumentException($"Robot system requires {groupCount} previous joint set(s), but {prevJoints.Count} were supplied.", nameof(prevJoints));
+
+        for (int group = 0; group < groupCount; group++)
+        {
+            if (ValidateTargetAxes(group, targets[group]) is string error)
+                throw new ArgumentException($"Target {group}: {error}.", nameof(targets));
+
+            if (prevJoints?[group] is { } previous)
+            {
+                int jointCount = GetJoints(group).Count;
+
+                if (previous.Length != jointCount)
+                    throw new ArgumentException($"Previous joints for target {group} must contain {jointCount} value(s), but {previous.Length} were supplied.", nameof(prevJoints));
+            }
+        }
+
+        return SolveKinematics(targets, prevJoints);
+    }
+
+    private protected abstract List<KinematicSolution> SolveKinematics(IReadOnlyList<Target> targets, IReadOnlyList<double[]?>? prevJoints);
     public abstract double DegreeToRadian(double degree, int i, int group = 0);
     public abstract double[] PlaneToNumbers(Plane plane);
     public abstract Plane NumbersToPlane(double[] numbers);

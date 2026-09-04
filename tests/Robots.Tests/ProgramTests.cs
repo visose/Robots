@@ -50,6 +50,29 @@ public class ProgramTests
     }
 
     [Test]
+    public void GroupRunBeforeFailsFast()
+    {
+        var group = new Group([new Message("Test")]) { RunBefore = true };
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            _ = group.Flatten().ToArray());
+
+        Assert.That(exception!.Message, Is.EqualTo("RunBefore must be set on commands inside the group."));
+    }
+
+    [Test]
+    public void SingleGroupProgramNameDoesNotReserveMechanicalGroupSuffix()
+    {
+        const string name = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEF";
+        var target = new JointTarget(new double[6]);
+
+        Program program = new(name, TestRobots.UR10(), [TestRobots.Toolpath(target)]);
+
+        Assert.That(program.Issues, Has.None.Matches<ProgramIssue>(issue =>
+            issue.Kind == IssueKind.ProgramNameInvalid));
+    }
+
+    [Test]
     public void ProgramReportsInvalidFrameCoupling()
     {
         var frame = new Frame(Plane.WorldXY, coupledMechanism: 0, coupledMechanicalGroup: 1);
@@ -127,6 +150,31 @@ public class ProgramTests
         });
     }
 
+    [TestCase("Feed", "Feed000")]
+    [TestCase("ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEF", "ABCDEFGHIJKLMNOPQRSTUVWXYZABC000")]
+    [TestCase(null, "Speed000")]
+    public void AttributeNamesAvoidCollisions(string? duplicate, string reserved)
+    {
+        Target[] targets =
+        [
+            new JointTarget([0, 0, 0, 0, 0, 0], speed: new(100, name: duplicate)),
+            new JointTarget([0.1, 0, 0, 0, 0, 0], speed: new(200, name: duplicate)),
+            new JointTarget([0.2, 0, 0, 0, 0, 0], speed: new(300, name: reserved))
+        ];
+        Program program = new("P", TestRobots.AbbIrb120(), [new SimpleToolpath(targets)]);
+        var names = program.Attributes.OfType<Speed>().Select(speed => speed.Name).ToArray();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(names, Has.Length.EqualTo(3).And.Unique);
+            Assert.That(names, Has.One.EqualTo(reserved));
+            Assert.That(names, Has.All.Length.LessThanOrEqualTo(32));
+            Assert.That(program.Targets.Select(t => t.ProgramTargets[0].Target.Speed.Name), Is.EquivalentTo(names));
+            Assert.That(targets[0].Speed.HasName, Is.EqualTo(duplicate is not null), "Input attributes must not be mutated.");
+        });
+    }
+
     [TestCaseSource(nameof(FlyByCommands))]
     public void CommandWithFlyByZoneKeepsFlyByZone(Command command)
     {
@@ -148,8 +196,8 @@ public class ProgramTests
         Zone zone = new(100);
         Plane startPlane = Plane.WorldZX.WithOrigin(200, 100, 600);
         Plane firstPlane = Plane.WorldZX.WithOrigin(500, 100, 600);
-        Plane secondPlane = Plane.WorldZX.WithOrigin(500, 400, 600);
-        Plane endPlane = Plane.WorldZX.WithOrigin(200, 400, 600);
+        Plane secondPlane = Plane.WorldZX.WithOrigin(500, 200, 600);
+        Plane endPlane = Plane.WorldZX.WithOrigin(200, 200, 600);
         CartesianTarget start = new(startPlane, RobotConfigurations.Wrist, Motions.Joint, speed: speed);
         CartesianTarget first = new(firstPlane, motion: Motions.Linear, speed: speed, zone: zone, command: new Message("First"));
         CartesianTarget second = new(secondPlane, motion: Motions.Linear, speed: speed, zone: zone, command: new Message("Second"));
@@ -324,7 +372,7 @@ public class ProgramTests
 
         Plane startPlane = Plane.WorldZX.WithOrigin(200, 100, 600);
         Plane cornerPlane = Plane.WorldZX.WithOrigin(500, 100, 600);
-        Plane endPlane = Plane.WorldZX.WithOrigin(500, 400, 600);
+        Plane endPlane = Plane.WorldZX.WithOrigin(500, 200, 600);
 
         CartesianTarget start = new(startPlane, RobotConfigurations.Wrist, Motions.Joint, speed: speed);
         CartesianTarget corner = new(cornerPlane, motion: Motions.Linear, speed: speed, zone: zone, command: command);

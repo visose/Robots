@@ -24,7 +24,7 @@ public abstract class ComponentUpgrade(string from, string to) : IGH_UpgradeObje
         foreach (var (from, to) in map)
         {
             if (from < source.Params.Input.Count && to < target.Params.Input.Count)
-                _ = GH_UpgradeUtil.MigrateSources(source.Params.Input[from], target.Params.Input[to]);
+                ParameterMigration.Input(source.Params.Input[from], target.Params.Input[to]);
         }
     }
 
@@ -33,7 +33,7 @@ public abstract class ComponentUpgrade(string from, string to) : IGH_UpgradeObje
         int count = Math.Min(source.Params.Output.Count, target.Params.Output.Count);
 
         for (int i = 0; i < count; i++)
-            _ = GH_UpgradeUtil.MigrateRecipients(source.Params.Output[i], target.Params.Output[i]);
+            ParameterMigration.Output(source.Params.Output[i], target.Params.Output[i]);
     }
 
     protected static bool HasSources(IGH_Component component, int input) =>
@@ -59,7 +59,7 @@ public sealed class CreateTargetUpgrade() : ComponentUpgrade(ComponentIds.Legacy
                 continue;
 
             var newInput = replacement.AddInputForUpgrade(index);
-            _ = GH_UpgradeUtil.MigrateSources(oldInput, newInput);
+            ParameterMigration.Input(oldInput, newInput);
         }
 
         if (replacement.Params.Input.Count == 0)
@@ -95,7 +95,7 @@ public sealed class DeconstructTargetUpgrade() : ComponentUpgrade(ComponentIds.L
                 continue;
 
             var newOutput = replacement.AddOutputForUpgrade(index);
-            _ = GH_UpgradeUtil.MigrateRecipients(oldOutput, newOutput);
+            ParameterMigration.Output(oldOutput, newOutput);
         }
 
         if (replacement.Params.Output.Count == 0)
@@ -151,20 +151,21 @@ public sealed class CustomCommandUpgrade() : ComponentUpgrade(ComponentIds.Legac
         if (target is not IGH_Component source)
             return null!;
 
+        var manufacturer = Manufacturer(source);
         var replacement = new CustomCommand();
         MigrateSources(source, replacement, [(0, 0)]);
 
-        if (FirstManufacturer(source) is { } manufacturer)
+        if (manufacturer is { } selected)
         {
-            SetManufacturer(replacement, manufacturer.Name);
-            MigrateSources(source, replacement, [(manufacturer.Code, 2), (manufacturer.Declaration, 3)]);
+            SetManufacturer(replacement, selected.Name);
+            MigrateSources(source, replacement, [(selected.Code, 2), (selected.Declaration, 3)]);
         }
 
         MigrateOutputs(source, replacement);
         return Swap(source, replacement);
     }
 
-    static (string Name, int Declaration, int Code)? FirstManufacturer(IGH_Component source)
+    static (string Name, int Declaration, int Code)? Manufacturer(IGH_Component source)
     {
         (string Name, int Declaration, int Code)[] manufacturers =
         [
@@ -173,14 +174,25 @@ public sealed class CustomCommandUpgrade() : ComponentUpgrade(ComponentIds.Legac
             ("UR", 3, 6)
         ];
 
+        (string Name, int Declaration, int Code)? selected = null;
+
         foreach (var manufacturer in manufacturers)
         {
-            if (HasSources(source, manufacturer.Declaration) || HasSources(source, manufacturer.Code))
-                return manufacturer;
+            if (!HasData(source, manufacturer.Declaration) && !HasData(source, manufacturer.Code))
+                continue;
+
+            if (selected is not null)
+                throw new InvalidOperationException("Split this custom command into one component per manufacturer before upgrading.");
+
+            selected = manufacturer;
         }
 
-        return null;
+        return selected;
     }
+
+    static bool HasData(IGH_Component component, int input) =>
+        HasSources(component, input) || component.Params.Input[input] is Param_String parameter
+            && parameter.PersistentData.AllData(true).Any(value => !string.IsNullOrWhiteSpace(((GH_String)value).Value));
 
     static void SetManufacturer(IGH_Component component, string manufacturer)
     {

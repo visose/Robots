@@ -15,12 +15,12 @@ public class Frame : TargetProperty, IEquatable<Frame>
     public int CoupledMechanicalGroup { get; }
 
     /// <summary>
-    /// Specifies that it will use a tool that exists in the controller and does not need to be defined in the generated program.
+    /// Specifies that it will use a frame that exists in the controller and does not need to be defined in the generated program.
     /// </summary>
     public bool UseController { get; }
 
     /// <summary>
-    /// Used only in KUKA to load from the BASE_DATA array.
+    /// Controller-defined frame number, when supported by the postprocessor.
     /// </summary>
     public int? Number { get; }
     public bool IsCoupled => CoupledMechanicalGroup != -1;
