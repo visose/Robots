@@ -1,6 +1,7 @@
 ﻿- version: 2.4.0
   changes:
-  - Added analytical IK for non-spherical wrists (including ABB PoWa/GoFa).
+  - Added analytical IK for non-spherical wrists (including ABB PoWa/GoFa) and fixed-redundancy seven-axis arms (including Franka Emika Panda).
+  - Added optional `franky` 2 output for Franka, with continuous Process paths.
   - Added optional library `postProcessor`/`solver` selection and custom postprocessor control over commands, validation and saved files; fixed declaration-only custom commands.
   - Added UR runtime frames; fixed small rotations and URP XML escaping.
   - Fixed ABB negative configuration quadrants, KUKA axis speeds/external declarations, Doosan multi-file declaration ordering, and Staubli XYZ conversion/input waits.

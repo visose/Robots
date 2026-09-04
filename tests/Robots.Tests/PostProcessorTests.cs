@@ -11,6 +11,7 @@ public class PostProcessorTests
     [TestCase("URScript")]
     [TestCase("DRL")]
     [TestCase("Frankx")]
+    [TestCase("Franky")]
     public void SingleGroupPostProcessorsRejectExternalAxes(string dialect)
     {
         var (robot, jointCount) = dialect switch
@@ -18,6 +19,7 @@ public class PostProcessorTests
             "URScript" => (TestRobots.UR10WithCustomExternal(), 6),
             "DRL" => (TestRobots.DoosanWithCustomExternal(), 6),
             "Frankx" => (TestRobots.FrankaPandaWithCustomExternal("FrankxPostProcessor"), 7),
+            "Franky" => (TestRobots.FrankaPandaWithCustomExternal("FrankyPostProcessor"), 7),
             _ => throw new ArgumentOutOfRangeException(nameof(dialect))
         };
         var target = new JointTarget(new double[jointCount], external: [0]);

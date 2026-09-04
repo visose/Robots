@@ -39,7 +39,7 @@ public class NumericalKinematicsTests
     [Test]
     public void XmlRejectsIncompatibleSolverGeometry()
     {
-        var exception = Assert.Throws<ArgumentException>(() => AbbWithSolver(nameof(OffsetWristKinematics)));
+        var exception = Assert.Throws<ArgumentException>(() => AbbWithSolver(nameof(FixedRedundancyKinematics)));
 
         Assert.Multiple(() =>
         {

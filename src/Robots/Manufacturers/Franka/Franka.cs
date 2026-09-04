@@ -23,7 +23,10 @@ public class RobotFranka : RobotArm
 
     internal override NumericalKinematicsSettings NumericalSettings => new(true, 2);
 
-    private protected override MechanismKinematics CreateSolver() => new NumericalKinematics(this);
+    private protected override MechanismKinematics CreateSolver() =>
+        FixedRedundancyKinematics.Supports(this)
+            ? new FixedRedundancyKinematics(this)
+            : new NumericalKinematics(this);
 
     public override double DegreeToRadian(double degree, int i) => degree * (PI / 180.0);
     public override double RadianToDegree(double radian, int i) => radian * (180.0 / PI);

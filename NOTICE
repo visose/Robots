@@ -24,6 +24,10 @@ Frankx (LGPL-3.0)
 * Copyright (с) Lars Berscheid
 * https://github.com/pantor/frankx/blob/master/LICENSE
 
+Franky (LGPL-3.0 for non-commercial applications; separate commercial license)
+* Copyright (c) Tim Schneider
+* https://github.com/TimSchneider42/franky/blob/v2.0.0/LICENSE
+
 ROS-Industrial Support for Universal Robots (BSD, 3-Clause)
 * Copyright (с) Felix Messmer, Kelsey Hawkins, Shaun Edwards, Stuart Glaser, Wim Meeussen
 * https://opensource.org/licenses/BSD-3-Clause
