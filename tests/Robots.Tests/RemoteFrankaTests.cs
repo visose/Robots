@@ -7,6 +7,18 @@ namespace Robots.Tests;
 public class RemoteFrankaTests
 {
     [Test]
+    public void InvalidAddressClearsPreviousConnection()
+    {
+        using RemoteFranka remote = new() { IP = "ssh://example.invalid/programs" };
+        Assert.That(remote.IP, Is.EqualTo("example.invalid"));
+
+        remote.IP = "not an absolute URI";
+
+        Assert.That(remote.IP, Is.Null);
+        Assert.That(remote.Log, Has.Some.Contains("Invalid address"));
+    }
+
+    [Test]
     public async Task QuietCommandCanBeCanceled()
     {
         using CancellationTokenSource cancellation = new();

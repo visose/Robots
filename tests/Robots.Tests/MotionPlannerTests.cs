@@ -6,6 +6,75 @@ namespace Robots.Tests;
 
 public class MotionPlannerTests
 {
+    [TestCase(5, 1)]
+    [TestCase(1, 4)]
+    public void LinearMotionReusesOnlyUnsubdividedEndpoints(double stepSize, int expectedCalls)
+    {
+        var system = TestRobots.AbbIrb120();
+        var robot = system.GetRobot(0);
+        double[] joints = [0.3, 1.1, 0.4, -0.5, 0.7, 0.6];
+        Tool previousTool = new(Plane.WorldXY.WithOrigin(0, 0, 30));
+        Tool tool = new(Plane.WorldXY.WithOrigin(10, 0, 40));
+        Plane framePlane = new(new Point3d(10, 20, 30), Vector3d.YAxis, -Vector3d.XAxis);
+        Frame frame = new(framePlane);
+        JointTarget start = new(joints, tool: previousTool);
+        Plane endWorld = system.Kinematics([new JointTarget(joints, tool: tool)])[0].Planes[^1];
+        endWorld.OriginX += 2.5;
+        Plane endPlane = endWorld;
+        _ = endPlane.Transform(Transform.PlaneToPlane(framePlane, Plane.WorldXY));
+        CartesianTarget end = new(endPlane, motion: Motions.Linear, tool: tool, frame: frame);
+        CountingKinematics solver = new(robot);
+        robot.Solver = solver;
+
+        Program program = new("Samples", system, [TestRobots.Toolpath(start, end)], stepSize: stepSize);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(solver.PreviousJoints, Has.Count.EqualTo(expectedCalls));
+            Assert.That(solver.PreviousJoints[0], Is.EqualTo(joints));
+            Assert.That(program.Targets[^1].Planes[^1].Origin.DistanceTo(endWorld.Origin), Is.LessThan(1e-8));
+            Assert.That(end.Plane, Is.EqualTo(endPlane), "The input target must remain unchanged.");
+
+            if (expectedCalls > 1)
+                Assert.That(solver.PreviousJoints[1], Is.EqualTo(program.Targets[^1].Joints).Within(1e-8));
+        });
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void LinearMotionPreservesOtherGroupAndCoupledExternalEndpoint(bool coupled)
+    {
+        var system = TestRobots.AbbTwoGroupWithCustomExternal();
+        double[] joints = [0.3, 1.1, 0.4, -0.5, 0.7, 0.6];
+        double[] endJoints = [0.31, 1.1, 0.4, -0.5, 0.7, 0.6];
+        JointTarget otherStart = new(joints, external: [0]);
+        JointTarget otherEnd = new(joints, external: [5]);
+        var expected = system.Kinematics([new JointTarget(endJoints), otherEnd]);
+        Plane plane = expected[0].Planes[^1];
+        Frame frame = new(Plane.WorldXY);
+
+        if (coupled)
+        {
+            _ = plane.Transform(Transform.PlaneToPlane(expected[1].Planes[1], Plane.WorldXY));
+            frame = new(Plane.WorldXY, coupledMechanism: 0, coupledMechanicalGroup: 1);
+        }
+
+        CartesianTarget end = new(plane, motion: Motions.Linear, frame: frame);
+        Program program = new("Groups", system,
+            [TestRobots.Toolpath(new JointTarget(joints), end), TestRobots.Toolpath(otherStart, otherEnd)], stepSize: 1);
+
+        Assert.That(program.Errors, Is.Empty);
+        var actual = program.Targets[^1].ProgramTargets;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(actual[0].Kinematics.Joints, Is.EqualTo(expected[0].Joints).Within(1e-8));
+            Assert.That(actual[1].Kinematics.Joints, Is.EqualTo(expected[1].Joints).Within(1e-8));
+            Assert.That(actual[0].Kinematics.Planes[^1].Origin.DistanceTo(expected[0].Planes[^1].Origin), Is.LessThan(1e-8));
+        });
+    }
+
     [TestCase(-0.2)]
     [TestCase(-0.13)]
     public void PureRotationChecksIntermediateSingularities(double wrist)
@@ -130,5 +199,18 @@ public class MotionPlannerTests
             Assert.That(program.Duration, Is.EqualTo(5));
             Assert.That(program.CurrentSimulationPose.Kinematics[0].Joints, Is.EqualTo(target.Joints));
         });
+    }
+
+    class CountingKinematics(RobotArm robot) : SphericalWristKinematics(robot)
+    {
+        public List<double[]> PreviousJoints { get; } = [];
+
+        protected override void SetJoints(KinematicSolution solution, Target target, PreviousJoints prevJoints)
+        {
+            if (target is CartesianTarget)
+                PreviousJoints.Add(prevJoints.Values.ToArray());
+
+            base.SetJoints(solution, target, prevJoints);
+        }
     }
 }

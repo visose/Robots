@@ -194,6 +194,7 @@ class SphericalWristKinematics(RobotArm robot) : ConfigurationKinematics(robot)
             joints[i] = _signs[i] * joints[i] + _start[i];
 
             if (joints[i] > PI) joints[i] -= 2 * PI;
+
             if (joints[i] < -PI) joints[i] += 2 * PI;
 
             if (double.IsNaN(joints[i]))

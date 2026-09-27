@@ -155,8 +155,7 @@ class FanucPostProcessor : IPostProcessor
                             {
                                 RobotConfigurations configuration = programTarget.Kinematics.Configuration;
                                 bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
-                                bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
-                                if (shoulder) elbow = !elbow;
+                                bool elbow = configuration.HasFlag(RobotConfigurations.Elbow) ^ shoulder;
                                 bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
 
                                 string cfw = wrist ? "F" : "N";
@@ -182,8 +181,7 @@ class FanucPostProcessor : IPostProcessor
                             {
                                 RobotConfigurations configuration = programTarget.Kinematics.Configuration;
                                 bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
-                                bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
-                                if (shoulder) elbow = !elbow;
+                                bool elbow = configuration.HasFlag(RobotConfigurations.Elbow) ^ shoulder;
                                 bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
 
                                 string cfw = wrist ? "F" : "N";

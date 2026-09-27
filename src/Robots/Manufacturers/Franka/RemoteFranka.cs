@@ -32,7 +32,7 @@ public class RemoteFranka : IRemote, IRemoteNotifier, IDisposable
             {
                 _user = new(value);
             }
-            catch
+            catch (UriFormatException)
             {
                 _user = null;
                 LogAdd($"Invalid address: {value}.");

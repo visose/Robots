@@ -2,7 +2,7 @@
 
 namespace Robots.Icons;
 
-internal static class IconQa
+static class IconQa
 {
     public static void ThrowIfInvalid(IReadOnlyList<IconOutput> outputs)
     {

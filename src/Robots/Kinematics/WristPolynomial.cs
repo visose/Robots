@@ -67,6 +67,7 @@ static class WristPolynomial
             in tangentSin,
             -phaseSin,
             out var cosNumerator);
+
         Polynomial.Combine(
             in tangentCos,
             phaseSin,
@@ -87,6 +88,7 @@ static class WristPolynomial
             in sinNumerator,
             out var y5X,
             out var x);
+
         BuildComponent(
             target.M10,
             target.M11,
@@ -100,6 +102,7 @@ static class WristPolynomial
             in sinNumerator,
             out var y5Y,
             out var y);
+
         BuildComponent(
             target.M20,
             target.M21,
@@ -135,6 +138,7 @@ static class WristPolynomial
             in tempRadial,
             -1,
             out var h);
+
         Polynomial.Combine(in z, 1, in delta, -d[0], out tempPolynomial);
         RadialPolynomial.SetConstant(in tempPolynomial, out var height);
         RadialPolynomial.Combine(
@@ -143,6 +147,7 @@ static class WristPolynomial
             in height,
             -d[3],
             out var armCos);
+
         RadialPolynomial.Combine(
             in h,
             d[3],
@@ -157,6 +162,7 @@ static class WristPolynomial
             in deltaSquared,
             a[2] * a[2] + d[3] * d[3] - a[1] * a[1],
             out tempPolynomial);
+
         RadialPolynomial.AddConstant(ref twiceReach, in tempPolynomial);
 
         Polynomial.Multiply(in x, in y5X, out var dot);
@@ -182,6 +188,7 @@ static class WristPolynomial
             in tempPolynomial,
             in termPolynomial,
             out var constantPolynomial);
+
         RadialPolynomial.AddConstant(ref orientationNorm, in constantPolynomial);
 
         RadialPolynomial.Square(in armOrientation, out tempRadial);
@@ -192,6 +199,7 @@ static class WristPolynomial
             in tempRadial,
             in orientationNorm,
             out var termRadial);
+
         RadialPolynomial.AddScaled(ref equation, in termRadial, -1);
 
         ReduceRadius(
@@ -206,6 +214,7 @@ static class WristPolynomial
             in signedRadiusSquared,
             in tempPolynomial,
             out termPolynomial);
+
         Polynomial.AddScaled(ref resultant, in termPolynomial, -1);
 
         Polynomial.Square(in planarRadius, out tempPolynomial);
@@ -226,9 +235,11 @@ static class WristPolynomial
             in tempPolynomial,
             -1,
             out var remainder);
+
         double scale = Math.Max(
             resultant.NormInfinity,
             factor.NormOne * quotient.NormInfinity);
+
         double relativeRemainder = remainder.NormInfinity / Math.Max(scale, 1e-300);
 
         if (!double.IsFinite(relativeRemainder)
@@ -269,12 +280,14 @@ static class WristPolynomial
             in sinNumerator,
             -ry,
             out var x5);
+
         Polynomial.Combine(
             in sinNumerator,
             rx,
             in cosNumerator,
             ry,
             out y5);
+
         Polynomial.Scale(in delta, position - d6 * rz, out p4);
         Polynomial.AddScaled(ref p4, in x5, -a5);
         Polynomial.AddScaled(ref p4, in y5, -d5);
@@ -317,6 +330,7 @@ static class WristPolynomial
             in squared,
             in signedRadiusSquared,
             out var cubed);
+
         even = default;
         odd = default;
 
@@ -438,6 +452,7 @@ static class WristPolynomial
                 result._tangentDegrees[radial] = Math.Max(
                     result._tangentDegrees[radial],
                     tangentDegree);
+
                 int offset = radial * RadialStride;
 
                 for (int tangent = 0; tangent <= tangentDegree; tangent++)

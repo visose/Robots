@@ -25,6 +25,7 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
     const double SingularRatioTolerance = 1e-5;
     const double RangeTolerance = 1e-10;
     const double StationaryTolerance = 1e-7;
+    const double ReachSearchRange = 0.02;
 
     static readonly string[] NearSingularityErrors = ["Target near singularity."];
 
@@ -57,14 +58,18 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         PreviousJoints prevJoints,
         RobotConfigurations? requested)
     {
-        var principal = GetPrincipalSolutions(transform, prevJoints, out var errors);
-        var solutions = new List<InverseSolution>(principal.Count);
+        if (TryGetClosestSolution(transform, prevJoints, requested, out var nearby))
+            return new([nearby], [], PreserveWindings: true);
 
-        if (requested is not null)
-            AddPreferredSolutions(principal, prevJoints, requested, solutions);
+        var principal = GetPrincipalSolutions(transform, prevJoints, out var errors, requested);
+        List<InverseSolution> solutions = new(principal.Count);
+        AddPreferredSolutions(principal, prevJoints, solutions);
 
-        if (requested is null || solutions.Count == 0)
-            AddPreferredSolutions(principal, prevJoints, requested: null, solutions);
+        if (requested is not null && solutions.Count == 0)
+        {
+            principal = GetPrincipalSolutions(transform, prevJoints, out errors);
+            AddPreferredSolutions(principal, prevJoints, solutions);
+        }
 
         solutions.Sort(CompareSolutions);
 
@@ -82,6 +87,114 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
             solutions[selected] = solutions[selected] with { Errors = NearSingularityErrors };
 
         return new(solutions, errors, PreserveWindings: true);
+    }
+
+    bool TryGetClosestSolution(
+        Transform transform,
+        PreviousJoints previous,
+        RobotConfigurations? requested,
+        out InverseSolution solution)
+    {
+        solution = default;
+
+        if (!previous.HasValue)
+            return false;
+
+        var wrist = ScaleTarget(transform, out var a, out var d, out var scaledTarget);
+        double initial = NormalizeAngle(previous[5]);
+        GetWristGeometry(in wrist, initial, out _, out var y5, out _, out var p4);
+        double combined = previous[1] + previous[2];
+        double radius = a[0] + a[1] * Cos(previous[1]) + a[2] * Cos(combined) + d[3] * Sin(combined);
+        double horizontal = Cos(previous[0]) * y5.X + Sin(previous[0]) * y5.Y;
+        int radiusSign = radius < 0 ? -1 : 1;
+        int combinedSign = horizontal * Cos(combined) + y5.Z * Sin(combined) < 0 ? -1 : 1;
+
+        if (!TryNewtonReachRoot(a, d, in wrist, initial, radiusSign, combinedSign, out double root))
+            return false;
+
+        List<PrincipalSolution> principal = [];
+        BackSubstitute(a, d, in wrist, transform, root, previous, principal, requested);
+        List<InverseSolution> solutions = new(principal.Count);
+        AddPreferredSolutions(principal, previous, solutions);
+        solutions.Sort(CompareSolutions);
+        int selected = SelectSolution(solutions, requested, previous, preserveWindings: true, out _);
+
+        if (selected < 0)
+            return false;
+
+        double distanceSquared = 0;
+
+        for (int i = 0; i < 6; i++)
+        {
+            double delta = solutions[selected].Joints[i] - previous[i];
+            distanceSquared += delta * delta;
+        }
+
+        // Any closer solution must also have joint 6 inside this interval.
+        double distance = Sqrt(distanceSquared) + 1e-6;
+
+        if (distance > 0.25)
+            return false;
+
+        double planarLower = Hypot(p4.X, p4.Y) - Hypot(a[4], d[4]) * distance;
+
+        if (planarLower <= Abs(d[2]) + BranchTolerance)
+            return false;
+
+        Span<double> coefficients = stackalloc double[WristPolynomial.MaxDegree + 1];
+
+        if (!WristPolynomial.TryBuild(a, d, scaledTarget, initial, coefficients, out var polynomial)
+            || !polynomial.IsStable
+            || polynomial.Degree < 1)
+        {
+            return false;
+        }
+
+        var values = coefficients[..(polynomial.Degree + 1)];
+        double bound = Tan(distance * 0.5);
+        double derivativeVariation = 0;
+
+        for (int i = polynomial.Degree; i >= 2; i--)
+            derivativeVariation = (derivativeVariation + i * Abs(values[i])) * bound;
+
+        // A strictly monotone chart with opposite endpoint signs has exactly
+        // one root here. Back-substitution above includes every branch at it.
+        const double margin = 1e-8;
+        double derivative = values[1];
+
+        if (Abs(derivative) <= derivativeVariation + margin)
+            return false;
+
+        double left = Evaluate(values, -bound);
+        double right = Evaluate(values, bound);
+        bool bracketed = derivative > 0
+            ? left < -margin * bound && right > margin * bound
+            : left > margin * bound && right < -margin * bound;
+
+        if (!bracketed || IsNearSingular(solutions[selected].Joints))
+            return false;
+
+        solution = solutions[selected];
+        return true;
+    }
+
+    WristContext ScaleTarget(Transform transform, out double[] a, out double[] d, out Transform scaledTarget)
+    {
+        double scale = GetScale(transform);
+        a = new double[6];
+        d = new double[6];
+
+        for (int i = 0; i < 6; i++)
+        {
+            a[i] = _a[i] / scale;
+            d[i] = _d[i] / scale;
+        }
+
+        scaledTarget = transform;
+        scaledTarget.M03 /= scale;
+        scaledTarget.M13 /= scale;
+        scaledTarget.M23 /= scale;
+        return CreateWristContext(a, d, scaledTarget);
     }
 
     protected override bool TryGetConfiguration(
@@ -132,16 +245,10 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
     public List<WristSolution> GetSolutions(
         Transform transform,
         double[]? previous,
-        out List<string> errors) =>
-        GetSolutions(transform, new PreviousJoints(previous), out errors);
-
-    List<WristSolution> GetSolutions(
-        Transform transform,
-        PreviousJoints previous,
         out List<string> errors)
     {
-        var principal = GetPrincipalSolutions(transform, previous, out errors);
-        var solutions = new List<WristSolution>(principal.Count);
+        var principal = GetPrincipalSolutions(transform, new(previous), out errors);
+        List<WristSolution> solutions = new(principal.Count);
         double[]? classifiedJoints = null;
         bool isNearSingular = false;
 
@@ -167,7 +274,8 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
     List<PrincipalSolution> GetPrincipalSolutions(
         Transform transform,
         PreviousJoints previous,
-        out List<string> errors)
+        out List<string> errors,
+        RobotConfigurations? requested = null)
     {
         errors = [];
 
@@ -182,24 +290,10 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
             return [];
         }
 
-        double scale = GetScale(transform);
-        var scaledA = new double[6];
-        var scaledD = new double[6];
+        var wrist = ScaleTarget(transform, out var scaledA, out var scaledD, out var scaledTarget);
 
-        for (int i = 0; i < 6; i++)
-        {
-            scaledA[i] = _a[i] / scale;
-            scaledD[i] = _d[i] / scale;
-        }
-
-        var scaledTarget = transform;
-        scaledTarget.M03 /= scale;
-        scaledTarget.M13 /= scale;
-        scaledTarget.M23 /= scale;
-        var wrist = CreateWristContext(scaledA, scaledD, scaledTarget);
-
-        var joint6Values = new List<double>(32);
-        var tangentSeeds = new List<double>(WristPolynomial.MaxDegree);
+        List<double> joint6Values = new(32);
+        List<double> tangentSeeds = new(WristPolynomial.MaxDegree);
 
         bool primaryCoverage = AddChartPair(
             scaledA,
@@ -210,6 +304,7 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
             joint6Values,
             tangentSeeds,
             out bool primaryIsStable);
+
         bool alternateCoverage = false;
 
         if (!primaryCoverage
@@ -242,10 +337,10 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
 
         RefineJoint6Roots(scaledA, scaledD, in wrist, joint6Values, tangentSeeds);
         joint6Values.Sort();
-        var principal = new List<PrincipalSolution>(32);
+        List<PrincipalSolution> principal = new(32);
 
         foreach (double joint6 in joint6Values)
-            BackSubstitute(scaledA, scaledD, in wrist, transform, joint6, previous, principal);
+            BackSubstitute(scaledA, scaledD, in wrist, transform, joint6, previous, principal, requested);
 
         if (principal.Count == 0)
             errors.Add("Target out of reach.");
@@ -271,6 +366,7 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
             joint6Values,
             tangentSeeds,
             out bool firstIsStable);
+
         bool secondBuilt = AddChartRoots(
             a,
             d,
@@ -447,16 +543,16 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         double cosCoefficient = wrist.Ry.Z;
         double sinCoefficient = wrist.Rx.Z;
         var roots = SolveLineCircle(cosCoefficient, sinCoefficient, 0, out bool isContinuum);
+        double boundaryCos = wrist.P5.X * wrist.Ry.X
+            + wrist.P5.Y * wrist.Ry.Y
+            + wrist.P5.Z * wrist.Ry.Z;
+
+        double boundarySin = wrist.P5.X * wrist.Rx.X
+            + wrist.P5.Y * wrist.Rx.Y
+            + wrist.P5.Z * wrist.Rx.Z;
 
         if (isContinuum)
         {
-            double boundaryCos = wrist.P5.X * wrist.Ry.X
-                + wrist.P5.Y * wrist.Ry.Y
-                + wrist.P5.Z * wrist.Ry.Z;
-            double boundarySin = wrist.P5.X * wrist.Rx.X
-                + wrist.P5.Y * wrist.Rx.Y
-                + wrist.P5.Z * wrist.Rx.Z;
-
             // With y5.Z identically zero, the axis-4 boundary reduces to
             // p5·y5 = d5 ± d3.
             for (int offsetSign = -1; offsetSign <= 1; offsetSign += 2)
@@ -486,11 +582,19 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
             return;
         }
 
+        // Recovery searches up to one range for an extremum, then another
+        // for its neighboring roots. Bound the change in p5·y5 over both.
+        double boundaryTolerance = 2 * ReachSearchRange * Hypot(boundaryCos, boundarySin) + BranchTolerance;
+
         for (int i = 0; i < roots.Count; i++)
         {
             double root = roots[i];
             joint6Values.Add(root);
-            tangentSeeds.Add(root);
+            double offset = boundaryCos * Cos(root) + boundarySin * Sin(root) - wrist.D5;
+
+            // y5.Z = 0 also needs p5·y5 = d5 ± d3 at the axis-4 boundary.
+            if (Abs(Abs(offset) - Abs(shoulderOffset)) <= boundaryTolerance)
+                tangentSeeds.Add(root);
         }
     }
 
@@ -563,7 +667,6 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         int combinedSign,
         List<double> joint6Values)
     {
-        const double offset = 0.02;
         const int sideCount = 44;
         Span<ReachSample> samples = stackalloc ReachSample[sideCount * 2 + 1];
         int sampleCount = 0;
@@ -574,7 +677,7 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
                 a,
                 d,
                 in wrist,
-                initial - ScaleB(offset, -i),
+                initial - ScaleB(ReachSearchRange, -i),
                 radiusSign,
                 combinedSign,
                 samples,
@@ -597,7 +700,7 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
                 a,
                 d,
                 in wrist,
-                initial + ScaleB(offset, -i),
+                initial + ScaleB(ReachSearchRange, -i),
                 radiusSign,
                 combinedSign,
                 samples,
@@ -714,7 +817,7 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
                 double nearResidual = extremumResidual;
                 double distance = 1e-13;
 
-                for (int i = 0; i < 40 && distance <= 0.02; i++)
+                for (int i = 0; i < 40 && distance <= ReachSearchRange; i++)
                 {
                     double farAngle = extremum + direction * distance;
 
@@ -743,6 +846,7 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
                             farResidual,
                             radiusSign,
                             combinedSign);
+
                         joint6Values.Add(NormalizeAngle(root));
                         return;
                     }
@@ -767,8 +871,8 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         out double residual)
     {
         var context = wrist;
-        double left = initial - 0.02;
-        double right = initial + 0.02;
+        double left = initial - ReachSearchRange;
+        double right = initial + ReachSearchRange;
         double first = right - (right - left) * 0.6180339887498949;
         double second = left + (right - left) * 0.6180339887498949;
         double firstValue = ReachObjective(first);
@@ -877,6 +981,17 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         double initial,
         int radiusSign,
         int combinedSign,
+        out double refined) =>
+        TryNewtonReachRoot(a, d, in wrist, initial, radiusSign, combinedSign, out refined)
+        || TryMinimizeReachError(a, d, in wrist, initial, radiusSign, combinedSign, out refined);
+
+    static bool TryNewtonReachRoot(
+        double[] a,
+        double[] d,
+        in WristContext wrist,
+        double initial,
+        int radiusSign,
+        int combinedSign,
         out double refined)
     {
         double current = initial;
@@ -936,7 +1051,7 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         }
 
         refined = NormalizeAngle(current);
-        bool isRefined = TryReachResidual(
+        return TryReachResidual(
             a,
             d,
             in wrist,
@@ -945,15 +1060,6 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
             combinedSign,
             out double finalResidual)
             && Abs(finalResidual) < 1e-10;
-
-        return isRefined || TryMinimizeReachError(
-            a,
-            d,
-            in wrist,
-            initial,
-            radiusSign,
-            combinedSign,
-            out refined);
     }
 
     static bool TryMinimizeReachError(
@@ -966,9 +1072,8 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         out double refined)
     {
         const int sampleCount = 32;
-        const double halfWidth = 0.02;
-        double left = initial - halfWidth;
-        double step = 2 * halfWidth / sampleCount;
+        double left = initial - ReachSearchRange;
+        double step = 2 * ReachSearchRange / sampleCount;
         int bestIndex = -1;
         double bestAngle = initial;
         double bestResidual = double.PositiveInfinity;
@@ -993,7 +1098,7 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         }
 
         left += Max(0, bestIndex - 1) * step;
-        double right = initial - halfWidth + Min(sampleCount, bestIndex + 1) * step;
+        double right = initial - ReachSearchRange + Min(sampleCount, bestIndex + 1) * step;
 
         for (int iteration = 0; iteration < 64; iteration++)
         {
@@ -1116,9 +1221,9 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         double[] d,
         Transform target)
     {
-        var rx = new Vector3d(target.M00, target.M10, target.M20);
-        var ry = new Vector3d(target.M01, target.M11, target.M21);
-        var rz = new Vector3d(target.M02, target.M12, target.M22);
+        Vector3d rx = new(target.M00, target.M10, target.M20);
+        Vector3d ry = new(target.M01, target.M11, target.M21);
+        Vector3d rz = new(target.M02, target.M12, target.M22);
         var p5 = new Point3d(target.M03, target.M13, target.M23) - d[5] * rz;
         return new(rx, ry, rz, p5, a[4], d[4]);
     }
@@ -1142,7 +1247,8 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         Transform unscaledTarget,
         double joint6,
         PreviousJoints previous,
-        List<PrincipalSolution> solutions)
+        List<PrincipalSolution> solutions,
+        RobotConfigurations? requested)
     {
         GetWristGeometry(in wrist, joint6, out var x5, out var y5, out var rz, out var p4);
         double planarSquared = p4.X * p4.X + p4.Y * p4.Y;
@@ -1163,7 +1269,9 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
                 rz,
                 joint6,
                 previous,
-                solutions);
+                solutions,
+                requested);
+
             return;
         }
 
@@ -1177,6 +1285,14 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         for (int i = 0; i < radiusCount; i++)
         {
             double signedRadius = signedRadii[i];
+
+            if (requested is RobotConfigurations configuration
+                && radius >= BranchTolerance
+                && (signedRadius < 0) != ((configuration & RobotConfigurations.Shoulder) != 0))
+            {
+                continue;
+            }
+
             double cos1 = (signedRadius * p4.X - d[2] * p4.Y) / planarSquared;
             double sin1 = (d[2] * p4.X + signedRadius * p4.Y) / planarSquared;
             double norm1 = Hypot(cos1, sin1);
@@ -1220,7 +1336,8 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
                     combinedAngle,
                     joint6,
                     ambiguousShoulder: radius < BranchTolerance,
-                    solutions);
+                    solutions,
+                    requested);
             }
         }
     }
@@ -1235,7 +1352,8 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         Vector3d rz,
         double joint6,
         PreviousJoints previous,
-        List<PrincipalSolution> solutions)
+        List<PrincipalSolution> solutions,
+        RobotConfigurations? requested)
     {
         double h = -a[0];
         double height = p4.Z - d[0];
@@ -1318,7 +1436,8 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
                     combinedAngle,
                     joint6,
                     ambiguousShoulder: true,
-                    solutions);
+                    solutions,
+                    requested);
             }
         }
     }
@@ -1337,7 +1456,8 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         double combinedAngle,
         double joint6,
         bool ambiguousShoulder,
-        List<PrincipalSolution> solutions)
+        List<PrincipalSolution> solutions,
+        RobotConfigurations? requested)
     {
         double cosCombined = Cos(combinedAngle);
         double sinCombined = Sin(combinedAngle);
@@ -1352,9 +1472,9 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         double joint3 = NormalizeAngle(combinedAngle - joint2);
         double cos1 = Cos(joint1);
         double sin1 = Sin(joint1);
-        var x3 = new Vector3d(cos1 * cosCombined, sin1 * cosCombined, sinCombined);
-        var y3 = new Vector3d(sin1, -cos1, 0);
-        var z3 = new Vector3d(cos1 * sinCombined, sin1 * sinCombined, -cosCombined);
+        Vector3d x3 = new(cos1 * cosCombined, sin1 * cosCombined, sinCombined);
+        Vector3d y3 = new(sin1, -cos1, 0);
+        Vector3d z3 = new(cos1 * sinCombined, sin1 * sinCombined, -cosCombined);
 
         if (Abs(z3 * y5) > EquationTolerance)
             return;
@@ -1371,14 +1491,26 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
             NormalizeAngle(joint6)
         ];
 
-        if (!MatchesTarget(joints, target))
+        Span<RobotConfigurations> configurations = stackalloc RobotConfigurations[8];
+        int count = GetConfigurations(joints, signedRadius, ambiguousShoulder, configurations);
+        int matches = 0;
+
+        for (int i = 0; i < count; i++)
+        {
+            if (requested is null || configurations[i] == requested)
+                configurations[matches++] = configurations[i];
+        }
+
+        if (matches == 0 || !MatchesTarget(joints, target))
             return;
 
-        AddConfigurations(
-            joints,
-            signedRadius,
-            ambiguousShoulder,
-            solutions);
+        for (int i = 0; i < matches; i++)
+        {
+            PrincipalSolution candidate = new(joints, configurations[i]);
+
+            if (!Contains(solutions, candidate))
+                solutions.Add(candidate);
+        }
     }
 
     static AngleSolutions SolveCombinedAngle(
@@ -1409,9 +1541,13 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         bool hasSecond = SatisfiesReach(armCos, armSin, reach, cos, sin);
         double second = Atan2(sin, cos);
 
-        return hasFirst
-            ? hasSecond ? AngleSolutions.Two(first, second) : AngleSolutions.One(first)
-            : hasSecond ? AngleSolutions.One(second) : default;
+        return (hasFirst, hasSecond) switch
+        {
+            (true, true) => AngleSolutions.Two(first, second),
+            (true, false) => AngleSolutions.One(first),
+            (false, true) => AngleSolutions.One(second),
+            _ => default
+        };
     }
 
     static AngleSolutions SolveLineCircle(
@@ -1459,30 +1595,6 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         return Abs(actual - reach) <= EquationTolerance * scale;
     }
 
-    void AddConfigurations(
-        double[] joints,
-        double signedRadius,
-        bool ambiguousShoulder,
-        List<PrincipalSolution> solutions)
-    {
-        Span<RobotConfigurations> configurations = stackalloc RobotConfigurations[8];
-        int count = GetConfigurations(
-            joints,
-            signedRadius,
-            ambiguousShoulder,
-            configurations);
-
-        for (int i = 0; i < count; i++)
-        {
-            var candidate = new PrincipalSolution(
-                joints,
-                configurations[i]);
-
-            if (!Contains(solutions, candidate))
-                solutions.Add(candidate);
-        }
-    }
-
     int GetConfigurations(
         double[] joints,
         double signedRadius,
@@ -1523,19 +1635,7 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
                     if (wrist)
                         configuration |= RobotConfigurations.Wrist;
 
-                    bool isDuplicate = false;
-
-                    for (int i = 0; i < count; i++)
-                    {
-                        if (configurations[i] == configuration)
-                        {
-                            isDuplicate = true;
-                            break;
-                        }
-                    }
-
-                    if (!isDuplicate)
-                        configurations[count++] = configuration;
+                    configurations[count++] = configuration;
                 }
             }
         }
@@ -1636,7 +1736,7 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
         {
             if (index == principal.Joints.Length)
             {
-                var solution = new WristSolution(
+                WristSolution solution = new(
                     [.. current],
                     principal.Configuration,
                     isNearSingular);
@@ -1725,17 +1825,10 @@ class NonSphericalWristKinematics(RobotArm robot) : RobotKinematics(robot)
     void AddPreferredSolutions(
         List<PrincipalSolution> principal,
         PreviousJoints previous,
-        RobotConfigurations? requested,
         List<InverseSolution> solutions)
     {
         foreach (var candidate in principal)
         {
-            if (requested is RobotConfigurations configuration
-                && candidate.Configuration != configuration)
-            {
-                continue;
-            }
-
             if (TryGetPreferredWinding(candidate.Joints, previous, out var joints))
                 solutions.Add(new(joints, candidate.Configuration));
         }

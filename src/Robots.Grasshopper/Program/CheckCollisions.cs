@@ -48,6 +48,7 @@ public class CheckCollisions() : Component(
             DA.Get<int>(4),
             DA.Get<double>(5),
             DA.Get<double>(6));
+
         _ = DA.SetData(0, collision.HasCollision);
 
         if (collision.CollisionTarget is not null)

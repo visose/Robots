@@ -32,6 +32,7 @@ static class GeometryMath
             ab.SquareLength * acCrossAd
             + ac.SquareLength * adCrossAb
             + ad.SquareLength * abCrossAc) / denominator;
+
         return a + scale * offset;
     }
 
@@ -73,6 +74,7 @@ static class GeometryMath
             -(transform.M01 * transform.M03 + transform.M11 * transform.M13 + transform.M21 * transform.M23),
             transform.M02, transform.M12, transform.M22,
             -(transform.M02 * transform.M03 + transform.M12 * transform.M13 + transform.M22 * transform.M23));
+
         return result;
     }
 }

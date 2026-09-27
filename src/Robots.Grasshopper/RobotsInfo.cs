@@ -1,5 +1,4 @@
 ﻿global using Grasshopper.Kernel;
-
 using System.Drawing;
 using System.Reflection;
 using Grasshopper;

@@ -68,7 +68,7 @@ public abstract class Mechanism
 
     Mesh CreateDisplayMesh()
     {
-        var mesh = new Mesh();
+        Mesh mesh = new();
 
         if (BaseMesh is null)
             return mesh;

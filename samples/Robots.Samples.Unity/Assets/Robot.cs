@@ -13,7 +13,7 @@ namespace Robots.Samples.Unity
 
         async void Start()
         {
-            _program = await TestProgram.CreateAsync();
+            _program = await TestProgram.Create();
 
             if (_material == null)
                 throw new ArgumentNullException(nameof(_material));

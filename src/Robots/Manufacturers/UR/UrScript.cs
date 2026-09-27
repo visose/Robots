@@ -69,7 +69,7 @@ class URScriptPostProcessor : IPostProcessor
             foreach (var tool in attributes.OfType<Tool>().Where(t => !t.UseController))
             {
                 Plane tcp = tool.Tcp;
-                var originPlane = new Plane(Point3d.Origin, Vector3d.YAxis, -Vector3d.XAxis);
+                Plane originPlane = new(Point3d.Origin, Vector3d.YAxis, -Vector3d.XAxis);
                 tcp.Orient(ref originPlane);
                 double[] axisAngle = _system.PlaneToNumbers(tcp);
 

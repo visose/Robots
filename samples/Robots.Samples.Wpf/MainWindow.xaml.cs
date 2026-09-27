@@ -1,10 +1,10 @@
 ﻿using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
-using Color = System.Windows.Media.Color;
 using HelixToolkit.SharpDX.Core;
 using HelixToolkit.Wpf.SharpDX;
 using SharpDX;
+using Color = System.Windows.Media.Color;
 using PerspectiveCamera = HelixToolkit.Wpf.SharpDX.PerspectiveCamera;
 
 namespace Robots.Samples.Wpf;
@@ -22,7 +22,7 @@ partial class MainWindow : Window, IDisposable
 
         SetViewport();
         var viewModel = (MainViewModel)DataContext;
-        await viewModel.InitAsync();
+        await viewModel.Init();
     }
 
     protected override void OnClosed(EventArgs e)
@@ -59,12 +59,13 @@ partial class MainWindow : Window, IDisposable
             FarPlaneDistance = 10000,
             NearPlaneDistance = 10
         };
+
         view.CameraChanged += (o, e) => SetHeadLight();
 
         ambient.Color = Color.FromScRgb(1, 0.02f, 0.02f, 0.02f);
 
         light.Color = Colors.White;
-        var lightDir = new Vector3D(0, -0.5, -1);
+        Vector3D lightDir = new(0, -0.5, -1);
         lightDir.Normalize();
         light.Direction = lightDir;
         SetHeadLight();
@@ -78,7 +79,7 @@ partial class MainWindow : Window, IDisposable
     void SetHeadLight()
     {
         var matrix = view.Camera.GetInversedViewMatrix();
-        var t = new MatrixTransform3D(matrix);
+        MatrixTransform3D t = new(matrix);
         light.Transform = t;
     }
 

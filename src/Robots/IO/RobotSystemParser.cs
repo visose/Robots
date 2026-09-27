@@ -92,6 +92,7 @@ static class RobotSystemParser
         var mechanisms = element.Elements()
             .Select(element => CreateMechanism(element, meshDoc))
             .ToList();
+
         return new(index, mechanisms);
     }
 
@@ -122,9 +123,10 @@ static class RobotSystemParser
             double alpha = jointElement.GetDoubleOrNull("α") ?? double.NaN;
             double theta = jointElement.GetDoubleOrNull("θ") ?? double.NaN;
             int sign = jointElement.GetIntOrNull("sign") ?? 0;
-            var range = new Interval(
+            Interval range = new(
                 jointElement.GetDoubleAttribute("minrange"),
                 jointElement.GetDoubleAttribute("maxrange"));
+
             double maxSpeed = jointElement.GetDoubleAttribute("maxspeed");
             int number = jointElement.GetIntAttribute("number") - 1;
 

@@ -2,9 +2,9 @@
 
 namespace Robots.AbbRemote;
 
-internal sealed class AbbRemoteServer(PcSdkAbbClient client)
+sealed class AbbRemoteServer(PcSdkAbbClient client)
 {
-    public async Task<int> RunAsync(TextReader input, TextWriter output)
+    public async Task<int> Run(TextReader input, TextWriter output)
     {
         string id = "unknown";
         AbbRemoteResponse response;
@@ -49,7 +49,7 @@ internal sealed class AbbRemoteServer(PcSdkAbbClient client)
 
 }
 
-internal sealed class AbbRemoteHelperException(
+sealed class AbbRemoteHelperException(
     string message,
     string errorCode,
     IReadOnlyCollection<string>? log = null,

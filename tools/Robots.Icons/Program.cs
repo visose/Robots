@@ -26,7 +26,7 @@ catch (Exception exception)
 
 static string FindRepositoryRoot()
 {
-    var current = new DirectoryInfo(Directory.GetCurrentDirectory());
+    DirectoryInfo? current = new(Directory.GetCurrentDirectory());
 
     while (current is not null)
     {
@@ -71,6 +71,6 @@ file sealed record Options(string? OutputRoot)
             throw new ArgumentException($"Unknown argument: {args[i]}");
         }
 
-        return new Options(outputRoot);
+        return new(outputRoot);
     }
 }

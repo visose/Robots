@@ -25,7 +25,7 @@ public class CreateFrame() : Component(
 
     protected override void SolveComponent(IGH_DataAccess DA)
     {
-        var frame = new Frame(DA.Get<Plane>(0), DA.Get<int>(2), DA.Get<int>(1), DA.Maybe<string>(3));
+        Frame frame = new(DA.Get<Plane>(0), DA.Get<int>(2), DA.Get<int>(1), DA.Maybe<string>(3));
         _ = DA.SetData(0, frame);
     }
 }

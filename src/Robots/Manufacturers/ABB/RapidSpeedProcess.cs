@@ -50,6 +50,7 @@ class RapidSpeedProcess(
                         (Command)motionCommand,
                         target,
                         $"Motion command {motionCommand.GetType().Name} is not implemented by the ABB postprocessor.");
+
                     continue;
                 }
 
@@ -79,6 +80,7 @@ class RapidSpeedProcess(
                 first.Command,
                 first.Target,
                 "An ABB robot group can use only one speed-proportional analogue-output command.");
+
             return null;
         }
 
@@ -91,6 +93,7 @@ class RapidSpeedProcess(
                 first.Command,
                 first.Target,
                 $"Robot system does not define analogue output index {first.Command.AO}.");
+
             return null;
         }
 
@@ -103,6 +106,7 @@ class RapidSpeedProcess(
                 first.Command,
                 first.Target,
                 $"Analog output name '{output}' is not a valid RAPID identifier: {outputError}");
+
             return null;
         }
 

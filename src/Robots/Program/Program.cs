@@ -107,7 +107,7 @@ public class Program : IProgram
 
         if (targets.Count > 0 && Errors.Count == 0)
         {
-            var motionPlanner = new ProgramMotionPlanner(this, targets, stepSize);
+            ProgramMotionPlanner motionPlanner = new(this, targets, stepSize);
 
             if (motionPlanner.Keyframes.Count > 0)
             {
@@ -260,11 +260,11 @@ public class Program : IProgram
 
     List<SystemTarget> BuildSystemTargets(IReadOnlyList<Target>[] targets, int targetCount)
     {
-        var systemTargets = new List<SystemTarget>(targetCount);
+        List<SystemTarget> systemTargets = new(targetCount);
 
         for (int index = 0; index < targetCount; index++)
         {
-            var groupTargets = new List<ProgramTarget>(targets.Length);
+            List<ProgramTarget> groupTargets = new(targets.Length);
 
             for (int group = 0; group < targets.Length; group++)
             {
@@ -276,10 +276,10 @@ public class Program : IProgram
                     return systemTargets;
                 }
 
-                groupTargets.Add(new ProgramTarget(target, group));
+                groupTargets.Add(new(target, group));
             }
 
-            systemTargets.Add(new SystemTarget(groupTargets, index));
+            systemTargets.Add(new(groupTargets, index));
         }
 
         return systemTargets;
@@ -364,7 +364,7 @@ public class Program : IProgram
         int seconds = (int)Duration;
         int milliseconds = (int)((Duration - seconds) * 1000);
         string format = @"hh\:mm\:ss";
-        var span = new TimeSpan(0, 0, 0, seconds, milliseconds);
+        TimeSpan span = new(0, 0, 0, seconds, milliseconds);
         return $"Program ({Name} with {Targets.Count} targets and {span.Text(format)} (h:m:s) long)";
     }
 }

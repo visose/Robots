@@ -19,6 +19,7 @@ abstract class ConfigurationKinematics(RobotArm robot) : RobotKinematics(robot)
                 external,
                 prevJoints,
                 out var errors);
+
             return new([new(joints, configuration, errors)], []);
         }
 
@@ -33,6 +34,7 @@ abstract class ConfigurationKinematics(RobotArm robot) : RobotKinematics(robot)
                 external,
                 prevJoints,
                 out var errors);
+
             solutions[i] = new(joints, current, errors);
         }
 

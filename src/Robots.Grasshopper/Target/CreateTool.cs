@@ -30,7 +30,7 @@ public class CreateTool() : Component(
 
     protected override void SolveComponent(IGH_DataAccess DA)
     {
-        var tool = new Tool(DA.Get<Plane>(1), DA.Get<string>(0), DA.Get<double>(3), DA.MaybeValue<Point3d>(4), DA.Maybe<Mesh>(5), DA.MaybeList<Plane>(2));
+        Tool tool = new(DA.Get<Plane>(1), DA.Get<string>(0), DA.Get<double>(3), DA.MaybeValue<Point3d>(4), DA.Maybe<Mesh>(5), DA.MaybeList<Plane>(2));
 
         _ = DA.SetData(0, tool);
         _ = DA.SetData(1, tool.Tcp);

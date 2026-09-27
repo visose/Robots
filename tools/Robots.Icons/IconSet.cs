@@ -1,11 +1,10 @@
 ﻿using SkiaSharp;
-
 using static Robots.Icons.IconCanvas;
 using static Robots.Icons.IconPalette;
 
 namespace Robots.Icons;
 
-internal static class IconSet
+static class IconSet
 {
     static readonly string[] IconNames =
     [
@@ -78,7 +77,7 @@ internal static class IconSet
 
     static SKBitmap DrawParameter(string name)
     {
-        using var g = new IconCanvas();
+        using IconCanvas g = new();
         DrawHex(g);
         var inner = name[..^"Parameter".Length];
 
@@ -150,7 +149,7 @@ internal static class IconSet
 
     static SKBitmap DrawComponent(string name)
     {
-        using var g = new IconCanvas();
+        using IconCanvas g = new();
 
         switch (name)
         {
@@ -427,6 +426,7 @@ internal static class IconSet
                 P(x + w + 1.2, y + h + 1.2),
                 P(x + 1.2, y + h + 1.2)
             ]);
+
         g.Polygon(Paper, Ink, 1.5, P(x, y), P(x + w - 7, y), P(x + w, y + 7), P(x + w, y + h), P(x, y + h));
         g.Polygon(MetalLight, Ink, 1.0, P(x + w - 7, y), P(x + w - 7, y + 7), P(x + w, y + 7));
 
@@ -558,7 +558,7 @@ internal static class IconSet
     static void DrawSimpleTrail(IconCanvas g)
     {
         DrawRobot(g, 2, 12, 0.68);
-        var trail = new[] { P(30, 24), P(34, 20), P(38, 23), P(43, 18) };
+        (double X, double Y)[] trail = [P(30, 24), P(34, 20), P(38, 23), P(43, 18)];
         g.Line(Shadow, 0.9, Offset(trail, 0.45, 0.45));
         g.Line(Orange, 0.8, trail);
     }

@@ -35,6 +35,7 @@ public class JointTarget : Target
         ArgumentOutOfRangeException.ThrowIfNotEqual(a.Length, b.Length, nameof(b));
 
         t = (t - min) / (max - min);
+
         if (double.IsNaN(t)) t = 0;
         var result = new double[a.Length];
 
@@ -50,6 +51,7 @@ public class JointTarget : Target
     {
         double absJoint = Abs(joint);
         double result = absJoint - Floor(absJoint / PI2) * PI2;
+
         if (result > PI) result -= PI2;
         result *= Sign(joint);
         return result;
@@ -68,6 +70,7 @@ public class JointTarget : Target
             double joint = GetAbsoluteJoint(joints[i]);
             double difference = joint - prevJoint;
             double absDifference = Abs(difference);
+
             if (absDifference > PI) difference = (absDifference - PI2) * Sign(difference);
             closestJoints[i] = prevJoints[i] + difference;
         }

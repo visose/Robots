@@ -15,6 +15,7 @@ public class SimpleTrail(Program program, double maxLength, int mechanicalGroup 
     public void Update()
     {
         var currentTime = _program.CurrentSimulationPose.CurrentTime;
+
         if (currentTime < _time)
             Polyline.Clear();
 

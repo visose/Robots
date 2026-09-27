@@ -88,13 +88,15 @@ class FixedRedundancyKinematics(RobotArm robot) : RobotKinematics(robot)
             : prevJoints.HasValue
                 ? prevJoints[Redundant]
                 : _joints[Redundant].Range.Mid;
+
         var candidates = GetSolutions(
             transform,
             redundant,
             prevJoints,
             preserveRedundant: external.Length > 0,
             out var errors);
-        var solutions = new List<InverseSolution>(candidates.Count);
+
+        List<InverseSolution> solutions = new(candidates.Count);
 
         foreach (var candidate in candidates)
             solutions.Add(new(candidate, RobotConfigurations.None));
@@ -120,7 +122,7 @@ class FixedRedundancyKinematics(RobotArm robot) : RobotKinematics(robot)
         GetSolutions(
             transform,
             redundant,
-            new PreviousJoints(previous),
+            new(previous),
             preserveRedundant: true,
             out errors);
 
@@ -138,7 +140,7 @@ class FixedRedundancyKinematics(RobotArm robot) : RobotKinematics(robot)
         target.M23 /= chain.Scale;
 
         var angles = SolveSixAxis(chain.Factors, target);
-        var solutions = new List<double[]>(16);
+        List<double[]> solutions = new(16);
         bool hasClosingSolution = false;
 
         foreach (var theta in angles)
@@ -188,7 +190,8 @@ class FixedRedundancyKinematics(RobotArm robot) : RobotKinematics(robot)
             new(1, 2, 3, 0, 5, 4),
             new(2, 3, 4, 0, 1, 5)
         ];
-        var solutions = new List<double[]>(16);
+
+        List<double[]> solutions = new(16);
         Span<Transform> samples = stackalloc Transform[RaghavanRoth.SampleTransformCount];
         Span<Transform> inverseSamples = stackalloc Transform[RaghavanRoth.SampleTransformCount];
         RaghavanRoth.BuildSampleTransforms(
@@ -289,6 +292,7 @@ class FixedRedundancyKinematics(RobotArm robot) : RobotKinematics(robot)
             int turn = previous.HasValue
                 ? Clamp((int)Round((previous[i] - angle) / PI2), minTurn, maxTurn)
                 : minTurn;
+
             joints[i] = angle + turn * PI2;
         }
 
@@ -398,6 +402,7 @@ class FixedRedundancyKinematics(RobotArm robot) : RobotKinematics(robot)
             1, 0, 0, joint.A,
             0, cosine, -sine, 0,
             0, sine, cosine, 0);
+
         return result;
     }
 
@@ -417,6 +422,7 @@ class FixedRedundancyKinematics(RobotArm robot) : RobotKinematics(robot)
             cosineTheta, -sineTheta, 0, joint.A,
             sineTheta * cosineAlpha, cosineTheta * cosineAlpha, -sineAlpha, -joint.D * sineAlpha,
             sineTheta * sineAlpha, cosineTheta * sineAlpha, cosineAlpha, joint.D * cosineAlpha);
+
         return result;
     }
 

@@ -44,7 +44,7 @@ public class TargetTests
     public void JointTargetsAllowMechanismSpecificJointCounts(int jointCount)
     {
         var joints = new double[jointCount];
-        var target = new JointTarget(joints);
+        JointTarget target = new(joints);
 
         Assert.That(target.Joints, Is.SameAs(joints));
     }

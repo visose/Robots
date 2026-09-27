@@ -26,7 +26,7 @@ public class ProgramTests
     [Test]
     public void ProgramReportsEmptyToolpaths()
     {
-        var program = new Program("P", TestRobots.AbbIrb120(), [new SimpleToolpath()]);
+        Program program = new("P", TestRobots.AbbIrb120(), [new SimpleToolpath()]);
 
         Assert.Multiple(() =>
         {
@@ -41,7 +41,7 @@ public class ProgramTests
     [Test]
     public void ProgramReportsMismatchedToolpathCounts()
     {
-        var program = new Program(
+        Program program = new(
             "P",
             TestRobots.AbbTwoGroupWithCustomExternal(),
             [TestRobots.Toolpath(new JointTarget(new double[6]))]);
@@ -52,7 +52,7 @@ public class ProgramTests
     [Test]
     public void GroupRunBeforeFailsFast()
     {
-        var group = new Group([new Message("Test")]) { RunBefore = true };
+        Group group = new([new Message("Test")]) { RunBefore = true };
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
             _ = group.Flatten().ToArray());
@@ -64,7 +64,7 @@ public class ProgramTests
     public void SingleGroupProgramNameDoesNotReserveMechanicalGroupSuffix()
     {
         const string name = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEF";
-        var target = new JointTarget(new double[6]);
+        JointTarget target = new(new double[6]);
 
         Program program = new(name, TestRobots.UR10(), [TestRobots.Toolpath(target)]);
 
@@ -75,10 +75,10 @@ public class ProgramTests
     [Test]
     public void ProgramReportsInvalidFrameCoupling()
     {
-        var frame = new Frame(Plane.WorldXY, coupledMechanism: 0, coupledMechanicalGroup: 1);
-        var target = new JointTarget(new double[6], frame: frame);
+        Frame frame = new(Plane.WorldXY, coupledMechanism: 0, coupledMechanicalGroup: 1);
+        JointTarget target = new(new double[6], frame: frame);
 
-        var program = new Program("P", TestRobots.AbbIrb120(), [TestRobots.Toolpath(target)]);
+        Program program = new("P", TestRobots.AbbIrb120(), [TestRobots.Toolpath(target)]);
 
         Assert.Multiple(() =>
         {
@@ -161,6 +161,7 @@ public class ProgramTests
             new JointTarget([0.1, 0, 0, 0, 0, 0], speed: new(200, name: duplicate)),
             new JointTarget([0.2, 0, 0, 0, 0, 0], speed: new(300, name: reserved))
         ];
+
         Program program = new("P", TestRobots.AbbIrb120(), [new SimpleToolpath(targets)]);
         var names = program.Attributes.OfType<Speed>().Select(speed => speed.Name).ToArray();
 

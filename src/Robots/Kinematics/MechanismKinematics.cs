@@ -31,7 +31,7 @@ abstract class MechanismKinematics
 
     public KinematicSolution Solve(Target target, PreviousJoints prevJoints, Plane? basePlane)
     {
-        var solution = new KinematicSolution();
+        KinematicSolution solution = new();
 
         int jointCount = _mechanism.Joints.Length;
 

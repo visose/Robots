@@ -36,7 +36,7 @@ public abstract class Param<T, TGoo>(
 
     internal static TGoo New(T value)
     {
-        var goo = new TGoo();
+        TGoo goo = new();
         goo.SetValue(value);
         return goo;
     }

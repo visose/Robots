@@ -1,4 +1,10 @@
-﻿- version: 2.4.0
+﻿- version: 2.4.1
+  changes:
+  - Improved inverse-kinematics performance for non-spherical wrists, including ABB PoWa and GoFa, especially along continuous paths and when a configuration is specified.
+  - Improved Create Program performance by avoiding redundant endpoint solves during motion verification.
+  - Fixed Kinematics outputting the previous robot pose when a target could not be solved.
+
+- version: 2.4.0
   changes:
   - Added analytical IK for non-spherical wrists (including ABB PoWa/GoFa) and fixed-redundancy seven-axis arms (including Franka Emika Panda).
   - Added optional `franky` 2 output for Franka, with continuous Process paths.

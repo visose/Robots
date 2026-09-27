@@ -30,9 +30,9 @@ class OnlineLibraryTests
         using HttpClient http = new(new CatalogueHandler(online));
 
         if (online)
-            await library.UpdateLibraryAsync(http, downloaded, local);
+            await library.UpdateLibrary(http, downloaded, local);
         else
-            Assert.That(async () => await library.UpdateLibraryAsync(http, downloaded, local), Throws.TypeOf<HttpRequestException>());
+            Assert.That(async () => await library.UpdateLibrary(http, downloaded, local), Throws.TypeOf<HttpRequestException>());
 
         Assert.Multiple(() =>
         {

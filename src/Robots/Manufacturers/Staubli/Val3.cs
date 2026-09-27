@@ -11,7 +11,7 @@ static class VAL3Syntax
 
     public static string Data(string name, string type, IReadOnlyList<string> values)
     {
-        var text = new StringBuilder();
+        StringBuilder text = new();
         _ = text.AppendLine(CultureInfo.InvariantCulture, $"    <Data name=\"{name}\" access=\"private\" xsi:type=\"array\" type=\"{type}\" size=\"{values.Count}\">");
 
         for (int i = 0; i < values.Count; i++)
@@ -145,13 +145,13 @@ class VAL3PostProcessor : IPostProcessor
                 var name = $"{_program.Name}";
                 var mdescs = CreateMdescs(i);
 
-                var groupCode = new List<List<string>>
-                    {
+                List<List<string>> groupCode =
+                    [
                         Program(name),
                         DataList(i, mdescs, out var indices),
                         Start(name),
                         Stop(name),
-                    };
+                    ];
 
                 for (int j = 0; j < program.MultiFileIndices.Count; j++)
                     groupCode.Add(SubModule(j, i, mdescs, indices, name));
@@ -194,7 +194,7 @@ class VAL3PostProcessor : IPostProcessor
 
         Dictionary<(Speed speed, Zone zone), string> CreateMdescs(int group)
         {
-            var mdescs = new Dictionary<(Speed speed, Zone zone), string>();
+            Dictionary<(Speed speed, Zone zone), string> mdescs = [];
             int count = 0;
 
             foreach (var systemTarget in _program.Targets)
@@ -215,7 +215,7 @@ class VAL3PostProcessor : IPostProcessor
 
         List<string> Program(string name)
         {
-            var codes = new List<string>();
+            List<string> codes = [];
 
             string start = """
                 <?xml version="1.0" encoding="utf-8"?>
@@ -242,13 +242,14 @@ class VAL3PostProcessor : IPostProcessor
                 </Project>
                 {"    "}
                 """;
+
             codes.Add(end);
             return codes;
         }
 
         List<string> DataList(int group, Dictionary<(Speed speed, Zone zone), string> mdescs, out List<int> indices)
         {
-            var codes = new List<string>();
+            List<string> codes = [];
 
             string start = """
                 <?xml version="1.0" encoding="utf-8" ?>
@@ -285,7 +286,7 @@ class VAL3PostProcessor : IPostProcessor
 
         List<string> IOData()
         {
-            var datas = new List<string>();
+            List<string> datas = [];
             var io = _system.IO;
 
             AddIO("dos", "dio", io.DO);
@@ -298,6 +299,7 @@ class VAL3PostProcessor : IPostProcessor
                 if (ios is not null)
                 {
                     var iosData = ios.Where(d => !string.IsNullOrEmpty(d)).Select(d => $"link=\"{d}\"").ToArray();
+
                     if (iosData.Length > 0)
                         datas.Add(VAL3Syntax.Data(name, type, iosData));
                 }
@@ -308,8 +310,8 @@ class VAL3PostProcessor : IPostProcessor
 
         string Targets(int group, out List<int> indices)
         {
-            var joints = new List<string>();
-            var points = new List<string>();
+            List<string> joints = [];
+            List<string> points = [];
             indices = new List<int>(_program.Targets.Count);
 
             for (int i = 0; i < _program.Targets.Count; i++)
@@ -337,8 +339,7 @@ class VAL3PostProcessor : IPostProcessor
                     {
                         RobotConfigurations configuration = programTarget.Kinematics.Configuration;
                         bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
-                        bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
-                        if (shoulder) elbow = !elbow;
+                        bool elbow = configuration.HasFlag(RobotConfigurations.Elbow) ^ shoulder;
                         bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
 
                         var wristT = !wrist ? "wpositive" : "wnegative";
@@ -370,6 +371,7 @@ class VAL3PostProcessor : IPostProcessor
             double weight = (tool.Weight > 0.001) ? tool.Weight : 0.001;
 
             Point3d centroid = tool.Centroid;
+
             if (centroid.DistanceTo(Point3d.Origin) < 0.001)
                 centroid = new(0, 0, 0.001);
 
@@ -406,7 +408,7 @@ class VAL3PostProcessor : IPostProcessor
 
         static List<string> Speeds(Dictionary<(Speed speed, Zone zone), string> mdescs)
         {
-            var codes = new List<string>();
+            List<string> codes = [];
 
             foreach (var pair in mdescs)
             {
@@ -444,7 +446,7 @@ class VAL3PostProcessor : IPostProcessor
 
         List<string> Start(string name)
         {
-            var codes = new List<string>();
+            List<string> codes = [];
 
             string start = $"""
                 {ProgramHeader("start")}
@@ -473,7 +475,7 @@ class VAL3PostProcessor : IPostProcessor
 
         static List<string> Stop(string name)
         {
-            var codes = new List<string>();
+            List<string> codes = [];
 
             string start = $"""
                 {ProgramHeader("stop")}
@@ -494,7 +496,7 @@ class VAL3PostProcessor : IPostProcessor
 
             Tool? lastTool = null;
 
-            var instructions = new List<string>();
+            List<string> instructions = [];
 
             for (int j = start; j < end; j++)
             {
@@ -550,13 +552,14 @@ class VAL3PostProcessor : IPostProcessor
                     <Code><![CDATA[begin{" "}
                 """;
 
-            var code = new List<string>
-        {
+            List<string> code =
+        [
             startCode,
-            midCode
-        };
-            code.AddRange(instructions);
-            code.Add(ProgramFooter());
+            midCode,
+            .. instructions,
+            ProgramFooter(),
+        ];
+
             return code;
         }
     }

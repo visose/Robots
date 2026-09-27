@@ -26,14 +26,13 @@ public class RobotDoosan : RobotArm
     public override double DegreeToRadian(double degree, int i)
     {
         var radian = degree.ToRadians();
-        if (i == 0) radian -= PI;
-        return radian + Joints[i].Theta;
+
+        return (i == 0 ? radian - PI : radian) + Joints[i].Theta;
     }
 
     public override double RadianToDegree(double radian, int i)
     {
-        if (i == 0) radian += PI;
-        return (radian - Joints[i].Theta) * (180.0 / PI);
+        return ((i == 0 ? radian + PI : radian) - Joints[i].Theta) * (180.0 / PI);
     }
 
     protected override double[] DefaultAlpha => [HalfPI, 0, HalfPI, -HalfPI, HalfPI, 0];

@@ -17,7 +17,7 @@ static class IconDrawing
         var size = Math.Min(_iconSize, Math.Min(box.Width, box.Height));
         var x = Convert.ToInt32((box.Left + box.Right - size) * 0.5f);
         var y = Convert.ToInt32((box.Top + box.Bottom - size) * 0.5f) + offsetY;
-        var target = new Rectangle(x, y, (int)size, (int)size);
+        Rectangle target = new(x, y, (int)size, (int)size);
         var state = graphics.Save();
 
         try

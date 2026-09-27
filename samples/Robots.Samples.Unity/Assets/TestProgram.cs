@@ -6,9 +6,9 @@ namespace Robots.Samples.Unity
 {
     class TestProgram
     {
-        public static async Task<Program> CreateAsync()
+        public static async Task<Program> Create()
         {
-            var robot = await GetRobotAsync();
+            var robot = await GetRobot();
 
             var planeA = Plane.WorldYZ;
             var planeB = Plane.WorldYZ;
@@ -22,7 +22,7 @@ namespace Robots.Samples.Unity
             return new("TestProgram", robot, new[] { toolpath });
         }
 
-        static async Task<RobotSystem> GetRobotAsync()
+        static async Task<RobotSystem> GetRobot()
         {
             var name = "Bartlett-IRB120";
 
@@ -36,12 +36,12 @@ namespace Robots.Samples.Unity
                     throw;
 
                 UnityEngine.Debug.Log("Bartlett robot library not found, installing...");
-                await DownloadLibraryAsync();
+                await DownloadLibrary();
                 return FileIO.LoadRobotSystem(name, Plane.WorldXY);
             }
         }
 
-        static async Task DownloadLibraryAsync()
+        static async Task DownloadLibrary()
         {
             OnlineLibrary online = new();
             await online.UpdateLibraryAsync();

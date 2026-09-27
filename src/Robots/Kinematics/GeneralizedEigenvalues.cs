@@ -268,6 +268,7 @@ static class GeneralizedEigenvalues
 
     CheckConvergence:
         shiftType = 2;
+
         l = last;
 
         while (l > 0 && Abs(a[l * order + l - 1]) > epsilonA)
@@ -290,6 +291,7 @@ static class GeneralizedEigenvalues
 
     CheckSmallB:
         l1 = l + 1;
+
         double b11 = b[l * order + l];
 
         if (Abs(b11) <= epsilonB)
@@ -396,6 +398,7 @@ static class GeneralizedEigenvalues
 
     FormSingleShift:
         a1 = a11 - shift;
+
         a2 = a21;
 
         if (l != lowerBound)
@@ -405,21 +408,25 @@ static class GeneralizedEigenvalues
 
     FormDoubleShift:
         double a12 = a[l * order + l1] / b22;
+
         double a22 = a[l1 * order + l1] / b22;
         double b12 = b[l * order + l1] / b22;
         a1 = ((a33 - a11) * (a44 - a11) - a34 * a43 + a43 * b34 * a11)
             / a21 + a12 - a11 * b12;
+
         a2 = a22 - a11 - a21 * b12 - (a33 - a11) - (a44 - a11) + a43 * b34;
         a3 = a[(l1 + 1) * order + l1] / b22;
         goto ApplyShift;
 
     FormAdHocShift:
         a1 = 0;
+
         a2 = 1;
         a3 = 1.1605;
 
     ApplyShift:
         iterations++;
+
         remainingIterations--;
 
         for (int k = l; k <= previous; k++)
@@ -565,6 +572,7 @@ static class GeneralizedEigenvalues
 
     Success:
         unconvergedIndex = -1;
+
         return true;
     }
 
@@ -633,9 +641,11 @@ static class GeneralizedEigenvalues
                     + Abs(a[previous * order + en])
                     + Abs(a[en * order + previous])
                     + Abs(a[en * order + en]);
+
                 bn = Abs(b[previous * order + previous])
                     + Abs(b[previous * order + en])
                     + Abs(b[en * order + en]);
+
                 double a11 = a[previous * order + previous] / an;
                 double a12 = a[previous * order + en] / an;
                 double a21 = a[en * order + previous] / an;
@@ -677,6 +687,7 @@ static class GeneralizedEigenvalues
                         alphaReal,
                         alphaImaginary,
                         beta);
+
                     skipConjugate = true;
                     continue;
                 }
@@ -932,12 +943,15 @@ static class GeneralizedEigenvalues
                     + cosineQ * sineZReal * a12
                     + sineQReal * cosineZ * a21
                     + ssReal * a22;
+
                 ti = cosineQ * sineZImaginary * a12
                     - sineQImaginary * cosineZ * a21
                     + ssImaginary * a22;
+
                 dr = cosineQ * cosineZ * b11
                     + cosineQ * sineZReal * b12
                     + ssReal * b22;
+
                 di = cosineQ * sineZImaginary * b12 + ssImaginary * b22;
             }
             else
@@ -946,12 +960,15 @@ static class GeneralizedEigenvalues
                     - sineQReal * cosineZ * a12
                     - cosineQ * sineZReal * a21
                     + cosineQ * cosineZ * a22;
+
                 ti = -ssImaginary * a11
                     - sineQImaginary * cosineZ * a12
                     + cosineQ * sineZImaginary * a21;
+
                 dr = ssReal * b11
                     - sineQReal * cosineZ * b12
                     + cosineQ * cosineZ * b22;
+
                 di = -ssImaginary * b11 - sineQImaginary * cosineZ * b12;
             }
 

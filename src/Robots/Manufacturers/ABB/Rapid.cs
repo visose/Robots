@@ -50,8 +50,10 @@ class RapidPostProcessor : IPostProcessor
             var groupName = _system.MechanicalGroups[group].Name;
 
             code.Add($"MODULE {_program.Name}_{groupName}");
+
             if (_system.MechanicalGroups[group].Externals.Length == 0)
                 code.Add("VAR extjoint extj := [9E9,9E9,9E9,9E9,9E9,9E9];");
+
             code.Add("VAR confdata conf := [0,0,0,0];");
 
             var attributes = _program.Attributes;
@@ -82,6 +84,7 @@ class RapidPostProcessor : IPostProcessor
                 code.AddRange(process.Declarations);
 
             code.Add("PROC Main()");
+
             if (!multiProgram)
                 code.Add("ConfL \\Off;");
 
@@ -166,14 +169,10 @@ class RapidPostProcessor : IPostProcessor
 
                                 var configuration = programTarget.Kinematics.Configuration;
                                 var shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
-                                var elbow = configuration.HasFlag(RobotConfigurations.Elbow);
-                                if (shoulder) elbow = !elbow;
+                                var elbow = configuration.HasFlag(RobotConfigurations.Elbow) ^ shoulder;
                                 var wrist = configuration.HasFlag(RobotConfigurations.Wrist);
 
-                                var cfx = 0;
-                                if (wrist) cfx += 1;
-                                if (elbow) cfx += 2;
-                                if (shoulder) cfx += 4;
+                                var cfx = (wrist ? 1 : 0) | (elbow ? 2 : 0) | (shoulder ? 4 : 0);
 
                                 var conf = $"[{cf1},{cf4},{cf6},{cfx}]";
                                 var robtarget = $"[{pos},{orient},{conf},{external}]";
@@ -404,9 +403,6 @@ static class RapidFormatting
         int group,
         bool useDefaultExternalVariable)
     {
-        ArgumentNullException.ThrowIfNull(robotSystem);
-        ArgumentNullException.ThrowIfNull(target);
-
         if (robotSystem is not SystemAbb system)
             throw new ArgumentException("RAPID joint targets require an ABB robot system.", nameof(robotSystem));
 

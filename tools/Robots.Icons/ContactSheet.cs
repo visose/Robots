@@ -2,7 +2,7 @@
 
 namespace Robots.Icons;
 
-internal static class ContactSheet
+static class ContactSheet
 {
     public static void Write(IReadOnlyList<IconOutput> outputs, string path)
     {
@@ -30,6 +30,7 @@ internal static class ContactSheet
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 1
         };
+
         using SKPaint borderPaint = new()
         {
             Color = new(218, 232, 236),
@@ -37,12 +38,14 @@ internal static class ContactSheet
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 1
         };
+
         using SKPaint textPaint = new()
         {
             Color = new(20, 20, 20),
             IsAntialias = true,
             Style = SKPaintStyle.Fill
         };
+
         using SKFont font = new(SKTypeface.Default, 9);
 
         for (var i = 0; i < outputs.Count; i++)

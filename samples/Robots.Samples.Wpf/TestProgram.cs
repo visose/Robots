@@ -5,9 +5,9 @@ namespace Robots.Samples.Wpf;
 
 class TestProgram
 {
-    public static async Task<Program> CreateAsync()
+    public static async Task<Program> Create()
     {
-        var robot = await GetRobotAsync();
+        var robot = await GetRobot();
 
         var planeA = Plane.WorldYZ;
         var planeB = Plane.WorldYZ;
@@ -21,7 +21,7 @@ class TestProgram
         return new("TestProgram", robot, [toolpath]);
     }
 
-    static async Task<RobotSystem> GetRobotAsync()
+    static async Task<RobotSystem> GetRobot()
     {
         var name = "Bartlett-IRB120";
 
@@ -34,16 +34,16 @@ class TestProgram
             if (!e.Message.Contains("not found"))
                 throw;
 
-            await DownloadLibraryAsync();
+            await DownloadLibrary();
             return FileIO.LoadRobotSystem(name, Plane.WorldXY);
         }
     }
 
-    static async Task DownloadLibraryAsync()
+    static async Task DownloadLibrary()
     {
         OnlineLibrary online = new();
-        await online.UpdateLibraryAsync();
+        await online.UpdateLibrary();
         var bartlett = online.Libraries["Bartlett"];
-        await online.DownloadLibraryAsync(bartlett);
+        await online.DownloadLibrary(bartlett);
     }
 }

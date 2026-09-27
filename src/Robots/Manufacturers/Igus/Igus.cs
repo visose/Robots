@@ -27,22 +27,11 @@ public class RobotIgus : RobotArm
     {
         double radian = degree.ToRadians();
 
-        if (i is 1 or 2)
-            radian -= HalfPI;
-
-        radian = -radian;
-        return radian;
+        return i is 1 or 2 ? -(radian - HalfPI) : -radian;
     }
 
-    public override double RadianToDegree(double radian, int i)
-    {
-        radian = -radian;
-
-        if (i is 1 or 2)
-            radian += HalfPI;
-
-        return radian.ToDegrees();
-    }
+    public override double RadianToDegree(double radian, int i) =>
+        (i is 1 or 2 ? -radian + HalfPI : -radian).ToDegrees();
 
     protected override double[] DefaultAlpha => [HalfPI, 0, HalfPI, -HalfPI, HalfPI, 0];
     protected override double[] DefaultTheta => [0, HalfPI, HalfPI, 0, 0, -PI];

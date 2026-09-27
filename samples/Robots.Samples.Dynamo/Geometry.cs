@@ -1,6 +1,6 @@
 using Autodesk.DesignScript.Runtime;
-using D = Autodesk.DesignScript.Geometry;
 using Rhino.Geometry;
+using D = Autodesk.DesignScript.Geometry;
 
 namespace Robots.Dynamo;
 

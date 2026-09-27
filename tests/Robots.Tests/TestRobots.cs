@@ -270,6 +270,7 @@ static class TestRobots
                 jointCount,
                 io: io ?? PostProcessorIOXml,
                 postProcessor: postProcessor);
+
             return FileIO.ParseRobotSystem(xml, Plane.WorldXY, postProcessorOverride);
         }
 
@@ -316,9 +317,9 @@ static class TestRobots
 
     static Program SampleProgram(string name, RobotSystem robot, Plane planeA, Plane planeB)
     {
-        var speed = new Speed(300);
-        var targetA = new CartesianTarget(planeA, RobotConfigurations.Wrist, Motions.Joint);
-        var targetB = new CartesianTarget(planeB, null, Motions.Linear, speed: speed);
+        Speed speed = new(300);
+        CartesianTarget targetA = new(planeA, RobotConfigurations.Wrist, Motions.Joint);
+        CartesianTarget targetB = new(planeB, null, Motions.Linear, speed: speed);
 
         return new(name, robot, [Toolpath(targetA, targetB)]);
     }

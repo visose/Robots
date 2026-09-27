@@ -9,7 +9,7 @@ public class KinematicsTests
     public void RobotSystemRejectsWrongJointCountAtPublicBoundary()
     {
         var robot = TestRobots.AbbIrb120();
-        var target = new JointTarget(new double[5]);
+        JointTarget target = new(new double[5]);
 
         var exception = Assert.Throws<ArgumentException>(() => robot.Kinematics([target]));
 
@@ -20,7 +20,7 @@ public class KinematicsTests
     public void RobotArmRejectsWrongJointCountAtPublicBoundary()
     {
         var robot = ((IndustrialSystem)TestRobots.AbbIrb120()).MechanicalGroups[0].Robot;
-        var target = new JointTarget(new double[5]);
+        JointTarget target = new(new double[5]);
 
         var exception = Assert.Throws<ArgumentException>(() => robot.Kinematics(target));
 
@@ -35,6 +35,7 @@ public class KinematicsTests
 
         var unsupported = Assert.Throws<ArgumentException>(() =>
             sixAxis.Kinematics(new JointTarget(new double[6], external: [0])));
+
         var excess = Assert.Throws<ArgumentException>(() =>
             redundant.Kinematics(new JointTarget(new double[7], external: [0, 0])));
 
@@ -49,7 +50,7 @@ public class KinematicsTests
     public void RedundantRobotRejectsRealExternalMechanisms()
     {
         var robot = TestRobots.FrankaPandaWithCustomExternal();
-        var target = new JointTarget(new double[7], external: [0]);
+        JointTarget target = new(new double[7], external: [0]);
 
         var exception = Assert.Throws<ArgumentException>(() => robot.Kinematics([target]));
 
@@ -60,7 +61,7 @@ public class KinematicsTests
     public void CustomExternalKinematicsPreservesBasePlane()
     {
         var robot = TestRobots.AbbIrb120WithCustomExternal();
-        var target = new JointTarget(new double[6], external: [25]);
+        JointTarget target = new(new double[6], external: [25]);
         var solution = robot.Kinematics([target])[0];
         double[] expectedJoints = [0, 0, 0, 0, 0, 0, 25];
 
@@ -74,7 +75,7 @@ public class KinematicsTests
     public void SingleGroupSystemRetainsExternalMechanisms()
     {
         var system = (SystemUR)TestRobots.UR10WithCustomExternal();
-        var target = new JointTarget(new double[6], external: [25]);
+        JointTarget target = new(new double[6], external: [25]);
         var solution = system.Kinematics([target])[0];
 
         Assert.Multiple(() =>
@@ -96,15 +97,15 @@ public class KinematicsTests
     {
         var robot = TestRobots.AbbTwoGroupWithCustomExternal();
         double[] joints = [0, 0.2, -0.3, 0.1, 0.2, -0.1];
-        var group1Target = new JointTarget(new double[6], external: [0]);
+        JointTarget group1Target = new(new double[6], external: [0]);
         var reference = robot.Kinematics([new JointTarget(joints), group1Target]);
 
         Plane coupledPlane = reference[1].Planes[1];
         Plane localPlane = reference[0].Planes[^1];
         _ = localPlane.Transform(Transform.PlaneToPlane(coupledPlane, Plane.WorldXY));
 
-        var coupledFrame = new Frame(Plane.WorldXY, coupledMechanism: 0, coupledMechanicalGroup: 1);
-        var coupledTarget = new CartesianTarget(localPlane, reference[0].Configuration, frame: coupledFrame);
+        Frame coupledFrame = new(Plane.WorldXY, coupledMechanism: 0, coupledMechanicalGroup: 1);
+        CartesianTarget coupledTarget = new(localPlane, reference[0].Configuration, frame: coupledFrame);
         var solution = robot.Kinematics([coupledTarget, group1Target])[0];
 
         Assert.That(solution.Errors, Is.Empty);

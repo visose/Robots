@@ -180,6 +180,12 @@ class ProgramMotionPlanner
         int divisions = GetDivisions(systemTarget, previous, stepSize);
         var prevStep = ResetTiming(previous.ShallowClone());
 
+        // With no intermediate samples, the seed and the destination are
+        // already the same solved pose. Keep endpoint seeding for longer moves.
+        bool reuseEndpoint = divisions == 1
+            && !HasModeOtherThan(modes, EndpointMode.Direct)
+            && systemTarget.ProgramTargets.All(target => !target.IsJointMotion);
+
         double lastDeltaTime = 0;
         double deltaSinceKey = 0;
         double minSinceKey = 0;
@@ -189,8 +195,11 @@ class ProgramMotionPlanner
         {
             double t = step / (double)divisions;
             var interTarget = systemTarget.ShallowClone();
-            _ = systemTarget.Lerp(previous, _robotSystem, t, 0.0, 1.0, targets);
-            var kinematics = _program.RobotSystem.Kinematics(targets, prevJoints);
+            var kinematics = reuseEndpoint
+                ? systemTarget.ProgramTargets.MapToList(target => target.Kinematics)
+                : _robotSystem.Kinematics(
+                    systemTarget.Lerp(previous, _robotSystem, t, 0.0, 1.0, targets),
+                    prevJoints);
 
             prevJoints = kinematics.JointSets(prevJoints);
             interTarget.SetTargetKinematics(kinematics, _program, prevStep);
@@ -347,7 +356,7 @@ class ProgramMotionPlanner
             if (_program.Errors.Count > 0)
                 return;
 
-            Segments.Add(new MotionSegment(entry, exit, current, next));
+            Segments.Add(new(entry, exit, current, next));
             Keyframes.Add(exit);
         }
     }
@@ -376,7 +385,7 @@ class ProgramMotionPlanner
         if (end.TotalTime <= start.TotalTime + TimeTol)
             return;
 
-        Segments.Add(new MotionSegment(start, end));
+        Segments.Add(new(start, end));
     }
 
     static bool HasFlyby(List<SystemTarget> systemTargets)
@@ -885,16 +894,12 @@ class ProgramMotionPlanner
         {
             int jointIndex = i + jointCount;
             var joint = joints[jointIndex];
-            double jointSpeed = joint.MaxSpeed;
-
-            if (joint is PrismaticJoint)
+            double jointSpeed = joint switch
             {
-                jointSpeed = Min(jointSpeed, target.Target.Speed.TranslationExternal);
-            }
-            else if (joint is RevoluteJoint)
-            {
-                jointSpeed = Min(jointSpeed, target.Target.Speed.RotationExternal);
-            }
+                PrismaticJoint => Min(joint.MaxSpeed, target.Target.Speed.TranslationExternal),
+                RevoluteJoint => Min(joint.MaxSpeed, target.Target.Speed.RotationExternal),
+                _ => joint.MaxSpeed
+            };
 
             double currentTime = Abs(target.Kinematics.Joints[jointIndex] - prevTarget.Kinematics.Joints[jointIndex]) / jointSpeed;
 

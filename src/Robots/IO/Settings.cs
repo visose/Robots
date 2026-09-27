@@ -24,7 +24,7 @@ public record Settings(string LocalLibraryPath)
             var version = Rhino.RhinoApp.Version.Major;
 
             if (version <= 0)
-                version = 8;
+                throw new InvalidOperationException("Rhino did not provide a valid major version.");
 
             return Path.Combine(appData, "McNeel", "Rhinoceros", "packages", $"{version.Text()}.0", "Robots");
 #else

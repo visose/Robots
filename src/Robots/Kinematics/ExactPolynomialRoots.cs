@@ -46,17 +46,17 @@ static class ExactPolynomialRoots
         }
 
         var chain = CreateSturmChain(ref polynomial);
-        var left = new Dyadic(-BigInteger.One, 0);
-        var right = new Dyadic(BigInteger.One, 0);
+        Dyadic left = new(-BigInteger.One, 0);
+        Dyadic right = new(BigInteger.One, 0);
         var leftVariations = CountVariations(chain, left);
         var rightVariations = CountVariations(chain, right);
-        var found = new List<double>(polynomial.Degree);
+        List<double> found = new(polynomial.Degree);
 
         // V(a) - V(b) counts roots in (a, b], so include the left endpoint explicitly.
         if (polynomial.SignAt(left) == 0)
             found.Add(-1);
 
-        var pending = new Stack<Interval>(TargetDepth + 1);
+        Stack<Interval> pending = new(TargetDepth + 1);
         pending.Push(new(left, right, leftVariations, rightVariations, 0));
 
         while (pending.TryPop(out var interval))
@@ -108,7 +108,7 @@ static class ExactPolynomialRoots
     static IntegerPolynomial[] CreateSturmChain(ref IntegerPolynomial polynomial)
     {
         polynomial = polynomial.Primitive(positiveLeading: true);
-        var chain = new List<IntegerPolynomial>(polynomial.Degree + 1)
+        List<IntegerPolynomial> chain = new(polynomial.Degree + 1)
         {
             polynomial,
             polynomial.Derivative().Primitive()
@@ -135,7 +135,7 @@ static class ExactPolynomialRoots
 
     static IntegerPolynomial[] CreateSquareFreeChain(IntegerPolynomial polynomial)
     {
-        var chain = new List<IntegerPolynomial>(polynomial.Degree + 1)
+        List<IntegerPolynomial> chain = new(polynomial.Degree + 1)
         {
             polynomial,
             polynomial.Derivative().Primitive()

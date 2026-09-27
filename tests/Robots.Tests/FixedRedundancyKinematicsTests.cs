@@ -34,7 +34,7 @@ class FixedRedundancyKinematicsTests
     {
         var robot = GetRobot();
         var solver = GetSolver(robot);
-        var random = new Random(191_307);
+        Random random = new(191_307);
 
         for (int sample = 0; sample < 256; sample++)
         {
@@ -76,8 +76,8 @@ class FixedRedundancyKinematicsTests
         var robot = ((SingleGroupSystem)system).Robot;
         double[] joints = [0.25, -0.65, robot.Joints[2].Range.Mid, -1.35, 0.8, 1.1, -0.55];
         var plane = robot.Kinematics(new JointTarget(joints)).Planes[^1];
-        var target = new CartesianTarget(plane, motion: Motions.Linear);
-        var program = new Program("P", system, [TestRobots.Toolpath(target)], stepSize: 1000);
+        CartesianTarget target = new(plane, motion: Motions.Linear);
+        Program program = new("P", system, [TestRobots.Toolpath(target)], stepSize: 1000);
 
         Assert.Multiple(() =>
         {
@@ -155,15 +155,14 @@ class FixedRedundancyKinematicsTests
         var robot = GetRobot();
         var solver = GetSolver(robot);
         double[] regular = [0.35, -0.55, 0.4, -1.2, 0.7, 1.1, -0.45];
-        var cases = new (string Name, double[] Joints)[]
-        {
+        (string Name, double[] Joints)[] cases = [
             ("Axis 1 lower boundary", With(regular, 0, robot.Joints[0].Range.T0 + 1e-5)),
             ("Redundant axis upper boundary", With(regular, 2, robot.Joints[2].Range.T1 - 1e-5)),
             ("Axis 4 upper boundary", With(regular, 3, robot.Joints[3].Range.T1 - 1e-5)),
             ("Half-angle pole", With(regular, 5, Math.PI)),
             ("Near flat shoulder", With(regular, 1, 1e-5)),
             ("Near intersecting-axis singularity", With(regular, 4, 1e-5))
-        };
+        ];
 
         foreach (var (name, joints) in cases)
             AssertRoundTrip(robot, solver, joints, name);
@@ -217,7 +216,7 @@ class FixedRedundancyKinematicsTests
         ReadOnlySpan<double> offsets = [5e-9, 8e-9, 8.2e-9, 1e-8, 2e-8];
         var robot = GetRobot();
         var solver = GetSolver(robot);
-        var random = new Random(472_391);
+        Random random = new(472_391);
 
         foreach (double magnitude in offsets)
         {
@@ -250,6 +249,7 @@ class FixedRedundancyKinematicsTests
             [0.548394783488352, -0.6218491784906528, 5e-8, -1.1603337501173019, -0.026072332112152288, 1.228256534935021, 0.26074723677531253],
             [1.2460848712079189, -0.319565067343198, 5e-8, -0.7287624995987259, 0.006487423300970074, 2.7195768421800866, -1.543691414578571]
         ];
+
         var robot = GetRobot();
         var solver = GetSolver(robot);
 
@@ -275,12 +275,11 @@ class FixedRedundancyKinematicsTests
         setC[4] = 0;
         double[] setCChartBoundary = [.. setC];
         setCChartBoundary[0] = 0;
-        var cases = new (string Name, double[] Joints)[]
-        {
+        (string Name, double[] Joints)[] cases = [
             ("Singular set A", setA),
             ("Singular set C", setC),
             ("Singular set C at chart boundary", setCChartBoundary)
-        };
+        ];
 
         foreach (var (name, joints) in cases)
         {
@@ -292,6 +291,7 @@ class FixedRedundancyKinematicsTests
                 Assert.That(errors, Is.Empty, name);
                 Assert.That(solutions, Is.Not.Empty, name);
             });
+
             AssertAllSolutions(robot, target, joints[2], solutions, name);
             var selected = robot.Kinematics(
                 CartesianTarget(robot, joints, [joints[2]]),
@@ -358,7 +358,7 @@ class FixedRedundancyKinematicsTests
         double[] joints = [0.2, -0.5, 0.4, -1.2, 0.7, 1.0, -0.4];
         var target = CartesianTarget(robot, joints, [joints[2]]);
         double[] nearby = [0.28, -0.58, joints[2], -1.12, 0.62, 1.08, -0.32];
-        var numerical = new NumericalKinematics(robot, useModifiedDH: true, redundant: 2);
+        NumericalKinematics numerical = new(robot, useModifiedDH: true, redundant: 2);
         Report("analytical nearby", robot.Solver, new(nearby));
         Report("numerical nearby", numerical, new(nearby));
         Report("analytical unseeded", robot.Solver, default);
@@ -387,6 +387,7 @@ class FixedRedundancyKinematicsTests
             double microseconds = System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMicroseconds / count;
             TestContext.Out.WriteLine(
                 $"{name}: {microseconds:0.###} us/solve, {allocated / (1024.0 * count):0.###} KiB/solve");
+
             Assert.That(successful, Is.True, name);
         }
     }
@@ -432,10 +433,12 @@ class FixedRedundancyKinematicsTests
                     positionError,
                     Is.LessThan(PositionTolerance),
                     $"{message}, branch {solutionIndex}: position");
+
                 Assert.That(
                     orientationError,
                     Is.LessThan(OrientationTolerance),
                     $"{message}, branch {solutionIndex}: orientation");
+
                 Assert.That(
                     Math.Abs(Math.IEEERemainder(solution[2] - redundant, 2 * Math.PI)),
                     Is.LessThan(1e-10),
@@ -528,6 +531,7 @@ class FixedRedundancyKinematicsTests
                 cosine, -sine, 0, definition.A,
                 sine * cosineAlpha, cosine * cosineAlpha, -sineAlpha, -definition.D * sineAlpha,
                 sine * sineAlpha, cosine * sineAlpha, cosineAlpha, definition.D * cosineAlpha);
+
             transform *= current;
         }
 

@@ -61,6 +61,7 @@ public class GeometryUtilTests
         var rotation = Transform.Rotation(x, Vector3d.XAxis, Point3d.Origin)
             * Transform.Rotation(y, Vector3d.YAxis, Point3d.Origin)
             * Transform.Rotation(z, Vector3d.ZAxis, Point3d.Origin);
+
         var expected = Plane.WorldXY;
         _ = expected.Transform(rotation);
         expected.Origin = new(12, -7, 3);
@@ -73,7 +74,7 @@ public class GeometryUtilTests
     [Test]
     public void CircumcentreFindsSphereCenter()
     {
-        var center = new Point3d(12, -7, 3);
+        Point3d center = new(12, -7, 3);
         const double radius = 5;
         var actual = GeometryMath.Circumcentre(
             center + new Vector3d(radius, 0, 0),

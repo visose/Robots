@@ -47,7 +47,7 @@ public sealed class CreateTargetUpgrade() : ComponentUpgrade(ComponentIds.Legacy
         if (target is not IGH_Component source)
             return null!;
 
-        var replacement = new CreateTarget();
+        CreateTarget replacement = new();
         replacement.ClearInputsForUpgrade();
         replacement.SetCartesianForUpgrade(IsCartesian(source));
 
@@ -84,7 +84,7 @@ public sealed class DeconstructTargetUpgrade() : ComponentUpgrade(ComponentIds.L
         if (target is not IGH_Component source)
             return null!;
 
-        var replacement = new DeconstructTarget();
+        DeconstructTarget replacement = new();
         replacement.ClearOutputsForUpgrade();
 
         foreach (var oldOutput in source.Params.Output)
@@ -116,7 +116,7 @@ public sealed class CreateSpeedUpgrade() : ComponentUpgrade(ComponentIds.LegacyC
         if (target is not IGH_Component source)
             return null!;
 
-        var replacement = new CreateSpeedAccel();
+        CreateSpeedAccel replacement = new();
         MigrateSources(source, replacement, [(0, 0), (1, 1), (2, 2), (3, 3)]);
         MigrateOutputs(source, replacement);
         return Swap(source, replacement);
@@ -130,7 +130,7 @@ public sealed class CreateProgramUpgrade() : ComponentUpgrade(ComponentIds.Legac
         if (target is not IGH_Component source)
             return null!;
 
-        var replacement = new CreateProgramVariable();
+        CreateProgramVariable replacement = new();
         bool hasSecondToolpath = HasSources(source, 3);
 
         if (hasSecondToolpath)
@@ -139,6 +139,7 @@ public sealed class CreateProgramUpgrade() : ComponentUpgrade(ComponentIds.Legac
         MigrateSources(source, replacement, hasSecondToolpath
             ? [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6)]
             : [(0, 0), (1, 1), (2, 2), (4, 3), (5, 4), (6, 5)]);
+
         MigrateOutputs(source, replacement);
         return Swap(source, replacement);
     }
@@ -152,7 +153,7 @@ public sealed class CustomCommandUpgrade() : ComponentUpgrade(ComponentIds.Legac
             return null!;
 
         var manufacturer = Manufacturer(source);
-        var replacement = new CustomCommand();
+        CustomCommand replacement = new();
         MigrateSources(source, replacement, [(0, 0)]);
 
         if (manufacturer is { } selected)

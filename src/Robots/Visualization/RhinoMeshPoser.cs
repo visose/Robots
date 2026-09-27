@@ -7,7 +7,7 @@ public class RhinoMeshPoser : IMeshPoser
     public static Mesh[] Pose(RobotSystem robot, IReadOnlyList<KinematicSolution> solutions, IReadOnlyList<Target> targets)
     {
         var tools = targets.Map(t => t.Tool);
-        var poser = new RhinoMeshPoser(robot);
+        RhinoMeshPoser poser = new(robot);
         poser.Pose(solutions, tools);
         return poser.Meshes;
     }

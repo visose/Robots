@@ -98,6 +98,7 @@ static class RaghavanRoth
             -0.5,
             -0.5
         ];
+
         ReadOnlySpan<double> sineTheta =
         [
             0,
@@ -123,6 +124,7 @@ static class RaghavanRoth
                     factors[joint],
                     cosineTheta[sample],
                     sineTheta[sample]);
+
                 inverseTransforms[index] = RigidInverse(transforms[index]);
             }
         }
@@ -239,6 +241,7 @@ static class RaghavanRoth
                     var transform = prefix[right0]
                         * inverseSampleTransforms[right1 * JointCount + split.Right1]
                         * dropped;
+
                     BuildFeatures(transform, right.Slice(column * EquationCount, EquationCount));
                 }
             }
@@ -255,6 +258,7 @@ static class RaghavanRoth
                     * inverseSampleTransforms[right0 * JointCount + split.Right0]
                     * target
                     * dropped;
+
                 BuildFeatures(transform, right.Slice(column * EquationCount, EquationCount));
             }
         }
@@ -391,6 +395,7 @@ static class RaghavanRoth
                 coefficients.Slice(
                     sourceOffset + basis * EquationCount,
                     EquationCount).CopyTo(column);
+
                 var q = coefficients[QOffset..];
 
                 for (int reflector = 0; reflector < RightBasisCount; reflector++)
@@ -411,6 +416,7 @@ static class RaghavanRoth
                 trig[basis] = eliminated[basis * eliminatedRows + row];
                 trig[LeftBasisCount + basis] = eliminated[
                     LeftBasisCount * eliminatedRows + basis * eliminatedRows + row];
+
                 trig[LeftBasisCount * 2 + basis] = eliminated[
                     LeftBasisCount * eliminatedRows * 2 + basis * eliminatedRows + row];
             }
@@ -564,9 +570,11 @@ static class RaghavanRoth
                 * target
                 * RigidInverse(after)
                 * inverseDrop;
+
             theta[split.Drop] = Atan2(
                 residual.M10 - residual.M01,
                 residual.M00 + residual.M11);
+
             var actual = before
                 * JointTransform(theta[split.Drop], factors[split.Drop])
                 * after;
@@ -661,6 +669,7 @@ static class RaghavanRoth
             double value = polynomial[i] * quadraticWeight
                 + polynomial[matrixLength + i] * linearWeight
                 + polynomial[matrixLength * 2 + i] * constantWeight;
+
             matrix[i] = value;
             scale = Max(scale, Abs(value));
         }
@@ -886,6 +895,7 @@ static class RaghavanRoth
         ReadOnlySpan<(int Numerator, int Denominator)> candidates = first
             ? [(5, 8), (2, 5), (11, 2), (4, 7), (10, 1), (3, 6), (9, 0)]
             : [(7, 8), (6, 7), (1, 2), (4, 5), (10, 11), (3, 4), (0, 1), (9, 10)];
+
         var selected = candidates[0];
         double magnitude = 0;
 
@@ -911,6 +921,7 @@ static class RaghavanRoth
         angle = NormalizeAngle(2 * Atan2(
             vector[selected.Numerator],
             vector[selected.Denominator]));
+
         return true;
     }
 
@@ -1083,6 +1094,7 @@ static class RaghavanRoth
             factor.M21,
             factor.M22,
             factor.M23);
+
         return result;
     }
 

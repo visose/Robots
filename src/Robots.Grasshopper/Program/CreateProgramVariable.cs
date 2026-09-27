@@ -1,4 +1,6 @@
-﻿namespace Robots.Grasshopper;
+﻿using static Robots.Grasshopper.ProgramToolpaths;
+
+namespace Robots.Grasshopper;
 
 public class CreateProgramVariable() : Component(
     "Create Program",
@@ -30,14 +32,6 @@ public class CreateProgramVariable() : Component(
         _ = pManager.AddNumberParameter("Duration", "D", "Program duration in seconds.", GH_ParamAccess.item);
         _ = pManager.AddTextParameter("Warnings", "W", "Program warnings.", GH_ParamAccess.list);
         _ = pManager.AddTextParameter("Errors", "E", "Program errors.", GH_ParamAccess.list);
-    }
-
-    static int GetRobotCount(RobotSystem robotSystem)
-    {
-        if (robotSystem is not IndustrialSystem system)
-            return 1;
-
-        return system.MechanicalGroups.Count;
     }
 
     void SetTargetInputs(int count)
@@ -82,7 +76,7 @@ public class CreateProgramVariable() : Component(
         if (robotSystem != _robotSystem)
         {
             _robotSystem = robotSystem;
-            SetTargetInputs(GetRobotCount(robotSystem));
+            SetTargetInputs(robotSystem.RobotCount);
         }
 
         var initCommandValues = MaybeList<Command>(DA, "Init Commands");
@@ -90,9 +84,9 @@ public class CreateProgramVariable() : Component(
         var multiFileIndices = MaybeList<int>(DA, "Multi-File Indices");
         var stepSizeIndex = InputIndex("Step Size");
         var stepSize = stepSizeIndex == -1 ? 1.0 : DA.Get<double>(stepSizeIndex);
-        var toolpaths = ReadToolpaths(DA);
+        var toolpaths = ProgramToolpaths.Read(DA, Params);
 
-        var program = new Program(name, robotSystem, toolpaths, initCommands, multiFileIndices, stepSize);
+        Program program = new(name, robotSystem, toolpaths, initCommands, multiFileIndices, stepSize);
 
         _ = DA.SetData(0, program);
 
@@ -131,44 +125,6 @@ public class CreateProgramVariable() : Component(
         return index == -1 ? [] : DA.MaybeList<T>(index);
     }
 
-    int[] TargetInputIndices()
-    {
-        return [.. Params.Input.Select((param, index) => (param, index)).Where(x => IsTargetInput(x.param)).Select(x => x.index)];
-    }
-
-    static bool IsTargetInput(IGH_Param param) => param is ToolpathParameter or TargetParameter;
-
-    IToolpath[] ReadToolpaths(IGH_DataAccess DA)
-    {
-        var indices = TargetInputIndices();
-        var toolpaths = new IToolpath[indices.Length];
-
-        for (int i = 0; i < indices.Length; i++)
-        {
-            int index = indices[i];
-            var param = Params.Input[index];
-
-            try
-            {
-                toolpaths[i] = ReadToolpath(DA, index, param);
-            }
-            catch (MissingInputException)
-            {
-                throw new RuntimeWarningException($"Input parameter {param.NickName} failed to collect data.");
-            }
-        }
-
-        return toolpaths;
-    }
-
-    static SimpleToolpath ReadToolpath(IGH_DataAccess DA, int index, IGH_Param param)
-    {
-        if (param is ToolpathParameter)
-            return new SimpleToolpath(DA.List<IToolpath>(index));
-
-        return new(DA.List<Target>(index));
-    }
-
     bool IGH_VariableParameterComponent.CanInsertParameter(GH_ParameterSide side, int index) => false;
     bool IGH_VariableParameterComponent.CanRemoveParameter(GH_ParameterSide side, int index) => false;
     IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index) => default!;
@@ -179,13 +135,13 @@ public class CreateProgramVariable() : Component(
     {
         int inputIndex = targetIndex + 2;
 
-        while (TargetInputIndices().Length <= targetIndex)
+        while (TargetInputIndices(Params).Length <= targetIndex)
         {
-            var param = new ToolpathParameter { Access = GH_ParamAccess.list, Optional = true };
+            ToolpathParameter param = new() { Access = GH_ParamAccess.list, Optional = true };
             _ = Params.RegisterInputParam(param, inputIndex);
         }
 
-        var targets = TargetInputIndices();
+        var targets = TargetInputIndices(Params);
         int count = targets.Length;
 
         for (int i = 0; i < targets.Length; i++)

@@ -64,10 +64,10 @@ class MainViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
-    public async Task InitAsync()
+    public async Task Init()
     {
         // robot material
-        var material = new PBRMaterial
+        PBRMaterial material = new()
         {
             AlbedoColor = new Color4(0.8f, 0.4f, 0.05f, 1f),
             MetallicFactor = 0.2,
@@ -77,9 +77,9 @@ class MainViewModel : INotifyPropertyChanged, IDisposable
         };
 
         // robot program
-        var programTask = TestProgram.CreateAsync();
-        var cancel = new CancellationTokenSource();
-        _ = SpinnerAsync(cancel);
+        var programTask = TestProgram.Create();
+        CancellationTokenSource cancel = new();
+        _ = Spinner(cancel);
         _program = await programTask;
         cancel.Cancel();
 
@@ -92,9 +92,9 @@ class MainViewModel : INotifyPropertyChanged, IDisposable
         IsPlaying = true;
     }
 
-    async Task SpinnerAsync(CancellationTokenSource cancel)
+    async Task Spinner(CancellationTokenSource cancel)
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(250));
+        using PeriodicTimer timer = new(TimeSpan.FromMilliseconds(250));
         string text = "Downloading Bartlett library";
 
         while (await timer.WaitForNextTickAsync(cancel.Token))

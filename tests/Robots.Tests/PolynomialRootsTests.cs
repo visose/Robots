@@ -50,8 +50,8 @@ class PolynomialRootsTests
     [Test]
     public void FindsAllDegree16Roots()
     {
-        var previous = new double[] { 1 };
-        var current = new double[] { 0, 1 };
+        double[] previous = [1];
+        double[] current = [0, 1];
 
         for (int degree = 2; degree <= 16; degree++)
         {

@@ -59,7 +59,7 @@ public class NumericalKinematicsTests
 
         JointTarget startTarget = new(startJoints);
         CartesianTarget endTarget = new(endPlane, motion: Motions.Joint);
-        var program = new Program("NumericalJointMove", robot, [new SimpleToolpath(startTarget, endTarget)]);
+        Program program = new("NumericalJointMove", robot, [new SimpleToolpath(startTarget, endTarget)]);
 
         Assert.That(program.Errors, Is.Empty);
         Assert.That(program.Code, Is.Not.Null);
@@ -73,10 +73,11 @@ public class NumericalKinematicsTests
         var robot = ((IndustrialSystem)system).MechanicalGroups[0].Robot;
         double[] joints = [0.25, 1.35, 0.15, 0.2, 0.15, 0.1];
         var forward = robot.Kinematics(new JointTarget(joints));
-        var target = new CartesianTarget(
+        CartesianTarget target = new(
             forward.Planes[^1],
             RobotConfigurations.Wrist,
             Motions.Joint);
+
         var solution = robot.Kinematics(target, joints);
 
         Assert.Multiple(() =>
@@ -116,6 +117,7 @@ public class NumericalKinematicsTests
             "<RobotArm ",
             $"<RobotArm solver=\"{solver}\" ",
             StringComparison.Ordinal);
+
         return (IndustrialSystem)FileIO.ParseRobotSystem(xml, Plane.WorldXY);
     }
 }

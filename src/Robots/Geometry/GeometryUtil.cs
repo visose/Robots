@@ -93,8 +93,8 @@ static class GeometryUtil
 
     public static Plane QuaternionToPlane(double x, double y, double z, double q1, double q2, double q3, double q4)
     {
-        var point = new Point3d(CheckFinite(x, nameof(x)), CheckFinite(y, nameof(y)), CheckFinite(z, nameof(z)));
-        var quaternion = new Quaternion(CheckFinite(q1, nameof(q1)), CheckFinite(q2, nameof(q2)), CheckFinite(q3, nameof(q3)), CheckFinite(q4, nameof(q4)));
+        Point3d point = new(CheckFinite(x, nameof(x)), CheckFinite(y, nameof(y)), CheckFinite(z, nameof(z)));
+        Quaternion quaternion = new(CheckFinite(q1, nameof(q1)), CheckFinite(q2, nameof(q2)), CheckFinite(q3, nameof(q3)), CheckFinite(q4, nameof(q4)));
         return quaternion.ToPlane(point);
     }
 
@@ -102,8 +102,8 @@ static class GeometryUtil
     {
         numbers = CheckNumbers(numbers, 7);
 
-        var point = new Point3d(numbers[0], numbers[1], numbers[2]);
-        var quaternion = new Quaternion(numbers[3], numbers[4], numbers[5], numbers[6]);
+        Point3d point = new(numbers[0], numbers[1], numbers[2]);
+        Quaternion quaternion = new(numbers[3], numbers[4], numbers[5], numbers[6]);
         return quaternion.ToPlane(point);
     }
 
@@ -148,7 +148,7 @@ static class GeometryUtil
     public static Plane EulerZYXDegreesToPlane(double[] numbers)
     {
         numbers = CheckNumbers(numbers, 6);
-        var euler = new Vector6d(numbers[0], numbers[1], numbers[2], numbers[3].ToRadians(), numbers[4].ToRadians(), numbers[5].ToRadians());
+        Vector6d euler = new(numbers[0], numbers[1], numbers[2], numbers[3].ToRadians(), numbers[4].ToRadians(), numbers[5].ToRadians());
         var t = euler.EulerZYXToTransform();
         return t.ToPlane();
     }
@@ -156,7 +156,7 @@ static class GeometryUtil
     public static Plane EulerZYZDegreesToPlane(double[] numbers)
     {
         numbers = CheckNumbers(numbers, 6);
-        var euler = new Vector6d(numbers[0], numbers[1], numbers[2], numbers[3].ToRadians(), numbers[4].ToRadians(), numbers[5].ToRadians());
+        Vector6d euler = new(numbers[0], numbers[1], numbers[2], numbers[3].ToRadians(), numbers[4].ToRadians(), numbers[5].ToRadians());
         var t = euler.EulerZYZToTransform();
         return t.ToPlane();
     }
@@ -164,7 +164,7 @@ static class GeometryUtil
     public static Plane ReversedEulerZYXDegreesToPlane(double[] numbers)
     {
         numbers = CheckNumbers(numbers, 6);
-        var euler = new Vector6d(numbers[0], numbers[1], numbers[2], numbers[5].ToRadians(), numbers[4].ToRadians(), numbers[3].ToRadians());
+        Vector6d euler = new(numbers[0], numbers[1], numbers[2], numbers[5].ToRadians(), numbers[4].ToRadians(), numbers[3].ToRadians());
         var t = euler.EulerZYXToTransform();
         return t.ToPlane();
     }
@@ -201,7 +201,7 @@ static class GeometryUtil
 
     static Transform AxisAngleRotation(double vx, double vy, double vz)
     {
-        var vector = new Vector3d(vx, vy, vz);
+        Vector3d vector = new(vx, vy, vz);
         double angle = vector.Length;
         _ = vector.Unitize();
 
@@ -224,6 +224,7 @@ static class GeometryUtil
             c + xx, xy - zs, xz + ys,
             xy + zs, c + yy, yz - xs,
             xz - ys, yz + xs, c + zz);
+
         return matrix;
     }
 
@@ -252,9 +253,9 @@ static class GeometryUtil
 
         public Plane ToPlane()
         {
-            var p = new Point3d(t.M03, t.M13, t.M23);
-            var vx = new Vector3d(t.M00, t.M10, t.M20);
-            var vy = new Vector3d(t.M01, t.M11, t.M21);
+            Point3d p = new(t.M03, t.M13, t.M23);
+            Vector3d vx = new(t.M00, t.M10, t.M20);
+            Vector3d vy = new(t.M01, t.M11, t.M21);
 
             var vz = Vector3d.CrossProduct(vx, vy);
             vy = Vector3d.CrossProduct(vz, vx);
@@ -406,6 +407,7 @@ static class GeometryUtil
                 cb * cc, -cb * sc, sb, euler.A1,
                 ca * sc + sa * sb * cc, ca * cc - sa * sb * sc, -sa * cb, euler.A2,
                 sa * sc - ca * sb * cc, sa * cc + ca * sb * sc, ca * cb, euler.A3);
+
             return t;
         }
 
@@ -421,6 +423,7 @@ static class GeometryUtil
                 ca * cb * cc - sa * sc, -ca * cb * sc - sa * cc, ca * sb, euler.A1,
                 sa * cb * cc + ca * sc, -sa * cb * sc + ca * cc, sa * sb, euler.A2,
                 -sb * cc, sb * sc, cb, euler.A3);
+
             return t;
         }
     }

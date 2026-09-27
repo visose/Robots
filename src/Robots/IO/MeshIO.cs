@@ -79,6 +79,7 @@ static class MeshIO
     {
         var layer = FindLayer(doc, ToolLayerName(name))
             ?? throw new ArgumentException($"\"{name}\" is not in the 3dm file.");
+
         return GetLayerMesh(doc, layer.Index, append: true) ?? GeometryUtil.EmptyMesh;
     }
 
@@ -99,6 +100,7 @@ static class MeshIO
     {
         var layer = doc.AllLayers.FirstOrDefault(layer =>
             layer.Name.EqualsIgnoreCase(layerName) && layer.ParentLayerId == parentLayer.Id);
+
         return layer is null ? null : GetLayerMesh(doc, layer.Index, append);
     }
 

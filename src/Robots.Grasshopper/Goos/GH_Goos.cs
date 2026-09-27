@@ -23,7 +23,7 @@ public abstract class Goo<T, TGoo> : GH_Goo<T>
 
     public override IGH_Goo Duplicate()
     {
-        var goo = new TGoo();
+        TGoo goo = new();
 
         if (Value is null)
         {

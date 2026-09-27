@@ -33,6 +33,7 @@ class KinematicsComparisonTests
                 joints[2].A = 0;
                 joints[3].D = 0;
             }), Is.False, "forearm");
+
             Assert.That(SphericalSupportsAfter(joints => joints[0] = new PrismaticJoint()), Is.False, "joint type");
             Assert.That(SphericalSupportsAfter(joints => joints[0].D = double.NaN), Is.False, "finite DH");
         });
@@ -48,6 +49,7 @@ class KinematicsComparisonTests
         var automatic = robot.Kinematics(
             new CartesianTarget(forward.Planes[^1], motion: motion),
             joints);
+
         var ignored = automatic.Configuration ^ RobotConfigurations.Shoulder;
         var configured = robot.Kinematics(
             new CartesianTarget(forward.Planes[^1], ignored, motion),
@@ -70,7 +72,7 @@ class KinematicsComparisonTests
         {
             var robot = GetRobot(factory());
             var analytical = robot.Solver;
-            var numerical = new NumericalKinematics(robot);
+            NumericalKinematics numerical = new(robot);
             var samples = CreateSamples(robot, seed, RoundTripCount);
 
             for (int i = 0; i < samples.Length; i++)
@@ -99,7 +101,7 @@ class KinematicsComparisonTests
         {
             var robot = GetRobot(factory());
             var sample = CreateSamples(robot, seed, count: 1)[0];
-            var previous = new PreviousJoints(sample.Previous);
+            PreviousJoints previous = new(sample.Previous);
             _ = robot.Solver.Solve(sample.Target, previous, basePlane: null);
             long allocationStart = GC.GetAllocatedBytesForCurrentThread();
             var solution = robot.Solver.Solve(sample.Target, previous, basePlane: null);
@@ -139,7 +141,7 @@ class KinematicsComparisonTests
 
     static Sample[] CreateSamples(RobotArm robot, int seed, int count)
     {
-        var random = new Random(seed);
+        Random random = new(seed);
         var samples = new Sample[count];
 
         for (int sampleIndex = 0; sampleIndex < samples.Length; sampleIndex++)
@@ -148,8 +150,8 @@ class KinematicsComparisonTests
             var previous = NearbyJoints(robot, joints);
             var forward = robot.Kinematics(new JointTarget(joints));
             var expected = forward.Planes[^1];
-            var target = new CartesianTarget(expected, motion: Motions.Joint);
-            var configuredTarget = new CartesianTarget(expected, forward.Configuration, Motions.Joint);
+            CartesianTarget target = new(expected, motion: Motions.Joint);
+            CartesianTarget configuredTarget = new(expected, forward.Configuration, Motions.Joint);
             samples[sampleIndex] = new(target, configuredTarget, previous, expected);
         }
 
@@ -245,7 +247,7 @@ class KinematicsComparisonTests
             total += duration;
 
         int p95Index = Math.Max(0, (int)Math.Ceiling(durations.Length * 0.95) - 1);
-        var measurement = new Measurement(
+        Measurement measurement = new(
             samples.Length,
             successes,
             total / durations.Length,

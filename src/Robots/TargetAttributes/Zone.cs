@@ -38,7 +38,10 @@ public class Zone(double distance, double? rotation = null, double? rotationExte
             && _name == other._name;
     }
 
-    public override string ToString() => HasName
-         ? $"Zone ({Name})"
-         : IsFlyBy ? $"Zone ({Distance:0.##} mm)" : $"Zone (Stop point)";
+    public override string ToString() => this switch
+    {
+        { HasName: true } => $"Zone ({Name})",
+        { IsFlyBy: true } => $"Zone ({Distance:0.##} mm)",
+        _ => "Zone (Stop point)"
+    };
 }

@@ -34,18 +34,23 @@ public class RobotAbb : RobotArm
     public override double DegreeToRadian(double degree, int i)
     {
         double radian = degree.ToRadians();
-        if (i == 1) radian = -radian + HalfPI;
-        if (i == 2) radian *= -1;
-        if (i == 4) radian *= -1;
-        return radian;
+
+        return i switch
+        {
+            1 => -radian + HalfPI,
+            2 or 4 => radian * -1,
+            _ => radian
+        };
     }
 
     public override double RadianToDegree(double radian, int i)
     {
-        if (i == 1) { radian -= HalfPI; radian = -radian; }
-        if (i == 2) radian *= -1;
-        if (i == 4) radian *= -1;
-        return radian.ToDegrees();
+        return (i switch
+        {
+            1 => -(radian - HalfPI),
+            2 or 4 => radian * -1,
+            _ => radian
+        }).ToDegrees();
     }
 
     protected override double[] DefaultAlpha => [HalfPI, 0, HalfPI, -HalfPI, HalfPI, 0];

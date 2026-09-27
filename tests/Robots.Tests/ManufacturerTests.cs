@@ -19,18 +19,37 @@ public class ManufacturerTests
         {
             Assert.That(ManufacturerCatalog.Get(manufacturer).Id, Is.EqualTo(manufacturer));
 
+            double[] angles = [-360, -180, -90, -30, -0.0, 0, 30, 90, 180, 360, 720];
+
             for (int joint = 0; joint < robot.Joints.Length; joint++)
             {
-                double radians = robot.DegreeToRadian(30, joint);
-                Assert.That(robot.RadianToDegree(radians, joint), Is.EqualTo(30).Within(1e-12), $"Axis {joint + 1}");
+                foreach (double angle in angles)
+                {
+                    double radians = robot.DegreeToRadian(angle, joint);
+                    Assert.That(robot.RadianToDegree(radians, joint), Is.EqualTo(angle).Within(1e-12), $"Axis {joint + 1}, {angle} degrees");
+                }
             }
         });
+    }
+
+    [TestCase(Manufacturers.ABB, 1)]
+    [TestCase(Manufacturers.Fanuc, 1)]
+    [TestCase(Manufacturers.Jaka, 1)]
+    [TestCase(Manufacturers.Jaka, 2)]
+    [TestCase(Manufacturers.Staubli, 1)]
+    [TestCase(Manufacturers.Staubli, 2)]
+    public void InverseOffsetPreservesNegativeZero(Manufacturers manufacturer, int joint)
+    {
+        var system = (IndustrialSystem)TestRobots.PostProcessorRobot(manufacturer, 6);
+        double degrees = system.MechanicalGroups[0].Robot.RadianToDegree(Math.PI / 2, joint);
+
+        Assert.That(BitConverter.DoubleToInt64Bits(degrees), Is.EqualTo(long.MinValue));
     }
 
     [Test]
     public void KukaControllerIOUsesOneBasedIndices()
     {
-        var io = new IO(Manufacturers.KUKA, true, [], [], [], []);
+        IO io = new(Manufacturers.KUKA, true, [], [], [], []);
 
         Assert.Multiple(() =>
         {

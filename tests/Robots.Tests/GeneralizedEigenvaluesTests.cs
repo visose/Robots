@@ -17,6 +17,7 @@ class GeneralizedEigenvaluesTests
             0, 0, 0, 1, -2,
             0, 0, 0, 2, 1
         ];
+
         double[] matrixB =
         [
             1, 0, 0, 0, 0,
@@ -25,6 +26,7 @@ class GeneralizedEigenvaluesTests
             0, 0, 0, 1, 0,
             0, 0, 0, 0, 1
         ];
+
         var alphaReal = new double[order];
         var alphaImaginary = new double[order];
         var beta = new double[order];
@@ -67,7 +69,7 @@ class GeneralizedEigenvaluesTests
                 : new(alpha / denominator, 0);
         }
 
-        var random = new Random(7305);
+        Random random = new(7305);
 
         for (int step = 0; step < order * 8; step++)
         {
@@ -121,12 +123,13 @@ class GeneralizedEigenvaluesTests
             0, 0, 0, 0, 4, 0,
             0, 0, 0, 0, 0, -5
         ];
+
         var matrixB = new double[order * order];
 
         for (int i = 0; i < order; i++)
             matrixB[i * order + i] = 1;
 
-        var random = new Random(1973);
+        Random random = new(1973);
 
         for (int step = 0; step < order * 8; step++)
         {
@@ -197,6 +200,7 @@ class GeneralizedEigenvaluesTests
             alphaImaginary,
             beta,
             out _);
+
         long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
 
         Assert.Multiple(() =>
@@ -213,7 +217,7 @@ class GeneralizedEigenvaluesTests
         Complex[] expected,
         double tolerance)
     {
-        var actual = new List<Complex>(alphaReal.Length);
+        List<Complex> actual = new(alphaReal.Length);
 
         Assert.That(beta, Has.All.GreaterThanOrEqualTo(0));
 
@@ -247,6 +251,7 @@ class GeneralizedEigenvaluesTests
                 best,
                 Is.LessThanOrEqualTo(tolerance * Max(1, Complex.Abs(value))),
                 $"No match for {value}. Actual: {string.Join(", ", actual)}");
+
             actual.RemoveAt(match);
         }
 

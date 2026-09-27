@@ -119,6 +119,7 @@ static class PostProcessorUtil
             IssueKind.CommandInvalid,
             $"Command {command.Name} is not implemented by {postProcessor.GetType().Name}.",
             source: command.GetType().Name);
+
         return "";
     }
 

@@ -165,6 +165,7 @@ class IgusPostProcessor : IPostProcessor
                                         $"x=\"{planeValues[0]:0.000}\" y=\"{planeValues[1]:0.000}\" z=\"{planeValues[2]:0.000}\" " +
                                         $"a=\"{planeValues[3]:0.000}\" b=\"{planeValues[4]:0.000}\" c=\"{planeValues[5]:0.000}\" " +
                                         $"e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"\" />";
+
                                     break;
                                 }
 
@@ -177,6 +178,7 @@ class IgusPostProcessor : IPostProcessor
                                         $"x=\"{planeValues[0]:0.000}\" y=\"{planeValues[1]:0.000}\" z=\"{planeValues[2]:0.000}\" " +
                                         $"a=\"{planeValues[3]:0.000}\" b=\"{planeValues[4]:0.000}\" c=\"{planeValues[5]:0.000}\" " +
                                         $"e1=\"0\" e2=\"0\" e3=\"0\" Descr=\"\" />";
+
                                     break;
                                 }
 

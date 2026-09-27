@@ -22,7 +22,8 @@ public class PostProcessorTests
             "Franky" => (TestRobots.FrankaPandaWithCustomExternal("FrankyPostProcessor"), 7),
             _ => throw new ArgumentOutOfRangeException(nameof(dialect))
         };
-        var target = new JointTarget(new double[jointCount], external: [0]);
+
+        JointTarget target = new(new double[jointCount], external: [0]);
 
         Program program = new("P", robot, [TestRobots.Toolpath(target)]);
 
@@ -129,11 +130,12 @@ public class PostProcessorTests
     public void AbbOmniCoreMultiFileReferencesSavedModxFiles()
     {
         var robot = TestRobots.AbbIrb120(omniCore: true);
-        var program = new Program(
+        Program program = new(
             "P",
             robot,
             [TestRobots.Toolpath(new JointTarget(new double[6]), new JointTarget(new double[6]))],
             multiFileIndices: [0, 1]);
+
         var output = Path.Combine(Path.GetTempPath(), $"RobotsTests-{Guid.NewGuid():N}");
 
         try
@@ -166,6 +168,7 @@ public class PostProcessorTests
             Manufacturers.ABB,
             6,
             postProcessorOverride: postProcessor);
+
         Program program = new(
             "P",
             robot,
@@ -188,6 +191,7 @@ public class PostProcessorTests
             name,
             TestRobots.PostProcessorRobot(Manufacturers.KUKA, 6),
             [TestRobots.Toolpath(new JointTarget(new double[6]))]);
+
         Program alternate = new(
             name,
             TestRobots.PostProcessorRobot(
@@ -220,12 +224,12 @@ public class PostProcessorTests
     public void DuplicateInvalidCommandsStayProgramErrors()
     {
         var robot = TestRobots.PostProcessorRobot(Manufacturers.ABB, 6);
-        var command = new SetDO(2, true);
+        SetDO command = new(2, true);
         var toolpath = TestRobots.Toolpath(
             new JointTarget(new double[6], command: command),
             new JointTarget(new double[6], command: command));
 
-        var program = new Program("P", robot, [toolpath]);
+        Program program = new("P", robot, [toolpath]);
 
         Assert.That(program.Code, Is.Null);
         Assert.That(program.Errors, Has.One.Contains("Digital output 2: IO index is out of range."));
@@ -239,7 +243,7 @@ public class PostProcessorTests
             new JointTarget(new double[7]),
             new JointTarget(new double[7]));
 
-        var program = new Program("P", robot, [toolpath], multiFileIndices: [0, 1]);
+        Program program = new("P", robot, [toolpath], multiFileIndices: [0, 1]);
 
         Assert.That(program.Code, Is.Null);
         Assert.That(program.Errors, Has.One.EqualTo("Multi-file programs are not supported on Franka Emika robots."));
@@ -249,7 +253,7 @@ public class PostProcessorTests
     [TestCase(Manufacturers.Jaka, 6, "Jaka")]
     public void UnsupportedCommandDeclarationsFail(Manufacturers manufacturer, int jointCount, string robotName)
     {
-        var command = new Commands.Custom(command: "noop()", declaration: "global int CustomCommand");
+        Commands.Custom command = new(command: "noop()", declaration: "global int CustomCommand");
         var program = CreateProgram(manufacturer, jointCount, command);
 
         Assert.That(program.Code, Is.Null);
@@ -260,12 +264,12 @@ public class PostProcessorTests
     public void FrankaCartesianWaypointMotionDefinesMotionData()
     {
         var robot = TestRobots.PostProcessorRobot(Manufacturers.FrankaEmika, 7);
-        var start = new JointTarget([0, -0.785, 0, -2.356, 0, 1.571, 0.785]);
+        JointTarget start = new([0, -0.785, 0, -2.356, 0, 1.571, 0.785]);
         var plane = robot.Kinematics([start])[0].Planes[^1];
-        var target = new CartesianTarget(plane, motion: Motions.Linear);
+        CartesianTarget target = new(plane, motion: Motions.Linear);
         var toolpath = TestRobots.Toolpath(start, target);
 
-        var program = new Program("P", robot, [toolpath]);
+        Program program = new("P", robot, [toolpath]);
         var code = TestRobots.FlattenCode(program);
 
         Assert.That(program.Errors, Is.Empty);
@@ -273,6 +277,7 @@ public class PostProcessorTests
             data = MotionData(dynamic_rel)
               motion = WaypointMotion([
             """.UseLF()));
+
         Assert.That(code, Does.Contain("robot.move(DefaultTool, motion, data)"));
     }
 
@@ -284,7 +289,7 @@ public class PostProcessorTests
             new JointTarget(new double[6]),
             new JointTarget(new double[6], command: new Wait(1.0)));
 
-        var program = new Program("P", robot, [toolpath]);
+        Program program = new("P", robot, [toolpath]);
         var code = TestRobots.FlattenCode(program);
 
         Assert.That(program.Errors, Is.Empty);
@@ -307,8 +312,8 @@ public class PostProcessorTests
     [Test]
     public void FanucTargetCommandsStayAroundMotionInOrder()
     {
-        var before = new Commands.Custom(command: "CALL BEFORE ;") { RunBefore = true };
-        var after = new Commands.Custom(command: "CALL AFTER ;");
+        Commands.Custom before = new(command: "CALL BEFORE ;") { RunBefore = true };
+        Commands.Custom after = new(command: "CALL AFTER ;");
         var program = CreateProgram(Manufacturers.Fanuc, 6, new Group([before, after]));
         var code = TestRobots.FlattenCode(program);
 
@@ -328,10 +333,10 @@ public class PostProcessorTests
     {
         const string io = """<IO><DO names="21"/><DI names="21"/><AO names="1"/><AI names="1"/></IO>""";
         var robot = TestRobots.PostProcessorRobot(Manufacturers.Igus, 6, io: io);
-        var before = new SetDO(0, true, runBefore: true);
-        var after = new PulseDO(0);
-        var target = new JointTarget(new double[6], command: new Group([before, after]));
-        var program = new Program("P", robot, [TestRobots.Toolpath(target)]);
+        SetDO before = new(0, true, runBefore: true);
+        PulseDO after = new(0);
+        JointTarget target = new(new double[6], command: new Group([before, after]));
+        Program program = new("P", robot, [TestRobots.Toolpath(target)]);
         var code = program.Code ?? throw new InvalidOperationException("Program code was not generated.");
         var numbered = code[0][0]
             .Where(line => line.Contains(" Nr=\"", StringComparison.Ordinal))
@@ -366,7 +371,7 @@ public class PostProcessorTests
     [Test]
     public void FormatterCanHandleCommandWithoutOutput()
     {
-        var formatter = new SuppressingFormatter();
+        SuppressingFormatter formatter = new();
         var system = TestRobots.AbbIrb120();
 
         bool handled = formatter.TryGetCommand(new Stop(), system, Target.Default, out string code);
@@ -384,7 +389,7 @@ public class PostProcessorTests
     public void DeclarationOnlyCommandsRequireMatchingManufacturer(Manufacturers manufacturer, bool supported)
     {
         const string declaration = "VAR num userValue := 1;";
-        var command = new Commands.Custom(manufacturer: manufacturer, declaration: declaration);
+        Commands.Custom command = new(manufacturer: manufacturer, declaration: declaration);
         var program = CreateProgram(Manufacturers.ABB, 6, command);
 
         if (supported)
@@ -507,7 +512,7 @@ public class PostProcessorTests
             new JointTarget(new double[6]),
             new JointTarget(new double[6]));
 
-        var program = new Program("P", robot, [toolpath], multiFileIndices: [0, 1]);
+        Program program = new("P", robot, [toolpath], multiFileIndices: [0, 1]);
 
         Assert.That(program.Code, Is.Null);
         Assert.That(program.Errors, Has.One.EqualTo("Multi-file programs are not supported on UR robots."));
@@ -525,7 +530,7 @@ public class PostProcessorTests
             new JointTarget(new double[6]),
             new JointTarget(new double[6]));
 
-        var program = new Program("P", robot, [toolpath], multiFileIndices: [0, 1]);
+        Program program = new("P", robot, [toolpath], multiFileIndices: [0, 1]);
         var code = program.Code ?? throw new InvalidOperationException("Program code was not generated.");
         var mainCode = string.Join("\n", code[0][0]).UseLF();
 
@@ -540,7 +545,7 @@ public class PostProcessorTests
         var robot = TestRobots.PostProcessorRobot(Manufacturers.Staubli, 6);
         var toolpath = TestRobots.Toolpath(new JointTarget(new double[6]));
 
-        var program = new Program("Program1", robot, [toolpath]);
+        Program program = new("Program1", robot, [toolpath]);
 
         Assert.That("Program1_T_ROB1".Length, Is.EqualTo(15));
         Assert.That(program.Errors, Is.Empty);
@@ -554,7 +559,7 @@ public class PostProcessorTests
             new JointTarget(new double[6], external: [0]),
             new JointTarget(new double[6], external: [100]));
 
-        var program = new Program("P", robot, [toolpath]);
+        Program program = new("P", robot, [toolpath]);
         var code = TestRobots.FlattenCode(program);
 
         Assert.That(program.Errors, Is.Empty);
@@ -573,6 +578,7 @@ public class PostProcessorTests
             new JointTarget([Math.PI / 2, 0, 0, 0, 0, 0], speed: speed),
             end, end,
             new JointTarget([Math.PI / 2, Math.PI, 0, 0, 0, 0], speed: speed));
+
         Program program = new("P", robot, [targets]);
         Assert.That(program.Errors, Is.Empty);
 
@@ -591,6 +597,7 @@ public class PostProcessorTests
             new JointTarget([Math.PI / 2, 0, 0, 0, 0, 0], speed: speed, external: [0]),
             new JointTarget([Math.PI / 2, 0, 0, 0, 0, 0], external: [100]),
             new JointTarget([Math.PI, 0, 0, 0, 0, 0], speed: speed, external: [100]));
+
         Program program = new("P", robot, [targets]);
         Assert.That(program.Errors, Is.Empty);
 
@@ -609,6 +616,7 @@ public class PostProcessorTests
         var external = TestRobots.Toolpath(
             new JointTarget(joints, external: [0], externalCustom: firstTarget ? ["0"] : null),
             new JointTarget(joints, external: [1], externalCustom: ["1"]));
+
         Program program = new("P", robot, [TestRobots.Toolpath(target, target), external]);
         Assert.That(program.Errors, Is.Empty);
 
@@ -671,8 +679,8 @@ public class PostProcessorTests
     public void AbbTaskListMatchesMechanicalGroups()
     {
         var robot = TestRobots.AbbThreeGroup();
-        var target = new JointTarget(new double[6]);
-        var program = new Program(
+        JointTarget target = new(new double[6]);
+        Program program = new(
             "P",
             robot,
             [
@@ -680,6 +688,7 @@ public class PostProcessorTests
                 TestRobots.Toolpath(target),
                 TestRobots.Toolpath(target)
             ]);
+
         var code = TestRobots.FlattenCode(program);
 
         Assert.Multiple(() =>
@@ -687,6 +696,7 @@ public class PostProcessorTests
             Assert.That(program.Errors, Is.Empty);
             Assert.That(code, Does.Contain(
                 @"TASK PERS tasks all_tasks{3} := [[""T_ROB1""], [""T_ROB2""], [""T_ROB3""]];"));
+
             Assert.That(code, Does.Not.Contain("all_tasks{2}"));
         });
     }
@@ -794,7 +804,7 @@ public class PostProcessorTests
             new CartesianTarget(planeA, RobotConfigurations.Wrist, Motions.Joint),
             new CartesianTarget(planeB, motion: Motions.Process));
 
-        var program = new Program("P", robot, [toolpath]);
+        Program program = new("P", robot, [toolpath]);
         var code = TestRobots.FlattenCode(program);
 
         Assert.That(program.Errors, Is.Empty);
@@ -836,7 +846,7 @@ public class PostProcessorTests
     [Test]
     public void UrProcessMotionWithTimeFails()
     {
-        var speed = new Speed(time: 2);
+        Speed speed = new(time: 2);
         var program = CreateProcessProgram(TestRobots.UR10(), speed);
 
         Assert.That(program.Code, Is.Null);
@@ -854,9 +864,9 @@ public class PostProcessorTests
 
     static Program CreateProcessProgram(RobotSystem robot, Speed? speed = null)
     {
-        var start = new JointTarget(new double[6]);
+        JointTarget start = new(new double[6]);
         var endPlane = robot.Kinematics([start])[0].Planes[^1];
-        var processTarget = new CartesianTarget(endPlane, motion: Motions.Process, speed: speed);
+        CartesianTarget processTarget = new(endPlane, motion: Motions.Process, speed: speed);
 
         return new("P", robot, [TestRobots.Toolpath(start, processTarget)]);
     }
@@ -864,7 +874,7 @@ public class PostProcessorTests
     static Program CreateProgram(Manufacturers manufacturer, int jointCount, Command? command = null)
     {
         var robot = TestRobots.PostProcessorRobot(manufacturer, jointCount);
-        var target = new JointTarget(new double[jointCount], command: command);
+        JointTarget target = new(new double[jointCount], command: command);
         return new("P", robot, [TestRobots.Toolpath(target)]);
     }
 

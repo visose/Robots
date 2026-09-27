@@ -2,8 +2,8 @@
 using HelixToolkit.SharpDX.Core;
 using HelixToolkit.Wpf.SharpDX;
 using SharpDX;
-using MeshGeometry3D = HelixToolkit.SharpDX.Core.MeshGeometry3D;
 using Rhino.Geometry;
+using MeshGeometry3D = HelixToolkit.SharpDX.Core.MeshGeometry3D;
 
 namespace Robots.Samples.Wpf;
 
@@ -19,7 +19,7 @@ class HelixMeshPoser : IMeshPoser
 
         foreach (var joint in _default.Meshes.SelectMany(m => m))
         {
-            var model = new MeshGeometryModel3D
+            MeshGeometryModel3D model = new()
             {
                 Geometry = ToWPF(joint),
                 Material = material,

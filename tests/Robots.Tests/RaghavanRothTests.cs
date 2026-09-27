@@ -7,7 +7,7 @@ class RaghavanRothTests
     [Test]
     public void CoefficientRecoveryMatchesSampledEquations()
     {
-        var random = new Random(603_501);
+        Random random = new(603_501);
         var expected = new double[RaghavanRothCoefficientRecovery.BufferLength];
 
         for (int i = 0; i < expected.Length; i++)

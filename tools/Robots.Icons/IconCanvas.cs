@@ -2,7 +2,7 @@
 
 namespace Robots.Icons;
 
-internal static class IconPalette
+static class IconPalette
 {
     public static readonly SKColor Ink = IconCanvas.Color(38, 42, 44);
     public static readonly SKColor InkSoft = IconCanvas.Color(84, 89, 91);
@@ -15,7 +15,7 @@ internal static class IconPalette
     public static readonly SKColor Shadow = IconCanvas.Color(0, 0, 0, 72);
 }
 
-internal sealed class IconCanvas : IDisposable
+sealed class IconCanvas : IDisposable
 {
     public const int DesignSize = 48;
     public const int OutputSize = 48;

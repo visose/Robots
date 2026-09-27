@@ -32,6 +32,7 @@ class MotionSegmentTests
             new JointTarget(joints, external: [0]),
             new JointTarget(joints, zone: new Zone(flyby ? 10 : 0), external: [1000]),
             new JointTarget(joints, external: [0]))]);
+
         Assert.That(program.Errors, Is.Empty);
         MotionSegment segment = flyby
             ? new(program.Targets[0], program.Targets[2], program.Targets[1], program.Targets[2])
@@ -47,6 +48,7 @@ class MotionSegmentTests
         Program program = new("P", robot, [TestRobots.Toolpath(
             new JointTarget([0.3, 1.1, 0.4, -0.5, 0.7, 0.6]),
             new JointTarget([1.3, 1.1, 0.4, -0.5, 0.7, 0.6]))]);
+
         Assert.That(program.Errors, Is.Empty);
         MotionSegment segment = new(program.Targets[0], program.Targets[1]);
 

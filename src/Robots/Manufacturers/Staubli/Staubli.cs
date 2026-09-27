@@ -25,20 +25,25 @@ public class RobotStaubli : RobotArm
     public override double DegreeToRadian(double degree, int i)
     {
         double radian = degree.ToRadians();
-        if (i == 1) radian = -radian + HalfPI;
-        if (i == 2) radian *= -1;
-        if (i == 2) radian += HalfPI;
-        if (i == 4) radian *= -1;
-        return radian;
+
+        return i switch
+        {
+            1 => -radian + HalfPI,
+            2 => radian * -1 + HalfPI,
+            4 => radian * -1,
+            _ => radian
+        };
     }
 
     public override double RadianToDegree(double radian, int i)
     {
-        if (i == 1) { radian -= HalfPI; radian = -radian; }
-        if (i == 2) radian -= HalfPI;
-        if (i == 2) radian *= -1;
-        if (i == 4) radian *= -1;
-        return radian.ToDegrees();
+        return (i switch
+        {
+            1 => -(radian - HalfPI),
+            2 => (radian - HalfPI) * -1,
+            4 => radian * -1,
+            _ => radian
+        }).ToDegrees();
     }
 
     protected override double[] DefaultAlpha => [HalfPI, 0, HalfPI, -HalfPI, HalfPI, 0];
@@ -56,7 +61,7 @@ public class SystemStaubli : IndustrialSystem
 
     public static Plane EulerToPlane(double x, double y, double z, double aDeg, double bDeg, double cDeg)
     {
-        var euler = new Vector6d(x, y, z, aDeg.ToRadians(), bDeg.ToRadians(), cDeg.ToRadians());
+        Vector6d euler = new(x, y, z, aDeg.ToRadians(), bDeg.ToRadians(), cDeg.ToRadians());
         return GeometryUtil.EulerXYZToPlane(euler);
     }
 

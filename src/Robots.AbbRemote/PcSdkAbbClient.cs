@@ -4,7 +4,7 @@ using System.Runtime.Loader;
 
 namespace Robots.AbbRemote;
 
-internal sealed class PcSdkAbbClient
+sealed class PcSdkAbbClient
 {
     static readonly Version RobotWare8 = new(8, 0);
 
@@ -325,19 +325,13 @@ internal sealed class PcSdkAbbClient
             || name.Contains("WriteAccess", StringComparison.OrdinalIgnoreCase);
     }
 
-    static string ErrorCodeFor(Exception exception)
+    static string ErrorCodeFor(Exception exception) => exception switch
     {
-        if (exception is UnauthorizedAccessException)
-            return AbbRemoteErrorCodes.PermissionDenied;
-
-        if (exception is InvalidOperationException)
-            return AbbRemoteErrorCodes.InvalidState;
-
-        if (IsWriteAccessFailure(exception))
-            return AbbRemoteErrorCodes.MastershipFailed;
-
-        return AbbRemoteErrorCodes.Unsupported;
-    }
+        UnauthorizedAccessException => AbbRemoteErrorCodes.PermissionDenied,
+        InvalidOperationException => AbbRemoteErrorCodes.InvalidState,
+        _ when IsWriteAccessFailure(exception) => AbbRemoteErrorCodes.MastershipFailed,
+        _ => AbbRemoteErrorCodes.Unsupported
+    };
 
     static Exception Unwrap(Exception exception) =>
         exception is TargetInvocationException { InnerException: not null }
@@ -355,7 +349,7 @@ internal sealed class PcSdkAbbClient
     }
 }
 
-internal sealed class AbbPcSdk
+sealed class AbbPcSdk
 {
     const string PathVariable = "ROBOTS_ABB_PCSDK_DIR";
     const string ControllersAssemblyName = "ABB.Robotics.Controllers.PC";
@@ -483,6 +477,6 @@ internal sealed class AbbPcSdk
 
 }
 
-internal sealed class AbbPcSdkLoadException(string message, Exception? innerException = null)
+sealed class AbbPcSdkLoadException(string message, Exception? innerException = null)
     : InvalidOperationException(message, innerException)
 { }

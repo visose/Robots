@@ -151,8 +151,8 @@ class FrankyPostProcessor : IPostProcessor
 
         List<string> Program()
         {
-            var code = new List<string>
-            {
+            List<string> code =
+            [
                 """
                 from argparse import ArgumentParser
                 from time import sleep
@@ -168,7 +168,7 @@ class FrankyPostProcessor : IPostProcessor
                   robot.set_ee([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1])
 
                 """
-            };
+            ];
 
             foreach (var tool in _program.Attributes.OfType<Tool>())
             {
@@ -317,12 +317,14 @@ class FrankyPostProcessor : IPostProcessor
                 waypoint.Plane,
                 (CartesianTarget)waypoint.ProgramTarget.Target,
                 waypoint.ProgramTarget.Kinematics.Joints);
+
             var linear = Values(velocity.Linear, scale);
             var angular = Values(velocity.Angular, scale);
             var twist = $"Twist({linear}, {angular})";
             var robotVelocity = velocity.Elbow is double elbow
                 ? $"RobotVelocity({twist}, elbow_velocity={ScaledNumber(elbow, scale)})"
                 : $"RobotVelocity({twist})";
+
             return $"CartesianState({pose}, {robotVelocity})";
         }
 
@@ -336,6 +338,7 @@ class FrankyPostProcessor : IPostProcessor
             string flip = Flip(joints[3]) > 0
                 ? "FlipDirection.Positive"
                 : "FlipDirection.Negative";
+
             return $"RobotPose({affine}, elbow_state=ElbowState({Number(joints[2])}, {flip}))";
         }
 
@@ -359,6 +362,7 @@ class FrankyPostProcessor : IPostProcessor
                 && next.ProgramTarget.Target.External.Length > 0
                     ? (next.ProgramTarget.Kinematics.Joints[2] - current.ProgramTarget.Kinematics.Joints[2]) * scale
                     : null;
+
             return new(linear, angular, elbow);
         }
 
@@ -399,10 +403,11 @@ class FrankyPostProcessor : IPostProcessor
             var offset = (eePlane.Origin - tcp.Origin) * 0.001;
             var eeLinear = velocity.Linear + Vector3d.CrossProduct(velocity.Angular, offset);
             string dynamics = $"min({DynamicsName(current)}.velocity, {DynamicsName(next)}.velocity)";
-            var limits = new List<string>(4) { "1" };
+            List<string> limits = new(4) { "1" };
 
             AddLimit(eeLinear.Length, _translationVelocityLimit);
             AddLimit(velocity.Angular.Length, _rotationVelocityLimit);
+
             if (velocity.Elbow is double elbow)
                 AddLimit(Abs(elbow), _elbowVelocityLimit);
 
@@ -421,6 +426,7 @@ class FrankyPostProcessor : IPostProcessor
             double acceleration = Min(
                 target.ProgramTargets[0].Target.Speed.AxisAccel / (4 * PI),
                 1);
+
             return $"RelativeDynamicsFactor({speed}, {Number(acceleration)}, {Number(acceleration)})";
         }
 
@@ -434,6 +440,7 @@ class FrankyPostProcessor : IPostProcessor
                 double speed = target.DeltaTime > 0 && target.MinTime > 0
                     ? target.MinTime / target.DeltaTime
                     : targetSpeed.TranslationSpeed / 1000.0;
+
                 return Number(Min(speed, 1));
             }
 
@@ -442,7 +449,7 @@ class FrankyPostProcessor : IPostProcessor
 
             var previousPlane = programTarget.GetPrevPlane(previous);
             var plane = programTarget.Plane;
-            var limits = new List<string>(3) { "1" };
+            List<string> limits = new(3) { "1" };
 
             if (previousPlane.Origin.DistanceTo(plane.Origin) > DistanceTol)
                 limits.Add($"{Number(targetSpeed.TranslationSpeed.ToMeters())} / {_translationVelocityLimit}");

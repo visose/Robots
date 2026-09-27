@@ -108,7 +108,7 @@ class MechanicalGroupKinematics(MechanicalGroup group)
         var frame = target.Frame;
         var plane = frame.Plane;
         plane.Orient(ref coupledPlane);
-        var coupledFrame = new Frame(plane, frame.CoupledMechanism, frame.CoupledMechanicalGroup, frame.HasName ? frame.Name : null, frame.UseController, frame.Number);
+        Frame coupledFrame = new(plane, frame.CoupledMechanism, frame.CoupledMechanicalGroup, frame.HasName ? frame.Name : null, frame.UseController, frame.Number);
         return target.WithFrame(coupledFrame);
     }
 }

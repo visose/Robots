@@ -28,7 +28,7 @@ class LibraryForm : ComponentForm
 
     internal static Label NewLabel(Expression<Func<LibraryItem, string>> bindText, TextAlignment align = TextAlignment.Left, Font? font = null)
     {
-        var label = new Label
+        Label label = new()
         {
             TextAlignment = align,
             Font = font ?? EtoFonts.NormalFont
@@ -76,7 +76,7 @@ class LibraryForm : ComponentForm
         _grid.SelectedRowsChanged += (s, e) => _detailView.DataContext = _grid.SelectedItem;
     }
 
-    async Task ChangeLocalPathAsync()
+    async Task ChangeLocalPath()
     {
         var settings = Settings.Load();
         SelectFolderDialog dialog = new()
@@ -89,14 +89,14 @@ class LibraryForm : ComponentForm
             return;
 
         Settings.Save(settings with { LocalLibraryPath = dialog.Directory });
-        await RefreshAsync();
+        await Refresh();
     }
 
-    async Task RefreshAsync()
+    async Task Refresh()
     {
         try
         {
-            await _library.UpdateLibraryAsync();
+            await _library.UpdateLibrary();
         }
         catch (Exception e)
         {
@@ -117,13 +117,14 @@ class LibraryForm : ComponentForm
 
         int index = _grid.SelectedItem is not LibraryItem selected
             ? 0 : ordered.FindIndex(i => selected.Name.Equals(i.Name, StringComparison.OrdinalIgnoreCase));
+
         index = Math.Max(index, 0);
 
         _grid.ScrollToRow(index);
         _grid.SelectRow(index);
     }
 
-    async Task DownloadAsync()
+    async Task Download()
     {
         if (_detailView.DataContext is not LibraryItem item)
             return;
@@ -135,7 +136,7 @@ class LibraryForm : ComponentForm
             switch (item)
             {
                 case { IsUpdateAvailable: true }:
-                    await _library.DownloadLibraryAsync(item);
+                    await _library.DownloadLibrary(item);
                     break;
                 case { IsDownloaded: true }:
                     _library.RemoveDownloadedLibrary(item);
@@ -192,8 +193,8 @@ class LibraryForm : ComponentForm
                 VerticalContentAlignment = VerticalAlignment.Bottom,
                 Items =
                 {
-                    new StackLayoutItem(NewAsyncButton(RefreshAsync, label: "Refresh", runOnce: true), true),
-                    new StackLayoutItem(NewAsyncButton(ChangeLocalPathAsync, label: "Set local folder"), false),
+                    new StackLayoutItem(NewAsyncButton(Refresh, label: "Refresh", runOnce: true), true),
+                    new StackLayoutItem(NewAsyncButton(ChangeLocalPath, label: "Set local folder"), false),
                     new LinkButton
                     {
                         Text = "Help",
@@ -230,7 +231,7 @@ class LibraryForm : ComponentForm
 
     StackLayout NewDetailButton()
     {
-        var detailButton = NewAsyncButton(DownloadAsync);
+        var detailButton = NewAsyncButton(Download);
         var button = (Button)detailButton.Items[0].Control;
         _ = button.TextBinding.BindDataContext((LibraryItem i) => ItemActions(i));
         _ = button.BindDataContext(s => s.Visible, (LibraryItem i) => ItemActions(i) != "");
@@ -249,7 +250,7 @@ class LibraryForm : ComponentForm
             Visible = false
         };
 
-        button.Click += async (s, e) => await ClickAsync();
+        button.Click += async (s, e) => await Click();
 
         if (runOnce)
             button.PerformClick();
@@ -266,7 +267,7 @@ class LibraryForm : ComponentForm
             }
         };
 
-        async Task ClickAsync()
+        async Task Click()
         {
             button.Enabled = false;
             spinner.Visible = true;

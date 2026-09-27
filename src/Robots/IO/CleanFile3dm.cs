@@ -23,8 +23,8 @@ public static class File3dmCleaner
             var library = Path.GetFileNameWithoutExtension(file);
 
             var doc = File3dm.Read(file);
-            var delete = new List<Guid>();
-            var modify = new List<(Guid id, Mesh mesh, ObjectAttributes att)>();
+            List<Guid> delete = [];
+            List<(Guid id, Mesh mesh, ObjectAttributes att)> modify = [];
 
             // objects
 
@@ -51,6 +51,7 @@ public static class File3dmCleaner
                     Log(library, objName, $"Deleted {obj.Geometry.GetType().Name} in wrong layer");
                     continue;
                 }
+
 #if RHINOCOMMON
                 var mesh = (Mesh)obj.Geometry;
                 var isValid = IsValidMesh(mesh);
@@ -65,6 +66,7 @@ public static class File3dmCleaner
                     Log(library, objName, "Failed to fix Mesh");
                     continue;
                 }
+
                 modify.Add((obj.Id, results[0], attributes.Duplicate()));
                 Log(library, objName, "Fixed Mesh");
 #endif
@@ -123,7 +125,7 @@ public static class File3dmCleaner
             if (delete.Count == 0 && modify.Count == 0 && blocks.Count == 0 && materials.Count == 0 && emptyLayers.Count == 0)
                 continue;
 
-            var options = new File3dmWriteOptions();
+            File3dmWriteOptions options = new();
             var success = doc.WriteWithLog(file, options, out var errors);
             var fileName = Path.GetFileName(file);
             Log(library, fileName, success ? "Saved" : errors);
@@ -144,7 +146,7 @@ public static class File3dmCleaner
             return true;
 
         var p = MeshCheckParameters.Defaults();
-        using var textLog = new TextLog();
+        using TextLog textLog = new();
         var isValid = mesh.Check(textLog, ref p);
 
         bool isReallyValid =

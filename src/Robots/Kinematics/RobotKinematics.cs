@@ -78,17 +78,20 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
         }
             ? configuration
             : null;
+
         var inverse = GetInverseSolutions(
             transform,
             cartesianTarget.External,
             prevJoints,
             requested);
+
         int selected = SelectSolution(
             inverse.Solutions,
             requested,
             prevJoints,
             inverse.PreserveWindings,
             out bool unavailable);
+
         double[] robotJoints;
 
         if (selected >= 0)
@@ -111,6 +114,7 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
             robotJoints = prevJoints.HasValue
                 ? prevJoints.Values.ToArray()
                 : new double[_mechanism.Joints.Length];
+
             solution.AddErrors(inverse.Errors);
         }
 
@@ -132,12 +136,13 @@ abstract class RobotKinematics(RobotArm robot) : MechanismKinematics(robot)
             }
             else
             {
-                var previous = new PreviousJoints(joints);
+                PreviousJoints previous = new(joints);
                 var inverse = GetInverseSolutions(
                     jointTransforms[^1],
                     target.External,
                     previous,
                     requested: null);
+
                 int selected = SelectSolution(
                     inverse.Solutions,
                     requested: null,

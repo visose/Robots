@@ -70,14 +70,14 @@ class KRLPostProcessor : IPostProcessor
         List<string> DatFile(int group)
         {
             string groupName = _system.MechanicalGroups[group].Name;
-            var code = new List<string>
-            {
+            List<string> code =
+            [
                 $"""
                 &ACCESS RVP
                 &REL 1
                 DEFDAT {_program.Name}_{groupName} PUBLIC
                 """
-            };
+            ];
 
             var attributes = _program.Attributes;
 
@@ -93,6 +93,7 @@ class KRLPostProcessor : IPostProcessor
             foreach (var zone in attributes.OfType<Zone>())
             {
                 var distance = zone.Distance;
+
                 if (distance == 0)
                     continue;
 
@@ -115,8 +116,8 @@ class KRLPostProcessor : IPostProcessor
         {
             string groupName = _system.MechanicalGroups[group].Name;
 
-            var code = new List<string>
-            {
+            List<string> code =
+            [
                 $"""
                 &ACCESS RVP
                 &REL 1
@@ -125,7 +126,7 @@ class KRLPostProcessor : IPostProcessor
                 $ADVANCE = 5
                 $APO.CPTP = 100
                 """
-            };
+            ];
 
             PostProcessorUtil.AddInitCommands(code, _program);
 
@@ -143,14 +144,14 @@ class KRLPostProcessor : IPostProcessor
             string groupName = _system.MechanicalGroups[group].Name;
             var (start, end) = _program.GetTargetRange(file);
 
-            var code = new List<string>
-            {
+            List<string> code =
+            [
                 $"""
                 &ACCESS RVP
                 &REL 1
                 DEF {_program.Name}_{groupName}_{file:000}()
                 """
-            };
+            ];
 
             Tool? currentTool = null;
             Frame? currentFrame = null;
@@ -211,6 +212,7 @@ class KRLPostProcessor : IPostProcessor
                                     $VEL.ORI1 = {rotation:0.###}
                                     $VEL.ORI2 = {rotation:0.####}
                                     """;
+
                                     currentOriSpeed = rotation;
                                 }
 
@@ -275,14 +277,10 @@ class KRLPostProcessor : IPostProcessor
 
                                 var configuration = programTarget.Kinematics.Configuration;
                                 bool shoulder = configuration.HasFlag(RobotConfigurations.Shoulder);
-                                bool elbow = configuration.HasFlag(RobotConfigurations.Elbow);
-                                elbow = !elbow;
+                                bool elbow = !configuration.HasFlag(RobotConfigurations.Elbow);
                                 bool wrist = configuration.HasFlag(RobotConfigurations.Wrist);
 
-                                int configNum = 0;
-                                if (shoulder) configNum += 1;
-                                if (elbow) configNum += 2;
-                                if (wrist) configNum += 4;
+                                int configNum = (shoulder ? 1 : 0) | (elbow ? 2 : 0) | (wrist ? 4 : 0);
 
                                 string status = Convert.ToString(configNum, 2);
                                 string turn = Convert.ToString(turnNum, 2);
@@ -333,11 +331,12 @@ class KRLPostProcessor : IPostProcessor
                     }
                     else
                     {
-                        var text = new List<string> { $"{name} = {{{pos}{bits}}}" };
+                        List<string> text = [$"{name} = {{{pos}{bits}}}"];
 
                         for (int i = 0; i < externalCustom.Length; i++)
                         {
                             var value = externalCustom[i];
+
                             if (string.IsNullOrWhiteSpace(value))
                                 value = "0";
 

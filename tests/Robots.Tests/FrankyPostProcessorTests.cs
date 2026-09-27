@@ -69,7 +69,7 @@ class FrankyPostProcessorTests
     [Test]
     public void GeneratesFrankyJointMotion()
     {
-        var program = new Program("P", Robot(), [TestRobots.Toolpath(new JointTarget(_start))]);
+        Program program = new("P", Robot(), [TestRobots.Toolpath(new JointTarget(_start))]);
         var code = TestRobots.FlattenCode(program);
 
         Assert.Multiple(() =>
@@ -95,20 +95,22 @@ class FrankyPostProcessorTests
         var start = TargetPlane(robot, _start);
         var first = start.WithOrigin(start.Origin + start.XAxis * 10);
         var second = start.WithOrigin(start.Origin + start.XAxis * 20);
-        var init = new Group([new Commands.Custom(command: initCode)]);
-        var beforeSecond = new Commands.Custom(command: targetCode, runBefore: true);
+        Group init = new([new Commands.Custom(command: initCode)]);
+        Commands.Custom beforeSecond = new(command: targetCode, runBefore: true);
         Target[] targets =
         [
             new JointTarget(_start),
             new CartesianTarget(first, motion: Motions.Linear, external: [_start[2]]),
             new CartesianTarget(second, motion: Motions.Linear, command: beforeSecond, external: [_start[2]])
         ];
-        var program = new Program(
+
+        Program program = new(
             "P",
             robot,
             [TestRobots.Toolpath(targets)],
             initCommands: init,
             stepSize: 1000);
+
         var code = TestRobots.FlattenCode(program);
 
         int initIndex = code.IndexOf(initCode, StringComparison.Ordinal);
@@ -132,15 +134,17 @@ class FrankyPostProcessorTests
     public void CartesianJointTargetGeneratesJointMotion()
     {
         var robot = Robot();
-        var target = new CartesianTarget(
+        CartesianTarget target = new(
             TargetPlane(robot, _first),
             motion: Motions.Joint,
             external: [_first[2]]);
-        var program = new Program(
+
+        Program program = new(
             "P",
             robot,
             [TestRobots.Toolpath(new JointTarget(_start), target)],
             stepSize: 1000);
+
         var code = TestRobots.FlattenCode(program);
 
         Assert.Multiple(() =>
@@ -155,14 +159,16 @@ class FrankyPostProcessorTests
     public void CartesianWithoutExternalLeavesElbowFree()
     {
         var robot = TestRobots.FrankaPanda(nameof(FrankyPostProcessor));
-        var target = new CartesianTarget(
+        CartesianTarget target = new(
             TargetPlane(robot, _first),
             motion: Motions.Linear);
-        var program = new Program(
+
+        Program program = new(
             "P",
             robot,
             [TestRobots.Toolpath(new JointTarget(_start), target)],
             stepSize: 1000);
+
         var code = TestRobots.FlattenCode(program);
 
         Assert.Multiple(() =>
@@ -179,12 +185,13 @@ class FrankyPostProcessorTests
     public void ExplicitElbowAfterFreeCartesianRequiresJointTarget()
     {
         var robot = TestRobots.FrankaPanda(nameof(FrankyPostProcessor));
-        var free = new CartesianTarget(TargetPlane(robot, _first), motion: Motions.Linear);
-        var explicitElbow = new CartesianTarget(
+        CartesianTarget free = new(TargetPlane(robot, _first), motion: Motions.Linear);
+        CartesianTarget explicitElbow = new(
             TargetPlane(robot, _second),
             motion: Motions.Linear,
             external: [_second[2]]);
-        var program = new Program(
+
+        Program program = new(
             "P",
             robot,
             [TestRobots.Toolpath(new JointTarget(_start), free, explicitElbow)],
@@ -202,10 +209,11 @@ class FrankyPostProcessorTests
         var system = TestRobots.FrankaPanda(nameof(FrankyPostProcessor));
         var robot = ((SingleGroupSystem)system).Robot;
         double[] joints = [0.25, -0.65, robot.Joints[2].Range.Mid, -1.35, 0.8, 1.1, -0.55];
-        var target = new CartesianTarget(
+        CartesianTarget target = new(
             TargetPlane(system, joints),
             motion: Motions.Linear);
-        var program = new Program("P", system, [TestRobots.Toolpath(target)], stepSize: 1000);
+
+        Program program = new("P", system, [TestRobots.Toolpath(target)], stepSize: 1000);
         var code = TestRobots.FlattenCode(program);
 
         Assert.Multiple(() =>
@@ -251,11 +259,13 @@ class FrankyPostProcessorTests
             new CartesianTarget(TargetPlane(robot, firstJoints), motion: Motions.Process),
             new CartesianTarget(TargetPlane(robot, secondJoints), motion: Motions.Process)
         ];
-        var program = new Program(
+
+        Program program = new(
             "P",
             robot,
             [TestRobots.Toolpath(targets)],
             stepSize: 1000);
+
         var code = TestRobots.FlattenCode(program);
 
         Assert.Multiple(() =>
@@ -270,8 +280,8 @@ class FrankyPostProcessorTests
     [Test]
     public void ProcessVelocityRespectsAdjacentDynamics()
     {
-        var slow = new Speed(1, rotationSpeed: 0.01);
-        var fast = new Speed(1000, rotationSpeed: 2.5);
+        Speed slow = new(1, rotationSpeed: 0.01);
+        Speed fast = new(1000, rotationSpeed: 2.5);
         var robot = Robot();
         var program = ProcessProgram(robot, [_first, _second], speeds: [slow, fast]);
         var code = TestRobots.FlattenCode(program);
@@ -304,12 +314,16 @@ class FrankyPostProcessorTests
 
         string translationWithSlowRotation = CartesianSpeed(
             LinearPlaneProgram(robot, translated, new(170, rotationSpeed: 0.001)));
+
         string translationWithFastRotation = CartesianSpeed(
             LinearPlaneProgram(robot, translated, new(170, rotationSpeed: 2.5)));
+
         string rotationWithSlowTranslation = CartesianSpeed(
             LinearPlaneProgram(robot, rotated, new(1, rotationSpeed: 0.25)));
+
         string rotationWithFastTranslation = CartesianSpeed(
             LinearPlaneProgram(robot, rotated, new(1700, rotationSpeed: 0.25)));
+
         string mixedSpeed = CartesianSpeed(
             LinearPlaneProgram(robot, mixed, new(170, rotationSpeed: 0.5)));
 
@@ -318,10 +332,12 @@ class FrankyPostProcessorTests
             Assert.That(
                 translationWithSlowRotation,
                 Is.EqualTo("min(1, 0.17 / robot.translation_velocity_limit.get())"));
+
             Assert.That(translationWithFastRotation, Is.EqualTo(translationWithSlowRotation));
             Assert.That(
                 rotationWithSlowTranslation,
                 Is.EqualTo("min(1, 0.25 / robot.rotation_velocity_limit.get())"));
+
             Assert.That(rotationWithFastTranslation, Is.EqualTo(rotationWithSlowTranslation));
             Assert.That(
                 mixedSpeed,
@@ -332,11 +348,12 @@ class FrankyPostProcessorTests
     [Test]
     public void PreservesPositiveDynamicsFactorsBelowOneMillionth()
     {
-        var jointSpeed = new Speed(0.0001, axisAccel: 4 * Math.PI * 1e-8);
-        var jointProgram = new Program(
+        Speed jointSpeed = new(0.0001, axisAccel: 4 * Math.PI * 1e-8);
+        Program jointProgram = new(
             "J",
             Robot(),
             [TestRobots.Toolpath(new JointTarget(_start, speed: jointSpeed))]);
+
         var jointCode = TestRobots.FlattenCode(jointProgram);
 
         var robot = TestRobots.FrankaPanda(nameof(FrankyPostProcessor));
@@ -353,6 +370,7 @@ class FrankyPostProcessorTests
             Assert.That(
                 jointCode,
                 Does.Contain("relative_dynamics_factor=RelativeDynamicsFactor(1E-07, 1E-08, 1E-08)"));
+
             Assert.That(cartesianProgram.Errors, Is.Empty);
             Assert.That(
                 CartesianSpeed(cartesianProgram),
@@ -404,7 +422,7 @@ class FrankyPostProcessorTests
     public void ProcessVelocityAccountsForToolOffset()
     {
         var robot = Robot();
-        var tool = new Tool(Plane.WorldXY.WithOrigin(1000, 0, 0), "OffsetTool");
+        Tool tool = new(Plane.WorldXY.WithOrigin(1000, 0, 0), "OffsetTool");
         var first = TargetPlane(robot, _first, tool);
         var second = first;
         _ = second.Rotate(0.02, first.ZAxis, first.Origin);
@@ -428,17 +446,19 @@ class FrankyPostProcessorTests
     public void ToolNamesCannotCollideWithPython()
     {
         var robot = Robot();
-        var tool = new Tool(Plane.WorldXY.WithOrigin(100, 0, 0), "class");
-        var target = new CartesianTarget(
+        Tool tool = new(Plane.WorldXY.WithOrigin(100, 0, 0), "class");
+        CartesianTarget target = new(
             TargetPlane(robot, _first, tool),
             motion: Motions.Linear,
             tool: tool,
             external: [_first[2]]);
-        var program = new Program(
+
+        Program program = new(
             "P",
             robot,
             [TestRobots.Toolpath(new JointTarget(_start, tool), target)],
             stepSize: 1000);
+
         var code = TestRobots.FlattenCode(program);
 
         Assert.Multiple(() =>
@@ -478,15 +498,17 @@ class FrankyPostProcessorTests
     [Test]
     public void RejectsUnsupportedToolsAndFrames()
     {
-        var payload = new Program(
+        Program payload = new(
             "P",
             Robot(),
             [TestRobots.Toolpath(new JointTarget(_start, tool: new(Plane.WorldXY, weight: 1)))]);
-        var controllerTool = new Program(
+
+        Program controllerTool = new(
             "P",
             Robot(),
             [TestRobots.Toolpath(new JointTarget(_start, tool: new(Plane.WorldXY, useController: true)))]);
-        var controllerFrame = new Program(
+
+        Program controllerFrame = new(
             "P",
             Robot(),
             [TestRobots.Toolpath(new JointTarget(_start, frame: new(Plane.WorldXY, useController: true)))]);
@@ -513,7 +535,7 @@ class FrankyPostProcessorTests
     public void RejectsCommandInsideProcessSequence()
     {
         var robot = Robot();
-        var command = new Message("Interrupt", runBefore: true);
+        Message command = new("Interrupt", runBefore: true);
         var program = ProcessProgram(robot, [_first, _second, _third], command, 1);
 
         Assert.That(program.Code, Is.Null);
@@ -524,7 +546,7 @@ class FrankyPostProcessorTests
     public void RejectsCommandAfterProcessWaypoint()
     {
         var robot = Robot();
-        var command = new Message("Interrupt");
+        Message command = new("Interrupt");
         var program = ProcessProgram(robot, [_first, _second, _third], command, 1);
 
         Assert.That(program.Code, Is.Null);
@@ -535,8 +557,8 @@ class FrankyPostProcessorTests
     public void RejectsToolChangeInsideProcessSequence()
     {
         var robot = Robot();
-        var firstTool = new Tool(Plane.WorldXY.WithOrigin(0, 0, 50), "FirstTool");
-        var secondTool = new Tool(Plane.WorldXY.WithOrigin(0, 0, 100), "SecondTool");
+        Tool firstTool = new(Plane.WorldXY.WithOrigin(0, 0, 50), "FirstTool");
+        Tool secondTool = new(Plane.WorldXY.WithOrigin(0, 0, 100), "SecondTool");
         Target[] targets =
         [
             new JointTarget(_start, firstTool),
@@ -551,7 +573,8 @@ class FrankyPostProcessorTests
                 tool: secondTool,
                 external: [_second[2]])
         ];
-        var program = new Program("P", robot, [TestRobots.Toolpath(targets)], stepSize: 1000);
+
+        Program program = new("P", robot, [TestRobots.Toolpath(targets)], stepSize: 1000);
 
         Assert.That(program.Code, Is.Null);
         Assert.That(program.Errors, Has.One.EqualTo("Target 1: Tool changes cannot interrupt a continuous Process motion."));
@@ -574,8 +597,8 @@ class FrankyPostProcessorTests
         var joints = (double[])_start.Clone();
         joints[3] = -0.467002423653011;
         var plane = TargetPlane(robot, joints);
-        var target = new CartesianTarget(plane, motion: Motions.Linear, external: [joints[2]]);
-        var program = new Program("P", robot, [TestRobots.Toolpath(new JointTarget(joints), target)], stepSize: 1000);
+        CartesianTarget target = new(plane, motion: Motions.Linear, external: [joints[2]]);
+        Program program = new("P", robot, [TestRobots.Toolpath(new JointTarget(joints), target)], stepSize: 1000);
 
         Assert.That(program.Code, Is.Null);
         Assert.That(program.Errors, Has.One.EqualTo("Target 1: Cartesian motion at the Franka elbow flip boundary is not supported by Franky."));
@@ -587,14 +610,16 @@ class FrankyPostProcessorTests
         var robot = TestRobots.FrankaPanda(nameof(FrankyPostProcessor));
         double[] previous = [0, -0.7, 0.1, -0.6, 0.2, 1.5, 0.7];
         double[] joints = [0, -0.7, 0.1, -0.3, 0.2, 1.5, 0.7];
-        var target = new CartesianTarget(
+        CartesianTarget target = new(
             TargetPlane(robot, joints),
             motion: Motions.Linear,
             external: [joints[2]]);
-        var program = new Program(
+
+        Program program = new(
             "P",
             robot,
             [TestRobots.Toolpath(new JointTarget(previous), new JointTarget(joints))]);
+
         Assert.That(program.Errors, Is.Empty);
 
         // Exercise controller policy independently of Cartesian path validation.
@@ -607,11 +632,12 @@ class FrankyPostProcessorTests
     public void NumericalFallbackRequiresInitialJointTarget()
     {
         var robot = Robot();
-        var target = new CartesianTarget(
+        CartesianTarget target = new(
             TargetPlane(robot, _first),
             motion: Motions.Linear,
             external: [_first[2]]);
-        var program = new Program("P", robot, [TestRobots.Toolpath(target)]);
+
+        Program program = new("P", robot, [TestRobots.Toolpath(target)]);
 
         Assert.That(program.Code, Is.Null);
         Assert.That(program.Errors, Has.One.EqualTo("Target 0: First target should be a joint target because this robot needs a known starting joint state."));
@@ -629,7 +655,7 @@ class FrankyPostProcessorTests
         Zone? zone = null,
         IReadOnlyList<Speed>? speeds = null)
     {
-        var targets = new List<Target> { new JointTarget(_start) };
+        List<Target> targets = [new JointTarget(_start)];
 
         for (int i = 0; i < waypoints.Count; i++)
         {
@@ -648,7 +674,7 @@ class FrankyPostProcessorTests
 
     static Program ProcessPlaneProgram(RobotSystem robot, IReadOnlyList<Plane> planes, Tool? tool = null, Speed? speed = null)
     {
-        var targets = new List<Target> { new JointTarget(_start, tool) };
+        List<Target> targets = [new JointTarget(_start, tool)];
 
         foreach (var plane in planes)
         {
@@ -670,6 +696,7 @@ class FrankyPostProcessorTests
             new JointTarget(_start),
             new CartesianTarget(plane, motion: Motions.Linear, speed: speed, external: [_start[2]])
         ];
+
         return new("P", robot, [TestRobots.Toolpath(targets)], stepSize: 1000);
     }
 

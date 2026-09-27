@@ -47,6 +47,7 @@ readonly record struct MotionSegment(SystemTarget Start, SystemTarget End, Syste
                 ? GetLineDivisions(Start.ProgramTargets[group], End.ProgramTargets[group], joints, linearStep, angularStep)
                 : GetLineDivisions(Start.ProgramTargets[group], corner, joints, linearStep, angularStep)
                     + GetLineDivisions(corner, End.ProgramTargets[group], joints, linearStep, angularStep);
+
             divisions = Max(divisions, current);
         }
 
@@ -100,6 +101,7 @@ readonly record struct MotionSegment(SystemTarget Start, SystemTarget End, Syste
 
         Plane plane = robot.CartesianLerp(entryPlane, exitPlane, t, 0.0, 1.0)
             .WithOrigin(GeometryUtil.Quadratic(entryPlane.Origin, cornerPlane.Origin, exitPlane.Origin, t));
+
         plane = corner.ToTargetPlane(plane);
 
         return new CartesianTarget(plane, corner.Target, motion: Motions.Linear, external: external);

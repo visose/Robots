@@ -5,9 +5,9 @@
 
 namespace Robots;
 
-internal enum IssueLevel { Warning, Error }
+enum IssueLevel { Warning, Error }
 
-internal enum IssueKind
+enum IssueKind
 {
     ProgramNameInvalid,
     ToolpathInvalid,
@@ -23,7 +23,7 @@ internal enum IssueKind
     CommandInvalid
 }
 
-internal readonly record struct ProgramIssue(
+readonly record struct ProgramIssue(
     IssueLevel Level,
     IssueKind Kind,
     string Message,

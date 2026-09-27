@@ -67,6 +67,7 @@ public class GH_Speed() : Goo<Speed, GH_Speed>("Speed", Speed.Default)
                     break;
                 }
         }
+
         return false;
     }
 

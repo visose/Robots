@@ -51,7 +51,7 @@ class FrankxPostProcessor : IPostProcessor
         {
             _system = system;
             _program = program;
-            var groupCode = new List<List<string>> { Program() };
+            List<List<string>> groupCode = [Program()];
             Code = [groupCode];
 
             PostProcessorUtil.RejectMultiFile(program, "Franka Emika");
@@ -59,8 +59,8 @@ class FrankxPostProcessor : IPostProcessor
 
         List<string> Program()
         {
-            var code = new List<string>
-            {
+            List<string> code =
+            [
                 """
                 from argparse import ArgumentParser
                 from time import sleep
@@ -76,7 +76,7 @@ class FrankxPostProcessor : IPostProcessor
                   robot.velocity_rel = 1.0
 
                 """
-            };
+            ];
 
             var attributes = _program.Attributes;
 
@@ -129,6 +129,7 @@ class FrankxPostProcessor : IPostProcessor
                       robot.acceleration_rel = dynamic_rel
                       robot.jerk_rel = dynamic_rel
                     """);
+
                     currentAccel = accel;
                 }
 
@@ -164,13 +165,8 @@ class FrankxPostProcessor : IPostProcessor
                         code.Add($"  data = MotionData(dynamic_rel)");
                         code.Add($"  motion = WaypointMotion([");
 
-                        switch (currentMotion)
-                        {
-                            case Motions.Linear:
-                                break;
-                            default:
-                                throw PostProcessorUtil.InvalidMotion(currentMotion);
-                        }
+                        if (currentMotion != Motions.Linear)
+                            throw PostProcessorUtil.InvalidMotion(currentMotion);
                     }
 
                     var plane = cartesian.Plane;

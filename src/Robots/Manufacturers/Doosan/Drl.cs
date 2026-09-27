@@ -63,6 +63,7 @@ class DrlPostProcessor : IPostProcessor
 
                     groupCode.Add(code);
                 }
+
                 for (int i = 0; i < program.MultiFileIndices.Count; i++)
                 {
                     var (start, end) = program.GetTargetRange(i);

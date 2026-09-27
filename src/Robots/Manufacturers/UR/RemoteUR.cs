@@ -33,7 +33,7 @@ public class RemoteUR : IRemote
                 User user = new(value);
                 _backend = new RemoteURFtp(user, AddLog);
             }
-            catch
+            catch (UriFormatException)
             {
                 _backend = new RemoteURSecondaryClient(value, AddLog);
             }
@@ -96,7 +96,7 @@ class RemoteURFtp(User user, Action<string> log) : IRemoteURBackend
 
     void SendPrivate(string message)
     {
-        using var client = new TcpClient();
+        using TcpClient client = new();
         client.Connect(_user.IP, _dashboardPort);
 
         using var stream = client.GetStream();
@@ -164,7 +164,7 @@ class RemoteURSecondaryClient(string ip, Action<string> log) : IRemoteURBackend
 
     void SendPrivate(string message)
     {
-        using var client = new TcpClient();
+        using TcpClient client = new();
         client.Connect(_ip, _secondaryPort);
 
         using var stream = client.GetStream();

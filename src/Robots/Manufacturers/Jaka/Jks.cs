@@ -54,6 +54,7 @@ class JKSPostProcessor : IPostProcessor
             pos_mvl =[0,0,0,0,0,0]
             pos_waypoint =[0,0,0,0,0,0]
             """);
+
             code.Add("set_tool_id(0)");
             code.Add("set_user_frame_id(0)");
 
@@ -127,6 +128,7 @@ class JKSPostProcessor : IPostProcessor
                         double[] joints = target is JointTarget jointTarget
                             ? jointTarget.Joints
                             : programTarget.Kinematics.Joints;
+
                         joints = joints.Map((x, i) => _system.MechanicalGroups[group].RadianToDegree(x, i));
 
                         moveText = $"""

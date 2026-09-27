@@ -19,8 +19,8 @@ class SimulationForm : ComponentForm
 
         Padding = new(5);
 
-        var font = new Font(FontFamilies.Sans, 14, FontStyle.None, FontDecoration.None);
-        var size = new Size(35, 35);
+        Font font = new(FontFamilies.Sans, 14, FontStyle.None, FontDecoration.None);
+        Size size = new(35, 35);
 
         Play = new CheckBox
         {
@@ -33,7 +33,7 @@ class SimulationForm : ComponentForm
 
         Play.CheckedChanged += (s, e) => component.TogglePlay();
 
-        var stop = new Button
+        Button stop = new()
         {
             Text = "\u25FC",
             Size = size,
@@ -43,7 +43,7 @@ class SimulationForm : ComponentForm
 
         stop.Click += (s, e) => component.Stop();
 
-        var slider = new Slider
+        Slider slider = new()
         {
             Orientation = Orientation.Vertical,
             Size = new(-1, -1),
@@ -57,13 +57,13 @@ class SimulationForm : ComponentForm
 
         slider.ValueChanged += (s, e) => component.Speed = slider.Value / 100.0; ;
 
-        var speedLabel = new Label
+        Label speedLabel = new()
         {
             Text = "100%",
             VerticalAlignment = VerticalAlignment.Center,
         };
 
-        var layout = new DynamicLayout();
+        DynamicLayout layout = new();
         _ = layout.BeginVertical();
         _ = layout.AddSeparateRow(padding: new(10), spacing: new(10, 0), controls: [Play, stop]);
         _ = layout.BeginGroup("Speed");

@@ -54,7 +54,9 @@ public class Remote() : Component(
         if (!_refresh)
         {
             if (upload) remote.Upload(program);
+
             if (play) remote.Play();
+
             if (pause) remote.Pause();
         }
 

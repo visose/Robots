@@ -18,7 +18,8 @@
 - Prefer the simplest coherent design. Keep one implementation per behavior and remove unnecessary layers, fallbacks, indirection, defensive branches, and speculative flexibility.
 - Fail fast on missing or invalid data and broken invariants. Do not substitute guessed defaults; catch only for expected recovery, cleanup followed by rethrow, or deliberate boundary handling.
 - Use `null` only for meaningful absence and validate deserialized configuration immediately. With nullable references enabled, avoid redundant null-only guards; validation that also checks null, such as `ThrowIfNullOrWhiteSpace`, is fine.
-- Use current C# when it improves clarity. Prefer target-typed `new` when the type is already clear without adding another statement or local solely to enable it. Omit access modifiers when the default is intended; a member cannot be more visible than its containing type. Use an `Async` suffix only when a synchronous counterpart exists or a framework requires it, and `sealed` only with intent.
+- Use modern C# features supported by the project's configured language version, including collection expressions and target-typed `new`. Prefer `List<T> items = new();` over `var items = new List<T>();`, and use inline `new(...)` where the target type is known. Do not add statements, declarations, or variables solely to enable target-typed `new`; retain an explicit constructor when needed. Check touched C# code for these conventions before finishing.
+- Omit access modifiers when the default is intended; a member cannot be more visible than its containing type. Use an `Async` suffix only when a synchronous counterpart exists or a framework requires it, and `sealed` only with intent.
 - Prefer records and primary constructors for immutable data carriers; use classes for services, mutable state, exceptions, and framework lifecycle types.
 - Keep C# `using` directives in one contiguous block with no blank lines. Order normal imports by source: `System`, third-party, `Rhino`, `Grasshopper`, then `Robots`; place aliases and static imports after normal imports.
 - Leave a blank line before an unbraced single-statement `if`, unless it starts the block, and after a multiline statement.
@@ -45,7 +46,7 @@
 ## Verification
 
 - Run the narrowest useful checks, but include `dotnet build` when code changes warrant it.
-- For formatting-sensitive edits, run `dotnet format Robots.slnx --verify-no-changes --no-restore --verbosity minimal`.
+- For formatting-sensitive edits, run `dotnet format whitespace Robots.slnx --verify-no-changes --no-restore --verbosity minimal` and resolve code-style warnings from the build. Review import order manually because the combined and style formatters force alphabetical imports instead of the repository's source-group order.
 - For package-resource changes, run `dotnet pack` and inspect `.nupkg` contents.
 - For `Robots.Rhino` package changes, verify a disposable `net8.0` consumer builds and its output lacks Robots, RhinoCommon, and Grasshopper runtime assemblies.
 - Do not run build and tests in parallel when they write the same output DLLs; build first, then test with `--no-build`.

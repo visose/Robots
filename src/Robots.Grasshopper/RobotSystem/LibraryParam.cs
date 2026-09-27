@@ -26,14 +26,14 @@ public class LibraryParam : GH_ValueList
         if (inputParam.SourceCount > 0 || inputParam is Param_String { PersistentDataCount: > 0 })
             return false;
 
-        var libraryParam = new LibraryParam
+        LibraryParam libraryParam = new()
         {
             _type = type
         };
 
         if (selected is not null)
         {
-            var selectedItem = new GH_ValueListItem(selected, $"\"{selected}\"")
+            GH_ValueListItem selectedItem = new(selected, $"\"{selected}\"")
             {
                 Selected = true
             };
@@ -115,7 +115,7 @@ public class LibraryParam : GH_ValueList
                 : e.Message;
 
             _ = MessageBox.Show($"Error loading the Robot library\n\n{message}", MessageBoxType.Error);
-            list = new List<string>(1);
+            list = new(1);
         }
 
         if (list.SequenceEqual(ListItems.Select(i => ((GH_String)i.Value).Value)))

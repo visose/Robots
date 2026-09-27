@@ -54,14 +54,14 @@ public class LoadRobotSystem() : Component(
     {
         if (_form is null)
         {
-            var library = new OnlineLibrary();
+            OnlineLibrary library = new();
             library.LibraryChanged += () =>
             {
                 if (LibraryParam.IsConnected(this, out var libraryParam))
                     libraryParam.UpdateAndExpire();
             };
 
-            _form = new LibraryForm(library);
+            _form = new(library);
         }
 
         _form.Visible = !_form.Visible;

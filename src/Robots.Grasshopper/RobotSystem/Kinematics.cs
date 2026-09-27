@@ -58,20 +58,9 @@ public class Kinematics() : Component(
         var errors = kinematics.AllErrors();
 
         if (errors.Length > 0)
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Solution has errors.");
+            throw new InvalidOperationException(string.Join(Environment.NewLine, errors));
 
-        if (errors.Contains("Target out of reach."))
-        {
-            if (prevKinematics is not null)
-            {
-                kinematics = prevKinematics;
-                _kinematics[key] = kinematics;
-            }
-        }
-        else
-        {
-            _kinematics[key] = kinematics;
-        }
+        _kinematics[key] = kinematics;
 
         if (drawMeshes)
             _ = DA.SetDataList(0, RhinoMeshPoser.Pose(robotSystem, kinematics, targets));

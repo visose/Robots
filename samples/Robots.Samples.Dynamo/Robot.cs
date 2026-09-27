@@ -21,7 +21,7 @@ public class Robot
     [IsVisibleInDynamoLibrary(false)]
     public RobotSystem System { get; }
 
-    private Robot(RobotSystem system)
+    Robot(RobotSystem system)
     {
         System = system;
     }

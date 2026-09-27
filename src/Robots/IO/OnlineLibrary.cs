@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace Robots;
 
-class FileDto
+record FileDto
 {
     public required string Name { get; init; }
     public required string Sha { get; init; }
@@ -38,17 +38,17 @@ public class OnlineLibrary : IDisposable
         headers.Add("User-Agent", "request");
     }
 
-    public Task UpdateLibraryAsync() => UpdateLibraryAsync(_http, RobotLibrary.OnlinePath, RobotLibrary.LocalPath);
+    public Task UpdateLibrary() => UpdateLibrary(_http, RobotLibrary.OnlinePath, RobotLibrary.LocalPath);
 
-    internal async Task UpdateLibraryAsync(HttpClient http, string onlinePath, string localPath)
+    internal async Task UpdateLibrary(HttpClient http, string onlinePath, string localPath)
     {
         Libraries.Clear();
         AddDiskLibraries(onlinePath, false);
         AddDiskLibraries(localPath, true);
-        await AddOnlineLibrariesAsync(http);
+        await AddOnlineLibraries(http);
     }
 
-    public async Task DownloadLibraryAsync(LibraryItem library)
+    public async Task DownloadLibrary(LibraryItem library)
     {
         await DownloadLibrary(library, _http, RobotLibrary.OnlinePath);
         LibraryChanged?.Invoke();
@@ -73,7 +73,7 @@ public class OnlineLibrary : IDisposable
         {
             foreach (var file in files)
             {
-                var uri = new Uri("https://raw.githubusercontent.com/visose/Robots/libraries/" + Uri.EscapeDataString(file));
+                Uri uri = new("https://raw.githubusercontent.com/visose/Robots/libraries/" + Uri.EscapeDataString(file));
                 using var content = await http.GetStreamAsync(uri);
                 using var output = File.Create(Path.Combine(staging, file));
                 await content.CopyToAsync(output);
@@ -138,9 +138,9 @@ public class OnlineLibrary : IDisposable
         LibraryChanged?.Invoke();
     }
 
-    async Task AddOnlineLibrariesAsync(HttpClient http)
+    async Task AddOnlineLibraries(HttpClient http)
     {
-        var uri = new Uri("https://api.github.com/repos/visose/robots/contents?ref=libraries");
+        Uri uri = new("https://api.github.com/repos/visose/robots/contents?ref=libraries");
         var json = await http.GetStringAsync(uri);
         var files = JsonSerializer.Deserialize<List<FileDto>>(json, JsonOptions)
             ?? throw new InvalidOperationException("Could not list libraries.");

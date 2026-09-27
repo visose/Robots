@@ -81,7 +81,7 @@ static class Util
     {
         public List<K> MapToList<K>(Func<T, K> projection)
         {
-            var result = new List<K>(array.Count);
+            List<K> result = new(array.Count);
 
             for (int i = 0; i < array.Count; i++)
                 result.Add(projection(array[i]));
@@ -183,7 +183,7 @@ static class Util
 
             for (int i = 0; i < count; i++)
             {
-                var row = new List<T>(source.Count);
+                List<T> row = new(source.Count);
 
                 for (int j = 0; j < source.Count; j++)
                     row.Add(source[j][i]);

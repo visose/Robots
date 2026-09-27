@@ -224,6 +224,7 @@ public class URRealTimeDataExchange : IDisposable
             while (readLength < length)
             {
                 int tempLength = stream.Read(_buffer, readLength, length - readLength);
+
                 if (tempLength == 0)
                     break;
 

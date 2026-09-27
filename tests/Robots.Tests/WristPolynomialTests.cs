@@ -46,6 +46,7 @@ class WristPolynomialTests
             phase,
             coefficients,
             out var result);
+
         double residual = Evaluate(coefficients[..(result.Degree + 1)], 0);
 
         Assert.Multiple(() =>
@@ -100,6 +101,7 @@ class WristPolynomialTests
                 cos, -sin * cosAlpha[i], sin * sinAlpha[i], a[i] * cos,
                 sin, cos * cosAlpha[i], -cos * sinAlpha[i], a[i] * sin,
                 0, sinAlpha[i], cosAlpha[i], d[i]);
+
             transform *= joint;
         }
 
