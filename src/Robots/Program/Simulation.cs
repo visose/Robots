@@ -60,11 +60,11 @@ class Simulation
 
         if (time >= segment.End.TotalTime - TimeTol)
         {
-            SetCurrentPose(segment.End, time);
+            SetCurrentPose(segment.CheckedSamples?[^1] ?? segment.End, time);
             return;
         }
 
-        _ = segment.Start.JointSets(_prevJoints);
+        _ = segment.PreviousSample(time).JointSets(_prevJoints);
         _ = segment.Lerp(_program.RobotSystem, time, _targets);
         CurrentSimulationPose.Kinematics = _program.RobotSystem.Kinematics(_targets, _prevJoints);
         CurrentSimulationPose.TargetIndex = segment.TargetIndex;

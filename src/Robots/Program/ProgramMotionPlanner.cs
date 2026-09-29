@@ -57,7 +57,7 @@ class ProgramMotionPlanner
 
         if (indexError == -1 && _program.Errors.Count == 0)
         {
-            BuildMotionSegments(systemTarget);
+            BuildMotionSegments(systemTarget, stepSize);
             AddZoneCapWarnings();
         }
         else
@@ -161,6 +161,8 @@ class ProgramMotionPlanner
         if (_program.Errors.Count > 0)
             return prevJoints;
 
+        // Endpoint solving must not replace the starting reference for path checking.
+        prevJoints = previous.JointSets(prevJoints);
         AddWaitTime(systemTarget, previous, true, ref time);
         var prevStep = InterpolateSegment(systemTarget, previous, modes, targets, ref prevJoints, stepSize, ref time, out var segmentTime);
 
@@ -180,15 +182,10 @@ class ProgramMotionPlanner
         int divisions = GetDivisions(systemTarget, previous, stepSize);
         var prevStep = ResetTiming(previous.ShallowClone());
 
-        // With no intermediate samples, the seed and the destination are
-        // already the same solved pose. Keep endpoint seeding for longer moves.
+        // An unsubdivided direct endpoint was already solved from the previous pose.
         bool reuseEndpoint = divisions == 1
             && !HasModeOtherThan(modes, EndpointMode.Direct)
             && systemTarget.ProgramTargets.All(target => !target.IsJointMotion);
-
-        double lastDeltaTime = 0;
-        double deltaSinceKey = 0;
-        double minSinceKey = 0;
         totalSpeed = default;
 
         for (int step = 1; step <= divisions; step++)
@@ -209,45 +206,54 @@ class ProgramMotionPlanner
 
             var speed = GetSegmentSpeed(interTarget, prevStep, 1.0 / divisions);
 
-            if ((step > 1) && ShouldStartNewKeyframe(modes, speed.DeltaTime, lastDeltaTime))
-            {
-                Keyframes.Add(prevStep.ShallowClone());
-                deltaSinceKey = 0;
-                minSinceKey = 0;
-            }
-
-            lastDeltaTime = speed.DeltaTime;
             time += speed.DeltaTime;
             totalSpeed = new(totalSpeed.DeltaTime + speed.DeltaTime, totalSpeed.MinTime + speed.MinTime);
-            deltaSinceKey += speed.DeltaTime;
-            minSinceKey += speed.MinTime;
-
-            interTarget.DeltaTime = deltaSinceKey;
-            interTarget.MinTime = minSinceKey;
+            interTarget.DeltaTime = speed.DeltaTime;
+            interTarget.MinTime = speed.MinTime;
             interTarget.TotalTime = time;
-
+            Keyframes.Add(interTarget);
             prevStep = interTarget;
 
             if (_program.Errors.Count > 0)
                 break;
         }
 
-        Keyframes.Add(prevStep.ShallowClone());
         return prevStep;
     }
 
-    static int GetDivisions(SystemTarget systemTarget, SystemTarget previous, double stepSize)
+    int GetDivisions(SystemTarget systemTarget, SystemTarget previous, double stepSize)
     {
         int divisions = 1;
 
+        if (systemTarget.ProgramTargets.All(target => target.IsJointMotion))
+            return divisions;
+
         foreach (var target in systemTarget.ProgramTargets)
         {
-            if (target.IsJointMotion)
-                continue;
-
             var prevTarget = previous.ProgramTargets[target.Group];
-            var prevPlane = target.GetPrevPlane(prevTarget);
-            divisions = Max(divisions, GetDivisions(prevPlane, target.Plane, stepSize));
+
+            if (!target.IsJointMotion)
+                divisions = Max(divisions, GetDivisions(target.GetPrevPlane(prevTarget), target.Plane, stepSize));
+
+            // A stationary TCP can still have a moving base or a coupled robot/frame.
+            var joints = _robotSystem.GetJoints(target.Group);
+            int robotCount = _robotSystem.GetRobotJointCount(target.Group);
+            int first = target.IsJointMotion ? 0 : robotCount;
+
+            for (int i = first; i < joints.Count; i++)
+            {
+                double end = target.IsJointMotion
+                    ? target.Kinematics.Joints[i]
+                    : target.Target.External[i - robotCount];
+                double step = joints[i] is PrismaticJoint ? stepSize : AngularStep;
+                divisions = Max(divisions, (int)Ceiling(Abs(end - prevTarget.Kinematics.Joints[i]) / step));
+            }
+
+            if (_robotSystem.RedundantJointIndex(target.Group) is int redundant && target.Target.External.Length == 1)
+            {
+                double delta = target.Target.External[0] - prevTarget.Kinematics.Joints[redundant];
+                divisions = Max(divisions, (int)Ceiling(Abs(delta) / AngularStep));
+            }
         }
 
         return divisions;
@@ -291,7 +297,7 @@ class ProgramMotionPlanner
         }
     }
 
-    void BuildMotionSegments(List<SystemTarget> systemTargets)
+    void BuildMotionSegments(List<SystemTarget> systemTargets, double stepSize)
     {
         if (!HasFlyby(systemTargets))
         {
@@ -299,10 +305,10 @@ class ProgramMotionPlanner
             return;
         }
 
-        ApplyFlybySegments(systemTargets);
+        ApplyFlybySegments(systemTargets, stepSize);
     }
 
-    void ApplyFlybySegments(List<SystemTarget> systemTargets)
+    void ApplyFlybySegments(List<SystemTarget> systemTargets, double stepSize)
     {
         Keyframes.Clear();
         Segments.Clear();
@@ -335,8 +341,8 @@ class ProgramMotionPlanner
             else
             {
                 entry = CreateFractionKeyframe(previous, current, entryFractions, entryTime, ref prevJoints, lastKeyframe, targets);
-                AddLineSegment(lastKeyframe, entry);
-                Keyframes.Add(entry);
+                AddCheckedSegment(new(lastKeyframe, entry), stepSize, targets, ref prevJoints);
+                entry = Keyframes[^1];
             }
 
             if (_program.Errors.Count > 0)
@@ -356,9 +362,51 @@ class ProgramMotionPlanner
             if (_program.Errors.Count > 0)
                 return;
 
-            Segments.Add(new(entry, exit, current, next));
-            Keyframes.Add(exit);
+            AddCheckedSegment(new(entry, exit, current, next), stepSize, targets, ref prevJoints);
+
+            if (_program.Errors.Count > 0)
+                return;
         }
+    }
+
+    void AddCheckedSegment(MotionSegment segment, double stepSize, Target[] targets, ref double[][] prevJoints)
+    {
+        if (segment.End.TotalTime <= segment.Start.TotalTime + TimeTol)
+        {
+            Keyframes.Add(segment.End);
+            prevJoints = segment.End.JointSets(prevJoints);
+            return;
+        }
+
+        int divisions = segment.Corner is null && segment.End.ProgramTargets.All(target => target.IsJointMotion)
+            ? 1
+            : segment.GetDivisions(_robotSystem, stepSize, AngularStep);
+
+        var samples = new SystemTarget[divisions + 1];
+        samples[0] = segment.Start;
+        prevJoints = segment.Start.JointSets(prevJoints);
+
+        for (int i = 1; i <= divisions; i++)
+        {
+            double time = SegmentTime(segment.Start.TotalTime, segment.End.TotalTime, i / (double)divisions);
+            var sample = segment.End.ShallowClone(segment.TargetIndex);
+            var kinematics = _robotSystem.Kinematics(segment.Lerp(_robotSystem, time, targets), prevJoints);
+            sample.SetTargetKinematics(kinematics, _program, samples[i - 1]);
+            prevJoints = kinematics.JointSets(prevJoints);
+            SetKeyframeTiming(sample, time, samples[i - 1]);
+            samples[i] = sample;
+            Keyframes.Add(sample);
+
+            if (_program.Errors.Count > 0)
+            {
+                samples = samples[..(i + 1)];
+                _program.Duration = time;
+                break;
+            }
+        }
+
+        // Keep the segment geometry; samples provide local IK references for any playback order.
+        Segments.Add(segment with { CheckedSamples = samples });
     }
 
     void AddHoldSegment(double time)
@@ -525,9 +573,6 @@ class ProgramMotionPlanner
         systemTarget.MinTime = 0;
         return systemTarget;
     }
-
-    static bool ShouldStartNewKeyframe(IReadOnlyList<EndpointMode> modes, double deltaTime, double lastDeltaTime) =>
-        modes.Contains(EndpointMode.Interpolated) || Abs(deltaTime - lastDeltaTime) > 1e-09;
 
     void AddWaitTime(SystemTarget systemTarget, SystemTarget pose, bool runBefore, ref double time)
     {

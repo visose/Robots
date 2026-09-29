@@ -1,4 +1,11 @@
-﻿- version: 2.4.1
+﻿- version: 2.4.2
+  changes:
+  - Fixed linear-motion verification starting from the destination pose instead of the previous pose.
+  - Fixed simulation and collision checking choosing inconsistent inverse-kinematics branches along verified paths, including ABB PoWa paths.
+  - Added verification of simulated fly-by curves so motion errors are reported by Create Program and prevent code generation.
+  - Fixed intermediate motion checks being skipped when external axes or coupled robots move while the TCP stays stationary.
+
+- version: 2.4.1
   changes:
   - Improved inverse-kinematics performance for non-spherical wrists, including ABB PoWa and GoFa, especially along continuous paths and when a configuration is specified.
   - Improved Create Program performance by avoiding redundant endpoint solves during motion verification.

@@ -142,8 +142,8 @@ public class Collision
                 double t = i / (double)divisions;
                 double time = segment.Start.TotalTime + ((segment.End.TotalTime - segment.Start.TotalTime) * t);
                 _ = segment.Lerp(_system, time, targets);
+                prevJoints = segment.PreviousSample(time).JointSets(prevJoints);
                 var kinematics = _program.RobotSystem.Kinematics(targets, prevJoints);
-                prevJoints = kinematics.JointSets(prevJoints);
                 var meshes = FindCollision(meshPoser, kinematics, _program.Targets[segment.TargetIndex]);
 
                 if (meshes is not null)

@@ -6,9 +6,32 @@ namespace Robots;
 
 readonly record struct MotionSegment(SystemTarget Start, SystemTarget End, SystemTarget? Corner = null, SystemTarget? Next = null)
 {
-    public int TargetIndex => Corner?.Index ?? End.Index;
+    internal SystemTarget[]? CheckedSamples { get; init; }
 
-    public Target[] Lerp(RobotSystem robot, double time)
+    internal int TargetIndex => Corner?.Index ?? End.Index;
+
+    internal SystemTarget PreviousSample(double time)
+    {
+        if (CheckedSamples is not { } samples)
+            return Start;
+
+        int low = 0;
+        int high = samples.Length - 1;
+
+        while (low < high)
+        {
+            int middle = low + (high - low + 1) / 2;
+
+            if (samples[middle].TotalTime <= time)
+                low = middle;
+            else
+                high = middle - 1;
+        }
+
+        return samples[low];
+    }
+
+    internal Target[] Lerp(RobotSystem robot, double time)
     {
         int count = Corner?.ProgramTargets.Count ?? End.ProgramTargets.Count;
         var targets = new Target[count];
@@ -35,7 +58,7 @@ readonly record struct MotionSegment(SystemTarget Start, SystemTarget End, Syste
         return targets;
     }
 
-    public int GetDivisions(RobotSystem robot, double linearStep, double angularStep)
+    internal int GetDivisions(RobotSystem robot, double linearStep, double angularStep)
     {
         int divisions = Corner is null ? 1 : 2;
 
@@ -66,7 +89,8 @@ readonly record struct MotionSegment(SystemTarget Start, SystemTarget End, Syste
     static int GetLineDivisions(ProgramTarget start, ProgramTarget end, IReadOnlyList<Joint> joints, double linearStep, double angularStep)
     {
         double distance = start.WorldPlane.Origin.DistanceTo(end.WorldPlane.Origin);
-        double divisions = distance / linearStep;
+        double divisions = Max(distance / linearStep,
+            GeometryMath.RotationAngle(start.WorldPlane, end.WorldPlane) / angularStep);
 
         for (int i = 0; i < joints.Count; i++)
         {
