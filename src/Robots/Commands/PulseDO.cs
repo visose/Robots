@@ -11,7 +11,7 @@ public class PulseDO(int @do, double length = 0.2, bool runBefore = false) : Com
 
         if (io.ValidateBounds(DO, io.DO) is string error)
         {
-            program.AddError(IssueKind.CommandInvalid, $"Digital output {DO}: {error}", source: nameof(PulseDO));
+            program.AddError($"Digital output {DO}: {error}");
             return false;
         }
 

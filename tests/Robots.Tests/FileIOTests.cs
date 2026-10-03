@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System.Xml.Linq;
+using NUnit.Framework;
 using Rhino.DocObjects;
 using Rhino.FileIO;
 using Rhino.Geometry;
@@ -7,6 +8,75 @@ namespace Robots.Tests;
 
 public class FileIOTests
 {
+    [TestCase("maxspeed", "0", "finite, positive maximum speed")]
+    [TestCase("maxspeed", "-1", "finite, positive maximum speed")]
+    [TestCase("maxspeed", "NaN", "finite, positive maximum speed")]
+    [TestCase("maxspeed", "Infinity", "finite, positive maximum speed")]
+    [TestCase("a", "NaN", "finite geometry")]
+    [TestCase("d", "Infinity", "finite geometry")]
+    [TestCase("α", "NaN", "finite geometry")]
+    [TestCase("θ", "Infinity", "finite geometry")]
+    [TestCase("minrange", "170", "finite, increasing range")]
+    [TestCase("maxrange", "NaN", "finite, increasing range")]
+    [TestCase("sign", "2", "sign of -1 or 1")]
+    [TestCase("number", "0", "numbered consecutively")]
+    public void RobotLibraryRejectsInvalidJointData(string attribute, string value, string message)
+    {
+        var xml = XElement.Parse(TestRobots.AbbIrb120Xml);
+        xml.Descendants("Revolute").First().SetAttributeValue(attribute, value);
+
+        var error = Assert.Throws<ArgumentException>(() => FileIO.ParseRobotSystem(xml.ToString(), Plane.WorldXY));
+
+        Assert.That(error!.Message, Does.Contain(message));
+    }
+
+    [TestCase(5)]
+    [TestCase(7)]
+    public void RobotLibraryRejectsDuplicateOrMissingJointNumbers(int number)
+    {
+        var xml = XElement.Parse(TestRobots.AbbIrb120Xml);
+        xml.Descendants("Revolute").Last().SetAttributeValue("number", number);
+
+        var error = Assert.Throws<ArgumentException>(() => FileIO.ParseRobotSystem(xml.ToString(), Plane.WorldXY));
+
+        Assert.That(error!.Message, Does.Contain("numbered consecutively"));
+    }
+
+    [TestCase(6)]
+    [TestCase(8)]
+    public void RobotLibraryRejectsOverlappingOrMissingExternalJointNumbers(int number)
+    {
+        var xml = XElement.Parse(TestRobots.AbbIrb120Xml);
+        var external = XElement.Parse($"""
+            <Custom model="External" manufacturer="ABB" payload="0">
+              <Base x="0" y="0" z="0" q1="1" q2="0" q3="0" q4="0"/>
+              <Joints><Prismatic number="{number}" a="0" d="0" minrange="-1000" maxrange="1000" maxspeed="1000"/></Joints>
+            </Custom>
+            """);
+        xml.Element("Mechanisms")!.Add(external);
+
+        var error = Assert.Throws<ArgumentException>(() => FileIO.ParseRobotSystem(xml.ToString(), Plane.WorldXY));
+
+        Assert.That(error!.Message, Does.Contain("Joint numbers must be unique and consecutive"));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void RobotLibraryRejectsInvalidGroupNumbers(bool duplicate)
+    {
+        var xml = XElement.Parse(TestRobots.AbbIrb120Xml);
+        var group = xml.Element("Mechanisms")!;
+
+        if (duplicate)
+            xml.Add(new XElement(group));
+        else
+            group.SetAttributeValue("group", 1);
+
+        var error = Assert.Throws<ArgumentException>(() => FileIO.ParseRobotSystem(xml.ToString(), Plane.WorldXY));
+
+        Assert.That(error!.Message, Does.Contain("Mechanical groups must be numbered consecutively"));
+    }
+
     [Test]
     public void ListRejectsUnknownElementType()
     {

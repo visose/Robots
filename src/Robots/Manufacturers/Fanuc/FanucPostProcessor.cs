@@ -113,6 +113,8 @@ class FanucPostProcessor : IPostProcessor
 
             int pointCounter = 1;
             List<string> pointsText = [];
+            int? currentTool = null;
+            int? currentFrame = null;
 
             for (int j = start; j < end; j++)
             {
@@ -122,6 +124,18 @@ class FanucPostProcessor : IPostProcessor
                 string zone = (target.Zone.IsFlyBy ? $"CNT{target.Zone.Distance}" : "FINE").NotNull("Zone name cannot be null.");
                 int frameNumber = _frames[target.Frame];
                 int toolNumber = _tools[target.Tool];
+
+                if (frameNumber != currentFrame)
+                {
+                    code.Add($": UFRAME_NUM={frameNumber} ;");
+                    currentFrame = frameNumber;
+                }
+
+                if (toolNumber != currentTool)
+                {
+                    code.Add($": UTOOL_NUM={toolNumber} ;");
+                    currentTool = toolNumber;
+                }
 
                 if (programTarget.IsJointTarget)
                 {
@@ -231,8 +245,8 @@ class FanucPostProcessor : IPostProcessor
             int nextTool = 1;
             int nextFrame = 1;
 
-            var tools = _program.Targets.SelectMany(t => t.ProgramTargets).Select(t => t.Target.Tool).Distinct();
-            var frames = _program.Targets.SelectMany(t => t.ProgramTargets).Select(t => t.Target.Frame).Distinct();
+            var tools = _program.Targets.SelectMany(t => t.ProgramTargets).Select(t => t.Target.Tool).Distinct().ToArray();
+            var frames = _program.Targets.SelectMany(t => t.ProgramTargets).Select(t => t.Target.Frame).Distinct().ToArray();
 
             foreach (var tool in tools)
             {
@@ -248,7 +262,7 @@ class FanucPostProcessor : IPostProcessor
                 }
                 else if (tool.UseController)
                 {
-                    _program.AddError(IssueKind.UnsupportedPostProcessorFeature, "Fanuc controller tools require a tool number.", source: "Fanuc");
+                    _program.AddError("Fanuc controller tools require a tool number.");
                     _tools[tool] = 1;
                 }
             }
@@ -272,7 +286,7 @@ class FanucPostProcessor : IPostProcessor
                 }
                 else if (frame.UseController)
                 {
-                    _program.AddError(IssueKind.UnsupportedPostProcessorFeature, "Fanuc controller frames require a frame number.", source: "Fanuc");
+                    _program.AddError("Fanuc controller frames require a frame number.");
                     _frames[frame] = 0;
                 }
             }
@@ -292,7 +306,6 @@ class FanucPostProcessor : IPostProcessor
             // TODO: Weight and centroid are not used.
 
             List<string> toolCode = [];
-            toolCode.Add($"UTOOL_NUM={_tools[tool]} ;");
             toolCode.Add($"! Tool {_tools[tool]} {tool.Name} TCP ;");
             toolCode.Add($"! X: {-1 * values[0]:0.000}, Y:{values[1]:0.000}, Z: {values[2]:0.000} ;");
             toolCode.Add($"! W: {values[5]:0.000}, P:{values[4]:0.000}, R: {-1 * values[3]:0.000} ;");
@@ -308,7 +321,6 @@ class FanucPostProcessor : IPostProcessor
 
             return
             [
-                $"UFRAME_NUM={_frames[frame]} ;",
                 $"! Frame {_frames[frame]} {frame.Name} ;",
                 $"! X: {values[0]:0.000}, Y:{values[1]:0.000}, Z: {values[2]:0.000} ;",
                 $"! W: {values[5]:0.000}, P:{values[4]:0.000}, R: {values[3]:0.000} ;"

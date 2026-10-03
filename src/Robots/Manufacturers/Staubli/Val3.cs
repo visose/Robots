@@ -131,7 +131,7 @@ class VAL3PostProcessor : IPostProcessor
 
             if (groupCount > 1)
             {
-                _program.AddError(IssueKind.UnsupportedPostProcessorFeature, "Coordinated robots are not supported on Staubli robots.", source: nameof(VAL3PostProcessor));
+                _program.AddError("Coordinated robots are not supported on Staubli robots.");
                 return;
             }
 
@@ -168,7 +168,7 @@ class VAL3PostProcessor : IPostProcessor
 
                 if (name.Length >= 16)
                 {
-                    _program.AddError(IssueKind.UnsupportedPostProcessorFeature, $"Program name combined with mechanical group name '{name}' is too long; it must be shorter than 16 characters.", source: nameof(VAL3PostProcessor));
+                    _program.AddError($"Program name combined with mechanical group name '{name}' is too long; it must be shorter than 16 characters.");
                     return false;
                 }
             }
@@ -184,7 +184,7 @@ class VAL3PostProcessor : IPostProcessor
 
                 if (name.Length >= maxLength)
                 {
-                    _program.AddError(IssueKind.UnsupportedPostProcessorFeature, $"Attribute name '{name}' is too long; it must be shorter than {maxLength} characters.", source: nameof(VAL3PostProcessor));
+                    _program.AddError($"Attribute name '{name}' is too long; it must be shorter than {maxLength} characters.");
                     return false;
                 }
             }
@@ -391,7 +391,7 @@ class VAL3PostProcessor : IPostProcessor
         {
             if (frame.IsCoupled)
             {
-                _program.AddError(IssueKind.UnsupportedPostProcessorFeature, "Frame coupling is not supported on Staubli robots.", source: nameof(VAL3PostProcessor));
+                _program.AddError("Frame coupling is not supported on Staubli robots.");
             }
 
             Plane plane = frame.Plane;

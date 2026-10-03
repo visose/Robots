@@ -35,25 +35,25 @@ static class PostProcessorUtil
     public static void RejectMultiFile(Program program, string robotName)
     {
         if (program.MultiFileIndices.Count > 1)
-            program.AddError(IssueKind.UnsupportedPostProcessorFeature, $"Multi-file programs are not supported on {robotName} robots.", source: robotName);
+            program.AddError($"Multi-file programs are not supported on {robotName} robots.");
     }
 
     public static void RejectMultiRobot(Program program, IndustrialSystem system, string robotName)
     {
         if (system.MechanicalGroups.Count > 1)
-            program.AddError(IssueKind.UnsupportedPostProcessorFeature, $"Multi-robot programs are not supported on {robotName} robots.", source: robotName);
+            program.AddError($"Multi-robot programs are not supported on {robotName} robots.");
     }
 
     public static void RejectExternalAxes(Program program, IndustrialSystem system, string robotName)
     {
         if (system.MechanicalGroups.Any(group => group.Externals.Length > 0))
-            program.AddError(IssueKind.UnsupportedPostProcessorFeature, $"External axes are not supported on {robotName} robots.", source: robotName);
+            program.AddError($"External axes are not supported on {robotName} robots.");
     }
 
     public static void RejectDeclarations(Program program, string robotName)
     {
         if (Declarations(program).Any())
-            program.AddError(IssueKind.UnsupportedPostProcessorFeature, $"Command declarations are not implemented for {robotName} robots.", source: robotName);
+            program.AddError($"Command declarations are not implemented for {robotName} robots.");
     }
 
     public static void RejectProcessMotions(Program program, IReadOnlyList<ProgramTarget> targets)
@@ -66,11 +66,9 @@ static class PostProcessorUtil
                 continue;
 
             program.AddError(
-                IssueKind.UnsupportedPostProcessorFeature,
                 $"Process motion is not supported by {postProcessor}.",
                 target.Index,
-                target.Group,
-                postProcessor);
+                target.Group);
         }
     }
 
@@ -116,9 +114,7 @@ static class PostProcessorUtil
             return code;
 
         program.AddError(
-            IssueKind.CommandInvalid,
-            $"Command {command.Name} is not implemented by {postProcessor.GetType().Name}.",
-            source: command.GetType().Name);
+            $"Command {command.Name} is not implemented by {postProcessor.GetType().Name}.");
 
         return "";
     }

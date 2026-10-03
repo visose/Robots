@@ -143,10 +143,10 @@ public class ProgramTarget
         return prevPlane;
     }
 
-    internal Plane ToTargetPlane(Plane worldPlane)
+    internal Plane ToTargetPlane(Plane worldPlane, SystemTarget systemTarget)
     {
         Plane plane = worldPlane;
-        var framePlane = GetFramePlane(SystemTarget);
+        var framePlane = GetFramePlane(systemTarget);
         plane.InverseOrient(ref framePlane);
         return plane;
     }
@@ -189,13 +189,13 @@ public class ProgramTarget
         if (kinematicErrors.Count > 0)
         {
             foreach (var error in kinematicErrors)
-                program.AddError(IssueKind.KinematicError, error, Index, Group, nameof(ProgramTarget));
+                program.AddError(error, Index, Group);
         }
 
         if (prevTarget is not null && prevTarget.Kinematics.Configuration != kinematics.Configuration)
         {
             ChangesConfiguration = true;
-            program.AddWarning(IssueKind.ConfigurationChanged, $"Configuration changed to \"{kinematics.Configuration}\".", Index, Group, nameof(ProgramTarget));
+            program.AddWarning($"Configuration changed to \"{kinematics.Configuration}\".", Index, Group);
         }
         else
         {

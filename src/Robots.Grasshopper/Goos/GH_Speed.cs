@@ -88,7 +88,4 @@ public class GH_Speed() : Goo<Speed, GH_Speed>("Speed", Speed.Default)
         Value = data.ToSpeed();
         return true;
     }
-
-    protected override Speed DuplicateValue(Speed value) =>
-        SpeedData.From(value).ToSpeed();
 }

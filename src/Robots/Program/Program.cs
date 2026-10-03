@@ -54,7 +54,6 @@ public class Program : IProgram
     }
 
     readonly Simulation? _simulation;
-    readonly List<ProgramIssue> _issues = [];
     readonly HashSet<string> _uniqueWarnings = [];
     readonly HashSet<string> _uniqueErrors = [];
     readonly List<string> _warnings = [];
@@ -62,7 +61,6 @@ public class Program : IProgram
     readonly List<int> _multiFileIndices = [];
     readonly List<TargetProperty> _attributes = [];
     readonly List<Command> _initCommands;
-    readonly List<SystemTarget> _motionSamples = [];
     readonly List<MotionSegment> _motionSegments = [];
     readonly SystemTarget[] _targets;
 
@@ -76,8 +74,6 @@ public class Program : IProgram
     public IReadOnlyList<string> Errors { get; }
     public List<List<List<string>>>? Code { get; }
     public double Duration { get; internal set; }
-    internal IReadOnlyList<ProgramIssue> Issues => _issues;
-    internal IReadOnlyList<SystemTarget> MotionSamples => _motionSamples;
     internal IReadOnlyList<MotionSegment> MotionSegments => _motionSegments;
 
     public IMeshPoser? MeshPoser { get; set; }
@@ -111,9 +107,8 @@ public class Program : IProgram
 
             if (motionPlanner.Keyframes.Count > 0)
             {
-                _motionSamples.AddRange(motionPlanner.Keyframes);
                 _motionSegments.AddRange(motionPlanner.Segments);
-                _simulation = new(this, _motionSamples[0], _motionSegments);
+                _simulation = new(this, motionPlanner.Keyframes[0], _motionSegments);
             }
 
             targets = motionPlanner.FixedTargets;
@@ -137,24 +132,24 @@ public class Program : IProgram
         }
     }
 
-    internal void AddError(IssueKind kind, string message, int? targetIndex = null, int? robotGroup = null, string? source = null) =>
-        AddIssue(IssueLevel.Error, kind, _errors, _uniqueErrors, message, targetIndex, robotGroup, source);
+    internal void AddError(string message, int? targetIndex = null, int? robotGroup = null) =>
+        AddMessage(_errors, _uniqueErrors, FormatIssueMessage(message, targetIndex, robotGroup));
 
-    internal void AddWarning(IssueKind kind, string message, int? targetIndex = null, int? robotGroup = null, string? source = null) =>
-        AddIssue(IssueLevel.Warning, kind, _warnings, _uniqueWarnings, message, targetIndex, robotGroup, source);
+    internal void AddWarning(string message, int? targetIndex = null, int? robotGroup = null) =>
+        AddMessage(_warnings, _uniqueWarnings, FormatIssueMessage(message, targetIndex, robotGroup));
 
-    internal void AddWarning(IssueKind kind, int count, int? targetIndex, int? robotGroup, string source, Func<string> singular, Func<int, string> plural)
+    internal void AddWarning(int count, int? targetIndex, int? robotGroup, Func<string> singular, Func<int, string> plural)
     {
         if (count == 0)
             return;
 
         if (count == 1)
         {
-            AddWarning(kind, singular(), targetIndex, robotGroup, source);
+            AddWarning(singular(), targetIndex, robotGroup);
             return;
         }
 
-        AddIssue(IssueLevel.Warning, kind, _warnings, _uniqueWarnings, AddFirstAffected(plural(count), targetIndex, robotGroup), targetIndex, robotGroup, source, formatLocation: false);
+        AddMessage(_warnings, _uniqueWarnings, AddFirstAffected(plural(count), targetIndex, robotGroup));
     }
 
     internal void AddAttributes(IEnumerable<TargetProperty> attributes) =>
@@ -169,16 +164,10 @@ public class Program : IProgram
         }
     }
 
-    void AddIssue(IssueLevel level, IssueKind kind, List<string> messages, HashSet<string> unique, string message, int? targetIndex, int? robotGroup, string? source, bool formatLocation = true)
+    static void AddMessage(List<string> messages, HashSet<string> unique, string message)
     {
-        if (formatLocation)
-            message = FormatIssueMessage(message, targetIndex, robotGroup);
-
-        if (!unique.Add(message))
-            return;
-
-        messages.Add(message);
-        _issues.Add(new(level, kind, message, targetIndex, robotGroup, source));
+        if (unique.Add(message))
+            messages.Add(message);
     }
 
     string FormatIssueMessage(string message, int? targetIndex, int? robotGroup)
@@ -217,7 +206,7 @@ public class Program : IProgram
         }
 
         if (!IsValidIdentifier(name, out var error))
-            AddError(IssueKind.ProgramNameInvalid, "Program " + error, source: nameof(CheckName));
+            AddError("Program " + error);
     }
 
     List<SystemTarget> CreateSystemTargets(IReadOnlyList<IToolpath> toolpaths)
@@ -236,7 +225,7 @@ public class Program : IProgram
 
         if (targets.Length != groupCount)
         {
-            AddError(IssueKind.ToolpathInvalid, $"You supplied {targets.Length} toolpath(s), this robot system requires {groupCount} toolpath(s).", source: nameof(ValidateToolpaths));
+            AddError($"You supplied {targets.Length} toolpath(s), this robot system requires {groupCount} toolpath(s).");
             return false;
         }
 
@@ -245,13 +234,13 @@ public class Program : IProgram
 
         if (firstTargetCount == 0)
         {
-            AddError(IssueKind.ToolpathInvalid, "The program must contain at least one target.", source: nameof(ValidateToolpaths));
+            AddError("The program must contain at least one target.");
             return false;
         }
 
         if (targets.Any(t => t.Count != firstTargetCount))
         {
-            AddError(IssueKind.ToolpathInvalid, "All toolpaths must contain the same number of targets.", source: nameof(ValidateToolpaths));
+            AddError("All toolpaths must contain the same number of targets.");
             return false;
         }
 
@@ -272,7 +261,7 @@ public class Program : IProgram
 
                 if (target is null)
                 {
-                    AddError(IssueKind.ToolpathInvalid, "Input target is null or invalid.", index, group, nameof(BuildSystemTargets));
+                    AddError("Input target is null or invalid.", index, group);
                     return systemTargets;
                 }
 
@@ -296,7 +285,7 @@ public class Program : IProgram
         indices = [.. indices.Where(i => i >= 0 && i < targetCount).Distinct()];
 
         if (startCount > indices.Count)
-            AddWarning(IssueKind.ToolpathInvalid, "Multi-file index was outside the target range.", source: nameof(FixMultiFileIndices));
+            AddWarning("Multi-file index was outside the target range.");
 
         indices.Sort();
 

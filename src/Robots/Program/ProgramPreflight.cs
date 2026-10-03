@@ -35,11 +35,9 @@ class ProgramPreflight(Program program)
             if (_robotSystem.ValidateTargetAxes(target.Group, target.Target) is string error)
             {
                 _program.AddError(
-                    IssueKind.TargetAxesInvalid,
                     $"{error}.",
                     target.Index,
-                    target.Group,
-                    nameof(ProgramPreflight));
+                    target.Group);
             }
         }
     }
@@ -65,11 +63,9 @@ class ProgramPreflight(Program program)
             return;
 
         _program.AddWarning(
-            IssueKind.MotionWarning,
             count,
             first.Index,
             first.Group,
-            nameof(ProgramPreflight),
             () => "Commands on a fly-by target may run before or after the exact target position.",
             total => $"{total} targets have commands on fly-by targets; commands may run before or after the exact target positions.");
     }
@@ -112,11 +108,9 @@ class ProgramPreflight(Program program)
         if (first is not null)
         {
             _program.AddWarning(
-                IssueKind.AttributeDefaulted,
                 count,
                 first.Index,
                 first.Group,
-                nameof(ProgramPreflight),
                 () => singular,
                 plural);
         }
@@ -133,10 +127,8 @@ class ProgramPreflight(Program program)
             if (tool.Weight > payload)
             {
                 _program.AddWarning(
-                    IssueKind.PayloadExceeded,
                     $"Tool {tool.Name} exceeds rated payload: {payload} kg.",
-                    robotGroup: group,
-                    source: nameof(ProgramPreflight));
+                    robotGroup: group);
             }
         }
     }
@@ -168,33 +160,40 @@ class ProgramPreflight(Program program)
 
     void NameAttributes(HashSet<TargetProperty> attributes, IReadOnlyList<ProgramTarget> targets)
     {
-        HashSet<string> names = new(attributes.Where(a => a.HasName).Select(a => a.Name), StringComparer.Ordinal);
+        var comparer = _robotSystem.Manufacturer is Manufacturers.ABB or Manufacturers.KUKA
+            ? StringComparer.OrdinalIgnoreCase
+            : StringComparer.Ordinal;
+        HashSet<string> names = new(attributes.Where(a => a.HasName).Select(a => a.Name), comparer);
         Dictionary<TargetProperty, string> renames = [];
 
-        foreach (var group in attributes.GroupBy(a => (a.HasName, Name: a.HasName ? a.Name : a.GetType().Name)))
+        foreach (var named in attributes.GroupBy(a => a.HasName))
         {
-            var (hasName, stem) = group.Key;
-
-            if (hasName && !group.Skip(1).Any())
-                continue;
-
-            if (hasName)
-                _program.AddWarning(IssueKind.AttributeDuplicateName, $"Multiple target attributes named \"{stem}\" were found.", source: nameof(ProgramPreflight));
-
-            int i = 0;
-
-            foreach (var attribute in group)
+            foreach (var group in named.GroupBy(a => named.Key ? a.Name : a.GetType().Name, comparer))
             {
-                string name;
+                bool hasName = named.Key;
+                string stem = group.Key;
 
-                do
+                if (hasName && !group.Skip(1).Any())
+                    continue;
+
+                if (hasName)
+                    _program.AddWarning($"Multiple target attributes named \"{stem}\" were found.");
+
+                int i = 0;
+
+                foreach (var attribute in group)
                 {
-                    string suffix = i++.ToString("000", CultureInfo.InvariantCulture);
-                    name = stem[..Math.Min(stem.Length, 32 - suffix.Length)] + suffix;
-                }
-                while (!names.Add(name));
+                    string name;
 
-                renames.Add(attribute, name);
+                    do
+                    {
+                        string suffix = i++.ToString("000", CultureInfo.InvariantCulture);
+                        name = stem[..Math.Min(stem.Length, 32 - suffix.Length)] + suffix;
+                    }
+                    while (!names.Add(name));
+
+                    renames.Add(attribute, name);
+                }
             }
         }
 
@@ -245,7 +244,7 @@ class ProgramPreflight(Program program)
     }
 
     void AddFrameError(string message, ProgramTarget programTarget) =>
-        _program.AddError(IssueKind.FrameCouplingInvalid, message, programTarget.Index, programTarget.Group, nameof(ProgramPreflight));
+        _program.AddError(message, programTarget.Index, programTarget.Group);
 
     void ApplyNames(HashSet<TargetProperty> attributes, IReadOnlyList<ProgramTarget> targets, Dictionary<TargetProperty, string> renames)
     {

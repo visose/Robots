@@ -88,7 +88,7 @@ class ProgramMotionPlanner
             if (kinematic.Errors.Count > 0)
             {
                 foreach (var error in kinematic.Errors)
-                    _program.AddError(IssueKind.KinematicError, error, programTarget.Index, programTarget.Group, nameof(ProgramMotionPlanner));
+                    _program.AddError(error, programTarget.Index, programTarget.Group);
             }
 
             int robotJointCount = _robotSystem.GetRobotJointCount(programTarget.Group);
@@ -100,11 +100,11 @@ class ProgramMotionPlanner
 
             if (_robotSystem.RequiresContinuation(programTarget.Group))
             {
-                _program.AddError(IssueKind.KinematicError, "First target should be a joint target because this robot needs a known starting joint state.", programTarget.Index, programTarget.Group, nameof(ProgramMotionPlanner));
+                _program.AddError("First target should be a joint target because this robot needs a known starting joint state.", programTarget.Index, programTarget.Group);
             }
             else
             {
-                _program.AddWarning(IssueKind.KinematicError, "First target changed to a joint target.", programTarget.Index, programTarget.Group, nameof(ProgramMotionPlanner));
+                _program.AddWarning("First target changed to a joint target.", programTarget.Index, programTarget.Group);
             }
         }
     }
@@ -192,14 +192,17 @@ class ProgramMotionPlanner
         {
             double t = step / (double)divisions;
             var interTarget = systemTarget.ShallowClone();
-            var kinematics = reuseEndpoint
-                ? systemTarget.ProgramTargets.MapToList(target => target.Kinematics)
-                : _robotSystem.Kinematics(
-                    systemTarget.Lerp(previous, _robotSystem, t, 0.0, 1.0, targets),
-                    prevJoints);
-
-            prevJoints = kinematics.JointSets(prevJoints);
-            interTarget.SetTargetKinematics(kinematics, _program, prevStep);
+            if (reuseEndpoint)
+            {
+                var kinematics = systemTarget.ProgramTargets.MapToList(target => target.Kinematics);
+                prevJoints = kinematics.JointSets(prevJoints);
+                interTarget.SetTargetKinematics(kinematics, _program, prevStep);
+            }
+            else
+            {
+                _ = systemTarget.Lerp(previous, _robotSystem, t, 0.0, 1.0, targets);
+                prevJoints = SolveSample(interTarget, targets, prevJoints, prevStep);
+            }
 
             if (_program.Errors.Count == 0)
                 CheckConfigurationChange(prevStep, interTarget);
@@ -390,9 +393,8 @@ class ProgramMotionPlanner
         {
             double time = SegmentTime(segment.Start.TotalTime, segment.End.TotalTime, i / (double)divisions);
             var sample = segment.End.ShallowClone(segment.TargetIndex);
-            var kinematics = _robotSystem.Kinematics(segment.Lerp(_robotSystem, time, targets), prevJoints);
-            sample.SetTargetKinematics(kinematics, _program, samples[i - 1]);
-            prevJoints = kinematics.JointSets(prevJoints);
+            _ = segment.Lerp(_robotSystem, time, targets);
+            prevJoints = SolveSample(sample, targets, prevJoints, samples[i - 1]);
             SetKeyframeTiming(sample, time, samples[i - 1]);
             samples[i] = sample;
             Keyframes.Add(sample);
@@ -551,11 +553,17 @@ class ProgramMotionPlanner
     {
         var keyframe = current.ShallowClone();
         _ = current.LerpFractions(previous, _robotSystem, fractions, targets);
-        var kinematics = _robotSystem.Kinematics(targets, prevJoints);
-        prevJoints = kinematics.JointSets(prevJoints);
-        keyframe.SetTargetKinematics(kinematics, _program, previousKeyframe);
+        prevJoints = SolveSample(keyframe, targets, prevJoints, previousKeyframe);
         SetKeyframeTiming(keyframe, time, previousKeyframe);
         return keyframe;
+    }
+
+    double[][] SolveSample(SystemTarget sample, Target[] targets, double[][]? prevJoints, SystemTarget previous)
+    {
+        var kinematics = _robotSystem.Kinematics(targets, prevJoints);
+        var joints = kinematics.JointSets(prevJoints);
+        sample.SetTargetKinematics(kinematics, _program, previous);
+        return joints;
     }
 
     static void SetKeyframeTiming(SystemTarget keyframe, double time, SystemTarget previous)
@@ -644,11 +652,9 @@ class ProgramMotionPlanner
         var worst = _worstZoneCap;
 
         _program.AddWarning(
-            IssueKind.MotionWarning,
             _zoneCapCount,
             first.Index,
             first.Group,
-            nameof(ProgramMotionPlanner),
             () => $"Fly-by zone {first.Requested:0.###} mm exceeds half of the {first.Side} segment; simulation uses {first.Used:0.###} mm on that side.",
             count => $"{count} fly-by zone segments exceed half of an adjacent segment; simulation caps their effective blend distance. Largest cap uses {worst.Used:0.###} mm instead of {worst.Requested:0.###} mm at {_program.TargetReference(worst.Index, worst.Group)}.");
     }
@@ -685,11 +691,9 @@ class ProgramMotionPlanner
 
     void AddMotionWarning(int count, MotionWarn first, Func<MotionWarn, string> singular, Func<int, MotionWarn, string> plural)
         => _program.AddWarning(
-            IssueKind.MotionWarning,
             count,
             first.Index,
             first.Group,
-            nameof(ProgramMotionPlanner),
             () => singular(first),
             total => plural(total, first));
 
@@ -861,7 +865,7 @@ class ProgramMotionPlanner
 
                 if (!systemTargets[i + 1].ProgramTargets[target.Group].IsJointMotion)
                 {
-                    _program.AddError(IssueKind.KinematicError, "Undefined configuration (probably due to a singularity) before a linear motion.", target.Index, target.Group, nameof(ProgramMotionPlanner));
+                    _program.AddError("Undefined configuration (probably due to a singularity) before a linear motion.", target.Index, target.Group);
                 }
             }
         }

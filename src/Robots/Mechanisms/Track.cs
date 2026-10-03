@@ -15,15 +15,6 @@ public class Track : Mechanism
             plane.Origin = plane.Origin + plane.XAxis * joint.A + plane.ZAxis * joint.D;
             joint.Plane = plane;
         }
-
-        /*
-        if (Joints.Length == 3)
-        {
-            plane = Joints[2].Plane;
-            plane.Rotate(PI, plane.XAxis);
-            Joints[2].Plane = plane;
-        }
-        */
     }
 
     private protected override MechanismKinematics CreateSolver() => new TrackKinematics(this);

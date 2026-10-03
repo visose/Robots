@@ -5,6 +5,63 @@ namespace Robots.Tests;
 
 public class KinematicsTests
 {
+    [TestCase(0)]
+    [TestCase(1e-10)]
+    [TestCase(-1e-10)]
+    [TestCase(Math.PI)]
+    [TestCase(-Math.PI)]
+    [TestCase(Math.PI - 1e-10)]
+    public void SphericalWristSingularityPreservesPoseAndReportsError(double wrist)
+    {
+        var robot = TestRobots.AbbIrb120();
+        ((IndustrialSystem)robot).MechanicalGroups[0].Robot.Joints[4].Range = new(-Math.PI, Math.PI);
+        double[] joints = [0.03844474607074855, 1.2297264014974825, 0.2658775023957144,
+            0.5180895819878624, wrist, 0.926030281896717];
+        var expected = robot.Kinematics([new JointTarget(joints)])[0].Planes[^1];
+        var actual = robot.Kinematics([new CartesianTarget(expected)], [joints])[0];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(actual.Errors, Does.Contain("Target near singularity."));
+            Assert.That(actual.Joints, Has.All.Matches<double>(double.IsFinite));
+            Assert.That(actual.Planes[^1].Origin.DistanceTo(expected.Origin), Is.LessThan(1e-6));
+            Assert.That(GeometryMath.RotationAngle(actual.Planes[^1], expected), Is.LessThan(1e-7));
+        });
+    }
+
+    [TestCase(2, 0, 0, 0)]
+    [TestCase(2, 5, 20, 0)]
+    [TestCase(3, 0, 0, 0)]
+    [TestCase(3, 5, 20, 30)]
+    public void TrackAccumulatesOffsetsAndDisplacementsOnce(int axes, double x, double y, double z)
+    {
+        string third = axes == 3
+            ? """<Prismatic number="9" a="25" d="15" minrange="-1000" maxrange="1000" maxspeed="1000"/>"""
+            : "";
+        string trackXml = $"""
+            <Track model="XYZ" manufacturer="ABB" payload="1000" movesRobot="true">
+              <Base x="0" y="0" z="0" q1="1" q2="0" q3="0" q4="0"/>
+              <Joints>
+                <Prismatic number="7" a="100" d="10" minrange="-1000" maxrange="1000" maxspeed="1000"/>
+                <Prismatic number="8" a="50" d="5" minrange="-1000" maxrange="1000" maxspeed="1000"/>
+                {third}
+              </Joints>
+            </Track>
+            """;
+        var xml = TestRobots.AbbIrb120Xml.Replace("<RobotArm ", trackXml + "<RobotArm ", StringComparison.Ordinal);
+        var robot = FileIO.ParseRobotSystem(xml, Plane.WorldXY);
+        double[] external = axes == 3 ? [x, y, z] : [x, y];
+        var pose = robot.Kinematics([new JointTarget([0, 1, 1, 0, 0.5, 0], external: external)])[0];
+        Point3d expected = new((axes == 3 ? 175 : 150) + x, y, (axes == 3 ? 30 : 15) + z);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(pose.Errors, Is.Empty);
+            Assert.That(pose.Planes[axes].Origin.DistanceTo(expected), Is.LessThan(1e-9));
+            Assert.That(pose.Planes[axes + 1].Origin.DistanceTo(expected), Is.LessThan(1e-9), "Robot base must follow the track.");
+        });
+    }
+
     [Test]
     public void RobotSystemRejectsWrongJointCountAtPublicBoundary()
     {

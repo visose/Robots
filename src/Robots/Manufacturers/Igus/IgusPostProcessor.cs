@@ -36,10 +36,10 @@ class IgusPostProcessor : IPostProcessor
             PostProcessorUtil.RejectDeclarations(program, "Igus");
 
             if (program.Attributes.OfType<Frame>().Any(frame => frame.UseController))
-                program.AddError(IssueKind.UnsupportedPostProcessorFeature, "Controller frames are not supported by the Igus postprocessor.", source: nameof(IgusPostProcessor));
+                program.AddError("Controller frames are not supported by the Igus postprocessor.");
 
             if (_program.Attributes.OfType<Tool>().Count(t => !t.UseController) > 1)
-                program.AddError(IssueKind.UnsupportedPostProcessorFeature, "Igus programs support only one custom tool.", source: nameof(IgusPostProcessor));
+                program.AddError("Igus programs support only one custom tool.");
 
             List<List<string>> groupCode = [MainModule()];
 
@@ -227,7 +227,7 @@ class IgusPostProcessor : IPostProcessor
 
             if (spaceIndex == -1)
             {
-                _program.AddError(IssueKind.UnsupportedPostProcessorFeature, "Could not number the Igus command.", source: nameof(IgusPostProcessor));
+                _program.AddError("Could not number the Igus command.");
                 return "Could not number the Igus command";
             }
 

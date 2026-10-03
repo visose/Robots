@@ -21,6 +21,13 @@ public class MechanicalGroup
         Index = index;
         Name = $"T_ROB{index + 1}";
         Joints = [.. mechanisms.SelectMany(x => x.Joints).OrderBy(x => x.Number)];
+
+        for (int i = 0; i < Joints.Length; i++)
+        {
+            if (Joints[i].Number != i)
+                throw new ArgumentException("Joint numbers must be unique and consecutive from one within each mechanical group.", nameof(mechanisms));
+        }
+
         RobotArm? robot = null;
 
         foreach (var mechanism in mechanisms.OfType<RobotArm>())

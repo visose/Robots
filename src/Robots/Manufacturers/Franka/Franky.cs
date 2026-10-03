@@ -79,11 +79,9 @@ class FrankyPostProcessor : IPostProcessor
     static void AddError(Program program, ProgramTarget target, string message)
     {
         program.AddError(
-            IssueKind.UnsupportedPostProcessorFeature,
             message,
             target.Index,
-            target.Group,
-            nameof(FrankyPostProcessor));
+            target.Group);
     }
 
     class PostInstance(SystemFranka system, Program program)

@@ -11,7 +11,7 @@ public class WaitDI(int di, bool value = true, bool runBefore = false) : Command
 
         if (io.ValidateBounds(DI, io.DI) is string error)
         {
-            program.AddError(IssueKind.CommandInvalid, $"Digital input {DI}: {error}", source: nameof(WaitDI));
+            program.AddError($"Digital input {DI}: {error}");
             return false;
         }
 

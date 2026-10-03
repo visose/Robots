@@ -33,7 +33,8 @@ class Performance
 
         TestContext.Out.WriteLine($"ABB dense fly-by target count: {targets.Length}");
         TestContext.Out.WriteLine($"ABB dense fly-by program creation: {watch.Elapsed.TotalMilliseconds:0.###} ms");
-        TestContext.Out.WriteLine($"motion samples / segments: {program.MotionSamples.Count} / {program.MotionSegments.Count}");
+        int sampleCount = 1 + program.MotionSegments.Sum(segment => segment.CheckedSamples?.Length - 1 ?? 1);
+        TestContext.Out.WriteLine($"motion samples / segments: {sampleCount} / {program.MotionSegments.Count}");
 
         Assert.That(program.Errors, Is.Empty);
     }

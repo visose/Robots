@@ -69,7 +69,4 @@ public class GH_Frame() : Goo<Frame, GH_Frame>("Frame", Frame.Default)
         Value = data.ToFrame(GooSerialization.ToPlane(reader.GetPlane(PlaneKey)));
         return true;
     }
-
-    protected override Frame DuplicateValue(Frame value) =>
-        FrameData.From(value).ToFrame(value.Plane);
 }

@@ -27,9 +27,7 @@ public class PostProcessorTests
 
         Program program = new("P", robot, [TestRobots.Toolpath(target)]);
 
-        Assert.That(program.Issues, Has.Some.Matches<ProgramIssue>(issue =>
-            issue.Kind == IssueKind.UnsupportedPostProcessorFeature
-            && issue.Message.Contains("External axes are not supported", StringComparison.Ordinal)));
+        Assert.That(program.Errors, Has.Some.Contains("External axes are not supported"));
     }
 
     const string MessageText = "Hello \"Robots\"\nNext";
@@ -505,7 +503,7 @@ public class PostProcessorTests
     }
 
     [Test]
-    public void UnsupportedPostProcessorFeatureKeepsPublicErrorAndIssueKind()
+    public void UnsupportedPostProcessorFeatureReportsPublicError()
     {
         var robot = TestRobots.PostProcessorRobot(Manufacturers.UR, 6);
         var toolpath = TestRobots.Toolpath(
@@ -516,10 +514,6 @@ public class PostProcessorTests
 
         Assert.That(program.Code, Is.Null);
         Assert.That(program.Errors, Has.One.EqualTo("Multi-file programs are not supported on UR robots."));
-        Assert.That(program.Issues, Has.One.Matches<ProgramIssue>(issue =>
-            issue.Level == IssueLevel.Error &&
-            issue.Kind == IssueKind.UnsupportedPostProcessorFeature &&
-            issue.Message == "Multi-file programs are not supported on UR robots."));
     }
 
     [Test]
@@ -764,6 +758,78 @@ public class PostProcessorTests
         Assert.That(code, Does.Contain("    UF : 3, UT : 7,"));
         Assert.That(code, Does.Not.Contain("ControllerTool TCP"));
         Assert.That(code, Does.Not.Contain("ControllerFrame"));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void FanucSelectsToolsAndFramesAtTransitionsAndFileStarts(bool multipleFiles)
+    {
+        var robot = TestRobots.FanucLrMate();
+        Tool firstTool = new(Plane.WorldXY, "FirstTool", number: 2);
+        Tool secondTool = new(Plane.WorldXY, "SecondTool", number: 7);
+        Frame firstFrame = new(Plane.WorldXY, name: "FirstFrame", number: 3);
+        Frame secondFrame = new(Plane.WorldXY, name: "SecondFrame", number: 9);
+        double[] joints = [0, 1, 1, 0, 0.5, 0];
+        Target[] targets =
+        [
+            new JointTarget(joints, tool: firstTool, frame: firstFrame),
+            new JointTarget(joints, tool: firstTool, frame: firstFrame),
+            new JointTarget(joints, tool: secondTool, frame: secondFrame),
+            new JointTarget(joints, tool: firstTool, frame: firstFrame)
+        ];
+        Program program = new("Selections", robot, [new SimpleToolpath(targets)], multiFileIndices: multipleFiles ? [0, 1] : [0]);
+        Assert.That(program.Errors, Is.Empty);
+        int index = 0;
+        int selections = 0;
+
+        foreach (var file in program.Code![0].Skip(1))
+        {
+            string? activeTool = null;
+            string? activeFrame = null;
+
+            foreach (var line in file)
+            {
+                if (line.StartsWith(": UTOOL_NUM=", StringComparison.Ordinal))
+                {
+                    activeTool = line;
+                    selections++;
+                }
+
+                if (line.StartsWith(": UFRAME_NUM=", StringComparison.Ordinal))
+                    activeFrame = line;
+
+                if (!line.StartsWith(":J P[", StringComparison.Ordinal))
+                    continue;
+
+                Assert.That(activeTool, Is.EqualTo($": UTOOL_NUM={targets[index].Tool.Number} ;"));
+                Assert.That(activeFrame, Is.EqualTo($": UFRAME_NUM={targets[index].Frame.Number} ;"));
+                index++;
+            }
+        }
+
+        Assert.That(index, Is.EqualTo(targets.Length));
+        Assert.That(selections, Is.EqualTo(multipleFiles ? 4 : 3));
+    }
+
+    [TestCase(0)]
+    [TestCase(1)]
+    [TestCase(2)]
+    public void KukaPartialExternalOverridesRetainNumericAxes(int kind)
+    {
+        var robot = TestRobots.KukaWithTwoCustomExternals();
+        string[] custom = kind switch { 0 => [], 1 => [""], _ => ["axisValue", " "] };
+        JointTarget target = new(new double[6], external: [123, 456], externalCustom: custom);
+        Program program = new("Externals", robot, [TestRobots.Toolpath(target)]);
+        Assert.That(program.Errors, Is.Empty);
+        var code = TestRobots.FlattenCode(program);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Targets[0].Joints[^2], Is.EqualTo(123));
+            Assert.That(program.Targets[0].Joints[^1], Is.EqualTo(456));
+            Assert.That(code, Does.Contain($"A.E1 = {(kind == 2 ? "axisValue" : "123")}"));
+            Assert.That(code, Does.Contain("A.E2 = 456"));
+        });
     }
 
     [Test]

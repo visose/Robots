@@ -14,15 +14,12 @@ class TrackKinematics(Track track) : MechanismKinematics(track)
             return;
 
         planes[2] = _mechanism.Joints[1].Plane;
-        planes[2].Origin += planes[1].Origin + planes[2].YAxis * joints[1];
+        planes[2].Origin += planes[1].Origin - _mechanism.Joints[0].Plane.Origin + planes[2].YAxis * joints[1];
 
         if (_mechanism.Joints.Length == 2)
             return;
 
         planes[3] = _mechanism.Joints[2].Plane;
-        planes[3].Origin += planes[2].Origin + planes[3].ZAxis * joints[2];
-
-        if (_mechanism.Joints.Length == 3)
-            return;
+        planes[3].Origin += planes[2].Origin - _mechanism.Joints[1].Plane.Origin + planes[3].ZAxis * joints[2];
     }
 }

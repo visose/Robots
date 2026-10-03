@@ -23,11 +23,9 @@ class URScriptPostProcessor : IPostProcessor
                 continue;
 
             program.AddError(
-                IssueKind.UnsupportedPostProcessorFeature,
                 "Process motion does not support time-based speed on UR robots.",
                 target.Index,
-                target.Group,
-                nameof(URScriptPostProcessor));
+                target.Group);
         }
     }
 

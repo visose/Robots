@@ -24,9 +24,7 @@ class KRLPostProcessor : IPostProcessor
         if (excess > 0)
         {
             program.AddWarning(
-                IssueKind.ProgramNameInvalid,
-                $"If using an older KRC2 or KRC3 controller, make the program name {excess} character(s) shorter.",
-                source: nameof(KRLPostProcessor));
+                $"If using an older KRC2 or KRC3 controller, make the program name {excess} character(s) shorter.");
         }
     }
 
@@ -318,10 +316,10 @@ class KRLPostProcessor : IPostProcessor
                 string Motion(string motion, string name, string pos, string? bits = null)
                 {
                     var externalCustom = target.ExternalCustom;
+                    double[] values = _system.MechanicalGroups[group].RadiansToDegreesExternal(target);
 
                     if (externalCustom is null)
                     {
-                        double[] values = _system.MechanicalGroups[group].RadiansToDegreesExternal(target);
                         string external = "";
 
                         for (int i = 0; i < values.Length; i++)
@@ -333,12 +331,12 @@ class KRLPostProcessor : IPostProcessor
                     {
                         List<string> text = [$"{name} = {{{pos}{bits}}}"];
 
-                        for (int i = 0; i < externalCustom.Length; i++)
+                        for (int i = 0; i < values.Length; i++)
                         {
-                            var value = externalCustom[i];
+                            var value = i < externalCustom.Length ? externalCustom[i] : null;
 
                             if (string.IsNullOrWhiteSpace(value))
-                                value = "0";
+                                value = $"{values[i]:0.####}";
 
                             text.Add($"{name}.E{i + 1} = {value}");
                         }

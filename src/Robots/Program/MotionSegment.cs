@@ -119,14 +119,12 @@ readonly record struct MotionSegment(SystemTarget Start, SystemTarget End, Syste
         if (corner.IsJointMotion || next.IsJointMotion)
             return new JointTarget(joints, corner.Target, external);
 
-        Plane entryPlane = entry.WorldPlane;
-        Plane cornerPlane = corner.WorldPlane;
-        Plane exitPlane = exit.WorldPlane;
+        Plane entryPlane = corner.ToTargetPlane(entry.WorldPlane, entry.SystemTarget);
+        Plane cornerPlane = corner.Plane;
+        Plane exitPlane = corner.ToTargetPlane(exit.WorldPlane, exit.SystemTarget);
 
         Plane plane = robot.CartesianLerp(entryPlane, exitPlane, t, 0.0, 1.0)
             .WithOrigin(GeometryUtil.Quadratic(entryPlane.Origin, cornerPlane.Origin, exitPlane.Origin, t));
-
-        plane = corner.ToTargetPlane(plane);
 
         return new CartesianTarget(plane, corner.Target, motion: Motions.Linear, external: external);
     }

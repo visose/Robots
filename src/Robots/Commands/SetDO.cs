@@ -11,7 +11,7 @@ public class SetDO(int @do, bool value, bool runBefore = false) : Command(runBef
 
         if (io.ValidateBounds(DO, io.DO) is string error)
         {
-            program.AddError(IssueKind.CommandInvalid, $"Digital output {DO}: {error}", source: nameof(SetDO));
+            program.AddError($"Digital output {DO}: {error}");
             return false;
         }
 

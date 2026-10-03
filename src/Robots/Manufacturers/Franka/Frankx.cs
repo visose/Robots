@@ -31,11 +31,9 @@ class FrankxPostProcessor : IPostProcessor
                 continue;
 
             program.AddError(
-                IssueKind.UnsupportedPostProcessorFeature,
                 "Process motion is not supported by Frankx.",
                 target.Index,
-                target.Group,
-                nameof(ProgramPreflight));
+                target.Group);
         }
     }
 
@@ -135,12 +133,12 @@ class FrankxPostProcessor : IPostProcessor
 
                 var speed = GetSpeed(systemTarget);
 
-                if (target is JointTarget joint)
+                if (programTarget.IsJointMotion)
                 {
                     if (currentMotion is not null)
                         MotionMove();
 
-                    double[] j = joint.Joints;
+                    double[] j = programTarget.Kinematics.Joints;
                     code.Add($"  data = MotionData(dynamic_rel)");
                     code.Add($"  data.velocity_rel = {speed:0.#####}");
                     code.Add($"  motion = JointMotion([{j[0]:0.#####}, {j[1]:0.#####}, {j[2]:0.#####}, {j[3]:0.#####}, {j[4]:0.#####}, {j[5]:0.#####}, {j[6]:0.#####}])");

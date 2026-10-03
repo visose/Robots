@@ -1,4 +1,14 @@
-﻿- version: 2.4.2
+﻿- version: 2.4.3
+  changes:
+  - Fixed inverse kinematics near wrist singularities.
+  - Fixed fly-by simulation in moving frames and multi-axis track offsets.
+  - Fixed FANUC tool and frame selection between targets and program files.
+  - Preserved KUKA external-axis values when custom overrides are blank or missing.
+  - Fixed Cartesian joint motion output for Frankx.
+  - Prevented case-insensitive attribute-name collisions in ABB and KUKA programs.
+  - Added validation of robot-library joint speeds, geometry, ranges, and numbering.
+
+- version: 2.4.2
   changes:
   - Fixed linear-motion verification starting from the destination pose instead of the previous pose.
   - Fixed simulation and collision checking choosing inconsistent inverse-kinematics branches along verified paths, including ABB PoWa paths.

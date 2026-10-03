@@ -145,14 +145,17 @@ class SphericalWristKinematics(RobotArm robot) : ConfigurationKinematics(robot)
         double c23 = Cos(joints[1] + joints[2]);
 
         double m = t.M02 * s23 * cos + t.M12 * s23 * sin + t.M22 * c23;
-        joints[4] = Atan2(Sqrt(1 - m * m), m);
+        double wristX = t.M02 * c23 * cos + t.M12 * c23 * sin - t.M22 * s23;
+        double wristY = t.M12 * cos - t.M02 * sin;
+        // Transverse components avoid cancellation in 1 - m*m near a straight wrist.
+        joints[4] = Atan2(Sqrt(wristX * wristX + wristY * wristY), m);
 
         if (wrist)
             joints[4] = -joints[4];
 
         const double zero_threshold = 1.24e-2;
 
-        if (Abs(joints[4]) < zero_threshold)
+        if (Min(Abs(joints[4]), PI - Abs(joints[4])) < zero_threshold)
         {
             isSingularity = true;
 
@@ -174,9 +177,7 @@ class SphericalWristKinematics(RobotArm robot) : ConfigurationKinematics(robot)
         }
         else
         {
-            var joints3_iy = t.M12 * cos - t.M02 * sin;
-            var joints3_ix = t.M02 * c23 * cos + t.M12 * c23 * sin - t.M22 * s23;
-            joints[3] = Atan2(joints3_iy, joints3_ix);
+            joints[3] = Atan2(wristY, wristX);
 
             var joints5_iy = t.M01 * s23 * cos + t.M11 * s23 * sin + t.M21 * c23;
             var joints5_ix = -t.M00 * s23 * cos - t.M10 * s23 * sin - t.M20 * c23;
@@ -197,8 +198,11 @@ class SphericalWristKinematics(RobotArm robot) : ConfigurationKinematics(robot)
 
             if (joints[i] < -PI) joints[i] += 2 * PI;
 
-            if (double.IsNaN(joints[i]))
+            if (!double.IsFinite(joints[i]))
+            {
                 joints[i] = 0;
+                isUnreachable = true;
+            }
         }
 
         errors = (isUnreachable, isSingularity) switch

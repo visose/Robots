@@ -11,7 +11,7 @@ public class SetAO(int ao, double value, bool runBefore = false) : Command(runBe
 
         if (io.ValidateBounds(AO, io.AO) is string error)
         {
-            program.AddError(IssueKind.CommandInvalid, $"Analog output {AO}: {error}", source: nameof(SetAO));
+            program.AddError($"Analog output {AO}: {error}");
             return false;
         }
 

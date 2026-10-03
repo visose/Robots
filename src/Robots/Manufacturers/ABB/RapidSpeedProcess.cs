@@ -47,7 +47,6 @@ class RapidSpeedProcess(
                 {
                     AddError(
                         program,
-                        (Command)motionCommand,
                         target,
                         $"Motion command {motionCommand.GetType().Name} is not implemented by the ABB postprocessor.");
 
@@ -61,7 +60,6 @@ class RapidSpeedProcess(
                 {
                     AddError(
                         program,
-                        processCommand,
                         target,
                         "Speed-proportional analogue output requires a Cartesian linear target.");
                 }
@@ -77,7 +75,6 @@ class RapidSpeedProcess(
         {
             AddError(
                 program,
-                first.Command,
                 first.Target,
                 "An ABB robot group can use only one speed-proportional analogue-output command.");
 
@@ -90,7 +87,6 @@ class RapidSpeedProcess(
         {
             AddError(
                 program,
-                first.Command,
                 first.Target,
                 $"Robot system does not define analogue output index {first.Command.AO}.");
 
@@ -103,7 +99,6 @@ class RapidSpeedProcess(
         {
             AddError(
                 program,
-                first.Command,
                 first.Target,
                 $"Analog output name '{output}' is not a valid RAPID identifier: {outputError}");
 
@@ -126,7 +121,6 @@ class RapidSpeedProcess(
             {
                 AddError(
                     program,
-                    first.Command,
                     program.Targets[index].ProgramTargets[group],
                     "A multi-file boundary cannot split a speed-proportional analogue-output sequence.");
             }
@@ -155,17 +149,15 @@ class RapidSpeedProcess(
         if (Program.IsValidIdentifier(name, out string error))
             return true;
 
-        AddError(program, command, target, $"RAPID trigger {error}");
+        AddError(program, target, $"RAPID trigger {error}");
         return false;
     }
 
-    static void AddError(Program program, Command command, ProgramTarget target, string error) =>
+    static void AddError(Program program, ProgramTarget target, string error) =>
         program.AddError(
-            IssueKind.CommandInvalid,
             error,
             target.Index,
-            target.Group,
-            command.GetType().Name);
+            target.Group);
 
     static string Number(double value) => value.ToString("G15", CultureInfo.InvariantCulture);
 }

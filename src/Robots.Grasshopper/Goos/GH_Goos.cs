@@ -31,7 +31,7 @@ public abstract class Goo<T, TGoo> : GH_Goo<T>
         }
         else
         {
-            goo.SetValue(DuplicateValue(Value));
+            goo.SetValue(Value);
         }
 
         return goo;
@@ -59,8 +59,6 @@ public abstract class Goo<T, TGoo> : GH_Goo<T>
     internal void SetValue(T value) => Value = Validate(value);
 
     protected virtual T Validate(T value) => value;
-
-    protected virtual T DuplicateValue(T value) => value;
 }
 
 public sealed class GH_Command() : Goo<Command, GH_Command>("Command", Command.Default)

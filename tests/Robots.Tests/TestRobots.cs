@@ -222,6 +222,10 @@ static class TestRobots
     public static RobotSystem KukaWithCustomExternal() =>
         Parse(PostProcessorXml(Manufacturers.KUKA, 6, model: "KR", external: CustomExternalXml(Manufacturers.KUKA), io: ""));
 
+    public static RobotSystem KukaWithTwoCustomExternals() =>
+        Parse(PostProcessorXml(Manufacturers.KUKA, 6, model: "KR", external:
+            CustomExternalXml(Manufacturers.KUKA) + CustomExternalXml(Manufacturers.KUKA, "SecondExternal", jointNumber: 8), io: ""));
+
     public static RobotSystem KukaTwoGroupWithCustomExternal() =>
         Parse(AbbTwoGroupWithCustomExternalXml.Replace("manufacturer=\"ABB\"", "manufacturer=\"KUKA\"", StringComparison.Ordinal));
 

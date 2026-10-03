@@ -124,7 +124,7 @@ public class MotionPlannerTests
 
         Assert.That(program.Errors, Is.Not.Empty);
         Assert.That(program.Code, Is.Null);
-        Assert.That(program.MotionSamples[^1].Joints[^1], Is.LessThan(Math.PI / 2));
+        Assert.That(program.MotionSegments[^1].End.Joints[^1], Is.LessThan(Math.PI / 2));
     }
 
     [TestCase(70, false)]

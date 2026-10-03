@@ -76,6 +76,4 @@ public class GH_Joints() : Goo<double[], GH_Joints>("Joints", [])
 
         return [.. values];
     }
-
-    protected override double[] DuplicateValue(double[] value) => [.. value];
 }

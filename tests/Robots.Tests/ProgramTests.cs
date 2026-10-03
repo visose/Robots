@@ -32,9 +32,6 @@ public class ProgramTests
         {
             Assert.That(program.Code, Is.Null);
             Assert.That(program.Errors, Has.One.EqualTo("The program must contain at least one target."));
-            Assert.That(program.Issues, Has.One.Matches<ProgramIssue>(issue =>
-                issue.Level == IssueLevel.Error
-                && issue.Kind == IssueKind.ToolpathInvalid));
         });
     }
 
@@ -68,8 +65,7 @@ public class ProgramTests
 
         Program program = new(name, TestRobots.UR10(), [TestRobots.Toolpath(target)]);
 
-        Assert.That(program.Issues, Has.None.Matches<ProgramIssue>(issue =>
-            issue.Kind == IssueKind.ProgramNameInvalid));
+        Assert.That(program.Errors, Is.Empty);
     }
 
     [Test]
@@ -84,11 +80,6 @@ public class ProgramTests
         {
             Assert.That(program.Code, Is.Null);
             Assert.That(program.Errors, Has.One.Contains("is set to couple a nonexistent mechanical group."));
-            Assert.That(program.Issues, Has.One.Matches<ProgramIssue>(issue =>
-                issue.Level == IssueLevel.Error
-                && issue.Kind == IssueKind.FrameCouplingInvalid
-                && issue.TargetIndex == 0
-                && issue.RobotGroup == 0));
         });
     }
 
@@ -176,6 +167,31 @@ public class ProgramTests
         });
     }
 
+    [TestCase(Manufacturers.ABB, true)]
+    [TestCase(Manufacturers.KUKA, true)]
+    [TestCase(Manufacturers.UR, false)]
+    public void AttributeNamesFollowControllerCaseRules(Manufacturers manufacturer, bool ignoreCase)
+    {
+        Speed[] speeds = [new(100, name: "Feed"), new(200, name: "feed"), new(300, name: "FEED000"),
+            new(400, name: "speed000"), new(500)];
+        var targets = speeds.Select(speed => new JointTarget(new double[6], speed: speed)).ToArray();
+        Program program = new("Names", TestRobots.PostProcessorRobot(manufacturer, 6), [new SimpleToolpath(targets)]);
+        var names = program.Attributes.OfType<Speed>().Select(speed => speed.Name).ToArray();
+        var comparer = ignoreCase ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(program.Errors, Is.Empty);
+            Assert.That(names.Distinct(comparer).Count(), Is.EqualTo(speeds.Length));
+            Assert.That(names, Does.Contain("FEED000").And.Contain("speed000"));
+            Assert.That(names, Does.Contain(ignoreCase ? "Feed001" : "Feed"));
+            Assert.That(names, Does.Contain(ignoreCase ? "Feed002" : "feed"));
+            Assert.That(names, Does.Contain(ignoreCase ? "Speed001" : "Speed000"));
+            Assert.That(speeds[0].Name, Is.EqualTo("Feed"));
+            Assert.That(speeds[^1].HasName, Is.False);
+        });
+    }
+
     [TestCaseSource(nameof(FlyByCommands))]
     public void CommandWithFlyByZoneKeepsFlyByZone(Command command)
     {
@@ -226,7 +242,8 @@ public class ProgramTests
         Assert.That(program.Errors, Is.Empty);
 
         var corner = program.Targets[1].ProgramTargets[0].WorldPlane.Origin;
-        var flybySamples = program.MotionSamples.Where(target => target.Index == 1).ToArray();
+        var flybySamples = program.MotionSegments.Where(segment => segment.Corner?.Index == 1)
+            .SelectMany(segment => segment.CheckedSamples!).ToArray();
 
         Assert.Multiple(() =>
         {
@@ -265,7 +282,8 @@ public class ProgramTests
         Assert.Multiple(() =>
         {
             Assert.That(program.Errors, Is.Empty);
-            Assert.That(program.MotionSamples.Count, Is.LessThanOrEqualTo(3 * program.Targets.Count + 2));
+            int sampleCount = 1 + program.MotionSegments.Sum(segment => segment.CheckedSamples?.Length - 1 ?? 1);
+            Assert.That(sampleCount, Is.LessThanOrEqualTo(3 * program.Targets.Count + 2));
         });
     }
 

@@ -37,8 +37,13 @@ static class RobotSystemParser
         if (mechanicalGroups.Count == 0)
             throw new ArgumentException("Robot systems must contain at least one mechanical group.");
 
-        foreach (var group in mechanicalGroups)
+        for (int i = 0; i < mechanicalGroups.Count; i++)
         {
+            var group = mechanicalGroups[i];
+
+            if (group.Index != i)
+                throw new ArgumentException("Mechanical groups must be numbered consecutively from zero in document order.");
+
             if (group.Robot.Manufacturer != manufacturer)
             {
                 throw new ArgumentException(
@@ -111,6 +116,10 @@ static class RobotSystemParser
         double payload = element.GetDoubleAttribute("payload");
         var basePlane = element.GetElement("Base").ToPlane();
         var jointElements = element.GetElement("Joints").Descendants().ToList();
+
+        if (jointElements.Count == 0)
+            throw new ArgumentException($"Mechanism '{model}' must contain joints.");
+
         var joints = new Joint[jointElements.Count];
         var meshes = MeshIO.GetMechanismMeshes(meshDoc, mechanism, model, manufacturer, joints.Length);
         MechanismBase mechanismBase = new(basePlane, meshes.Display[0], meshes.Collision[0]);
@@ -129,6 +138,25 @@ static class RobotSystemParser
 
             double maxSpeed = jointElement.GetDoubleAttribute("maxspeed");
             int number = jointElement.GetIntAttribute("number") - 1;
+
+            if (!double.IsFinite(maxSpeed) || maxSpeed <= 0)
+                throw new ArgumentException($"Joint {number + 1} in '{model}' must have a finite, positive maximum speed.");
+
+            if (!double.IsFinite(a) || !double.IsFinite(d)
+                || (jointElement.Attribute("α") is not null && !double.IsFinite(alpha))
+                || (jointElement.Attribute("θ") is not null && !double.IsFinite(theta)))
+            {
+                throw new ArgumentException($"Joint {number + 1} in '{model}' must have finite geometry values.");
+            }
+
+            if (!double.IsFinite(range.T0) || !double.IsFinite(range.T1) || range.T0 > range.T1)
+                throw new ArgumentException($"Joint {number + 1} in '{model}' must have a finite, increasing range.");
+
+            if (sign is < -1 or > 1)
+                throw new ArgumentException($"Joint {number + 1} in '{model}' must have a sign of -1 or 1, or omit it to use the default.");
+
+            if (mechanism == "RobotArm" && number != i)
+                throw new ArgumentException($"Robot joints in '{model}' must be numbered consecutively from one in document order.");
 
             joints[i] = jointElement.Name.LocalName switch
             {

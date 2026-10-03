@@ -81,7 +81,4 @@ public class GH_Zone() : Goo<Zone, GH_Zone>("Zone", Zone.Default)
         Value = data.ToZone();
         return true;
     }
-
-    protected override Zone DuplicateValue(Zone value) =>
-        ZoneData.From(value).ToZone();
 }

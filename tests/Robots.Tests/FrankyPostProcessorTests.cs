@@ -22,6 +22,25 @@ class FrankyPostProcessorTests
     }
 
     [Test]
+    public void FrankxGeneratesCartesianJointMotionFromResolvedJoints()
+    {
+        var robot = TestRobots.FrankaPanda("FrankxPostProcessor");
+        JointTarget first = new(_start);
+        var plane = robot.Kinematics([first])[0].Planes[^1];
+        CartesianTarget last = new(plane, motion: Motions.Joint, external: [_start[2]]);
+        Program program = new("CartesianJoint", robot, [TestRobots.Toolpath(first, last)]);
+
+        Assert.That(program.Errors, Is.Empty);
+        var code = TestRobots.FlattenCode(program);
+        var moves = code.Split('\n').Where(line => line.Contains("motion = JointMotion(", StringComparison.Ordinal)).ToArray();
+        var expected = string.Join(", ", program.Targets[1].Joints.Select(joint => joint.ToString("0.#####", CultureInfo.InvariantCulture)));
+
+        Assert.That(moves, Has.Length.EqualTo(2));
+        Assert.That(moves[1], Is.EqualTo($"  motion = JointMotion([{expected}])"));
+        Assert.That(code, Does.Not.Contain("WaypointMotion(["));
+    }
+
+    [Test]
     public void XmlRejectsUnknownPostProcessor()
     {
         var exception = Assert.Throws<ArgumentException>(() =>

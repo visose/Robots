@@ -35,7 +35,7 @@ class JKSPostProcessor : IPostProcessor
             PostProcessorUtil.RejectDeclarations(program, "Jaka");
 
             if (program.Attributes.OfType<Frame>().Any(frame => frame.UseController))
-                program.AddError(IssueKind.UnsupportedPostProcessorFeature, "Controller frames are not supported by the Jaka postprocessor.", source: nameof(JKSPostProcessor));
+                program.AddError("Controller frames are not supported by the Jaka postprocessor.");
 
             List<List<string>> groupCode = [MainModule()];
 
