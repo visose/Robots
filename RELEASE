@@ -1,4 +1,8 @@
-﻿- version: 2.4.3
+﻿- version: 2.4.4
+  changes:
+  - Fixed loading continuously rotating external axes with unbounded joint limits.
+
+- version: 2.4.3
   changes:
   - Fixed inverse kinematics near wrist singularities.
   - Fixed fly-by simulation in moving frames and multi-axis track offsets.

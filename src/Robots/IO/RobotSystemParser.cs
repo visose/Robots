@@ -104,11 +104,12 @@ static class RobotSystemParser
     static Mechanism CreateMechanism(XElement element, File3dm? meshDoc)
     {
         string mechanism = element.Name.LocalName;
+        bool isRobotArm = mechanism == nameof(RobotArm);
         string model = element.GetString("model");
         var manufacturer = Enum.Parse<Manufacturers>(element.GetString("manufacturer"));
         string? solverName = element.GetStringOrDefault("solver");
 
-        if (solverName is not null && mechanism != "RobotArm")
+        if (solverName is not null && !isRobotArm)
             throw new ArgumentException("The solver attribute is valid only for robot arms.");
 
         var solverType = ResolveConcreteType<RobotKinematics>(solverName, "Kinematics solver");
@@ -149,13 +150,21 @@ static class RobotSystemParser
                 throw new ArgumentException($"Joint {number + 1} in '{model}' must have finite geometry values.");
             }
 
-            if (!double.IsFinite(range.T0) || !double.IsFinite(range.T1) || range.T0 > range.T1)
-                throw new ArgumentException($"Joint {number + 1} in '{model}' must have a finite, increasing range.");
+            bool allowUnboundedRange = !isRobotArm && jointElement.Name.LocalName == "Revolute";
+
+            if (double.IsNaN(range.T0) || double.IsNaN(range.T1)
+                || double.IsPositiveInfinity(range.T0) || double.IsNegativeInfinity(range.T1)
+                || range.T0 > range.T1
+                || (!allowUnboundedRange && (!double.IsFinite(range.T0) || !double.IsFinite(range.T1))))
+            {
+                string requirement = allowUnboundedRange ? "an increasing range with valid bounds" : "a finite, increasing range";
+                throw new ArgumentException($"Joint {number + 1} in '{model}' must have {requirement}.");
+            }
 
             if (sign is < -1 or > 1)
                 throw new ArgumentException($"Joint {number + 1} in '{model}' must have a sign of -1 or 1, or omit it to use the default.");
 
-            if (mechanism == "RobotArm" && number != i)
+            if (isRobotArm && number != i)
                 throw new ArgumentException($"Robot joints in '{model}' must be numbered consecutively from one in document order.");
 
             joints[i] = jointElement.Name.LocalName switch
@@ -168,7 +177,7 @@ static class RobotSystemParser
 
         Mechanism result = mechanism switch
         {
-            "RobotArm" => ManufacturerCatalog.Get(manufacturer).CreateRobot(model, payload, mechanismBase, joints),
+            nameof(RobotArm) => ManufacturerCatalog.Get(manufacturer).CreateRobot(model, payload, mechanismBase, joints),
             "Positioner" => new Positioner(model, manufacturer, payload, mechanismBase, joints, movesRobot),
             "Track" => new Track(model, manufacturer, payload, mechanismBase, joints, movesRobot),
             "Custom" => new Custom(model, manufacturer, payload, mechanismBase, joints, movesRobot),
