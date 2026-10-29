@@ -3,8 +3,6 @@ using System.Windows.Forms;
 
 namespace Robots.Grasshopper;
 
-sealed class MissingInputException() : Exception("Input data is missing.");
-
 sealed class RuntimeWarningException(string message) : Exception(message);
 
 public abstract class Component(
@@ -55,17 +53,20 @@ public abstract class Component(
         {
             SolveComponent(DA);
         }
-        catch (MissingInputException)
-        {
-            DA.AbortComponentSolution();
-        }
         catch (Exception e)
         {
-            var level = e is RuntimeWarningException
+            var level = e is RuntimeWarningException && RuntimeMessageLevel != GH_RuntimeMessageLevel.Error
                 ? GH_RuntimeMessageLevel.Warning
                 : GH_RuntimeMessageLevel.Error;
 
             AddRuntimeMessage(level, RuntimeMessage(e));
+
+            if (level == GH_RuntimeMessageLevel.Warning)
+                return;
+
+            foreach (var output in Params.Output)
+                output.ClearData();
+
             DA.AbortComponentSolution();
         }
     }

@@ -17,16 +17,7 @@ static class ProgramToolpaths
         for (int i = 0; i < indices.Length; i++)
         {
             int index = indices[i];
-            var param = parameters.Input[index];
-
-            try
-            {
-                toolpaths[i] = ReadToolpath(DA, index, param);
-            }
-            catch (MissingInputException)
-            {
-                throw new RuntimeWarningException($"Input parameter {param.NickName} failed to collect data.");
-            }
+            toolpaths[i] = ReadToolpath(DA, index, parameters.Input[index]);
         }
 
         return toolpaths;

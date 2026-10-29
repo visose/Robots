@@ -1,4 +1,9 @@
-﻿- version: 2.4.4
+﻿- version: 2.4.5
+  changes:
+  - Fixed Grasshopper components silently truncating outputs after a null input item; null positions are preserved and a warning is shown.
+  - Cleared partial component outputs when a fatal error aborts the solution.
+
+- version: 2.4.4
   changes:
   - Fixed loading continuously rotating external axes with unbounded joint limits.
 

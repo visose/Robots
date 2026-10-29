@@ -24,9 +24,9 @@ static class DataAccess
 
         internal T? MaybeValue<T>(string name) where T : struct { T value = default; return DA.GetData(name, ref value) ? value : null; }
 
-        internal T[] List<T>(int index) { List<T> values = []; return DA.GetDataList(index, values) ? values.CheckedArray(index.ToString(CultureInfo.InvariantCulture)) : throw new MissingInputException(); }
+        internal T[] List<T>(int index) { List<T> values = []; return DA.GetDataList(index, values) ? values.CheckedArray(index.ToString(CultureInfo.InvariantCulture)) : throw new RuntimeWarningException($"Input '{index}' could not be read."); }
 
-        internal T[] List<T>(string name) { List<T> values = []; return DA.GetDataList(name, values) ? values.CheckedArray(name) : throw new MissingInputException(); }
+        internal T[] List<T>(string name) { List<T> values = []; return DA.GetDataList(name, values) ? values.CheckedArray(name) : throw new RuntimeWarningException($"Input '{name}' could not be read."); }
 
         internal T[] MaybeList<T>(int index) { List<T> values = []; return DA.GetDataList(index, values) ? values.CheckedArray(index.ToString(CultureInfo.InvariantCulture)) : []; }
 
@@ -35,7 +35,7 @@ static class DataAccess
         internal GH_Structure<T> Tree<T>(int index)
             where T : IGH_Goo
         {
-            return DA.GetDataTree(index, out GH_Structure<T> tree) ? tree : throw new MissingInputException();
+            return DA.GetDataTree(index, out GH_Structure<T> tree) ? tree : throw new RuntimeWarningException($"Input '{index}' could not be read.");
         }
 
         internal List<List<string>> TextTree(int index)
@@ -95,7 +95,7 @@ static class DataAccess
         }
     }
 
-    static T Required<T>(bool success, T? value) => success && value is not null ? value : throw new MissingInputException();
+    static T Required<T>(bool success, T? value) => success && value is not null ? value : throw new RuntimeWarningException("Input item is null or could not be read.");
 
     extension<T>(List<T> values)
     {
